@@ -10,18 +10,40 @@ Deux façons de piloter : les **outils MCP** (`cap-emploi mcp`, à privilégier 
 - `_SUIVI.md` se génère depuis la base (`generer_suivi` / `cap-emploi generer-suivi`) : ne pas l'éditer à la main une fois la bascule faite. Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `remplacer` seulement si l'utilisateur le demande.
 - Le dossier de données vient de `CAP_EMPLOI_DATA`, de `--data` ou de `cap-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
 - Ne pas télécharger LinkedIn, Indeed ni Glassdoor par script : lire ces pages dans le navigateur de l'utilisateur, ou lui demander le texte (Glassdoor bloque les robots). Les descriptions Hellowork et Free-Work sont déjà en base après `ingest`.
-- La grille de notation appartient à l'utilisateur (dans son dossier de données) : la lire avant de noter.
+- La grille de notation appartient à l'utilisateur (`profil/grille.json` de son dossier de données) : la lire avant de noter un lot (`grille` en MCP, `cap-emploi grille --consignes --json` en CLI). Ne jamais donner la note finale : noter les critères, l'application calcule.
+- Ne modifier la grille (`modifier_grille`, `cap-emploi grille --modifier`) qu'à la demande de l'utilisateur : d'abord un essai (`essai: true` / `--essai`) dont on lui montre l'impact, puis l'enregistrement avec un résumé.
 
 ## Flux complet via MCP
 
 1. **Ingérer** : `ingerer_emails` (`garder: true` pour conserver les `.eml`). Relever `nouvelles`, `doublons`, `ecartees`, `a_lire`, `erreurs`.
 2. **Lire** : `offres_a_lire`. Selon `lecture` : texte dans `description` ; `navigateur` = ouvrir `url` dans le navigateur de l'utilisateur ; `humain` = lui demander le texte. `lire_offre` pour le détail complet.
-3. **Noter** selon la grille de l'utilisateur : `noter_lot` (`{ "offres": [ {id, note, note_brute, penalites, colle, ecarts, lu, tags}, … ] }`) ou `noter_offre` pour une seule. Déjà vue ? `lister_offres` avec `texte`.
-4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil, conditions, ce qui colle, écarts. Sans « go » : `changer_statut` → `ecartee` avec la raison en commentaire.
+3. **Noter** avec la grille : `grille` d'abord (critères, poids, barèmes, règles, inventaire, exemples, `consignes_ia`), puis `noter_lot` (`{ "offres": [ {id, criteres, entrees, bloquants, colle, ecarts, lu, tags}, … ] }`) ou `noter_offre` pour une seule. Voir « Noter avec la grille » ci-dessous. Déjà vue ? `lister_offres` avec `texte`.
+4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil (celui de la grille), avec la décomposition (sous-notes, règles, drapeaux « inconnu » à vérifier), conditions, ce qui colle, écarts. Sans « go » : `changer_statut` → `ecartee` avec la raison en commentaire.
 5. **Candidater** sur son « go » : `candidater` (offre complète, dossier de données, `dossier_suggere`, étapes). Préparer le dossier, le CV et les messages selon ses consignes (dans le dossier de données).
 6. **Enregistrer la candidature** : `enregistrer_candidature` avec `dossier`, `cv`, `canal`, `message`, `prochaine_action` ; à l'envoi, `envoyee_le` (l'offre passe en `envoyee`). Ensuite : `changer_statut` (`relancee`, `entretien`, `refus`, `close`, `abandonnee`) et `enregistrer_candidature` pour la prochaine action.
 7. **Tenir le journal** (voir ci-dessous) : chaque échange devient un événement, la suite une échéance.
 8. **Générer le suivi** : `generer_suivi` → `candidatures/_SUIVI.genere.md` (sections En cours, Envoyées sans suite, Closes ; la prochaine action vient de la prochaine échéance).
+
+## Noter avec la grille
+
+1. Lire la grille (`grille`). Les critères `source: "ia"` sont à noter de 0 à 10 avec une justification courte ; leur `description` dit quoi regarder. Le critère technique se juge contre l'inventaire (fort / moyen / léger / zéro) : lister les écarts. Caler ses sous-notes sur les `exemples`.
+2. Ne pas noter les critères calculés (`teletravail`, `remuneration`) : remplir `entrees` quand l'offre les donne (`jours_sur_site` 0 à 5, 0 = full remote ; `salaire_min` / `salaire_max` en euros ; `unite` an, mois, jour, heure). Sinon l'application les lit dans les champs de l'offre ; inconnus, ils valent 5 avec un drapeau.
+3. `bloquants` : identifiants des règles actives qui s'appliquent (stage, défense…). Une règle inconnue est refusée.
+4. Ne pas envoyer `note` : avec `criteres`, il est ignoré (signalé dans `avertissements`). La réponse donne la note calculée, la valeur exacte et la `decomposition`.
+5. Essai possible : `noter_lot` avec `essai: true` (CLI `noter --fichier lot.json --essai`) calcule sans rien enregistrer.
+6. Changer de priorité (« le télétravail compte plus », « 50 K€ me suffisent ») : `modifier_grille` en essai, montrer l'impact (`montent`, `descendent`), puis enregistrer avec un `resume` ; toutes les notes à critères sont recalculées. Retour arrière : `modifier_grille` avec `restaurer_version`. Historique : `historique_grille`.
+
+Exemple d'entrée :
+
+```json
+{ "id": 42,
+  "criteres": { "technique": { "note": 8, "justification": "PHP, API REST ; écart : PostgreSQL (zéro)" },
+                "role": { "note": 7, "justification": "Senior, pas de lead" },
+                "interet": { "note": 6, "justification": "SaaS pour TPE" },
+                "risque": { "note": 7, "justification": "Test sur projet existant" } },
+  "entrees": { "jours_sur_site": 2, "salaire_min": 55000, "salaire_max": 65000, "unite": "an" },
+  "bloquants": [], "colle": "…", "ecarts": "…", "lu": true }
+```
 
 ## Journal : quand l'utilisateur raconte un appel, un entretien, un message, un devis
 
@@ -40,8 +62,8 @@ Une offre déjà suivie qui réapparaît dans une alerte ou un lot garde son sta
    - `description` : la description est dans le champ `description` (tronquée à 2 500 caractères ; `--complet` pour tout) ;
    - `navigateur` : ouvrir `url` dans le navigateur de l'utilisateur ;
    - `humain` : page protégée, demander le texte à l'utilisateur.
-3. Lire et noter chaque offre selon la grille de l'utilisateur.
-4. Écrire un fichier de lot (tableau JSON, format ci-dessous) puis `cap-emploi noter --fichier lot.json`. Les offres sont retrouvées par `id` ou par `url` ; elles passent en `notee`.
+3. Lire la grille (`cap-emploi grille --consignes --json`), puis lire chaque offre et noter ses critères.
+4. Écrire un fichier de lot (tableau JSON, format ci-dessous) puis `cap-emploi noter --fichier lot.json` (`--essai` pour vérifier sans enregistrer). Les offres sont retrouvées par `id` ou par `url` ; elles passent en `notee`.
 5. Résumer à l'utilisateur : offres notées, celles au-dessus de son seuil avec conditions, ce qui colle et les écarts.
 6. Selon sa réponse :
    - « go » : `cap-emploi candidater <id> --json` (passe en `go`, renvoie l'offre complète et un dossier suggéré) ;
@@ -55,12 +77,13 @@ Format d'une entrée de lot :
   "url": "https://www.linkedin.com/jobs/view/1234567890/",
   "titre": "…", "entreprise": "…", "lieu": "…", "contrat": "…", "remuneration": "…",
   "teletravail": "…", "publiee": "JJ/MM/AAAA ou NC", "stack": "…",
-  "note_brute": 6.5, "penalites": "-0,5 difficultés (…)", "note": 6,
+  "criteres": { "technique": { "note": 8, "justification": "…" }, "role": { "note": 7 }, "interet": { "note": 6 }, "risque": { "note": 7 } },
+  "entrees": { "jours_sur_site": 3 }, "bloquants": [],
   "colle": "…", "ecarts": "…", "lu": true, "tags": ["wordpress"]
 }
 ```
 
-`id` ou `url` suffit ; les autres champs complètent ce qui manque en base.
+`id` ou `url` suffit ; les autres champs complètent ce qui manque en base. Ancien format (note globale, sans `criteres`) : `"note_brute": 6.5, "penalites": "…", "note": 6`, encore accepté mais figé.
 
 ## Autres commandes utiles
 
@@ -79,7 +102,11 @@ Format d'une entrée de lot :
 | Échéance | `cap-emploi evenement <id> --type message --le +7 --resume "Relancer si sans nouvelles" --json` |
 | Journal, échéances | `cap-emploi journal <id> --json`, `cap-emploi echeances --jours 7 --json`, `cap-emploi fait <evenement_id> --json` |
 | Fichiers du dossier | `cap-emploi fichiers <id> --json` |
-| Note seule | `cap-emploi noter <id> --json '{"note": 6, "note_brute": 6.5, "penalites": "…", "colle": "…", "ecarts": "…"}'` |
+| Note seule | `cap-emploi noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "colle": "…", "ecarts": "…"}'` |
+| Grille, consignes | `cap-emploi grille --consignes --json` |
+| Changer un poids (essai, puis pour de vrai) | `cap-emploi grille --modifier '{"poids": {"teletravail": 30}}' --essai --json`, puis `--resume "Télétravail prioritaire"` |
+| Historique, retour arrière | `cap-emploi grille --historique --json`, `cap-emploi grille --restaurer 2 --json` |
+| Recalculer | `cap-emploi renoter --json` |
 
 Le bouton « Candidater » du tableau de bord copie `candidater <id>` : quand l'utilisateur colle ce texte, lancer `cap-emploi candidater <id> --json` et préparer la candidature selon ses consignes.
 

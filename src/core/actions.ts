@@ -13,7 +13,10 @@ import {
   type DetailOffre,
   type Offre,
 } from './offres.ts';
-import { noterEntree, type EntreeLot, type ResultatNotation } from './notation.ts';
+import { estNoteACriteres, noterEntree, type EntreeLot, type ResultatNotation } from './notation.ts';
+import { notesOffre } from './offres.ts';
+import type { VersionGrille } from './grille-stockage.ts';
+import type { Entrees } from './grille.ts';
 import { STATUTS_A_TRAITER, type Statut } from './statuts.ts';
 import { dateFr } from './texte.ts';
 
@@ -70,15 +73,74 @@ export function offresALire(db: Base, o: { limite?: number; complet?: boolean } 
   return { total: r.total, offres };
 }
 
+export interface OptionsNoter {
+  /** Charge la grille courante (appelé seulement si une entrée a des critères). */
+  grille?: () => VersionGrille | null;
+  /** Essai : calcule et renvoie les notes sans rien enregistrer. */
+  essai?: boolean;
+}
+
 /** Enregistre des notes au format des lots (dans une transaction : tout ou rien). */
-export function noterOffres(db: Base, entrees: EntreeLot[], origine: string): ResultatNotation[] {
+export function noterOffres(db: Base, entrees: EntreeLot[], origine: string, o: OptionsNoter = {}): ResultatNotation[] {
   if (!entrees.length) throw new Error('Aucune note à enregistrer');
-  return transaction(db, () =>
+  const grille = entrees.some(estNoteACriteres) ? (o.grille?.() ?? null) : null;
+  const noter = () =>
     entrees.map((e) => {
-      const r = noterEntree(db, e, { origine, origineOffre: 'manuel' });
+      const r = noterEntree(db, e, { origine, origineOffre: 'manuel', grille });
       if (Array.isArray(e.tags) && e.tags.length) modifierTags(db, r.id, e.tags, []);
       return r;
-    }),
+    });
+  if (!o.essai) return transaction(db, noter);
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    return noter();
+  } finally {
+    db.exec('ROLLBACK');
+  }
+}
+
+export interface SaisieSousNotes {
+  /** Sous-notes modifiées (critères notés par l'IA) ; null retire la sous-note (valeur neutre). */
+  criteres?: Record<string, { note: number | string; justification?: string | null } | null>;
+  /** Données d'entrée des critères calculés ; null efface une valeur (retour à la déduction depuis l'offre). */
+  entrees?: { [K in keyof Entrees]?: Entrees[K] | null };
+  bloquants?: string[];
+}
+
+/**
+ * Correction des sous-notes depuis l'interface : part de la dernière note (sous-notes, entrées, règles,
+ * « colle », « ecarts »), applique les changements et ajoute une note à l'historique (origine interface).
+ * Sur une note globale de l'ancienne grille, les critères non saisis valent la valeur neutre.
+ */
+export function modifierSousNotes(db: Base, id: number, s: SaisieSousNotes, origine: string, grille: VersionGrille): ResultatNotation {
+  offreOuErreur(db, id);
+  const derniere = notesOffre(db, id)[0];
+  const base = derniere?.saisie ?? { criteres: {}, entrees: undefined, bloquants: [] };
+  const criteres: NonNullable<EntreeLot['criteres']> = {};
+  for (const [k, v] of Object.entries(base.criteres)) criteres[k] = { note: v.note, justification: v.justification, origine: v.origine ?? 'ia' };
+  for (const [k, v] of Object.entries(s.criteres ?? {})) {
+    if (v === null) delete criteres[k];
+    else criteres[k] = { note: v.note, justification: v.justification ?? undefined, origine: 'interface' };
+  }
+  const entrees: Record<string, unknown> = { ...(base.entrees ?? {}) };
+  for (const [k, v] of Object.entries(s.entrees ?? {})) {
+    if (v === null || v === undefined) delete entrees[k];
+    else entrees[k] = v;
+  }
+  return transaction(db, () =>
+    noterEntree(
+      db,
+      {
+        id,
+        criteres,
+        entrees: entrees as Entrees,
+        bloquants: s.bloquants ?? base.bloquants,
+        colle: derniere?.colle ?? undefined,
+        ecarts: derniere?.ecarts ?? undefined,
+        lu: derniere?.lu ?? true,
+      },
+      { origine, grille },
+    ),
   );
 }
 

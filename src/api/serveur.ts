@@ -19,7 +19,18 @@ import {
   type ChampsCandidature,
 } from '../core/offres.ts';
 import { estStatut, STATUTS } from '../core/statuts.ts';
-import { noterOffres, preparerCandidature, suivreCandidature } from '../core/actions.ts';
+import { modifierSousNotes, noterOffres, preparerCandidature, suivreCandidature, type SaisieSousNotes } from '../core/actions.ts';
+import { noteExemple, LIBELLES_NIVEAUX, NIVEAUX, validerGrille } from '../core/grille.ts';
+import {
+  apercuGrille,
+  enregistrerGrille,
+  grilleCourante,
+  grilleObligatoire,
+  historiqueGrille,
+  restaurerGrille,
+  versionGrille,
+  type VersionGrille,
+} from '../core/grille-stockage.ts';
 import type { EntreeLot } from '../core/notation.ts';
 import {
   ajouterEvenement,
@@ -157,6 +168,52 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
     const { note, note_brute, penalites, colle, ecarts } = corps;
     noterOffres(db, [{ id, note, note_brute, penalites, colle, ecarts, lu: true }], 'interface');
     return c.json(detailOffre(db, id));
+  });
+
+  /** Correction des sous-notes (et des entrées des critères calculés) : nouvelle note calculée avec la grille. */
+  app.put('/api/offres/:id/sous-notes', async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    const corps = (await c.req.json()) as SaisieSousNotes;
+    modifierSousNotes(db, id, corps, 'interface', grilleObligatoire(db, config.dossierDonnees));
+    return c.json(detailOffre(db, id));
+  });
+
+  // Grille de notation : version courante (avec les exemples calculés), aperçu, enregistrement, versions.
+  const reponseGrille = (v: VersionGrille | null) =>
+    v
+      ? {
+          ...v,
+          niveaux: NIVEAUX.map((n) => ({ valeur: n, libelle: LIBELLES_NIVEAUX[n] })),
+          exemples: v.grille.exemples.map((e) => noteExemple(v.grille, e, v.version)),
+        }
+      : { version: null, grille: null, exemples: [] };
+
+  app.get('/api/grille', (c) => c.json(reponseGrille(grilleCourante(db, config.dossierDonnees))));
+
+  app.post('/api/grille/apercu', async (c) => {
+    const corps = (await c.req.json()) as { grille?: unknown };
+    const courante = grilleObligatoire(db, config.dossierDonnees);
+    return c.json(apercuGrille(db, validerGrille(corps.grille), courante.grille.seuil));
+  });
+
+  app.put('/api/grille', async (c) => {
+    const corps = (await c.req.json()) as { grille?: unknown; resume?: string };
+    const r = enregistrerGrille(db, config.dossierDonnees, corps.grille, { auteur: 'interface', resume: corps.resume ?? '' });
+    return c.json({ ok: true, ...reponseGrille(r.version), impact: r.impact });
+  });
+
+  app.get('/api/grille/historique', (c) => {
+    grilleCourante(db, config.dossierDonnees);
+    return c.json(historiqueGrille(db));
+  });
+
+  app.get('/api/grille/versions/:v', (c) => c.json(versionGrille(db, Number(c.req.param('v')))));
+
+  app.post('/api/grille/restaurer', async (c) => {
+    const corps = (await c.req.json()) as { version?: number; resume?: string };
+    const r = restaurerGrille(db, config.dossierDonnees, Number(corps.version), { auteur: 'interface', resume: corps.resume });
+    return c.json({ ok: true, ...reponseGrille(r.version), impact: r.impact });
   });
 
   /** Candidature : prochaine action, date d'envoi, canal… (null ou '' efface un champ, absent = inchangé). */

@@ -53,6 +53,8 @@ describe('serveur MCP (stdio)', () => {
         'enregistrer_candidature',
         'fichiers_dossier',
         'generer_suivi',
+        'grille',
+        'historique_grille',
         'ingerer_emails',
         'journal',
         'lire_offre',
@@ -64,6 +66,8 @@ describe('serveur MCP (stdio)', () => {
         'noter_lot',
         'noter_offre',
         'offres_a_lire',
+        'modifier_grille',
+        'renoter',
       ].sort(),
     );
     const noter = tools.find((t) => t.name === 'noter_offre')!;
@@ -136,6 +140,53 @@ describe('serveur MCP (stdio)', () => {
     expect(s.fichier).toBe(join(dossier, 'candidatures', '_SUIVI.genere.md'));
     expect(existsSync(s.fichier)).toBe(true);
     expect(s.en_cours).toBe(1);
+  }, 30_000);
+
+  it('grille : lire, noter à critères, modifier (essai puis enregistrement), renoter, historique', async () => {
+    expect((await appeler('grille')).erreur).toMatch(/Pas de grille/);
+    cpSync(join(RACINE, 'exemples', 'grille.json'), join(dossier, 'profil', 'grille.json'));
+    const g = (await appeler('grille')) as unknown as { version: number; consignes_ia: string[]; exemples_calcules: { note: number }[] };
+    expect(g.version).toBe(1);
+    expect(g.consignes_ia.join(' ')).toMatch(/Ne donne pas la note finale/);
+    expect(g.exemples_calcules.map((e) => e.note)).toEqual([8, 3.5, 0]);
+
+    const aLire = (await appeler('lister_offres', { taille: 2 })) as unknown as { offres: { id: number }[] };
+    const [a, b] = aLire.offres.map((o) => o.id);
+    const lot = (await appeler('noter_lot', {
+      offres: [
+        { id: a, note: 2, criteres: { technique: { note: 8, justification: 'PHP' }, role: { note: 7 }, interet: { note: 6 }, risque: { note: 7 } }, entrees: { jours_sur_site: 1, salaire_min: 55000, salaire_max: 60000, unite: 'an' } },
+        { id: b, criteres: { technique: { note: 9 } }, bloquants: ['stage'] },
+      ],
+    })) as unknown as { offres: { note: number; avertissements?: string[]; decomposition: { criteres: unknown[] } }[] };
+    // 8×.35 + 8×.2 + (57,5 K€ : 5 + 5×17,5/20 = 9,375)×.2 + 7×.1 + 6×.1 + 7×.05 = 7,925 → 8
+    expect(lot.offres[0].note).toBe(8);
+    expect(lot.offres[0].avertissements?.[0]).toMatch(/ignoré/);
+    expect(lot.offres[0].decomposition.criteres).toHaveLength(6);
+    expect(lot.offres[1].note).toBe(0);
+    expect((await appeler('noter_offre', { id: a, criteres: { teletravail: { note: 3 } } })).erreur).toMatch(/calculé/);
+    expect((await appeler('noter_offre', { id: a, criteres: { technique: { note: 3 } }, bloquants: ['armee'] })).erreur).toMatch(/Règle bloquante inconnue/);
+
+    const essai = (await appeler('modifier_grille', { changement: { regles: [{ id: 'stage', actif: false }] }, essai: true })) as unknown as {
+      enregistree: boolean;
+      impact: { montent: { id: number }[] };
+    };
+    expect(essai.enregistree).toBe(false);
+    expect(essai.impact.montent.map((x) => x.id)).toEqual([b]);
+    expect((await appeler('modifier_grille', { changement: { seuil: 5 } })).erreur).toMatch(/resume/);
+    const m = (await appeler('modifier_grille', { changement: { regles: [{ id: 'stage', actif: false }] }, resume: 'Stages acceptés' })) as unknown as {
+      version: number;
+    };
+    expect(m.version).toBe(2);
+    expect(((await appeler('lire_offre', { id: b })) as unknown as { note: number }).note).toBeGreaterThan(0);
+    expect(await appeler('renoter')).toMatchObject({ ok: true, version: 2, impact: { offres_recalculees: 2, changees: 0 } });
+    const r = (await appeler('modifier_grille', { restaurer_version: 1 })) as unknown as { version: number };
+    expect(r.version).toBe(3);
+    const h = (await appeler('historique_grille')) as unknown as { versions: { version: number; auteur: string; resume: string }[] };
+    expect(h.versions.map((x) => [x.version, x.auteur, x.resume])).toEqual([
+      [3, 'mcp', 'Retour à la version 1'],
+      [2, 'mcp', 'Stages acceptés'],
+      [1, 'fichier', "Grille d'exemple de cap-emploi (à adapter)"],
+    ]);
   }, 30_000);
 
   it('erreurs renvoyées à l’IA sans arrêter le serveur', async () => {

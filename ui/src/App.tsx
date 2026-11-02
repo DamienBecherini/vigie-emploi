@@ -15,6 +15,7 @@ import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
 import { Detail } from './composants/Detail.tsx';
 import { AVenir } from './composants/AVenir.tsx';
+import { Reglages } from './composants/Reglages.tsx';
 
 const TAILLES = [25, 50, 100, 200, 500];
 
@@ -123,6 +124,9 @@ export function App() {
   const [visibilite, setVisibilite] = usePreference<VisibilityState>('colonnes', VISIBILITE_DEFAUT);
   const [filtresOuverts, setFiltresOuverts] = usePreference<boolean>('filtres-ouverts', true);
   const [annonce, setAnnonce] = useState('');
+  const [reglages, setReglages] = useState(false);
+  const grille = useQuery({ queryKey: ['grille'], queryFn: api.grille });
+  const seuil = String(grille.data?.grille?.seuil ?? 4.5);
   const [recherche, setRecherche] = useState(params.get('q') ?? '');
   const rechercheDifferee = useDebounce(recherche, 300);
 
@@ -176,7 +180,7 @@ export function App() {
     if (nom === 'toutes') modifier(vide);
     if (nom === 'a-traiter') modifier({ ...vide, statut: STATUTS_A_TRAITER.join(',') });
     if (nom === 'candidatures') modifier({ ...vide, candidatures: '1' });
-    if (nom === 'bonnes') modifier({ ...vide, noteMin: '4.5', statut: 'notee,go' });
+    if (nom === 'bonnes') modifier({ ...vide, noteMin: seuil, statut: 'notee,go' });
     setRecherche('');
   };
   const raccourciActif =
@@ -184,7 +188,7 @@ export function App() {
       ? 'candidatures'
       : params.get('statut') === STATUTS_A_TRAITER.join(',')
         ? 'a-traiter'
-        : params.get('noteMin') === '4.5' && params.get('statut') === 'notee,go'
+        : params.get('noteMin') === seuil && params.get('statut') === 'notee,go'
           ? 'bonnes'
           : CLES_FILTRES.some((k) => params.has(k))
             ? null
@@ -221,7 +225,7 @@ export function App() {
               [
                 ['toutes', 'Toutes'],
                 ['a-traiter', 'À traiter'],
-                ['bonnes', 'Notées ≥ 4,5'],
+                ['bonnes', `Notées ≥ ${seuil.replace('.', ',')}`],
                 ['candidatures', 'Mes candidatures'],
               ] as const
             ).map(([nom, libelle]) => (
@@ -236,6 +240,9 @@ export function App() {
               </button>
             ))}
           </nav>
+          <button type="button" className="bouton" onClick={() => setReglages(true)} aria-haspopup="dialog">
+            Réglages de la note
+          </button>
           <Preferences />
         </div>
       </header>
@@ -382,6 +389,16 @@ export function App() {
       </div>
 
       {offreChoisie !== null && <Detail id={offreChoisie} fermer={fermer} annoncer={annoncer} />}
+      {reglages && (
+        <Reglages
+          fermer={() => setReglages(false)}
+          annoncer={annoncer}
+          choisir={(id) => {
+            setReglages(false);
+            modifier({ offre: String(id) });
+          }}
+        />
+      )}
 
       <div
         role="status"

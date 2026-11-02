@@ -25,20 +25,33 @@ import {
   TYPES_EVENEMENT,
 } from '../core/evenements.ts';
 import { fichiersDossier } from '../core/fichiers.ts';
+import { consignesIa, noteExemple, schemaChangement, UNITES } from '../core/grille.ts';
+import {
+  cheminGrille,
+  grilleCourante,
+  grilleObligatoire,
+  historiqueGrille,
+  modifierGrille,
+  renoter,
+  restaurerGrille,
+  versionGrille,
+} from '../core/grille-stockage.ts';
 
 const ORIGINE = 'mcp';
 
 const INSTRUCTIONS = `cap-emploi garde l'état des offres d'emploi et de mission de l'utilisateur (base SQLite locale) :
 offres, notes, statuts, tags, candidatures. L'application n'appelle aucun modèle : c'est toi qui lis et notes.
-Flux habituel : ingerer_emails → offres_a_lire → (lire chaque offre, la noter selon la grille de l'utilisateur)
-→ noter_lot → résumer à l'utilisateur → sur son « go » : candidater, préparer le dossier, enregistrer_candidature
+Flux habituel : ingerer_emails → offres_a_lire → grille (lire la grille de notation : critères, barèmes, règles,
+inventaire, exemples) → (lire chaque offre, noter ses critères) → noter_lot avec criteres / entrees / bloquants
+(l'application calcule la note finale, ne la donne pas) → résumer à l'utilisateur → sur son « go » : candidater, préparer le dossier, enregistrer_candidature
 → generer_suivi. Sans « go » : changer_statut vers « ecartee » avec la raison.
 Quand l'utilisateur raconte un appel, un entretien, un message, un devis : ajouter_evenement (avec le fichier
 du dossier s'il y en a un, voir fichiers_dossier), puis la prochaine échéance (ajouter_evenement daté dans
 le futur, fait: false). echeances liste ce qui est en retard ou à venir ; marquer_fait clôt une échéance.
 Ne télécharge pas LinkedIn, Indeed ni Glassdoor par script : lis ces pages dans le navigateur de l'utilisateur
-ou demande-lui le texte. La grille de notation et les consignes de candidature sont dans le dossier de données
-de l'utilisateur (renvoyé par candidater) : les lire avant de noter ou de rédiger.`;
+ou demande-lui le texte. Les consignes de candidature sont dans le dossier de données de l'utilisateur (renvoyé par
+candidater) : les lire avant de rédiger. Ne modifie la grille (modifier_grille) qu'à la demande de l'utilisateur,
+après un essai (essai: true) dont tu lui montres l'impact.`;
 
 const id = z.number().int().positive().describe("Identifiant de l'offre dans cap-emploi (champ id)");
 const texteFacultatif = (d: string) => z.string().nullable().optional().describe(d);
@@ -46,13 +59,35 @@ const nombreNote = (d: string) => z.union([z.number().min(0).max(10), z.string()
 
 /** Une note au format des lots (fichiers candidatures/_lots/*.json). */
 const champsNote = {
-  note: nombreNote('Note finale sur 10 (après pénalités), ex. 6 ou 5.5'),
-  note_brute: nombreNote('Note avant pénalités, sur 10'),
-  penalites: z.string().optional().describe('Pénalités appliquées, en clair : « -0,5 difficultés (…) »'),
+  criteres: z
+    .record(
+      z.string(),
+      z.object({
+        note: z.union([z.number().min(0).max(10), z.string()]).describe('Sous-note de 0 à 10'),
+        justification: z.string().optional().describe('Justification courte (écarts pour le critère technique)'),
+      }),
+    )
+    .optional()
+    .describe(
+      "Sous-notes des critères notés par l'IA (voir l'outil grille) : { \"technique\": { \"note\": 8, \"justification\": \"…\" }, \"role\": {…}, … }. " +
+        "Avec criteres, l'application calcule la note finale (le champ note est ignoré).",
+    ),
+  entrees: z
+    .object({
+      jours_sur_site: z.number().int().min(0).max(5).nullable().optional().describe('Jours sur site par semaine (0 = full remote, 5 = sur site)'),
+      salaire_min: z.number().positive().nullable().optional().describe('Rémunération basse en euros (55000, 450)'),
+      salaire_max: z.number().positive().nullable().optional().describe('Rémunération haute en euros'),
+      unite: z.enum(UNITES).nullable().optional().describe('an (salaire annuel brut), mois, jour (TJM), heure'),
+    })
+    .optional()
+    .describe("Données d'entrée des critères calculés, quand l'offre les donne (sinon déduites des champs de l'offre)"),
+  bloquants: z.array(z.string()).optional().describe('Identifiants des règles bloquantes qui s’appliquent (voir grille), ex. ["stage"]'),
+  note: nombreNote('Note globale sur 10 (ancienne grille, sans criteres) ; ignorée si criteres est fourni'),
+  note_brute: nombreNote('Note globale avant pénalités (ancienne grille)'),
+  penalites: z.string().optional().describe('Ancienne grille : pénalités en clair. Avec criteres, utiliser bloquants'),
   colle: z.string().optional().describe("Ce qui colle avec le profil de l'utilisateur"),
   ecarts: z.string().optional().describe('Écarts à assumer ou raisons de ne pas y aller'),
   lu: z.boolean().optional().describe("true si l'offre complète a été lue (pas seulement l'intitulé)"),
-  grille_version: z.string().optional().describe('Version de la grille de notation utilisée, si elle en a une'),
   tags: z.array(z.string()).optional().describe("Tags à ajouter à l'offre (ex. wordpress, a-reprendre)"),
 };
 const champsDescriptifs = {
@@ -99,8 +134,9 @@ function normaliserEntree(e: z.infer<typeof entreeLot>): EntreeLot {
 }
 
 export function creerServeurMcp(db: Base, config: Config): McpServer {
-  const serveur = new McpServer({ name: 'cap-emploi', version: '0.3.0' }, { instructions: INSTRUCTIONS });
+  const serveur = new McpServer({ name: 'cap-emploi', version: '0.4.0' }, { instructions: INSTRUCTIONS });
   const lecture = { readOnlyHint: true, openWorldHint: false };
+  const chargerGrille = () => grilleCourante(db, config.dossierDonnees);
 
   serveur.registerTool(
     'lister_offres',
@@ -190,13 +226,14 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     {
       title: 'Noter une offre',
       description:
-        "Enregistre une note pour une offre, désignée par id (ou par url : l'offre est créée si elle n'existe pas). La note s'ajoute " +
-        "à l'historique (la dernière fait foi) ; une offre encore à traiter passe en « notee ». Les champs descriptifs ne complètent " +
-        'que ce qui manque en base.',
+        "Enregistre une note pour une offre, désignée par id (ou par url : l'offre est créée si elle n'existe pas). Lire d'abord " +
+        "l'outil grille. Fournir criteres (sous-notes des critères IA), entrees (jours sur site, salaire) et bloquants : l'application " +
+        "calcule la note finale et renvoie sa décomposition. La note s'ajoute à l'historique (la dernière fait foi) ; une offre encore " +
+        'à traiter passe en « notee ». Les champs descriptifs ne complètent que ce qui manque en base.',
       inputSchema: entreeLot.shape,
     },
     sur((e) => {
-      const [r] = noterOffres(db, [normaliserEntree(e)], ORIGINE);
+      const [r] = noterOffres(db, [normaliserEntree(e)], ORIGINE, { grille: chargerGrille });
       return { ok: true, ...r };
     }),
   );
@@ -206,13 +243,114 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     {
       title: 'Noter un lot',
       description:
-        'Enregistre plusieurs notes d’un coup (format des fichiers de lot : chaque entrée a un id ou une url, et les champs de noter_offre). ' +
-        'Tout ou rien : une entrée invalide annule le lot.',
-      inputSchema: { offres: z.array(entreeLot).min(1).describe('Entrées du lot') },
+        'Enregistre plusieurs notes d’un coup (format des fichiers de lot : chaque entrée a un id ou une url, et les champs de noter_offre, ' +
+        'dont criteres / entrees / bloquants). Tout ou rien : une entrée invalide annule le lot. essai: true calcule sans enregistrer.',
+      inputSchema: {
+        offres: z.array(entreeLot).min(1).describe('Entrées du lot'),
+        essai: z.boolean().optional().describe('true : calcule les notes et les renvoie sans rien enregistrer'),
+      },
     },
-    sur(({ offres }) => {
-      const r = noterOffres(db, offres.map(normaliserEntree), ORIGINE);
-      return { ok: true, notees: r.length, offres: r };
+    sur(({ offres, essai }) => {
+      const r = noterOffres(db, offres.map(normaliserEntree), ORIGINE, { grille: chargerGrille, essai });
+      return { ok: true, essai: Boolean(essai), notees: essai ? 0 : r.length, offres: r };
+    }),
+  );
+
+  serveur.registerTool(
+    'grille',
+    {
+      title: 'Grille de notation',
+      description:
+        "Grille de notation courante de l'utilisateur, à lire avant de noter : critères et poids (normalisés), qui note quoi (IA ou calcul), " +
+        'barèmes (télétravail, rémunération), règles bloquantes, inventaire de compétences (fort / moyen / léger / zéro), exemples de ' +
+        'référence avec leur note calculée, seuil « à regarder » et consignes de notation (consignes_ia).',
+      inputSchema: { version: z.number().int().positive().optional().describe('Version précise (par défaut : la courante)') },
+      annotations: lecture,
+    },
+    sur(({ version }) => {
+      const v = version ? versionGrille(db, version) : grilleObligatoire(db, config.dossierDonnees);
+      const somme = v.grille.criteres.reduce((s, c) => s + c.poids, 0);
+      return {
+        fichier: cheminGrille(config.dossierDonnees),
+        version: v.version,
+        le: v.le,
+        auteur: v.auteur,
+        resume: v.resume,
+        consignes_ia: [...v.grille.consignes, ...consignesIa(v.grille)],
+        poids_normalises: Object.fromEntries(v.grille.criteres.map((c) => [c.id, Math.round((c.poids / somme) * 1000) / 1000])),
+        grille: v.grille,
+        exemples_calcules: v.grille.exemples.map((e) => ({
+          titre: e.titre,
+          entreprise: e.entreprise ?? null,
+          note: noteExemple(v.grille, e, v.version).note,
+          moyenne: noteExemple(v.grille, e, v.version).moyenne,
+        })),
+        format_note: {
+          id: 42,
+          criteres: { technique: { note: 8, justification: '…' }, role: { note: 7, justification: '…' } },
+          entrees: { jours_sur_site: 2, salaire_min: 55000, salaire_max: 65000, unite: 'an' },
+          bloquants: [],
+          colle: '…',
+          ecarts: '…',
+          lu: true,
+        },
+      };
+    }),
+  );
+
+  serveur.registerTool(
+    'modifier_grille',
+    {
+      title: 'Modifier la grille',
+      description:
+        "Changement partiel de la grille, à la demande de l'utilisateur seulement : poids ({ technique: 40 }), seuil, barèmes " +
+        '(teletravail.jours_sur_site, remuneration.salaire / tjm : plancher, cible_basse, cible_haute, plancher_full_remote), règles ' +
+        '(ajout ou modification par id : libelle, effet zero | plafond, valeur, actif ; retirer_regles), critères (libellé, description), ' +
+        "inventaire (ajouter [{ techno, niveau }], retirer [techno]). essai: true renvoie l'aperçu sans enregistrer : le montrer d'abord. " +
+        "Sinon crée une nouvelle version (avec le résumé), recalcule toutes les notes à critères et renvoie l'impact (notes qui changent, " +
+        'offres qui franchissent le seuil). restaurer_version revient à une version précédente.',
+      inputSchema: {
+        changement: schemaChangement.optional().describe('Changement partiel (champs absents inchangés)'),
+        resume: z.string().optional().describe('Résumé du changement, gardé dans l’historique (obligatoire sauf en essai)'),
+        essai: z.boolean().optional().describe('true : aperçu de l’impact sans enregistrer'),
+        restaurer_version: z.number().int().positive().optional().describe('Revenir à cette version (à la place de changement)'),
+      },
+    },
+    sur(({ changement, resume, essai, restaurer_version }) => {
+      if (restaurer_version !== undefined) {
+        const r = restaurerGrille(db, config.dossierDonnees, restaurer_version, { auteur: ORIGINE, resume });
+        return { ok: true, enregistree: true, version: r.version.version, impact: r.impact };
+      }
+      if (!changement) throw new Error('changement ou restaurer_version attendu');
+      if (!essai && !resume?.trim()) throw new Error('resume attendu (ou essai: true pour un aperçu)');
+      const r = modifierGrille(db, config.dossierDonnees, changement, { auteur: ORIGINE, resume: resume ?? '', essai });
+      return { ok: true, enregistree: r.enregistree, version: r.version, impact: r.impact };
+    }),
+  );
+
+  serveur.registerTool(
+    'renoter',
+    {
+      title: 'Recalculer les notes',
+      description:
+        "Recalcule avec la grille courante toutes les notes à critères (sans relire d'offre). Les notes globales de l'ancienne grille restent " +
+        "figées. Utile après une correction des champs télétravail / rémunération des offres ; un changement de grille recalcule déjà tout.",
+      inputSchema: {},
+    },
+    sur(() => ({ ok: true, ...renoter(db, config.dossierDonnees) })),
+  );
+
+  serveur.registerTool(
+    'historique_grille',
+    {
+      title: 'Historique de la grille',
+      description: 'Versions de la grille, de la plus récente à la plus ancienne : version, date, auteur (interface, cli, mcp, fichier), résumé.',
+      inputSchema: {},
+      annotations: lecture,
+    },
+    sur(() => {
+      grilleCourante(db, config.dossierDonnees);
+      return { versions: historiqueGrille(db) };
     }),
   );
 

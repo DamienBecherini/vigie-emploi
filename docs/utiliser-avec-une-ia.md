@@ -11,8 +11,12 @@ Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon
 | `lister_offres` | Liste paginée, mêmes filtres que `cap-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri) |
 | `lire_offre` | Détail complet : description, notes, historique des statuts, tags, candidature |
 | `offres_a_lire` | Offres à traiter sans note, avec `lecture` = `description`, `navigateur` ou `humain` |
-| `noter_offre` | Une note (par `id`, ou par `url` : l'offre est créée au besoin) |
-| `noter_lot` | Plusieurs notes au format des lots, tout ou rien |
+| `grille` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |
+| `noter_offre` | Une note (par `id`, ou par `url` : l'offre est créée au besoin) : `criteres`, `entrees`, `bloquants` ; la note finale est calculée et renvoyée avec sa décomposition |
+| `noter_lot` | Plusieurs notes au format des lots, tout ou rien ; `essai: true` calcule sans enregistrer |
+| `modifier_grille` | Changement partiel de la grille (poids, seuil, barèmes, règles, inventaire) avec un résumé ; `essai: true` pour l'aperçu ; `restaurer_version` ; renvoie l'impact (notes qui changent, offres qui franchissent le seuil) |
+| `renoter` | Recalcule les notes à critères avec la grille courante |
+| `historique_grille` | Versions de la grille (date, auteur, résumé) |
 | `changer_statut` | Statut + commentaire (historisé) |
 | `modifier_tags` | Ajout / retrait de tags |
 | `modifier_lien` | Lien de l'offre (ou `null` pour l'effacer) |
@@ -41,7 +45,7 @@ Fichier `.mcp.json` à la racine du dossier de données (ou du projet où l'on t
 }
 ```
 
-Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `npm link` : les trois formes ci-dessous se connectent et exposent les outils (18 depuis la version 0.3).
+Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `npm link` : les trois formes ci-dessous se connectent et exposent les outils (22 depuis la version 0.4).
 
 | Forme | `command` / `args` | Quand l'utiliser |
 |---|---|---|
@@ -89,4 +93,4 @@ Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprot
 
 ## Flux type
 
-Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → noter → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.
+Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → lire la grille (`grille`) → noter les critères (`noter_lot`) → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.

@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "resume": "Grille d'exemple de cap-emploi (à adapter)",
+  "nom": "Grille d'exemple",
+  "seuil": 4.5,
+  "consignes": [
+    "Exemple générique : remplacer les cibles, l'inventaire, les barèmes et les exemples par les siens (panneau « Réglages de la note » ou ce fichier).",
+    "Cibles : développement web backend (PHP, API, intégration), tout contrat.",
+    "Signaler dans « ecarts » une rémunération sous le plancher, un trajet long, un anglais oral exigé."
+  ],
+  "criteres": [
+    {
+      "id": "technique",
+      "libelle": "Adéquation technique",
+      "description": "Compétences demandées comparées à l'inventaire : haut si le cœur de l'offre est au niveau fort, bas si la stack principale est au niveau zéro. Lister les écarts dans la justification.",
+      "source": "ia",
+      "poids": 35
+    },
+    {
+      "id": "teletravail",
+      "libelle": "Télétravail et trajet",
+      "description": "Calculé depuis le nombre de jours sur site par semaine.",
+      "source": "calcul",
+      "calcul": "teletravail",
+      "poids": 20
+    },
+    {
+      "id": "remuneration",
+      "libelle": "Rémunération",
+      "description": "Calculé : salaire en K€ brut annuel ou TJM en €/j, comparé au plancher et à la cible haute.",
+      "source": "calcul",
+      "calcul": "remuneration",
+      "poids": 20
+    },
+    {
+      "id": "role",
+      "libelle": "Rôle et séniorité",
+      "description": "Niveau du poste cohérent avec l'expérience ; baisser pour un poste junior ou de management imposé.",
+      "source": "ia",
+      "poids": 10
+    },
+    {
+      "id": "interet",
+      "libelle": "Intérêt",
+      "description": "Secteur, produit, client cible, technologies nouvelles à apprendre.",
+      "source": "ia",
+      "poids": 10
+    },
+    {
+      "id": "risque",
+      "libelle": "Risque du processus",
+      "description": "10 = aucun risque. Baisser pour un test technique en direct sur une stack non pratiquée ou une langue étrangère orale exigée.",
+      "source": "ia",
+      "poids": 5
+    }
+  ],
+  "baremes": {
+    "teletravail": {
+      "jours_sur_site": [10, 8, 6, 3, 1, 1],
+      "inconnu": 5
+    },
+    "remuneration": {
+      "reference": "milieu",
+      "inconnue": 5,
+      "salaire": { "plancher": 40, "cible_basse": 50, "cible_haute": 60 },
+      "tjm": { "plancher": 350, "cible_basse": 420, "cible_haute": 450 }
+    }
+  },
+  "regles": [
+    {
+      "id": "stage",
+      "libelle": "Stage ou alternance",
+      "description": "Stage, alternance, apprentissage.",
+      "effet": "zero",
+      "actif": true
+    },
+    {
+      "id": "sur-site-loin",
+      "libelle": "Sur site hors de la région, sans télétravail",
+      "description": "Présence sur site demandée loin du domicile, sans télétravail possible.",
+      "effet": "plafond",
+      "valeur": 3,
+      "actif": true
+    }
+  ],
+  "inventaire": [
+    { "techno": "PHP", "niveau": "fort", "precision": "PHP 8, programmation objet" },
+    { "techno": "JavaScript", "niveau": "fort" },
+    { "techno": "API REST", "niveau": "fort" },
+    { "techno": "MySQL / MariaDB", "niveau": "fort" },
+    { "techno": "Linux", "niveau": "moyen" },
+    { "techno": "Docker", "niveau": "moyen" },
+    { "techno": "React", "niveau": "moyen" },
+    { "techno": "Python", "niveau": "leger" },
+    { "techno": "Kubernetes", "niveau": "zero" },
+    { "techno": "Java", "niveau": "zero" }
+  ],
+  "exemples": [
+    {
+      "titre": "Développeur PHP senior (exemple)",
+      "entreprise": "Société A (fictive)",
+      "conditions": "CDI, 1 j sur site, 52-58 K€",
+      "criteres": {
+        "technique": { "note": 8, "justification": "PHP, API REST, MySQL : niveau fort ; Docker demandé (moyen)" },
+        "role": { "note": 7, "justification": "Développeur senior, pas de management" },
+        "interet": { "note": 6, "justification": "Logiciel métier B2B" },
+        "risque": { "note": 7, "justification": "Test technique sur un projet existant" }
+      },
+      "entrees": { "jours_sur_site": 1, "salaire_min": 52000, "salaire_max": 58000, "unite": "an" },
+      "bloquants": [],
+      "commentaire": "Bonne offre : technique haut, télétravail presque complet, salaire dans la cible."
+    },
+    {
+      "titre": "Développeur Java (exemple)",
+      "entreprise": "Société B (fictive)",
+      "conditions": "CDI, télétravail (jours NC), salaire NC",
+      "criteres": {
+        "technique": { "note": 1, "justification": "Java, Spring, Kubernetes : stack principale au niveau zéro" },
+        "role": { "note": 5, "justification": "Développeur confirmé" },
+        "interet": { "note": 3, "justification": "Secteur sans intérêt particulier" },
+        "risque": { "note": 4, "justification": "Test Java en direct probable" }
+      },
+      "entrees": {},
+      "bloquants": [],
+      "commentaire": "Hors cible : technique au plus bas, sous le seuil malgré les valeurs neutres."
+    },
+    {
+      "titre": "Stage développeur web (exemple)",
+      "entreprise": "Société C (fictive)",
+      "conditions": "Stage, full remote",
+      "criteres": {
+        "technique": { "note": 9, "justification": "PHP / JavaScript : stack idéale" },
+        "role": { "note": 1, "justification": "Stage" },
+        "interet": { "note": 5, "justification": "Agence web" },
+        "risque": { "note": 8, "justification": "Pas de risque particulier" }
+      },
+      "entrees": { "jours_sur_site": 0 },
+      "bloquants": ["stage"],
+      "commentaire": "La règle bloquante « stage » met la note à 0."
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { LIBELLES_STATUTS, STATUTS, type Statut } from '../../../src/core/statut
 import { api, type DetailOffre } from '../api.ts';
 import { BadgeNote, BadgeStatut, formaterDate, formaterNote } from './Badges.tsx';
 import { FichiersDuDossier, Journal } from './Journal.tsx';
+import { BadgeAncienneGrille, DecompositionNote, EditeurSousNotes } from './Decomposition.tsx';
 
 function Ligne({ libelle, children }: { libelle: string; children: React.ReactNode }) {
   if (children === null || children === undefined || children === '') return null;
@@ -193,7 +194,7 @@ function EditeurNote({ offre }: { offre: DetailOffre }) {
           setEdition(true);
         }}
       >
-        {n ? 'Corriger la note' : 'Noter'}
+        {n ? 'Note globale (ancienne grille)' : 'Note globale'}
       </button>
     );
   }
@@ -491,12 +492,20 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             </h3>
             {n ? (
               <div className="space-y-1 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
-                <p>
+                <p className="flex flex-wrap items-center gap-x-2">
                   <strong>{formaterNote(n.note)}/10</strong>
-                  {n.note_brute !== null && ` · brute ${formaterNote(n.note_brute)}`}
-                  {n.penalites && ` · pénalités : ${n.penalites}`}
-                  <span className="text-slate-600 dark:text-slate-400"> · {formaterDate(n.notee_le)} ({n.origine})</span>
+                  {n.decomposition ? null : (
+                    <>
+                      <BadgeAncienneGrille />
+                      {n.note_brute !== null && <span>brute {formaterNote(n.note_brute)}</span>}
+                      {n.penalites && <span>pénalités : {n.penalites}</span>}
+                    </>
+                  )}
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {formaterDate(n.notee_le)} ({n.origine})
+                  </span>
                 </p>
+                {n.decomposition && <DecompositionNote note={n} />}
                 {n.colle && (
                   <p>
                     <span className="font-semibold">Ce qui colle : </span>
@@ -516,7 +525,10 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             ) : (
               <p className="text-sm text-slate-600 dark:text-slate-400">Pas encore notée.</p>
             )}
-            <EditeurNote key={o.id} offre={o} />
+            <div className="flex flex-wrap gap-2">
+              <EditeurSousNotes key={`sn-${o.id}`} offre={o} />
+              <EditeurNote key={o.id} offre={o} />
+            </div>
           </section>
 
           <section aria-labelledby={`${titre}-candidature`}>

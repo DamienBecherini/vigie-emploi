@@ -1,5 +1,8 @@
 // Client de l'API locale (mêmes types que le serveur, recopiés ici pour garder l'interface autonome).
 import type { Sens, Statut, TypeEvenement } from '../../src/core/statuts.ts';
+import type { Decomposition, Entrees, Grille, Saisie } from '../../src/core/grille.ts';
+
+export type { Decomposition, Grille, Saisie };
 
 export interface LigneOffre {
   id: number;
@@ -46,6 +49,10 @@ export interface Note {
   grille_version: string | null;
   origine: string;
   notee_le: string;
+  note_exacte: number | null;
+  saisie: Saisie | null;
+  decomposition: Decomposition | null;
+  recalculee_le: string | null;
 }
 
 export interface LigneStatut {
@@ -169,6 +176,46 @@ export interface SaisieNote {
 
 export type SaisieCandidature = Partial<Record<'prochaine_action' | 'envoyee_le' | 'canal' | 'dossier' | 'cv' | 'conditions', string | null>>;
 
+export interface InfoVersion {
+  version: number;
+  le: string;
+  auteur: 'interface' | 'cli' | 'mcp' | 'fichier';
+  resume: string;
+}
+
+export interface ReponseGrille {
+  version: number | null;
+  le?: string;
+  auteur?: InfoVersion['auteur'];
+  resume?: string;
+  grille: Grille | null;
+  exemples: Decomposition[];
+}
+
+export interface ChangementNote {
+  id: number;
+  titre: string;
+  entreprise: string | null;
+  avant: number | null;
+  apres: number;
+}
+
+export interface Impact {
+  offres_recalculees: number;
+  changees: number;
+  seuil_avant: number | null;
+  seuil_apres: number;
+  montent: ChangementNote[];
+  descendent: ChangementNote[];
+  changements: ChangementNote[];
+}
+
+export interface SaisieSousNotes {
+  criteres?: Record<string, { note: number; justification?: string | null } | null>;
+  entrees?: { [K in keyof Entrees]?: Entrees[K] | null };
+  bloquants?: string[];
+}
+
 export interface Meta {
   total: number;
   statuts: { valeur: string; n: number }[];
@@ -211,6 +258,15 @@ export const api = {
   echeances: (jours = 7) => appel<Echeances>(`/api/echeances?jours=${jours}`),
   fichiers: (id: number) => appel<FichiersDossier>(`/api/offres/${id}/fichiers`),
   statistiques: () => appel<Statistiques>('/api/statistiques'),
+  sousNotes: (id: number, s: SaisieSousNotes) =>
+    appel<DetailOffre>(`/api/offres/${id}/sous-notes`, { method: 'PUT', body: JSON.stringify(s) }),
+  grille: () => appel<ReponseGrille>('/api/grille'),
+  apercuGrille: (grille: Grille) => appel<Impact>('/api/grille/apercu', { method: 'POST', body: JSON.stringify({ grille }) }),
+  enregistrerGrille: (grille: Grille, resume: string) =>
+    appel<ReponseGrille & { impact: Impact }>('/api/grille', { method: 'PUT', body: JSON.stringify({ grille, resume }) }),
+  historiqueGrille: () => appel<InfoVersion[]>('/api/grille/historique'),
+  restaurerGrille: (version: number) =>
+    appel<ReponseGrille & { impact: Impact }>('/api/grille/restaurer', { method: 'POST', body: JSON.stringify({ version }) }),
   candidater: (id: number) =>
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
 };

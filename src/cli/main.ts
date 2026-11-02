@@ -34,6 +34,19 @@ import {
 } from '../core/evenements.ts';
 import { fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
+import { consignesIa, LIBELLES_NIVEAUX, noteExemple, type Decomposition } from '../core/grille.ts';
+import {
+  cheminGrille,
+  grilleCourante,
+  grilleObligatoire,
+  historiqueGrille,
+  initialiserGrille,
+  modifierGrille,
+  renoter,
+  restaurerGrille,
+  versionGrille,
+  type Impact,
+} from '../core/grille-stockage.ts';
 
 const AIDE = `cap-emploi — offres, notes et candidatures (base SQLite locale)
 
@@ -52,9 +65,17 @@ Commandes
   show <id>             Détail d'une offre (notes, statuts, tags, candidature)
   a-lire [--limite N] [--complet]
                         Offres à traiter sans note, avec l'URL à lire (ou la description déjà extraite)
-  noter <id> --json '{"note": 6, "note_brute": 6.5, "penalites": "...", "colle": "...", "ecarts": "..."}'
-  noter --fichier lot.json
-                        Enregistre des notes (format des lots : {source, url, titre, …, note, colle, ecarts, lu})
+  noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "entrees": {…}, "bloquants": [], "colle": "…"}'
+  noter --fichier lot.json [--essai]
+                        Enregistre des notes (format des lots). Avec « criteres », la note est calculée avec la
+                        grille (voir « grille ») ; sans, c'est une note globale (ancienne grille).
+                        --essai : calcule et affiche sans rien enregistrer
+  grille [--consignes] [--json]
+                        Grille de notation courante : critères, poids, barèmes, règles, inventaire, exemples
+  grille --historique | --version N | --restaurer N [--resume "…"] | --init
+  grille --modifier '{"poids": {"technique": 40}, …}' --resume "…" [--essai]
+                        Changement partiel (poids, seuil, baremes, regles, inventaire) ; recalcule les notes
+  renoter               Recalcule toutes les notes à critères avec la grille courante
   statut <id> <statut> [--commentaire "…"]
                         Statuts : ${STATUTS.join(', ')}
   tag <id> +ajout -retrait
@@ -175,8 +196,12 @@ function afficherDetail(d: DetailOffre): string {
   if (d.stack) l.push(`Stack : ${d.stack}`);
   if (d.tags.length) l.push(`Tags : ${d.tags.join(', ')}`);
   const n = d.notes[0];
-  if (n) {
-    l.push('', `Note ${n.note ?? '—'} (brute ${n.note_brute ?? '—'}${n.penalites ? `, pénalités : ${n.penalites}` : ''}) le ${n.notee_le}`);
+  if (n?.decomposition) {
+    l.push('', `Note ${n.note} (grille v${n.grille_version}, exacte ${n.note_exacte}) le ${n.notee_le}`, ...lignesDecomposition(n.decomposition));
+    if (n.colle) l.push(`Ce qui colle : ${n.colle}`);
+    if (n.ecarts) l.push(`Écarts : ${n.ecarts}`);
+  } else if (n) {
+    l.push('', `Note ${n.note ?? '—'} (ancienne grille ; brute ${n.note_brute ?? '—'}${n.penalites ? `, pénalités : ${n.penalites}` : ''}) le ${n.notee_le}`);
     if (n.colle) l.push(`Ce qui colle : ${n.colle}`);
     if (n.ecarts) l.push(`Écarts : ${n.ecarts}`);
   }
@@ -192,6 +217,33 @@ function afficherDetail(d: DetailOffre): string {
   }
   if (d.description) l.push('', 'Description :', d.description);
   return l.join('\n');
+}
+
+function virgule(n: number, d = 2): string {
+  return String(Math.round(n * 10 ** d) / 10 ** d).replace('.', ',');
+}
+
+/** Décomposition d'une note : un critère par ligne, puis règles et drapeaux. */
+function lignesDecomposition(d: Decomposition): string[] {
+  const l = d.criteres.map(
+    (c) =>
+      `  ${c.libelle.padEnd(26)} ${virgule(c.note, 1).padStart(4)} × ${String(Math.round(c.poids_normalise * 100)).padStart(3)} % = ${virgule(c.contribution).padStart(5)}` +
+      `  ${c.origine === 'neutre' ? '(neutre) ' : c.origine === 'interface' ? '(main) ' : ''}${tronquer(c.justification, 90)}`,
+  );
+  l.push(`  ${'Moyenne pondérée'.padEnd(26)} ${virgule(d.moyenne)}`);
+  for (const r of d.regles) l.push(`  Règle : ${r.libelle} → ${r.effet === 'zero' ? '0' : `plafond ${virgule(r.valeur!)}`}${r.effective ? '' : ' (sans effet)'}`);
+  for (const b of d.bloquants_ignores) l.push(`  Règle ignorée (inconnue ou désactivée) : ${b}`);
+  for (const f of d.drapeaux) l.push(`  ⚑ ${f.message}`);
+  l.push(`  Note : ${virgule(d.note_exacte)} → ${virgule(d.note, 1)}`);
+  return l;
+}
+
+function afficherImpact(i: Impact): void {
+  console.log(`${i.offres_recalculees} offre(s) à critères recalculée(s), ${i.changees} changent de note.`);
+  const ligne = (c: Impact['changements'][number]) =>
+    `  #${String(c.id).padEnd(5)} ${String(c.avant ?? '—').padStart(4)} → ${String(c.apres).padEnd(4)} ${tronquer(`${c.entreprise ?? ''} ${c.titre}`, 80)}`;
+  if (i.montent.length) console.log(`Passent au-dessus du seuil ${i.seuil_apres} (${i.montent.length}) :\n${i.montent.map(ligne).join('\n')}`);
+  if (i.descendent.length) console.log(`Repassent sous le seuil ${i.seuil_apres} (${i.descendent.length}) :\n${i.descendent.map(ligne).join('\n')}`);
 }
 
 function ligneJournal(e: EvenementJournal): string {
@@ -364,8 +416,8 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   noter(args) {
-    const { v, pos } = analyser(args, { fichier: { type: 'string' }, json: { type: 'string' } });
-    const { db } = contexte(v);
+    const { v, pos } = analyser(args, { fichier: { type: 'string' }, json: { type: 'string' }, essai: { type: 'boolean' } });
+    const { config, db } = contexte(v);
     let entrees: EntreeLot[];
     if (v.fichier) {
       entrees = entreesDuLot(JSON.parse(readFileSync(v.fichier as string, 'utf8').replace(/^﻿/, '')));
@@ -378,8 +430,102 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
         entrees[0] = { ...entrees[0], id: entier(pos[0], 'id') };
       }
     }
-    const resultats = sansErreur(() => noterOffres(db, entrees, 'cli'));
-    json({ ok: true, notees: resultats.length, offres: resultats });
+    const resultats = sansErreur(() =>
+      noterOffres(db, entrees, 'cli', { grille: () => grilleCourante(db, config.dossierDonnees), essai: Boolean(v.essai) }),
+    );
+    json({ ok: true, essai: Boolean(v.essai), notees: v.essai ? 0 : resultats.length, offres: resultats });
+  },
+
+  grille(args) {
+    const { v } = analyser(args, {
+      consignes: { type: 'boolean' },
+      historique: { type: 'boolean' },
+      version: { type: 'string' },
+      restaurer: { type: 'string' },
+      init: { type: 'boolean' },
+      modifier: { type: 'string' },
+      resume: { type: 'string' },
+      essai: { type: 'boolean' },
+    });
+    const { config, db } = contexte(v);
+    const dossier = config.dossierDonnees;
+    if (v.init) {
+      const r = sansErreur(() => initialiserGrille(db, dossier));
+      if (v.json) return json({ ok: true, cree: r.cree, chemin: r.chemin, version: r.version.version });
+      return console.log(r.cree ? `Grille d'exemple copiée dans ${r.chemin} (version 1) : à adapter.` : `Une grille existe déjà : ${r.chemin}`);
+    }
+    if (v.historique) {
+      sansErreur(() => grilleCourante(db, dossier));
+      const h = historiqueGrille(db);
+      if (v.json) return json({ ok: true, versions: h });
+      for (const x of h) console.log(`  v${String(x.version).padEnd(4)} ${x.le.slice(0, 16).replace('T', ' ')}  ${x.auteur.padEnd(9)} ${x.resume}`);
+      return;
+    }
+    if (v.restaurer !== undefined) {
+      const r = sansErreur(() => restaurerGrille(db, dossier, entier(v.restaurer, 'version'), { auteur: 'cli', resume: v.resume as string | undefined }));
+      if (v.json) return json({ ok: true, version: r.version.version, impact: r.impact });
+      console.log(`Version ${r.version.version} : ${r.version.resume}`);
+      return afficherImpact(r.impact);
+    }
+    if (v.modifier !== undefined) {
+      if (!v.essai && !v.resume) erreur('grille --modifier : --resume "…" attendu (ou --essai pour un aperçu)');
+      let changement: unknown;
+      try {
+        changement = JSON.parse(v.modifier as string);
+      } catch (e) {
+        erreur(`grille --modifier : JSON invalide (${(e as Error).message})`);
+      }
+      const r = sansErreur(() => modifierGrille(db, dossier, changement, { auteur: 'cli', resume: (v.resume as string) ?? '', essai: Boolean(v.essai) }));
+      if (v.json) return json({ ok: true, ...r });
+      console.log(r.enregistree ? `Version ${r.version} enregistrée.` : 'Essai : rien n’est enregistré.');
+      return afficherImpact(r.impact);
+    }
+    const g = v.version !== undefined ? sansErreur(() => versionGrille(db, entier(v.version, 'version'))) : sansErreur(() => grilleObligatoire(db, dossier));
+    if (v.json) {
+      return json({
+        ok: true,
+        fichier: cheminGrille(dossier),
+        ...g,
+        consignes_ia: consignesIa(g.grille),
+        exemples_calcules: g.grille.exemples.map((e) => ({ titre: e.titre, entreprise: e.entreprise ?? null, ...noteExemple(g.grille, e, g.version) })),
+      });
+    }
+    const G = g.grille;
+    console.log(`${G.nom} — version ${g.version} du ${g.le.slice(0, 10)} (${g.auteur}) : ${g.resume}`);
+    console.log(`Fichier : ${cheminGrille(dossier)} · seuil « à regarder » : ${virgule(G.seuil)}`);
+    const somme = G.criteres.reduce((s, c) => s + c.poids, 0);
+    console.log('\nCritères (poids normalisés) :');
+    for (const c of G.criteres) {
+      console.log(`  ${c.id.padEnd(14)} ${String(Math.round((c.poids / somme) * 100)).padStart(3)} %  ${c.source === 'ia' ? 'IA    ' : 'calcul'}  ${c.libelle}`);
+    }
+    const t = G.baremes.teletravail;
+    const r = G.baremes.remuneration;
+    console.log(`\nTélétravail (0 à 5 j sur site) : ${t.jours_sur_site.join(' / ')} ; inconnu ${t.inconnu}`);
+    console.log(
+      `Rémunération (${r.reference}) : salaire plancher ${r.salaire.plancher}, cible ${r.salaire.cible_basse}-${r.salaire.cible_haute} K€ ; ` +
+        `TJM plancher ${r.tjm.plancher}${r.tjm.plancher_full_remote ? ` (${r.tjm.plancher_full_remote} en full remote)` : ''}, cible ${r.tjm.cible_basse}-${r.tjm.cible_haute} € ; inconnue ${r.inconnue}`,
+    );
+    console.log('\nRègles bloquantes :');
+    for (const x of G.regles) console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${(x.effet === 'zero' ? '0' : `plafond ${x.valeur}`).padEnd(10)} ${x.libelle}`);
+    console.log('\nInventaire :');
+    for (const n of ['fort', 'moyen', 'leger', 'zero'] as const) {
+      const items = G.inventaire.filter((x) => x.niveau === n).map((x) => x.techno);
+      if (items.length) console.log(`  ${LIBELLES_NIVEAUX[n].padEnd(6)} ${items.join(', ')}`);
+    }
+    if (G.exemples.length) {
+      console.log('\nExemples de référence :');
+      for (const e of G.exemples) console.log(`  ${virgule(noteExemple(G, e).note, 1).padStart(4)}  ${e.entreprise ? `${e.entreprise} — ` : ''}${e.titre}`);
+    }
+    if (v.consignes) console.log(`\nConsignes pour l'IA :\n${[...G.consignes, ...consignesIa(G)].map((x) => `- ${x}`).join('\n')}`);
+  },
+
+  renoter(args) {
+    const { v } = analyser(args, {});
+    const { config, db } = contexte(v);
+    const r = sansErreur(() => renoter(db, config.dossierDonnees));
+    if (v.json) return json({ ok: true, ...r });
+    console.log(`Grille v${r.version}.`);
+    afficherImpact(r.impact);
   },
 
   statut(args) {

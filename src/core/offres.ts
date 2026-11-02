@@ -3,6 +3,7 @@ import type { Base } from '../db/base.ts';
 import { estStatut, type Statut } from './statuts.ts';
 import { lireRemuneration, maintenant, nettoyer } from './texte.ts';
 import { journal, type EvenementJournal } from './evenements.ts';
+import type { Decomposition, Saisie } from './grille.ts';
 
 export type Origine = 'email' | 'import-lot' | 'import-registre' | 'import-suivi' | 'manuel';
 
@@ -57,6 +58,13 @@ export interface Note {
   grille_version: string | null;
   origine: string;
   notee_le: string;
+  /** Note à critères : valeur exacte (note = arrondi au demi-point). null pour une note globale. */
+  note_exacte: number | null;
+  /** Sous-notes, entrées et règles signalées (ce qui a été saisi). null : note globale de l'ancienne grille. */
+  saisie: Saisie | null;
+  /** Décomposition calculée : sous-notes, poids, contributions, règles appliquées, drapeaux. */
+  decomposition: Decomposition | null;
+  recalculee_le: string | null;
 }
 
 export interface LigneStatut {
@@ -283,6 +291,9 @@ export interface EntreeNote {
   ecarts?: string | null;
   lu?: boolean | null;
   grille_version?: string | null;
+  note_exacte?: number | null;
+  saisie?: Saisie | null;
+  decomposition?: Decomposition | null;
 }
 
 function nombreOuNull(v: unknown): number | null {
@@ -310,8 +321,9 @@ export function ajouterNote(
     if (deja) return false;
   }
   db.prepare(
-    `INSERT INTO notes (offre_id, note_brute, penalites, note, colle, ecarts, lu, grille_version, origine, notee_le)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO notes (offre_id, note_brute, penalites, note, colle, ecarts, lu, grille_version, origine, notee_le,
+                        note_exacte, saisie, decomposition)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     offreId,
     brute,
@@ -323,6 +335,9 @@ export function ajouterNote(
     nettoyer(e.grille_version),
     origine,
     le,
+    e.note_exacte ?? null,
+    e.saisie ? JSON.stringify(e.saisie) : null,
+    e.decomposition ? JSON.stringify(e.decomposition) : null,
   );
   recalculer(db, offreId);
   return true;
@@ -406,15 +421,24 @@ function nettoyerChamp(v: string | null | undefined): string | null {
   return t === '' ? null : t;
 }
 
+type LigneNote = Omit<Note, 'lu' | 'saisie' | 'decomposition'> & { lu: number; saisie: string | null; decomposition: string | null };
+
+/** Notes d'une offre, de la plus récente à la plus ancienne (sous-notes et décomposition lues). */
+export function notesOffre(db: Base, offreId: number): Note[] {
+  return (db.prepare('SELECT * FROM notes WHERE offre_id = ? ORDER BY notee_le DESC, id DESC').all(offreId) as unknown as LigneNote[]).map(
+    (n) => ({
+      ...n,
+      lu: Boolean(n.lu),
+      saisie: n.saisie ? (JSON.parse(n.saisie) as Saisie) : null,
+      decomposition: n.decomposition ? (JSON.parse(n.decomposition) as Decomposition) : null,
+    }),
+  );
+}
+
 export function detailOffre(db: Base, id: number): DetailOffre | undefined {
   const offre = offreParId(db, id);
   if (!offre) return undefined;
-  const notes = (
-    db.prepare('SELECT * FROM notes WHERE offre_id = ? ORDER BY notee_le DESC, id DESC').all(id) as unknown as (Omit<
-      Note,
-      'lu'
-    > & { lu: number })[]
-  ).map((n) => ({ ...n, lu: Boolean(n.lu) }));
+  const notes = notesOffre(db, id);
   const statuts = db
     .prepare('SELECT * FROM statuts WHERE offre_id = ? ORDER BY le DESC, id DESC')
     .all(id) as unknown as LigneStatut[];

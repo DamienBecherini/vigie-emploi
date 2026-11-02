@@ -3,7 +3,7 @@
 Application locale de suivi des offres d'emploi et de mission : une base SQLite, un tableau de bord web et une CLI qu'une IA (Claude Code ou autre) peut piloter.
 
 - **Ingestion** des e-mails d'alertes (`.eml` de LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work) : décodage des liens de suivi, dédoublonnage, exclusion sur l'intitulé, lecture du JSON-LD public de Hellowork et Free-Work.
-- **Notation** par l'IA de l'utilisateur, via la CLI : l'application n'appelle aucun modèle d'IA.
+- **Notation** par l'IA de l'utilisateur, via la CLI ou MCP : l'application n'appelle aucun modèle d'IA. L'IA note des critères, l'application calcule la note avec une **grille transparente et réglable** (poids, barèmes, règles bloquantes, inventaire de compétences), versionnée, et recalcule toutes les notes quand elle change.
 - **Statuts** (de `nouvelle` à `entretien`, `refus`, `close`…), **tags**, **candidatures**, avec historique.
 - **Tableau de bord** paginé côté serveur, prévu pour des dizaines de milliers d'offres ; notes et suivi des candidatures éditables.
 - **Serveur MCP** (`cap-emploi mcp`) : une IA pilote l'application par des outils (voir [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)).
@@ -36,6 +36,7 @@ Le dossier de données contient la base et la boîte de réception :
   data/cap-emploi.sqlite   base (créée au premier lancement)
   emails/                  .eml à ingérer (supprimés une fois traités)
   candidatures/            historique facultatif à reprendre (voir import-historique)
+  profil/grille.json       grille de notation (cap-emploi grille --init copie l'exemple)
 ```
 
 Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
@@ -68,7 +69,11 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 | `cap-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
 | `cap-emploi a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
 | `cap-emploi noter <id> --json '{…}'` | Enregistre une note pour une offre |
-| `cap-emploi noter --fichier lot.json` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) |
+| `cap-emploi noter --fichier lot.json [--essai]` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) ; `--essai` calcule sans enregistrer |
+| `cap-emploi grille [--consignes]` | Grille de notation courante : critères et poids, barèmes, règles, inventaire, exemples (`--consignes` : consignes pour l'IA) |
+| `cap-emploi grille --modifier '{…}' --resume "…" [--essai]` | Changement partiel (poids, seuil, barèmes, règles, inventaire) ; nouvelle version et renotation, ou aperçu avec `--essai` |
+| `cap-emploi grille --historique` / `--version N` / `--restaurer N` / `--init` | Versions de la grille, retour à une version, copie de la grille d'exemple |
+| `cap-emploi renoter` | Recalcule les notes à critères avec la grille courante |
 | `cap-emploi statut <id> <statut> [--commentaire "…"]` | Change le statut (historisé) |
 | `cap-emploi tag <id> +ajout -retrait` | Ajoute / retire des tags |
 | `cap-emploi candidater <id>` | Passe l'offre en `go` et affiche ce qu'il faut pour préparer la candidature |
@@ -94,12 +99,35 @@ Format d'une note (celui des lots) :
   "source": "linkedin", "url": "https://www.linkedin.com/jobs/view/1234567890/",
   "titre": "…", "entreprise": "…", "lieu": "…", "contrat": "CDI", "remuneration": "50-60 K€",
   "teletravail": "hybride", "publiee": "NC", "stack": "PHP, API",
-  "note_brute": 6.5, "penalites": "-0,5 difficultés (…)", "note": 6,
+  "criteres": {
+    "technique": { "note": 8, "justification": "PHP, API REST ; écart : PostgreSQL" },
+    "role": { "note": 7, "justification": "…" },
+    "interet": { "note": 6, "justification": "…" },
+    "risque": { "note": 7, "justification": "…" }
+  },
+  "entrees": { "jours_sur_site": 2, "salaire_min": 55000, "salaire_max": 65000, "unite": "an" },
+  "bloquants": [],
   "colle": "…", "ecarts": "…", "lu": true
 }
 ```
 
-Champs facultatifs : `id` (à la place de `url`), `description`, `grille_version`, `tags`. Les champs descriptifs ne complètent que ce qui manque ; la dernière note fait foi.
+Avec `criteres` (ou `entrees`, `bloquants`), la note est **calculée** avec la grille ; un champ `note` fourni est ignoré et signalé dans `avertissements`. La réponse contient la note, la valeur exacte et la décomposition. Sans `criteres`, c'est une note globale de l'ancienne grille (`note`, `note_brute`, `penalites`), qui reste figée. Champs facultatifs : `id` (à la place de `url`), `description`, `tags`. Les champs descriptifs ne complètent que ce qui manque ; la dernière note fait foi.
+
+## Grille de notation
+
+La grille vit dans `<données>/profil/grille.json` (modèle générique : [`exemples/grille.json`](exemples/grille.json), copié par `cap-emploi grille --init`). Elle contient :
+
+- **critères pondérés** (7 au plus) notés de 0 à 10 : par l'IA (`source: "ia"`, avec une consigne dans `description`) ou par l'application (`source: "calcul"`, `calcul: "teletravail"` ou `"remuneration"`) ; poids relatifs, normalisés à 100 % ;
+- **barèmes** : télétravail (sous-note pour 0 à 5 jours sur site, valeur « inconnu ») ; rémunération (salaire en K€/an et TJM en €/j : plancher = 5, cible haute = 10, sous le plancher = 0, linéaire entre ; plancher full remote facultatif ; milieu, bas ou haut de fourchette) ;
+- **règles bloquantes** : identifiant, libellé, effet `zero` ou `plafond` + valeur, active ou non ;
+- **inventaire de compétences** (technologie → fort / moyen / léger / zéro), lu par l'IA pour le critère technique ;
+- **seuil « à regarder »** (vue rapide « Notées ≥ … ») ;
+- **exemples de référence** (offres notées critère par critère, avec justification) pour caler l'IA ;
+- **consignes** générales pour l'IA.
+
+Calcul : moyenne pondérée des sous-notes → règles bloquantes (zéro, plafond) → arrondi au demi-point pour l'affichage et les filtres (la valeur exacte est gardée). Donnée manquante (critère non noté, télétravail ou salaire inconnus) : valeur neutre 5 et un **drapeau** sur l'offre. Les jours sur site et le salaire viennent de `entrees`, sinon des champs télétravail et rémunération de l'offre.
+
+Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée une **version** (numéro, date, auteur, résumé) et **recalcule toutes les notes à critères**, sans relire d'offre. Les anciennes notes globales restent telles quelles (badge « ancienne grille »). On peut revenir à une version précédente (elle devient une nouvelle version).
 
 ## Tableau de bord
 
@@ -107,9 +135,10 @@ Champs facultatifs : `id` (à la place de `url`), `description`, `grille_version
 
 - Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne, colonnes masquables.
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
-- Vues rapides : à traiter, notées ≥ 4,5, mes candidatures.
+- Vues rapides : à traiter, notées ≥ seuil de la grille (4,5 par défaut), mes candidatures.
+- **Réglages de la note** (bouton de l'en-tête) : curseurs des poids (total normalisé affiché), seuil, barèmes télétravail et rémunération, règles bloquantes (activer, effet, plafond, ajout, suppression), inventaire (ajout, modification, suppression, filtre), exemples de référence recalculés en direct ; **aperçu avant d'enregistrer** (offres dont la note change, offres qui franchissent le seuil, cliquables) ; résumé du changement obligatoire ; historique des versions et restauration.
 - Bandeau **À venir** au-dessus du tableau : échéances en retard et des 7 prochains jours, chacune ouvre son offre ; bouton **Statistiques** (candidatures par étape, délai de réponse).
-- Panneau de détail : description, lien vers l'offre (modifiable), note détaillée et **saisie / correction de la note** (nouvelle entrée d'historique), **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
+- Panneau de détail : description, lien vers l'offre (modifiable), **décomposition de la note** (critère par critère : sous-note, poids, apport, justification, origine ; règles appliquées ; drapeaux ; valeur exacte et version de la grille), badge « ancienne grille » pour une note globale, **correction des sous-notes** (critères IA, jours sur site, salaire, règles ; la note est recalculée et s'ajoute à l'historique), note globale à l'ancienne, **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
 - Fichiers : servis en lecture par `/api/fichier/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?brut=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`.
 - Thème clair / sombre / système, taille du texte réglable (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau).
 
@@ -146,7 +175,9 @@ Arborescence :
 ```
 bin/cap-emploi.js   point d'entrée de la commande (Node exécute le TypeScript directement)
 migrations/         schéma SQL versionné (PRAGMA user_version)
-src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes
+src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes,
+                    grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)
+exemples/           grille de notation d'exemple (générique)
 src/db/             ouverture de la base et migrations
 src/ingest/         lecture des .eml, JSON-LD, ingestion
 src/import/         reprise de l'historique Markdown / JSON (dont les journaux des dossiers)
@@ -158,4 +189,4 @@ ui/                 interface React 19 + Vite + Tailwind CSS v4 + TanStack Table
 docs/adr/           décisions d'architecture
 ```
 
-Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) et [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md).
+Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md) et [`docs/adr/0004-grille-de-notation.md`](docs/adr/0004-grille-de-notation.md).

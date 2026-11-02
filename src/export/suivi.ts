@@ -202,7 +202,7 @@ export function genererSuivi(db: Base, dossierDonnees: string, le: Date = new Da
     '|---|---|',
     ...closes.map(ligneClose),
     '',
-    'Offres analysées puis écartées ou mises de côté : [`_ecartees.md`](_ecartees.md) (une ligne par offre, à consulter par mot-clé).',
+    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `cap-emploi serve`, ou `cap-emploi list --statut ecartee`).',
     '',
   );
   return { markdown: md.join('\n'), en_cours: enCours.length, sans_suite: sansSuite.length, closes: closes.length };

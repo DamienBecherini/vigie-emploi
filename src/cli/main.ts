@@ -56,7 +56,7 @@ Commandes
   ingest [--keep] [--no-fetch] [--emails <dossier>]
                         Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
                         puis supprime les e-mails traités (sauf --keep)
-  import-historique     Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md (idempotent)
+  import-historique     Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md s'ils existent (idempotent)
   list [filtres]        Liste paginée des offres
       --statut a,b  --note-min N  --note-max N  --sans-note  --source s1,s2  --tag t
       --depuis AAAA-MM-JJ  --jusqua AAAA-MM-JJ (date de réception)  --texte "mots"

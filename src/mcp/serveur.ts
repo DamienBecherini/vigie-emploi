@@ -305,7 +305,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       description:
         "Changement partiel de la grille, à la demande de l'utilisateur seulement : poids ({ technique: 40 }), seuil, barèmes " +
         '(teletravail.jours_sur_site, remuneration.salaire / tjm : plancher, cible_basse, cible_haute, plancher_full_remote), règles ' +
-        '(ajout ou modification par id : libelle, effet zero | plafond, valeur, actif ; retirer_regles), critères (libellé, description), ' +
+        '(ajout ou modification par id : libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif ; retirer_regles), critères (libellé, description), ' +
         "inventaire (ajouter [{ techno, niveau }], retirer [techno]). essai: true renvoie l'aperçu sans enregistrer : le montrer d'abord. " +
         "Sinon crée une nouvelle version (avec le résumé), recalcule toutes les notes à critères et renvoie l'impact (notes qui changent, " +
         'offres qui franchissent le seuil). restaurer_version revient à une version précédente.',

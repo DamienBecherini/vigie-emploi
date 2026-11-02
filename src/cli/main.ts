@@ -506,7 +506,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
         `TJM plancher ${r.tjm.plancher}${r.tjm.plancher_full_remote ? ` (${r.tjm.plancher_full_remote} en full remote)` : ''}, cible ${r.tjm.cible_basse}-${r.tjm.cible_haute} € ; inconnue ${r.inconnue}`,
     );
     console.log('\nRègles bloquantes :');
-    for (const x of G.regles) console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${(x.effet === 'zero' ? '0' : `plafond ${x.valeur}`).padEnd(10)} ${x.libelle}`);
+    for (const x of G.regles) console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${(x.effet === 'zero' ? '0' : x.effet === 'plafond' ? `plafond ${x.valeur}` : `${x.critere} < ${x.seuil}`).padEnd(10)} ${x.libelle}`);
     console.log('\nInventaire :');
     for (const n of ['fort', 'moyen', 'leger', 'zero'] as const) {
       const items = G.inventaire.filter((x) => x.niveau === n).map((x) => x.techno);

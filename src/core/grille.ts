@@ -90,14 +90,26 @@ export const schemaRegle = z
     libelle: z.string().min(1),
     /** Quand la signaler (consigne pour l'IA). */
     description: z.string().default(''),
-    effet: z.enum(['zero', 'plafond']),
+    /**
+     * zero / plafond : appliquées quand l'IA signale la règle dans « bloquants ».
+     * plafond_critere : appliquée automatiquement quand la sous-note de « critere » est sous « seuil » ;
+     * la note finale est alors plafonnée à cette sous-note.
+     */
+    effet: z.enum(['zero', 'plafond', 'plafond_critere']),
     /** Note maximale pour l'effet « plafond ». */
     valeur: note10.optional(),
+    /** Critère surveillé (effet « plafond_critere »). */
+    critere: z.string().optional(),
+    /** Seuil sous lequel la règle s'applique (effet « plafond_critere »). */
+    seuil: note10.optional(),
     actif: z.boolean().default(true),
   })
   .superRefine((r, ctx) => {
     if (r.effet === 'plafond' && r.valeur === undefined) {
       ctx.addIssue({ code: 'custom', path: ['valeur'], message: `règle ${r.id} : « valeur » attendue pour un plafond` });
+    }
+    if (r.effet === 'plafond_critere' && (r.critere === undefined || r.seuil === undefined)) {
+      ctx.addIssue({ code: 'custom', path: ['critere'], message: `règle ${r.id} : « critere » et « seuil » attendus` });
     }
   });
 export type Regle = z.infer<typeof schemaRegle>;
@@ -238,7 +250,7 @@ export interface LigneCritere {
 export interface RegleAppliquee {
   id: string;
   libelle: string;
-  effet: 'zero' | 'plafond';
+  effet: 'zero' | 'plafond' | 'plafond_critere';
   valeur: number | null;
   /** La règle a fait baisser la note (un plafond au-dessus de la moyenne ne change rien). */
   effective: boolean;
@@ -473,6 +485,14 @@ export function calculerNote(grille: Grille, saisie: Saisie, offre: DonneesOffre
     else noteExacte = Math.min(noteExacte, r.valeur!);
     regles.push({ id: r.id, libelle: r.libelle, effet: r.effet, valeur: r.effet === 'plafond' ? r.valeur! : null, effective: noteExacte < avant });
   }
+  for (const r of grille.regles) {
+    if (!r.actif || r.effet !== 'plafond_critere') continue;
+    const c = criteres.find((x) => x.id === r.critere);
+    if (!c || c.origine === 'neutre' || c.note >= r.seuil!) continue;
+    const avant = noteExacte;
+    noteExacte = Math.min(noteExacte, c.note);
+    regles.push({ id: r.id, libelle: r.libelle, effet: r.effet, valeur: c.note, effective: noteExacte < avant });
+  }
   noteExacte = arrondi(noteExacte);
   return {
     grille_version: version,
@@ -553,8 +573,10 @@ export const schemaChangement = z.strictObject({
         id: identifiant,
         libelle: z.string().optional(),
         description: z.string().optional(),
-        effet: z.enum(['zero', 'plafond']).optional(),
+        effet: z.enum(['zero', 'plafond', 'plafond_critere']).optional(),
         valeur: note10.nullable().optional(),
+        critere: z.string().optional(),
+        seuil: note10.optional(),
         actif: z.boolean().optional(),
       }),
     )
@@ -613,10 +635,12 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
         if (m.valeur === null) delete r0.valeur;
         else r0.valeur = m.valeur;
       }
+      if (m.critere !== undefined) r0.critere = m.critere;
+      if (m.seuil !== undefined) r0.seuil = m.seuil;
       if (m.actif !== undefined) r0.actif = m.actif;
     } else {
       if (!m.libelle || !m.effet) throw new Error(`Nouvelle règle ${m.id} : « libelle » et « effet » attendus`);
-      g.regles.push({ id: m.id, libelle: m.libelle, description: m.description ?? '', effet: m.effet, valeur: m.valeur ?? undefined, actif: m.actif ?? true });
+      g.regles.push({ id: m.id, libelle: m.libelle, description: m.description ?? '', effet: m.effet, valeur: m.valeur ?? undefined, critere: m.critere, seuil: m.seuil, actif: m.actif ?? true });
     }
   }
   for (const id of ch.retirer_regles ?? []) {
@@ -657,7 +681,7 @@ export function consignesIa(g: Grille): string[] {
       'Sinon l’application les déduit des champs télétravail et rémunération de l’offre ; inconnus, ils valent la valeur neutre avec un drapeau.',
     `Signale dans « bloquants » les identifiants des règles qui s'appliquent à l'offre (actives : ${
       g.regles
-        .filter((r) => r.actif)
+        .filter((r) => r.actif && r.effet !== 'plafond_critere')
         .map((r) => `${r.id} = ${r.libelle} → ${r.effet === 'zero' ? '0' : `plafond ${r.valeur}`}`)
         .join(' ; ') || 'aucune'
     }).`,

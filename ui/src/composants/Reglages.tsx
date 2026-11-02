@@ -220,15 +220,42 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
                 value={r.effet}
                 onChange={(e) =>
                   maj((x) => {
-                    x.regles[i].effet = e.target.value as 'zero' | 'plafond';
+                    x.regles[i].effet = e.target.value as 'zero' | 'plafond' | 'plafond_critere';
                     if (x.regles[i].effet === 'plafond' && x.regles[i].valeur === undefined) x.regles[i].valeur = 3;
+                    if (x.regles[i].effet === 'plafond_critere') {
+                      x.regles[i].critere ??= x.criteres[0]?.id;
+                      x.regles[i].seuil ??= 4;
+                    }
                   })
                 }
               >
                 <option value="zero">Note à 0</option>
                 <option value="plafond">Plafond</option>
+                <option value="plafond_critere">Plafond si critère faible</option>
               </select>
             </div>
+            {r.effet === 'plafond_critere' && (
+              <>
+                <div className="w-40">
+                  <label htmlFor={`critere-${r.id}`} className="etiquette">
+                    Critère
+                  </label>
+                  <select
+                    id={`critere-${r.id}`}
+                    className="champ"
+                    value={r.critere ?? ''}
+                    onChange={(e) => maj((x) => void (x.regles[i].critere = e.target.value))}
+                  >
+                    {g.criteres.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.libelle}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <ChampNombre className="w-24" libelle="Sous le seuil" valeur={r.seuil} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].seuil = n))} />
+              </>
+            )}
             {r.effet === 'plafond' && (
               <ChampNombre className="w-24" libelle="Plafond" valeur={r.valeur} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].valeur = n))} />
             )}

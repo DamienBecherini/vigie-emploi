@@ -418,3 +418,27 @@ describe('stockage, versions et renotation', () => {
     rmSync(dossier, { recursive: true, force: true });
   });
 });
+
+describe('règle « plafond si critère faible »', () => {
+  const g = validerGrille({
+    ...grilleTest(),
+    regles: [{ id: 'technique-faible', libelle: 'Technique insuffisante', effet: 'plafond_critere', critere: 'technique', seuil: 4 }],
+  });
+
+  it('plafonne la note à la sous-note technique quand elle est sous le seuil, sans signalement de l’IA', () => {
+    // technique 2 × 50 % + télétravail 10 × 25 % + rémunération 10 × 25 % = 6 → plafonnée à 2
+    const d = calculerNote(g, { criteres: { technique: { note: 2 } }, entrees: { jours_sur_site: 0, salaire_min: 70000, unite: 'an' }, bloquants: [] });
+    expect(d.moyenne).toBe(6);
+    expect(d.note).toBe(2);
+    expect(d.regles).toEqual([expect.objectContaining({ id: 'technique-faible', effet: 'plafond_critere', valeur: 2, effective: true })]);
+  });
+
+  it('ne s’applique ni au-dessus du seuil ni sur une sous-note neutre (critère manquant)', () => {
+    expect(calculerNote(g, { criteres: { technique: { note: 4 } }, bloquants: [] }).regles).toEqual([]);
+    expect(calculerNote(g, { criteres: {}, bloquants: [] }).regles).toEqual([]);
+  });
+
+  it('refuse une règle sans critère ni seuil', () => {
+    expect(() => validerGrille({ ...grilleTest(), regles: [{ id: 'x', libelle: 'X', effet: 'plafond_critere' }] })).toThrow();
+  });
+});

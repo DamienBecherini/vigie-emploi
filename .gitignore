@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+# Configuration locale (chemin du dossier de données, listes d'exclusion personnelles)
+cap-emploi.config.json
+.env

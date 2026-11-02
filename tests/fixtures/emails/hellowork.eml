@@ -1,0 +1,24 @@
+From: HelloWork <alertes@exemple.test>
+To: candidat@exemple.test
+Subject: =?ISO-8859-1?Q?Vos_offres_du_jour?=
+Date: Sat, 31 Oct 2026 07:00:00 +0100
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="LIMITE"
+
+--LIMITE
+Content-Type: text/plain; charset=utf-8
+
+Version texte
+
+--LIMITE
+Content-Type: text/html; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><a href=3D"https://r.mailjet.exemple.test/lnk/AbCd/aHR0cHM6Ly9=
+3d3cuaGVsbG93b3JrLmNvbS9mci1mci9lbXBsb2lzLzcwMDAwMDAxLmh0bWw_dXRtX3NvdXJjZ=
+T1hbGVydGU/1/xyz">D&eacute;veloppeur WordPress H/F</a>
+<a href=3D"https://r.mailjet.exemple.test/lnk/AbCd/aHR0cHM6Ly93d3cuaGVsbG9=
+3b3JrLmNvbS9mci1mci9lbXBsb2lzLzcwMDAwMDAyLmh0bWw/1/xyz">Stage d&eacute;vel=
+oppeur web H/F</a></body></html>
+
+--LIMITE--

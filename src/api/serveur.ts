@@ -132,11 +132,19 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
 export function demarrerServeur(o: { db: Base; config: Config; port: number; hote?: string }): Promise<void> {
   const app = creerApp(o.db, o.config);
   const hote = o.hote ?? '127.0.0.1';
-  return new Promise((resolve) => {
-    serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
+  return new Promise((resolve, reject) => {
+    const serveur = serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
       console.log(`Tableau de bord : http://localhost:${info.port}/  (données : ${o.config.dossierDonnees})`);
       console.log('Ctrl+C pour arrêter.');
       resolve();
+    });
+    serveur.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Le port ${o.port} est déjà utilisé : le tableau de bord tourne sans doute déjà sur http://localhost:${o.port}/`);
+        console.error(`Sinon, choisissez un autre port : cap-emploi serve --port ${o.port + 1}`);
+        process.exit(1);
+      }
+      reject(err);
     });
   });
 }

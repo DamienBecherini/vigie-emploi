@@ -46,12 +46,18 @@ describe('serveur MCP (stdio)', () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
+        'ajouter_evenement',
         'candidater',
         'changer_statut',
+        'echeances',
         'enregistrer_candidature',
+        'fichiers_dossier',
         'generer_suivi',
         'ingerer_emails',
+        'journal',
         'lire_offre',
+        'marquer_fait',
+        'modifier_evenement',
         'lister_offres',
         'modifier_lien',
         'modifier_tags',
@@ -100,6 +106,31 @@ describe('serveur MCP (stdio)', () => {
 
     const detail = (await appeler('lire_offre', { id })) as unknown as { candidature: { prochaine_action: string; envoyee_le: string } };
     expect(detail.candidature).toMatchObject({ prochaine_action: 'Relancer le 09/11', envoyee_le: '2026-11-02' });
+
+    // Journal : l'appel raconté par l'utilisateur, puis la prochaine échéance.
+    const ev = (await appeler('ajouter_evenement', {
+      id,
+      type: 'entretien',
+      le: '02/11/2026 11:00',
+      resume: 'Appel avec la RH : périmètre et salaire',
+      canal: 'Téléphone',
+    })) as unknown as { evenement: { id: number; fait: boolean } };
+    expect(ev.evenement.fait).toBe(true);
+    const ech = (await appeler('ajouter_evenement', { id, type: 'message', sens: 'envoye', le: '+3', resume: 'Relancer la RH' })) as unknown as {
+      evenement: { id: number; fait: boolean };
+    };
+    expect(ech.evenement.fait).toBe(false);
+    const prochaines = (await appeler('echeances', { jours: 7 })) as unknown as { a_venir: { id: number; offre_id: number }[] };
+    expect(prochaines.a_venir).toEqual([expect.objectContaining({ id: ech.evenement.id, offre_id: id })]);
+    const j = (await appeler('journal', { id })) as unknown as { evenements: { id: number }[] };
+    expect(j.evenements.map((e) => e.id)).toEqual([ech.evenement.id, ev.evenement.id]);
+    expect(((await appeler('marquer_fait', { evenement_id: ech.evenement.id })) as { evenement: { fait: boolean } }).evenement.fait).toBe(true);
+    expect((await appeler('modifier_evenement', { evenement_id: ev.evenement.id, interlocuteurs: 'Julie (RH)' })).evenement).toMatchObject({
+      interlocuteurs: 'Julie (RH)',
+    });
+    const f = (await appeler('fichiers_dossier', { id })) as unknown as { dossier: string; existe: boolean };
+    expect(f).toMatchObject({ dossier: c.dossier_suggere, existe: false });
+    expect((await appeler('ajouter_evenement', { id, type: 'note', resume: 'x', le: 'bientôt' })).erreur).toMatch(/Date invalide/);
 
     const s = (await appeler('generer_suivi')) as unknown as { fichier: string; en_cours: number };
     expect(s.fichier).toBe(join(dossier, 'candidatures', '_SUIVI.genere.md'));

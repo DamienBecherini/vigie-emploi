@@ -20,6 +20,20 @@ import { noterOffres, offresALire, preparerCandidature, suivreCandidature } from
 import { estStatut, LIBELLES_STATUTS, STATUTS } from '../core/statuts.ts';
 import { ecrireSuivi } from '../export/suivi.ts';
 import { demarrerServeur } from '../api/serveur.ts';
+import {
+  ajouterEvenement,
+  dateEvenementFr,
+  echeances,
+  evenementOuErreur,
+  journal,
+  LIBELLES_TYPES,
+  marquerFait,
+  TYPES_EVENEMENT,
+  type EvenementJournal,
+  type SaisieEvenement,
+} from '../core/evenements.ts';
+import { fichiersDossier } from '../core/fichiers.ts';
+import { statistiques } from '../core/statistiques.ts';
 
 const AIDE = `cap-emploi — offres, notes et candidatures (base SQLite locale)
 
@@ -52,6 +66,18 @@ Commandes
                         avec --envoyee-le, l'offre passe en « envoyee »
   prochaine-action <id> "texte"
                         Prochaine action de la candidature ("" ou - pour l'effacer)
+  evenement <id> --type ${TYPES_EVENEMENT.join('|')} [--le "JJ/MM/AAAA HH:MM"] --resume "…"
+                   [--sens envoye|recu] [--canal c] [--interlocuteurs "…"] [--details "…"]
+                   [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier candidatures/x/devis.md]…
+                   [--fait | --no-fait]
+                        Ajoute un événement au journal de la candidature ; daté dans le futur (et pas fait),
+                        c'est une échéance. --le par défaut : maintenant ; « demain », « +3 » acceptés
+  journal <id>          Journal de la candidature (échéances d'abord, puis du plus récent au plus ancien)
+  echeances [--jours 7] Échéances en retard et à venir sur N jours
+  fait <evenement_id> [--no-fait]
+                        Marque une échéance comme faite (--no-fait : la rouvrir)
+  fichiers <id>         Fichiers du dossier de candidature (chemins à citer dans --fichier)
+  stats                 Candidatures par étape (envoyée, réponse, entretien, proposition), délai de réponse
   generer-suivi [--sortie <fichier>] [--remplacer]
                         Génère le suivi des candidatures depuis la base : par défaut
                         candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
@@ -64,7 +90,7 @@ Options générales
   --json                Sortie JSON (toutes les commandes)
 `;
 
-type Valeurs = Record<string, string | boolean | undefined>;
+type Valeurs = Record<string, string | boolean | string[] | undefined>;
 
 function erreur(message: string): never {
   throw Object.assign(new Error(message), { utilisateur: true });
@@ -114,7 +140,7 @@ const OPTIONS_GENERALES = {
   help: { type: 'boolean' },
 } as const;
 
-function analyser(args: string[], options: Record<string, { type: 'string' | 'boolean'; short?: string }>) {
+function analyser(args: string[], options: Record<string, { type: 'string' | 'boolean'; short?: string; multiple?: boolean }>) {
   const { values, positionals } = parseArgs({
     args,
     options: { ...OPTIONS_GENERALES, ...options },
@@ -159,12 +185,21 @@ function afficherDetail(d: DetailOffre): string {
     l.push('', `Candidature : ${[c.dossier, c.canal, c.envoyee_le && `envoyée le ${c.envoyee_le}`].filter(Boolean).join(' · ')}`);
     if (c.prochaine_action) l.push(`Prochaine action : ${c.prochaine_action}`);
   }
+  if (d.evenements.length) l.push('', 'Journal :', ...d.evenements.map(ligneJournal));
   if (d.statuts.length) {
     l.push('', 'Historique des statuts :');
     for (const s of d.statuts) l.push(`  ${s.le.slice(0, 10)}  ${s.statut.padEnd(10)} ${tronquer(s.commentaire, 100)}`);
   }
   if (d.description) l.push('', 'Description :', d.description);
   return l.join('\n');
+}
+
+function ligneJournal(e: EvenementJournal): string {
+  const etat = e.en_retard ? 'EN RETARD ' : e.echeance ? 'à faire   ' : '          ';
+  const sens = e.sens ? ` ${e.sens === 'envoye' ? '→' : '←'}` : '';
+  const montant = e.montant !== null ? ` · ${e.montant} ${e.unite ?? ''}`.trimEnd() : '';
+  const fichiers = e.fichiers.length ? ` · ${e.fichiers.join(', ')}` : '';
+  return `  #${String(e.id).padEnd(5)} ${dateEvenementFr(e.le).padEnd(19)} ${etat}${e.type.padEnd(11)}${sens} ${tronquer(e.resume, 90)}${montant}${fichiers}`;
 }
 
 function sansErreur<T>(fn: () => T): T {
@@ -214,6 +249,23 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
         `Suivi : ${r.suivi.lignes} ligne(s), ${r.suivi.offres_creees} offre(s) créée(s), ${r.suivi.candidatures} candidature(s), ` +
           `${r.suivi.statuts_ajoutes} statut(s).`,
       );
+    const J = r.journal;
+    console.log(
+      `Journaux : ${J.dossiers} dossier(s), ${J.lignes} ligne(s) datée(s), ${J.evenements_crees} événement(s) créé(s), ` +
+        `${J.evenements_existants} déjà en base, ${J.evenements_retires} retiré(s), ${J.echeances} échéance(s) ; ` +
+        `types : ${Object.entries(J.par_type).map(([t, n]) => `${t} ${n}`).join(', ') || '—'}.`,
+    );
+    for (const d of J.dossiers_rattaches) console.log(`  dossier rattaché à l'offre #${d.offre_id} : ${d.dossier}`);
+    for (const d of J.dossiers_sans_offre) console.log(`  dossier sans offre en base : ${d}`);
+    for (const d of J.dossiers_sans_suivi) console.log(`  dossier sans suivi daté : ${d}`);
+    if (J.non_typees.length) {
+      console.log(`Lignes de journal non typées, reprises en note (${J.non_typees.length}) :`);
+      for (const n of J.non_typees) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
+    }
+    if (J.sans_date.length) {
+      console.log(`Lignes de journal sans date, non reprises (${J.sans_date.length}) :`);
+      for (const n of J.sans_date) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
+    }
     for (const f of r.suivi.fusions) console.log(`  doublon fusionné : #${f.doublon} → #${f.offre} (${f.entreprise})`);
     const non = [...r.lots.erreurs, ...r.registre.non_reconnues, ...r.suivi.non_reconnues];
     if (non.length) {
@@ -427,6 +479,108 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const action = r.offre.candidature?.prochaine_action ?? null;
     if (v.json) return json({ ok: true, id, prochaine_action: action });
     console.log(`#${id} : ${action ?? '(aucune prochaine action)'}`);
+  },
+
+  evenement(args) {
+    const { v, pos } = analyser(args, {
+      type: { type: 'string', short: 't' },
+      le: { type: 'string' },
+      resume: { type: 'string', short: 'r' },
+      sens: { type: 'string' },
+      details: { type: 'string' },
+      canal: { type: 'string' },
+      interlocuteurs: { type: 'string' },
+      montant: { type: 'string' },
+      unite: { type: 'string' },
+      jours: { type: 'string' },
+      fichier: { type: 'string', multiple: true },
+      fait: { type: 'boolean' },
+    });
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    if (!v.type) erreur(`evenement : --type attendu (${TYPES_EVENEMENT.join(', ')})`);
+    if (!v.resume) erreur('evenement : --resume "…" attendu');
+    const saisie: SaisieEvenement = {
+      type: v.type as string,
+      le: v.le as string | undefined,
+      resume: v.resume as string,
+      sens: v.sens as string | undefined,
+      details: v.details as string | undefined,
+      canal: v.canal as string | undefined,
+      interlocuteurs: v.interlocuteurs as string | undefined,
+      montant: v.montant as string | undefined,
+      unite: v.unite as string | undefined,
+      jours: v.jours as string | undefined,
+      fichiers: v.fichier as unknown as string[] | undefined,
+      fait: v.fait as boolean | undefined,
+    };
+    const e = sansErreur(() => ajouterEvenement(db, id, saisie, 'cli'));
+    if (v.json) return json({ ok: true, evenement: e });
+    console.log(`Événement #${e.id} ajouté à l'offre #${id} : ${dateEvenementFr(e.le)} ${e.type}${e.fait ? '' : ' (échéance)'} — ${e.resume}`);
+  },
+
+  journal(args) {
+    const { v, pos } = analyser(args, {});
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    const o = offreParId(db, id);
+    if (!o) erreur(`Offre ${id} introuvable`);
+    const j = journal(db, id);
+    if (v.json) return json({ ok: true, id, evenements: j });
+    console.log(`#${id} ${o.titre}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
+    if (!j.length) return console.log('  (journal vide)');
+    for (const e of j) console.log(ligneJournal(e));
+  },
+
+  echeances(args) {
+    const { v } = analyser(args, { jours: { type: 'string' } });
+    const { db } = contexte(v);
+    const r = sansErreur(() => echeances(db, { jours: v.jours !== undefined ? Number(v.jours) : 7 }));
+    if (v.json) return json({ ok: true, ...r });
+    const ligne = (e: (typeof r.a_venir)[number]) =>
+      `  #${String(e.id).padEnd(5)} ${dateEvenementFr(e.le).padEnd(19)} offre #${e.offre_id} ${tronquer(e.entreprise ?? e.titre, 28).padEnd(28)} ${LIBELLES_TYPES[e.type]} : ${tronquer(e.resume, 80)}`;
+    console.log(`En retard (${r.en_retard.length}) :`);
+    for (const e of r.en_retard) console.log(ligne(e));
+    console.log(`À venir jusqu'au ${dateEvenementFr(r.jusqua)} (${r.a_venir.length}) :`);
+    for (const e of r.a_venir) console.log(ligne(e));
+  },
+
+  fait(args) {
+    const { v, pos } = analyser(args, { fait: { type: 'boolean' } });
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'evenement_id');
+    sansErreur(() => evenementOuErreur(db, id));
+    const e = marquerFait(db, id, v.fait !== false);
+    if (v.json) return json({ ok: true, evenement: e });
+    console.log(`Événement #${id} ${e.fait ? 'fait' : 'rouvert (à faire)'} : ${e.resume}`);
+  },
+
+  fichiers(args) {
+    const { v, pos } = analyser(args, {});
+    const { config, db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
+    const r = fichiersDossier(db, config.dossierDonnees, id);
+    if (v.json) return json({ ok: true, ...r });
+    if (!r.dossier) return console.log(`#${id} : pas de dossier de candidature (cap-emploi candidature ${id} --dossier candidatures/…)`);
+    if (!r.existe) return console.log(`#${id} : dossier ${r.dossier} absent du dossier de données`);
+    console.log(`${r.dossier} (${r.fichiers.length} fichier(s)) :`);
+    for (const f of r.fichiers) {
+      console.log(`  ${f.chemin.padEnd(70)} ${String(Math.ceil(f.taille / 1024)).padStart(5)} Ko  ${f.modifie_le.slice(0, 10)}`);
+    }
+  },
+
+  stats(args) {
+    const { v } = analyser(args, {});
+    const { db } = contexte(v);
+    const s = statistiques(db);
+    if (v.json) return json({ ok: true, ...s });
+    console.log(`Envoyées : ${s.envoyees} · réponse : ${s.reponses} · entretien : ${s.entretiens} · proposition : ${s.propositions}`);
+    console.log(
+      s.delai_moyen_reponse_jours === null
+        ? 'Délai avant première réponse : pas assez de données datées.'
+        : `Délai moyen avant la première réponse : ${String(s.delai_moyen_reponse_jours).replace('.', ',')} j (sur ${s.delai_base} candidature(s)).`,
+    );
   },
 
   'generer-suivi'(args) {

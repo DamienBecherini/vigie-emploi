@@ -20,7 +20,18 @@ Deux façons de piloter : les **outils MCP** (`cap-emploi mcp`, à privilégier 
 4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil, conditions, ce qui colle, écarts. Sans « go » : `changer_statut` → `ecartee` avec la raison en commentaire.
 5. **Candidater** sur son « go » : `candidater` (offre complète, dossier de données, `dossier_suggere`, étapes). Préparer le dossier, le CV et les messages selon ses consignes (dans le dossier de données).
 6. **Enregistrer la candidature** : `enregistrer_candidature` avec `dossier`, `cv`, `canal`, `message`, `prochaine_action` ; à l'envoi, `envoyee_le` (l'offre passe en `envoyee`). Ensuite : `changer_statut` (`relancee`, `entretien`, `refus`, `close`, `abandonnee`) et `enregistrer_candidature` pour la prochaine action.
-7. **Générer le suivi** : `generer_suivi` → `candidatures/_SUIVI.genere.md` (sections En cours, Envoyées sans suite, Closes).
+7. **Tenir le journal** (voir ci-dessous) : chaque échange devient un événement, la suite une échéance.
+8. **Générer le suivi** : `generer_suivi` → `candidatures/_SUIVI.genere.md` (sections En cours, Envoyées sans suite, Closes ; la prochaine action vient de la prochaine échéance).
+
+## Journal : quand l'utilisateur raconte un appel, un entretien, un message, un devis
+
+1. **L'événement** : `ajouter_evenement` (CLI : `cap-emploi evenement <id> …`) avec le type (`message`, `entretien`, `test`, `proposition`, `decision`, `note`), la date réelle (`le`), un résumé court, et ce qui est connu : `sens` (message envoyé / reçu), `canal`, `interlocuteurs`, `montant` + `unite` et `jours` pour un devis, `details`.
+2. **Le document éventuel** (compte rendu, devis, fiche d'appel) : l'écrire dans le dossier de candidature (`candidatures/<entreprise-poste>/…`), puis le citer dans `fichiers` (chemin relatif au dossier de données ; `fichiers_dossier` liste ceux qui existent). Ne jamais recopier le contenu d'un document dans la base.
+3. **La prochaine échéance** : un second `ajouter_evenement` daté dans le futur (`fait: false`), par exemple « Relancer si sans nouvelles » à J+7, « Entretien technique » à la date prévue.
+4. Une échéance réalisée : `marquer_fait`, puis l'événement de ce qui s'est passé. Un changement d'étape reste un statut (`changer_statut` : `relancee`, `entretien`, `refus`…).
+5. En début de session : `echeances` (retards et 7 prochains jours) pour dire à l'utilisateur ce qui l'attend.
+
+Une offre déjà suivie qui réapparaît dans une alerte ou un lot garde son statut : ne pas la renoter ni la changer de statut pour autant.
 
 ## Flux « traite les e-mails » (CLI)
 
@@ -64,6 +75,10 @@ Format d'une entrée de lot :
 | Relance, entretien, refus | `cap-emploi statut <id> relancee --commentaire "canal, date"` |
 | Suivi des candidatures | `cap-emploi generer-suivi --json` (aperçu `candidatures/_SUIVI.genere.md`) |
 | Tags | `cap-emploi tag <id> +a-reprendre -urgent --json` |
+| Événement (appel, devis…) | `cap-emploi evenement <id> --type proposition --le 15/10/2026 --resume "Devis envoyé sur Malt" --sens envoye --montant 3000 --unite "€ HT" --jours 6 --fichier candidatures/x/devis.md --json` |
+| Échéance | `cap-emploi evenement <id> --type message --le +7 --resume "Relancer si sans nouvelles" --json` |
+| Journal, échéances | `cap-emploi journal <id> --json`, `cap-emploi echeances --jours 7 --json`, `cap-emploi fait <evenement_id> --json` |
+| Fichiers du dossier | `cap-emploi fichiers <id> --json` |
 | Note seule | `cap-emploi noter <id> --json '{"note": 6, "note_brute": 6.5, "penalites": "…", "colle": "…", "ecarts": "…"}'` |
 
 Le bouton « Candidater » du tableau de bord copie `candidater <id>` : quand l'utilisateur colle ce texte, lancer `cap-emploi candidater <id> --json` et préparer la candidature selon ses consignes.

@@ -2,6 +2,7 @@
 import type { Base } from '../db/base.ts';
 import { estStatut, type Statut } from './statuts.ts';
 import { lireRemuneration, maintenant, nettoyer } from './texte.ts';
+import { journal, type EvenementJournal } from './evenements.ts';
 
 export type Origine = 'email' | 'import-lot' | 'import-registre' | 'import-suivi' | 'manuel';
 
@@ -105,6 +106,8 @@ export interface DetailOffre extends Offre {
   notes: Note[];
   statuts: LigneStatut[];
   candidature: Candidature | null;
+  /** Journal : échéances d'abord, puis événements du plus récent au plus ancien. */
+  evenements: EvenementJournal[];
 }
 
 const CHAMPS: (keyof ChampsOffre)[] = [
@@ -220,11 +223,23 @@ export function enregistrerOffre(
   return { offre: offreParId(db, existante.id)!, creee: false };
 }
 
+/**
+ * Ordre de l'historique des statuts pour trouver le statut courant : le plus récent, sauf qu'une ligne
+ * automatique d'avant le go (offre revue dans un lot, le registre ou une alerte) passe après les autres
+ * dès que l'offre a été suivie (go et au-delà) : elle ne change pas le statut d'une candidature.
+ * Même règle dans la migration 0003.
+ */
+export const ORDRE_STATUTS = `(s.origine IN ('ingest', 'import-lot', 'import-registre')
+    AND s.statut IN ('nouvelle', 'a-lire', 'notee', 'ecartee')
+    AND EXISTS (SELECT 1 FROM statuts s2 WHERE s2.offre_id = s.offre_id
+                AND s2.statut IN ('go', 'envoyee', 'relancee', 'entretien', 'refus', 'close', 'abandonnee'))),
+  s.le DESC, s.id DESC`;
+
 /** Recalcule les colonnes dénormalisées statut / note à partir de l'historique (la dernière fait foi). */
 export function recalculer(db: Base, offreId: number): void {
   db.prepare(
     `UPDATE offres SET
-       statut = COALESCE((SELECT statut FROM statuts WHERE offre_id = offres.id ORDER BY le DESC, id DESC LIMIT 1), 'nouvelle'),
+       statut = COALESCE((SELECT s.statut FROM statuts s WHERE s.offre_id = offres.id ORDER BY ${ORDRE_STATUTS} LIMIT 1), 'nouvelle'),
        note = (SELECT note FROM notes WHERE offre_id = offres.id ORDER BY notee_le DESC, id DESC LIMIT 1),
        maj_le = ?
      WHERE id = ?`,
@@ -403,7 +418,7 @@ export function detailOffre(db: Base, id: number): DetailOffre | undefined {
   const statuts = db
     .prepare('SELECT * FROM statuts WHERE offre_id = ? ORDER BY le DESC, id DESC')
     .all(id) as unknown as LigneStatut[];
-  return { ...offre, tags: tagsOffre(db, id), notes, statuts, candidature: candidatureDe(db, id) };
+  return { ...offre, tags: tagsOffre(db, id), notes, statuts, candidature: candidatureDe(db, id), evenements: journal(db, id) };
 }
 
 /** Nombre d'offres d'une entreprise déjà en base (comparaison sans casse). */
@@ -424,6 +439,7 @@ export function fusionnerOffres(db: Base, cible: number, doublon: number): void 
   if (!d || !offreParId(db, cible)) throw new Error(`Fusion impossible : offre ${cible} ou ${doublon} introuvable`);
   db.prepare('UPDATE notes SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
   db.prepare('UPDATE statuts SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
+  db.prepare('UPDATE OR IGNORE evenements SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
   db.prepare('INSERT OR IGNORE INTO offre_tags (offre_id, tag_id) SELECT ?, tag_id FROM offre_tags WHERE offre_id = ?').run(
     cible,
     doublon,

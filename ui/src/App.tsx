@@ -14,6 +14,7 @@ import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FIL
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
 import { Detail } from './composants/Detail.tsx';
+import { AVenir } from './composants/AVenir.tsx';
 
 const TAILLES = [25, 50, 100, 200, 500];
 
@@ -246,6 +247,7 @@ export function App() {
           </aside>
         )}
         <main className="min-w-0 flex-1" id="tableau" tabIndex={-1}>
+          <AVenir choisir={(id) => modifier({ offre: String(id) })} />
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>
               {filtresOuverts ? 'Masquer les filtres' : 'Afficher les filtres'}

@@ -7,7 +7,9 @@ Application locale de suivi des offres d'emploi et de mission : une base SQLite,
 - **Statuts** (de `nouvelle` à `entretien`, `refus`, `close`…), **tags**, **candidatures**, avec historique.
 - **Tableau de bord** paginé côté serveur, prévu pour des dizaines de milliers d'offres ; notes et suivi des candidatures éditables.
 - **Serveur MCP** (`cap-emploi mcp`) : une IA pilote l'application par des outils (voir [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)).
-- **Suivi des candidatures** (`_SUIVI.md`) généré depuis la base.
+- **Journal des candidatures** : messages, entretiens, tests, propositions (montant, jours), décisions, notes, datés ; une date future non faite est une **échéance** (bandeau « À venir », prochaine action du suivi). Les documents restent dans le dossier de candidature : un événement n'en garde que le chemin.
+- **Fichiers du dossier** de candidature listés et ouverts depuis le tableau de bord (Markdown rendu, PDF tel quel).
+- **Suivi des candidatures** (`_SUIVI.md`) généré depuis la base ; **statistiques** minimales (candidatures par étape, délai de réponse).
 
 Le code ne contient aucune donnée personnelle : tout vit dans un **dossier de données** choisi par l'utilisateur.
 
@@ -61,7 +63,7 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 | Commande | Effet |
 |---|---|
 | `cap-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`nouvelle`, ou `ecartee` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
-| `cap-emploi import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md` et `candidatures/_SUIVI.md` (lecture seule, idempotent), avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par cap-emploi n'est pas relu |
+| `cap-emploi import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par cap-emploi n'est pas relu |
 | `cap-emploi list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` |
 | `cap-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
 | `cap-emploi a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
@@ -73,6 +75,12 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 | `cap-emploi candidature <id> [--dossier] [--cv] [--canal] [--envoyee-le] [--message] [--prochaine-action]` | Enregistre la candidature (`""` efface un champ) ; avec `--envoyee-le`, l'offre passe en `envoyee` |
 | `cap-emploi prochaine-action <id> "texte"` | Prochaine action de la candidature (`-` pour l'effacer) |
 | `cap-emploi lien <id> <url ou ->` | Lien de l'offre |
+| `cap-emploi evenement <id> --type <type> [--le "JJ/MM/AAAA HH:MM"] --resume "…" [--sens envoye\|recu] [--canal] [--interlocuteurs] [--details] [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier <chemin>]… [--fait\|--no-fait]` | Ajoute un événement au journal (types : `message`, `entretien`, `test`, `proposition`, `decision`, `note`). `--le` : JJ/MM/AAAA, AAAA-MM-JJ, avec heure facultative, `demain`, `+3` ; par défaut maintenant. Daté dans le futur, il n'est pas fait : c'est une échéance |
+| `cap-emploi journal <id>` | Journal de la candidature : échéances d'abord (retards en tête), puis du plus récent au plus ancien |
+| `cap-emploi echeances [--jours 7]` | Échéances en retard et à venir sur N jours, toutes offres confondues |
+| `cap-emploi fait <evenement_id> [--no-fait]` | Marque une échéance comme faite (ou la rouvre) |
+| `cap-emploi fichiers <id>` | Fichiers du dossier de candidature (chemins à citer dans `--fichier`) |
+| `cap-emploi stats` | Candidatures par étape (envoyée, réponse, entretien, proposition) et délai moyen avant la première réponse |
 | `cap-emploi generer-suivi [--sortie <fichier>] [--remplacer]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--remplacer` |
 | `cap-emploi mcp` | Serveur MCP (stdio) pour une IA |
 | `cap-emploi serve [--port 4410]` | Lance le tableau de bord sur http://localhost:4410 |
@@ -100,7 +108,9 @@ Champs facultatifs : `id` (à la place de `url`), `description`, `grille_version
 - Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne, colonnes masquables.
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
 - Vues rapides : à traiter, notées ≥ 4,5, mes candidatures.
-- Panneau de détail : description, lien vers l'offre (modifiable), note détaillée et **saisie / correction de la note** (nouvelle entrée d'historique), **candidature** (prochaine action, date d'envoi, canal), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
+- Bandeau **À venir** au-dessus du tableau : échéances en retard et des 7 prochains jours, chacune ouvre son offre ; bouton **Statistiques** (candidatures par étape, délai de réponse).
+- Panneau de détail : description, lien vers l'offre (modifiable), note détaillée et **saisie / correction de la note** (nouvelle entrée d'historique), **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
+- Fichiers : servis en lecture par `/api/fichier/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?brut=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`.
 - Thème clair / sombre / système, taille du texte réglable (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau).
 
 Développement de l'interface : `cap-emploi serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `CAP_EMPLOI_API` pour en changer).
@@ -109,9 +119,19 @@ Développement de l'interface : `cap-emploi serve` d'un côté, `npm run dev:ui`
 
 `cap-emploi generer-suivi` écrit le suivi au format de l'ancien `_SUIVI.md` : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par cap-emploi le … : ne pas éditer à la main ».
 
+Colonne Prochaine action : la prochaine échéance du journal (« **04/11** : Relancer », « (en retard) » si la date est passée), sinon le champ `prochaine_action`.
+
 Tant qu'une candidature n'a pas bougé depuis la reprise, ses cellules sont réécrites telles quelles ; ensuite la colonne Statut reprend le commentaire du dernier statut. La prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise de l'ancien `_SUIVI.md`.
 
 Bascule : comparer `_SUIVI.genere.md` à `_SUIVI.md`, puis `cap-emploi generer-suivi --remplacer`. Après la bascule, la base fait foi.
+
+## Journal et échéances
+
+**La base sait ce qui s'est passé et quand ; le dossier Markdown garde les documents.** Un événement a un type, une date (ou date-heure), un résumé, et au besoin : sens (envoyé / reçu), canal, interlocuteurs, montant + unité, jours, détails, fichiers (chemins relatifs au dossier de données). Une date future non faite est une échéance ; passée et non faite, elle est en retard.
+
+Reprise (`import-historique`) : les sections « Suivi » des dossiers actifs (`candidatures/*/dossier-candidature.md`, pas `_archives/`) deviennent des événements d'origine `import` : lignes des tableaux Date | Événement, puces datées « - 13/10/2026 — … », cases cochées datées « - [x] Envoyée le : 13/10/2026 ». Les cases non cochées (à faire) ne sont pas reprises. Type deviné (message, entretien, test, proposition, décision ; `note` à défaut, listées dans le rapport), liens Markdown relatifs et chemins entre accents graves vers des fichiers existants. Idempotent : une empreinte par ligne ; une ligne disparue du dossier retire l'événement repris s'il n'a pas été modifié depuis. Un dossier qu'aucune candidature ne désigne est rattaché à la candidature sans dossier dont l'entreprise figure dans son nom (si elle est unique).
+
+Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot noté ou le registre ne change plus de statut ; l'alerte laisse une trace au journal (« Revue le … », une par jour).
 
 ## Développement
 
@@ -129,13 +149,13 @@ migrations/         schéma SQL versionné (PRAGMA user_version)
 src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes
 src/db/             ouverture de la base et migrations
 src/ingest/         lecture des .eml, JSON-LD, ingestion
-src/import/         reprise de l'historique Markdown / JSON
+src/import/         reprise de l'historique Markdown / JSON (dont les journaux des dossiers)
 src/cli/            commandes
-src/api/            serveur HTTP (Hono) : API JSON + interface compilée
+src/api/            serveur HTTP (Hono) : API JSON, lecture des fichiers du dossier, interface compilée
 src/mcp/            serveur MCP (stdio), outils branchés sur src/core
 src/export/         génération du suivi des candidatures (Markdown)
 ui/                 interface React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query
 docs/adr/           décisions d'architecture
 ```
 
-Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md) et [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md).
+Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) et [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md).

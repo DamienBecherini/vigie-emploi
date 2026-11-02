@@ -33,6 +33,9 @@ export const LIBELLES_STATUTS: Record<Statut, string> = {
 /** « Mes candidatures » : statuts envoyee et suivants. */
 export const STATUTS_CANDIDATURE: Statut[] = ['envoyee', 'relancee', 'entretien', 'refus', 'close'];
 
+/** Offres suivies (go et au-delà) : une alerte, un lot ou le registre ne changent plus leur statut. */
+export const STATUTS_SUIVIS: Statut[] = ['go', 'envoyee', 'relancee', 'entretien', 'refus', 'close', 'abandonnee'];
+
 /** Offres à lire et noter. */
 export const STATUTS_A_TRAITER: Statut[] = ['nouvelle', 'a-lire'];
 
@@ -57,3 +60,20 @@ export const COLONNES_TRI = [
   'maj_le',
 ] as const;
 export type ColonneTri = (typeof COLONNES_TRI)[number];
+
+// Journal des candidatures (événements datés).
+export const TYPES_EVENEMENT = ['message', 'entretien', 'test', 'proposition', 'decision', 'note'] as const;
+export type TypeEvenement = (typeof TYPES_EVENEMENT)[number];
+export const SENS_MESSAGE = ['envoye', 'recu'] as const;
+export type Sens = (typeof SENS_MESSAGE)[number];
+export const ORIGINES_EVENEMENT = ['interface', 'cli', 'mcp', 'import'] as const;
+export type OrigineEvenement = (typeof ORIGINES_EVENEMENT)[number];
+
+export const LIBELLES_TYPES: Record<TypeEvenement, string> = {
+  message: 'Message',
+  entretien: 'Entretien / appel',
+  test: 'Test',
+  proposition: 'Proposition / devis',
+  decision: 'Décision',
+  note: 'Note',
+};

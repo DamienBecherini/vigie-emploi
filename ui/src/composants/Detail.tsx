@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIBELLES_STATUTS, STATUTS, type Statut } from '../../../src/core/statuts.ts';
 import { api, type DetailOffre } from '../api.ts';
 import { BadgeNote, BadgeStatut, formaterDate, formaterNote } from './Badges.tsx';
+import { FichiersDuDossier, Journal } from './Journal.tsx';
 
 function Ligne({ libelle, children }: { libelle: string; children: React.ReactNode }) {
   if (children === null || children === undefined || children === '') return null;
@@ -530,6 +531,25 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
               </dl>
             )}
             <EditeurCandidature key={o.id} offre={o} />
+          </section>
+
+          <section aria-labelledby={`${titre}-journal`}>
+            <h3 id={`${titre}-journal`} className="mb-2 font-bold">
+              Journal{' '}
+              {o.evenements.some((e) => e.en_retard) && (
+                <span className="ml-1 rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">
+                  {o.evenements.filter((e) => e.en_retard).length} en retard
+                </span>
+              )}
+            </h3>
+            <Journal key={o.id} offre={o} />
+          </section>
+
+          <section aria-labelledby={`${titre}-fichiers`}>
+            <h3 id={`${titre}-fichiers`} className="mb-2 font-bold">
+              Fichiers du dossier
+            </h3>
+            <FichiersDuDossier offre={o} />
           </section>
 
           <section aria-labelledby={`${titre}-tags`}>

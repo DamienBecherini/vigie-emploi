@@ -7,6 +7,8 @@ import { transaction } from '../db/base.ts';
 import { SOURCES_JSONLD } from '../core/liens.ts';
 import { ajouterStatut, enregistrerOffre, modifierTags, offresDeLEntreprise, trouverOffre } from '../core/offres.ts';
 import { maintenant } from '../core/texte.ts';
+import { STATUTS_SUIVIS } from '../core/statuts.ts';
+import { ajouterEvenement, dateEvenementFr, jourLocal } from '../core/evenements.ts';
 import { lireEmail, type OffreEmail } from './eml.ts';
 import { extraireJsonLd, telechargerPage, type DetailJsonLd, type Telechargeur } from './jsonld.ts';
 
@@ -118,6 +120,20 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
         entreprise: existante.entreprise,
         statut: existante.statut,
       });
+      // Offre déjà suivie revue dans une alerte : son statut ne bouge pas, une trace au journal (une par jour).
+      if (STATUTS_SUIVIS.includes(existante.statut)) {
+        const jour = jourLocal();
+        const cle = `revue:${off.source}:${jour}`;
+        if (!db.prepare('SELECT 1 FROM evenements WHERE offre_id = ? AND cle_import = ?').get(existante.id, cle)) {
+          ajouterEvenement(
+            db,
+            existante.id,
+            { type: 'note', le: jour, fait: true, resume: `Revue le ${dateEvenementFr(jour)} dans une alerte ${off.source} : statut inchangé`, details: off.sujet || null },
+            'import',
+            { cleImport: cle },
+          );
+        }
+      }
       continue;
     }
     let motif = motifExclusion(off.titre, refuses) ?? motifExclusion(off.titre, titresExclus);

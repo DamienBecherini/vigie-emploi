@@ -6,6 +6,7 @@ import type { Base } from '../db/base.ts';
 import type { Candidature, Offre } from '../core/offres.ts';
 import { LIBELLES_STATUTS, type Statut } from '../core/statuts.ts';
 import { dateFr } from '../core/texte.ts';
+import { prochaineEcheance, texteEcheance, type Evenement } from '../core/evenements.ts';
 
 /** Repère d'un fichier généré (lu par import-historique, qui ne relit pas un suivi généré). */
 export const MARQUE_SUIVI_GENERE = /Fichier généré par cap-emploi/;
@@ -23,6 +24,8 @@ interface LigneSuivi {
   offre: Offre;
   candidature: Candidature | null;
   dernier: { statut: Statut; commentaire: string | null; origine: string; le: string } | null;
+  /** Prochaine échéance du journal (pas encore faite), si elle existe. */
+  echeance: Evenement | null;
 }
 
 export interface Suivi {
@@ -108,6 +111,7 @@ function lignes(db: Base): LigneSuivi[] {
     offre,
     candidature: (cand.get(offre.id) as Candidature | undefined) ?? null,
     dernier: (dernier.get(offre.id) as LigneSuivi['dernier'] | undefined) ?? null,
+    echeance: prochaineEcheance(db, offre.id),
   }));
 }
 
@@ -160,7 +164,7 @@ export function genererSuivi(db: Base, dossierDonnees: string, le: Date = new Da
       l.candidature?.canal,
       dateAffichee(l.candidature?.envoyee_le ?? null),
       etat(l),
-      l.candidature?.prochaine_action,
+      l.echeance ? texteEcheance(l.echeance, le) : l.candidature?.prochaine_action,
       lienDossier(dossierDonnees, l.candidature?.dossier ?? null),
     ]
       .map(cellule)

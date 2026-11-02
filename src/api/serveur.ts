@@ -21,6 +21,19 @@ import {
 import { estStatut, STATUTS } from '../core/statuts.ts';
 import { noterOffres, preparerCandidature, suivreCandidature } from '../core/actions.ts';
 import type { EntreeLot } from '../core/notation.ts';
+import {
+  ajouterEvenement,
+  echeances,
+  evenementOuErreur,
+  journal,
+  marquerFait,
+  modifierEvenement,
+  supprimerEvenement,
+  type SaisieEvenement,
+} from '../core/evenements.ts';
+import { fichierSur, fichiersDossier } from '../core/fichiers.ts';
+import { statistiques } from '../core/statistiques.ts';
+import { pageFichier } from './fichier.ts';
 
 /** Champs de candidature modifiables depuis l'interface. */
 const CHAMPS_EDITABLES = CHAMPS_CANDIDATURE.filter((k) => k !== 'etat' && k !== 'libelle');
@@ -76,6 +89,14 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
   const app = new Hono();
 
   app.onError((err, c) => c.json({ ok: false, erreur: err.message }, 400));
+
+  // Serveur local : seules les requêtes adressées à localhost / 127.0.0.1 sont servies (parade au
+  // « DNS rebinding » : une page web tierce ne peut pas lire l'API ni les fichiers du dossier).
+  app.use('*', async (c, next) => {
+    const hote = (c.req.header('host') ?? '').replace(/:\d+$/, '').toLowerCase();
+    if (hote && !['localhost', '127.0.0.1', '[::1]'].includes(hote)) return c.text('Hôte refusé', 403);
+    await next();
+  });
 
   app.get('/api/sante', (c) => c.json({ ok: true, dossier: config.dossierDonnees }));
   app.get('/api/meta', (c) => c.json({ ...meta(db), statutsPossibles: STATUTS }));
@@ -151,6 +172,70 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
       champs[k] = v;
     }
     return c.json(suivreCandidature(db, id, champs, 'interface').offre);
+  });
+
+  // Journal de la candidature (événements et échéances).
+  app.get('/api/offres/:id/evenements', (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    return c.json(journal(db, id));
+  });
+
+  app.post('/api/offres/:id/evenements', async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    const corps = (await c.req.json()) as SaisieEvenement;
+    ajouterEvenement(db, id, corps, 'interface');
+    return c.json(detailOffre(db, id));
+  });
+
+  app.put('/api/evenements/:id', async (c) => {
+    const e = evenementOuErreur(db, Number(c.req.param('id')));
+    const corps = (await c.req.json()) as SaisieEvenement;
+    modifierEvenement(db, e.id, corps);
+    return c.json(detailOffre(db, e.offre_id));
+  });
+
+  app.post('/api/evenements/:id/fait', async (c) => {
+    const e = evenementOuErreur(db, Number(c.req.param('id')));
+    const corps = (await c.req.json().catch(() => ({}))) as { fait?: boolean };
+    marquerFait(db, e.id, corps.fait ?? true);
+    return c.json(detailOffre(db, e.offre_id));
+  });
+
+  app.delete('/api/evenements/:id', (c) => {
+    const e = supprimerEvenement(db, Number(c.req.param('id')));
+    return c.json(detailOffre(db, e.offre_id));
+  });
+
+  app.get('/api/echeances', (c) => c.json(echeances(db, { jours: nombre(c.req.query('jours')) ?? 7 })));
+
+  app.get('/api/statistiques', (c) => c.json(statistiques(db)));
+
+  // Fichiers du dossier de candidature : liste, puis lecture (dossier de données uniquement).
+  app.get('/api/offres/:id/fichiers', (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    return c.json(fichiersDossier(db, config.dossierDonnees, id));
+  });
+
+  app.get('/api/fichier/*', (c) => {
+    const brut = new URL(c.req.url).pathname.slice('/api/fichier/'.length);
+    let chemin: string;
+    try {
+      chemin = brut.split('/').map(decodeURIComponent).join('/');
+    } catch {
+      return c.text('Chemin mal encodé', 400);
+    }
+    let fichier: { absolu: string; relatif: string };
+    try {
+      fichier = fichierSur(config.dossierDonnees, chemin);
+    } catch (e) {
+      const message = (e as Error).message;
+      return c.text(message, /introuvable/i.test(message) ? 404 : 403);
+    }
+    const p = pageFichier(fichier.absolu, fichier.relatif, { brut: c.req.query('brut') === '1' });
+    return c.body(p.corps, 200, p.entetes);
   });
 
   app.all('/api/*', (c) => c.json({ ok: false, erreur: 'Route inconnue' }, 404));

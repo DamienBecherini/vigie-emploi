@@ -18,6 +18,12 @@ Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon
 | `modifier_lien` | Lien de l'offre (ou `null` pour l'effacer) |
 | `candidater` | Passe en `go`, renvoie l'offre, le dossier de données, un dossier suggéré et les étapes |
 | `enregistrer_candidature` | Dossier, CV, canal, date d'envoi, message, prochaine action ; avec une date d'envoi, l'offre passe en `envoyee` |
+| `ajouter_evenement` | Événement daté au journal (message, entretien, test, proposition, décision, note) ; daté dans le futur et pas fait, c'est une échéance |
+| `modifier_evenement` | Corrige un événement (champ absent inchangé, `null` efface) |
+| `journal` | Journal d'une offre : échéances d'abord, puis du plus récent au plus ancien |
+| `echeances` | Échéances en retard et à venir sur N jours (7 par défaut), toutes offres |
+| `marquer_fait` | Marque une échéance comme faite (ou la rouvre) |
+| `fichiers_dossier` | Fichiers du dossier de candidature (chemins à citer dans un événement) |
 | `ingerer_emails` | Lit les `.eml` puis les supprime (sauf `garder: true`) |
 | `generer_suivi` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `remplacer: true` |
 
@@ -35,7 +41,7 @@ Fichier `.mcp.json` à la racine du dossier de données (ou du projet où l'on t
 }
 ```
 
-Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `npm link` : les trois formes ci-dessous se connectent et exposent les 12 outils.
+Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `npm link` : les trois formes ci-dessous se connectent et exposent les outils (18 depuis la version 0.3).
 
 | Forme | `command` / `args` | Quand l'utiliser |
 |---|---|---|
@@ -83,4 +89,4 @@ Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprot
 
 ## Flux type
 
-Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → noter → candidater → enregistrer la candidature → générer le suivi.
+Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → noter → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.

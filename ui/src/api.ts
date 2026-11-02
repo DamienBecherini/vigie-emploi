@@ -1,5 +1,5 @@
 // Client de l'API locale (mêmes types que le serveur, recopiés ici pour garder l'interface autonome).
-import type { Statut } from '../../src/core/statuts.ts';
+import type { Sens, Statut, TypeEvenement } from '../../src/core/statuts.ts';
 
 export interface LigneOffre {
   id: number;
@@ -61,6 +61,88 @@ export interface DetailOffre extends Omit<LigneOffre, 'a_description'> {
   notes: Note[];
   statuts: LigneStatut[];
   candidature: Candidature | null;
+  evenements: Evenement[];
+}
+
+export interface Evenement {
+  id: number;
+  offre_id: number;
+  type: TypeEvenement;
+  sens: Sens | null;
+  /** AAAA-MM-JJ ou AAAA-MM-JJTHH:MM (heure locale). */
+  le: string;
+  fait: boolean;
+  resume: string;
+  details: string | null;
+  canal: string | null;
+  interlocuteurs: string | null;
+  montant: number | null;
+  unite: string | null;
+  jours: number | null;
+  fichiers: string[];
+  origine: string;
+  cree_le: string;
+  maj_le: string | null;
+  echeance: boolean;
+  en_retard: boolean;
+}
+
+export interface EcheanceOffre extends Evenement {
+  titre: string;
+  entreprise: string | null;
+  statut: Statut;
+}
+
+export interface Echeances {
+  aujourdhui: string;
+  jusqua: string;
+  en_retard: EcheanceOffre[];
+  a_venir: EcheanceOffre[];
+}
+
+export interface FichierDossier {
+  chemin: string;
+  nom: string;
+  taille: number;
+  modifie_le: string;
+}
+
+export interface FichiersDossier {
+  offre_id: number;
+  dossier: string | null;
+  existe: boolean;
+  fichiers: FichierDossier[];
+  tronque: boolean;
+}
+
+export interface Statistiques {
+  envoyees: number;
+  reponses: number;
+  entretiens: number;
+  propositions: number;
+  delai_moyen_reponse_jours: number | null;
+  delai_base: number;
+}
+
+/** Saisie d'un événement : null efface un champ facultatif (modification). */
+export interface SaisieEvenement {
+  type: TypeEvenement;
+  sens: Sens | null;
+  le: string;
+  fait: boolean;
+  resume: string;
+  details: string | null;
+  canal: string | null;
+  interlocuteurs: string | null;
+  montant: number | null;
+  unite: string | null;
+  jours: number | null;
+  fichiers: string[];
+}
+
+/** URL de lecture d'un fichier du dossier de données (chaque segment encodé). */
+export function urlFichier(chemin: string): string {
+  return `/api/fichier/${chemin.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 export interface Candidature {
@@ -119,6 +201,16 @@ export const api = {
     appel<DetailOffre>(`/api/offres/${id}/note`, { method: 'POST', body: JSON.stringify(n) }),
   candidature: (id: number, c: SaisieCandidature) =>
     appel<DetailOffre>(`/api/offres/${id}/candidature`, { method: 'PUT', body: JSON.stringify(c) }),
+  ajouterEvenement: (id: number, e: SaisieEvenement) =>
+    appel<DetailOffre>(`/api/offres/${id}/evenements`, { method: 'POST', body: JSON.stringify(e) }),
+  modifierEvenement: (id: number, e: Partial<SaisieEvenement>) =>
+    appel<DetailOffre>(`/api/evenements/${id}`, { method: 'PUT', body: JSON.stringify(e) }),
+  marquerFait: (id: number, fait: boolean) =>
+    appel<DetailOffre>(`/api/evenements/${id}/fait`, { method: 'POST', body: JSON.stringify({ fait }) }),
+  supprimerEvenement: (id: number) => appel<DetailOffre>(`/api/evenements/${id}`, { method: 'DELETE' }),
+  echeances: (jours = 7) => appel<Echeances>(`/api/echeances?jours=${jours}`),
+  fichiers: (id: number) => appel<FichiersDossier>(`/api/offres/${id}/fichiers`),
+  statistiques: () => appel<Statistiques>('/api/statistiques'),
   candidater: (id: number) =>
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
 };

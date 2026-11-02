@@ -15,6 +15,16 @@ import type { EntreeLot } from '../core/notation.ts';
 import { COLONNES_TRI, STATUTS } from '../core/statuts.ts';
 import { ingererSelonConfig } from '../ingest/ingest.ts';
 import { ecrireSuivi } from '../export/suivi.ts';
+import {
+  ajouterEvenement,
+  echeances,
+  evenementOuErreur,
+  journal,
+  marquerFait,
+  modifierEvenement,
+  TYPES_EVENEMENT,
+} from '../core/evenements.ts';
+import { fichiersDossier } from '../core/fichiers.ts';
 
 const ORIGINE = 'mcp';
 
@@ -23,6 +33,9 @@ offres, notes, statuts, tags, candidatures. L'application n'appelle aucun modèl
 Flux habituel : ingerer_emails → offres_a_lire → (lire chaque offre, la noter selon la grille de l'utilisateur)
 → noter_lot → résumer à l'utilisateur → sur son « go » : candidater, préparer le dossier, enregistrer_candidature
 → generer_suivi. Sans « go » : changer_statut vers « ecartee » avec la raison.
+Quand l'utilisateur raconte un appel, un entretien, un message, un devis : ajouter_evenement (avec le fichier
+du dossier s'il y en a un, voir fichiers_dossier), puis la prochaine échéance (ajouter_evenement daté dans
+le futur, fait: false). echeances liste ce qui est en retard ou à venir ; marquer_fait clôt une échéance.
 Ne télécharge pas LinkedIn, Indeed ni Glassdoor par script : lis ces pages dans le navigateur de l'utilisateur
 ou demande-lui le texte. La grille de notation et les consignes de candidature sont dans le dossier de données
 de l'utilisateur (renvoyé par candidater) : les lire avant de noter ou de rédiger.`;
@@ -86,7 +99,7 @@ function normaliserEntree(e: z.infer<typeof entreeLot>): EntreeLot {
 }
 
 export function creerServeurMcp(db: Base, config: Config): McpServer {
-  const serveur = new McpServer({ name: 'cap-emploi', version: '0.2.0' }, { instructions: INSTRUCTIONS });
+  const serveur = new McpServer({ name: 'cap-emploi', version: '0.3.0' }, { instructions: INSTRUCTIONS });
   const lecture = { readOnlyHint: true, openWorldHint: false };
 
   serveur.registerTool(
@@ -287,6 +300,130 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     sur(({ id, ...champs }) => {
       const r = suivreCandidature(db, id, champs, ORIGINE);
       return { ok: true, id, statut: r.offre.statut, statut_ajoute: r.statut_ajoute, candidature: r.offre.candidature };
+    }),
+  );
+
+  const champsEvenement = {
+    sens: z.enum(['envoye', 'recu']).nullable().optional().describe("Pour un message : « envoye » (par l'utilisateur) ou « recu »"),
+    details: texteFacultatif('Texte libre plus long (contexte, ce qui a été dit) ; pas de copie de document : citer le fichier'),
+    canal: texteFacultatif('Canal : LinkedIn, Malt, e-mail, téléphone, Zoom, Teams…'),
+    interlocuteurs: texteFacultatif('Personnes concernées : « Zoé (RH), M. Gabord (directeur digital) »'),
+    montant: z.number().nullable().optional().describe('Montant (proposition, devis, salaire) : 3000, 450, 55'),
+    unite: texteFacultatif('Unité du montant : « € HT », « €/j », « K€/an »'),
+    jours: z.number().nullable().optional().describe("Nombre de jours d'un devis"),
+    fichiers: z
+      .array(z.string())
+      .nullable()
+      .optional()
+      .describe('Fichiers liés, chemins relatifs au dossier de données (« candidatures/x/devis.md ») : voir fichiers_dossier'),
+  };
+
+  serveur.registerTool(
+    'ajouter_evenement',
+    {
+      title: 'Ajouter un événement au journal',
+      description:
+        "Ajoute un événement daté au journal de la candidature d'une offre : message envoyé ou reçu, entretien ou appel, test, " +
+        "proposition ou devis (montant, unité, jours), décision (refus, go, abandon), note. Daté dans le futur et pas fait, c'est une " +
+        "échéance (relance, entretien prévu…) : elle apparaît dans echeances et devient la prochaine action du suivi. À appeler quand " +
+        "l'utilisateur raconte un échange : l'événement, puis la prochaine échéance. Le contenu d'un document reste dans le dossier " +
+        "de candidature : ne mettre que son chemin dans fichiers. « fait » vaut par défaut false pour une date future, true sinon.",
+      inputSchema: {
+        id,
+        type: z.enum(TYPES_EVENEMENT).describe(`Type : ${TYPES_EVENEMENT.join(', ')}`),
+        le: z
+          .string()
+          .optional()
+          .describe("Date : JJ/MM/AAAA, JJ/MM/AAAA HH:MM, AAAA-MM-JJ, AAAA-MM-JJTHH:MM, « demain », « +3 » (jours). Défaut : maintenant"),
+        resume: z.string().min(1).describe('Résumé court : « Appel avec Zoé : périmètre validé », « Relancer si sans nouvelles »'),
+        fait: z.boolean().optional().describe('false : échéance à faire ; true : déjà fait. Défaut selon la date'),
+        ...champsEvenement,
+      },
+    },
+    sur(({ id, ...saisie }) => ({ ok: true, evenement: ajouterEvenement(db, id, saisie, ORIGINE) })),
+  );
+
+  serveur.registerTool(
+    'modifier_evenement',
+    {
+      title: 'Modifier un événement',
+      description:
+        "Corrige un événement du journal (par son identifiant, champ id des événements). Champ absent = inchangé ; null = effacé " +
+        '(sauf type, date et résumé). Pour clore une échéance, marquer_fait suffit.',
+      inputSchema: {
+        evenement_id: z.number().int().positive().describe("Identifiant de l'événement"),
+        type: z.enum(TYPES_EVENEMENT).optional(),
+        le: z.string().optional().describe('Nouvelle date (mêmes formats que ajouter_evenement)'),
+        resume: z.string().min(1).optional(),
+        fait: z.boolean().optional(),
+        ...champsEvenement,
+      },
+    },
+    sur(({ evenement_id, ...saisie }) => ({ ok: true, evenement: modifierEvenement(db, evenement_id, saisie) })),
+  );
+
+  serveur.registerTool(
+    'journal',
+    {
+      title: 'Journal de la candidature',
+      description:
+        "Journal d'une offre : échéances pas encore faites d'abord (les retards en tête, en_retard: true), puis les événements faits, " +
+        'du plus récent au plus ancien. Chaque événement : id, type, sens, le, fait, resume, details, canal, interlocuteurs, montant, ' +
+        'unite, jours, fichiers.',
+      inputSchema: { id },
+      annotations: lecture,
+    },
+    sur(({ id }) => {
+      offreOuErreur(db, id);
+      return { id, evenements: journal(db, id) };
+    }),
+  );
+
+  serveur.registerTool(
+    'echeances',
+    {
+      title: 'Échéances',
+      description:
+        "Échéances de toutes les candidatures : en_retard (date passée, pas faites) et a_venir (d'aujourd'hui à N jours), avec " +
+        "l'offre (offre_id, entreprise, titre, statut). À consulter en début de session pour dire à l'utilisateur ce qui l'attend.",
+      inputSchema: { jours: z.number().int().min(0).max(366).optional().describe('Horizon en jours (7 par défaut)') },
+      annotations: lecture,
+    },
+    sur(({ jours }) => echeances(db, { jours })),
+  );
+
+  serveur.registerTool(
+    'marquer_fait',
+    {
+      title: 'Marquer une échéance faite',
+      description:
+        "Marque un événement comme fait (l'échéance disparaît des échéances), ou le rouvre avec fait: false. Ajouter ensuite, s'il y a " +
+        'lieu, ce qui s’est passé (ajouter_evenement) et la prochaine échéance.',
+      inputSchema: {
+        evenement_id: z.number().int().positive().describe("Identifiant de l'événement"),
+        fait: z.boolean().optional().describe('true par défaut ; false pour rouvrir'),
+      },
+    },
+    sur(({ evenement_id, fait }) => {
+      evenementOuErreur(db, evenement_id);
+      return { ok: true, evenement: marquerFait(db, evenement_id, fait ?? true) };
+    }),
+  );
+
+  serveur.registerTool(
+    'fichiers_dossier',
+    {
+      title: 'Fichiers du dossier de candidature',
+      description:
+        "Liste les fichiers du dossier de candidature d'une offre (chemin relatif au dossier de données, nom, taille, date) : " +
+        "ce sont les chemins à citer dans « fichiers » d'un événement. Liste vide si la candidature n'a pas de dossier (le fixer avec " +
+        'enregistrer_candidature, champ dossier).',
+      inputSchema: { id },
+      annotations: lecture,
+    },
+    sur(({ id }) => {
+      offreOuErreur(db, id);
+      return fichiersDossier(db, config.dossierDonnees, id);
     }),
   );
 

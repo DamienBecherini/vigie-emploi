@@ -1,6 +1,6 @@
 {
   "name": "cap-emploi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Suivi local des offres d'emploi et de mission : base SQLite, tableau de bord web et CLI pilotable par une IA.",
   "type": "module",
@@ -22,6 +22,7 @@
     "@modelcontextprotocol/sdk": "^1.32.2",
     "entities": "^7.0.1",
     "hono": "^4.13.16",
+    "marked": "^18.1.1",
     "postal-mime": "^2.4.0",
     "zod": "^4.6.7"
   },

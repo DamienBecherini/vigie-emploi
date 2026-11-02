@@ -22,6 +22,7 @@ import type { Statut } from '../core/statuts.ts';
 import { dateFr, empreinte, estVide, maintenant, sansMarkdown, trouverRemuneration } from '../core/texte.ts';
 import { decouper, liensMarkdown, lignesTableaux, type LigneTableau } from './markdown.ts';
 import { MARQUE_SUIVI_GENERE } from '../export/suivi.ts';
+import { importerJournaux, type RapportJournal } from './journal.ts';
 
 export interface LigneNonReconnue {
   fichier: string;
@@ -54,11 +55,13 @@ export interface RapportImport {
     notes_ajoutees: number;
     non_reconnues: LigneNonReconnue[];
   };
+  /** Journaux des dossiers de candidature (sections « Suivi »). */
+  journal: RapportJournal;
 }
 
 const extrait = (s: string) => (s.length > 160 ? `${s.slice(0, 157)}…` : s);
 
-function rapportVide(): RapportImport {
+function rapportVide(): Omit<RapportImport, 'journal'> {
   return {
     lots: { fichiers: 0, entrees: 0, offres_creees: 0, notes_ajoutees: 0, erreurs: [] },
     registre: {
@@ -503,12 +506,13 @@ function importerSuivi(db: Base, dossier: string, rapport: RapportImport): void 
 
 /** Rejoue toute la reprise. Idempotent : relancer ne duplique ni offres, ni notes, ni statuts. */
 export function importerHistorique(db: Base, dossierDonnees: string): RapportImport {
-  const rapport = rapportVide();
+  const rapport = rapportVide() as RapportImport;
   if (!existsSync(join(dossierDonnees, 'candidatures'))) {
     throw new Error(`Dossier candidatures/ introuvable dans ${dossierDonnees}`);
   }
   importerLots(db, dossierDonnees, rapport);
   importerRegistre(db, dossierDonnees, rapport);
   importerSuivi(db, dossierDonnees, rapport);
-  return rapport;
+  // Après le suivi : c'est lui qui relie les offres à leur dossier de candidature.
+  return { ...rapport, journal: importerJournaux(db, dossierDonnees) };
 }

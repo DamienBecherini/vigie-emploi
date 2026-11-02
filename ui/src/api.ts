@@ -95,6 +95,8 @@ export const api = {
     appel<DetailOffre>(`/api/offres/${id}/statut`, { method: 'POST', body: JSON.stringify({ statut, commentaire }) }),
   tags: (id: number, tags: string[]) =>
     appel<{ tags: string[] }>(`/api/offres/${id}/tags`, { method: 'PUT', body: JSON.stringify({ tags }) }),
+  lien: (id: number, url: string | null) =>
+    appel<DetailOffre>(`/api/offres/${id}/lien`, { method: 'PUT', body: JSON.stringify({ url }) }),
   candidater: (id: number) =>
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
 };

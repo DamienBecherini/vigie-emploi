@@ -72,6 +72,65 @@ function EditeurTags({ offre }: { offre: DetailOffre }) {
   );
 }
 
+function EditeurLien({ offre }: { offre: DetailOffre }) {
+  const client = useQueryClient();
+  const id = useId();
+  const [edition, setEdition] = useState(false);
+  const [saisie, setSaisie] = useState(offre.url_canonique ?? '');
+  const maj = useMutation({
+    mutationFn: (url: string | null) => api.lien(offre.id, url),
+    onSuccess: () => {
+      setEdition(false);
+      client.invalidateQueries({ queryKey: ['offre', offre.id] });
+      client.invalidateQueries({ queryKey: ['offres'] });
+    },
+  });
+  if (!edition) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {offre.url_canonique ? (
+          <a className="break-all text-blue-700 underline dark:text-blue-300" href={offre.url_canonique} target="_blank" rel="noreferrer noopener">
+            {offre.url_canonique}
+          </a>
+        ) : (
+          <span className="text-slate-500 dark:text-slate-400">Aucun lien enregistré</span>
+        )}
+        <button
+          type="button"
+          className="bouton"
+          onClick={() => {
+            setSaisie(offre.url_canonique ?? '');
+            setEdition(true);
+          }}
+        >
+          {offre.url_canonique ? 'Modifier' : 'Ajouter un lien'}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="flex flex-wrap gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        maj.mutate(saisie.trim() || null);
+      }}
+    >
+      <label htmlFor={id} className="sr-only">
+        Lien de l'offre
+      </label>
+      <input id={id} className="champ min-w-0 flex-1" type="url" placeholder="https://…" value={saisie} onChange={(e) => setSaisie(e.target.value)} autoFocus />
+      <button type="submit" className="bouton">
+        Enregistrer
+      </button>
+      <button type="button" className="bouton" onClick={() => setEdition(false)}>
+        Annuler
+      </button>
+      {maj.isError && <p className="w-full text-sm text-rose-700 dark:text-rose-300">{(maj.error as Error).message}</p>}
+    </form>
+  );
+}
+
 function ChangementStatut({ offre }: { offre: DetailOffre }) {
   const client = useQueryClient();
   const idStatut = useId();
@@ -202,6 +261,9 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             )}
           </div>
           <dl>
+            <Ligne libelle="Lien">
+              <EditeurLien key={o.id} offre={o} />
+            </Ligne>
             <Ligne libelle="Lieu">{o.lieu}</Ligne>
             <Ligne libelle="Contrat">{o.contrat}</Ligne>
             <Ligne libelle="Rémunération">{o.remuneration}</Ligne>

@@ -8,7 +8,7 @@ import { RACINE_APP } from '../core/config.ts';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
 import { listerOffres, meta, type OptionsListe } from '../core/requetes.ts';
-import { ajouterStatut, detailOffre, modifierTags, offreParId, tagsOffre } from '../core/offres.ts';
+import { ajouterStatut, detailOffre, modifierLien, modifierTags, offreParId, tagsOffre } from '../core/offres.ts';
 import { estStatut, STATUTS } from '../core/statuts.ts';
 
 const DOSSIER_UI = join(RACINE_APP, 'dist', 'ui');
@@ -96,6 +96,14 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
       ),
     );
     return c.json({ ok: true, tags });
+  });
+
+  app.put('/api/offres/:id/lien', async (c) => {
+    const id = Number(c.req.param('id'));
+    const corps = (await c.req.json()) as { url?: string | null };
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    modifierLien(db, id, corps.url ?? null);
+    return c.json(detailOffre(db, id));
   });
 
   /** Bouton « Candidater » : passe l'offre en go et renvoie la commande à copier. */

@@ -110,6 +110,15 @@ export function offreParUrl(db: Base, url: string): Offre | undefined {
   return db.prepare('SELECT * FROM offres WHERE url_canonique = ?').get(url) as Offre | undefined;
 }
 
+/** Remplace le lien de l'offre (null pour l'effacer). Seules les adresses http(s) sont acceptées. */
+export function modifierLien(db: Base, id: number, url: string | null): void {
+  const propre = url?.trim() || null;
+  if (propre !== null && !/^https?:\/\/\S+$/i.test(propre)) {
+    throw new Error(`Lien invalide (http:// ou https:// attendu) : ${propre}`);
+  }
+  db.prepare('UPDATE offres SET url_canonique = ?, maj_le = ? WHERE id = ?').run(propre, maintenant(), id);
+}
+
 function valeursNettoyees(champs: ChampsOffre): Partial<Record<keyof ChampsOffre, string>> {
   const r: Partial<Record<keyof ChampsOffre, string>> = {};
   for (const k of CHAMPS) {

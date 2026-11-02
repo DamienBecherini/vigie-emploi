@@ -6,7 +6,7 @@ import { ouvrirBase, transaction, type Base } from '../db/base.ts';
 import { ingerer } from '../ingest/ingest.ts';
 import { importerHistorique } from '../import/historique.ts';
 import { listerOffres, type OptionsListe } from '../core/requetes.ts';
-import { ajouterStatut, detailOffre, modifierTags, offreParId, type DetailOffre } from '../core/offres.ts';
+import { ajouterStatut, detailOffre, modifierLien, modifierTags, offreParId, type DetailOffre } from '../core/offres.ts';
 import { entreesDuLot, noterEntree, type EntreeLot } from '../core/notation.ts';
 import { estStatut, LIBELLES_STATUTS, STATUTS, STATUTS_A_TRAITER } from '../core/statuts.ts';
 import { demarrerServeur } from '../api/serveur.ts';
@@ -34,6 +34,7 @@ Commandes
   statut <id> <statut> [--commentaire "…"]
                         Statuts : ${STATUTS.join(', ')}
   tag <id> +ajout -retrait
+  lien <id> <url|->       Enregistre (ou efface avec -) le lien de l'offre
   candidater <id>       Passe l'offre en « go » et affiche tout ce qu'il faut pour préparer la candidature
   serve [--port 4410]   Lance le tableau de bord (http://localhost:4410)
 
@@ -375,6 +376,22 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const tags = modifierTags(db, id, ajouts, retraits);
     if (opts.json) return json({ ok: true, id, tags });
     console.log(`#${id} : ${tags.join(', ') || '(aucun tag)'}`);
+  },
+
+  lien(args) {
+    const { v, pos } = analyser(args, {});
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
+    if (pos[1] === undefined) erreur('lien : URL attendue (ou - pour effacer)');
+    try {
+      modifierLien(db, id, pos[1] === '-' ? null : pos[1]);
+    } catch (e) {
+      erreur((e as Error).message);
+    }
+    const o = offreParId(db, id)!;
+    if (v.json) return json({ ok: true, id, url: o.url_canonique });
+    console.log(`#${id} : ${o.url_canonique ?? '(aucun lien)'}`);
   },
 
   candidater(args) {

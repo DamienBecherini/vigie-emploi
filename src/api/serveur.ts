@@ -8,8 +8,22 @@ import { RACINE_APP } from '../core/config.ts';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
 import { listerOffres, meta, type OptionsListe } from '../core/requetes.ts';
-import { ajouterStatut, detailOffre, modifierLien, modifierTags, offreParId, tagsOffre } from '../core/offres.ts';
+import {
+  ajouterStatut,
+  CHAMPS_CANDIDATURE,
+  detailOffre,
+  modifierLien,
+  modifierTags,
+  offreParId,
+  tagsOffre,
+  type ChampsCandidature,
+} from '../core/offres.ts';
 import { estStatut, STATUTS } from '../core/statuts.ts';
+import { noterOffres, preparerCandidature, suivreCandidature } from '../core/actions.ts';
+import type { EntreeLot } from '../core/notation.ts';
+
+/** Champs de candidature modifiables depuis l'interface. */
+const CHAMPS_EDITABLES = CHAMPS_CANDIDATURE.filter((k) => k !== 'etat' && k !== 'libelle');
 
 const DOSSIER_UI = join(RACINE_APP, 'dist', 'ui');
 
@@ -109,12 +123,34 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
   /** Bouton « Candidater » : passe l'offre en go et renvoie la commande à copier. */
   app.post('/api/offres/:id/candidater', (c) => {
     const id = Number(c.req.param('id'));
-    const o = offreParId(db, id);
-    if (!o) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
-    if (['nouvelle', 'a-lire', 'notee', 'ecartee'].includes(o.statut)) {
-      ajouterStatut(db, id, 'go', { commentaire: 'bouton Candidater', origine: 'interface' });
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    const r = preparerCandidature(db, config.dossierDonnees, id, 'interface');
+    return c.json({ ok: true, commande: `candidater ${id}`, offre: r.offre });
+  });
+
+  /** Saisie ou correction d'une note depuis le panneau de détail (nouvelle entrée d'historique). */
+  app.post('/api/offres/:id/note', async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    const corps = (await c.req.json()) as Pick<EntreeLot, 'note' | 'note_brute' | 'penalites' | 'colle' | 'ecarts'>;
+    const { note, note_brute, penalites, colle, ecarts } = corps;
+    noterOffres(db, [{ id, note, note_brute, penalites, colle, ecarts, lu: true }], 'interface');
+    return c.json(detailOffre(db, id));
+  });
+
+  /** Candidature : prochaine action, date d'envoi, canal… (null ou '' efface un champ, absent = inchangé). */
+  app.put('/api/offres/:id/candidature', async (c) => {
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    const corps = (await c.req.json()) as Record<string, unknown>;
+    const champs: ChampsCandidature = {};
+    for (const k of CHAMPS_EDITABLES) {
+      if (!(k in corps)) continue;
+      const v = corps[k];
+      if (v !== null && typeof v !== 'string') return c.json({ ok: false, erreur: `Champ ${k} : texte attendu` }, 400);
+      champs[k] = v;
     }
-    return c.json({ ok: true, commande: `candidater ${id}`, offre: detailOffre(db, id) });
+    return c.json(suivreCandidature(db, id, champs, 'interface').offre);
   });
 
   app.all('/api/*', (c) => c.json({ ok: false, erreur: 'Route inconnue' }, 404));

@@ -60,14 +60,32 @@ export interface DetailOffre extends Omit<LigneOffre, 'a_description'> {
   description: string | null;
   notes: Note[];
   statuts: LigneStatut[];
-  candidature: {
-    dossier: string | null;
-    cv: string | null;
-    envoyee_le: string | null;
-    canal: string | null;
-    message: string | null;
-  } | null;
+  candidature: Candidature | null;
 }
+
+export interface Candidature {
+  dossier: string | null;
+  cv: string | null;
+  envoyee_le: string | null;
+  canal: string | null;
+  message: string | null;
+  prochaine_action: string | null;
+  prochaine_action_origine: string | null;
+  libelle: string | null;
+  conditions: string | null;
+  etat: string | null;
+  maj_le: string | null;
+}
+
+export interface SaisieNote {
+  note: number | null;
+  note_brute: number | null;
+  penalites: string;
+  colle: string;
+  ecarts: string;
+}
+
+export type SaisieCandidature = Partial<Record<'prochaine_action' | 'envoyee_le' | 'canal' | 'dossier' | 'cv' | 'conditions', string | null>>;
 
 export interface Meta {
   total: number;
@@ -97,6 +115,10 @@ export const api = {
     appel<{ tags: string[] }>(`/api/offres/${id}/tags`, { method: 'PUT', body: JSON.stringify({ tags }) }),
   lien: (id: number, url: string | null) =>
     appel<DetailOffre>(`/api/offres/${id}/lien`, { method: 'PUT', body: JSON.stringify({ url }) }),
+  noter: (id: number, n: SaisieNote) =>
+    appel<DetailOffre>(`/api/offres/${id}/note`, { method: 'POST', body: JSON.stringify(n) }),
+  candidature: (id: number, c: SaisieCandidature) =>
+    appel<DetailOffre>(`/api/offres/${id}/candidature`, { method: 'PUT', body: JSON.stringify(c) }),
   candidater: (id: number) =>
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
 };

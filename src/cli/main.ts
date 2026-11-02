@@ -2,13 +2,23 @@
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { chargerConfig, type Config } from '../core/config.ts';
-import { ouvrirBase, transaction, type Base } from '../db/base.ts';
-import { ingerer } from '../ingest/ingest.ts';
+import { ouvrirBase, type Base } from '../db/base.ts';
+import { ingererSelonConfig } from '../ingest/ingest.ts';
 import { importerHistorique } from '../import/historique.ts';
 import { listerOffres, type OptionsListe } from '../core/requetes.ts';
-import { ajouterStatut, detailOffre, modifierLien, modifierTags, offreParId, type DetailOffre } from '../core/offres.ts';
-import { entreesDuLot, noterEntree, type EntreeLot } from '../core/notation.ts';
-import { estStatut, LIBELLES_STATUTS, STATUTS, STATUTS_A_TRAITER } from '../core/statuts.ts';
+import {
+  ajouterStatut,
+  detailOffre,
+  modifierLien,
+  modifierTags,
+  offreParId,
+  type ChampsCandidature,
+  type DetailOffre,
+} from '../core/offres.ts';
+import { entreesDuLot, type EntreeLot } from '../core/notation.ts';
+import { noterOffres, offresALire, preparerCandidature, suivreCandidature } from '../core/actions.ts';
+import { estStatut, LIBELLES_STATUTS, STATUTS } from '../core/statuts.ts';
+import { ecrireSuivi } from '../export/suivi.ts';
 import { demarrerServeur } from '../api/serveur.ts';
 
 const AIDE = `cap-emploi — offres, notes et candidatures (base SQLite locale)
@@ -36,7 +46,17 @@ Commandes
   tag <id> +ajout -retrait
   lien <id> <url|->       Enregistre (ou efface avec -) le lien de l'offre
   candidater <id>       Passe l'offre en « go » et affiche tout ce qu'il faut pour préparer la candidature
+  candidature <id> [--dossier d] [--cv f] [--canal c] [--envoyee-le JJ/MM/AAAA] [--message m]
+                   [--prochaine-action "…"]
+                        Enregistre la candidature (option vide "" pour effacer un champ) ;
+                        avec --envoyee-le, l'offre passe en « envoyee »
+  prochaine-action <id> "texte"
+                        Prochaine action de la candidature ("" ou - pour l'effacer)
+  generer-suivi [--sortie <fichier>] [--remplacer]
+                        Génère le suivi des candidatures depuis la base : par défaut
+                        candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
   serve [--port 4410]   Lance le tableau de bord (http://localhost:4410)
+  mcp                   Serveur MCP (transport stdio) pour piloter cap-emploi depuis une IA
 
 Options générales
   --data <dossier>      Dossier de données (sinon CAP_EMPLOI_DATA ou cap-emploi.config.json)
@@ -137,6 +157,7 @@ function afficherDetail(d: DetailOffre): string {
   if (d.candidature) {
     const c = d.candidature;
     l.push('', `Candidature : ${[c.dossier, c.canal, c.envoyee_le && `envoyée le ${c.envoyee_le}`].filter(Boolean).join(' · ')}`);
+    if (c.prochaine_action) l.push(`Prochaine action : ${c.prochaine_action}`);
   }
   if (d.statuts.length) {
     l.push('', 'Historique des statuts :');
@@ -146,31 +167,22 @@ function afficherDetail(d: DetailOffre): string {
   return l.join('\n');
 }
 
-function slug(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/\b(h\/f|f\/h|h-f|f-h)\b/g, ' ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .split('-')
-    .slice(0, 6)
-    .join('-');
+function sansErreur<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (e) {
+    erreur((e as Error).message);
+  }
 }
 
 const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   async ingest(args) {
     const { v } = analyser(args, { keep: { type: 'boolean' }, fetch: { type: 'boolean' }, emails: { type: 'string' } });
     const { config, db } = contexte(v);
-    const r = await ingerer(db, {
-      dossierEmails: (v.emails as string | undefined) ?? config.emails,
+    const r = await ingererSelonConfig(db, config, {
+      dossierEmails: v.emails as string | undefined,
       garder: Boolean(v.keep),
-      telecharger: v.fetch === false ? false : config.telechargerJsonLd,
-      titresExclus: config.titresExclus,
-      employeursRefuses: config.employeursRefuses,
-      pause: 400,
+      telecharger: v.fetch === false ? false : undefined,
     });
     if (v.json) return json(r);
     console.log(
@@ -193,12 +205,16 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     );
     console.log(
       `Registre : ${r.registre.lignes} ligne(s), ${r.registre.offres} offre(s) dont ${r.registre.offres_creees} créée(s) ` +
-        `(${r.registre.offres_sans_lien} sans lien), ${r.registre.statuts_ajoutes} statut(s), ${r.registre.notes_ajoutees} note(s).`,
+        `(${r.registre.offres_sans_lien} sans lien), ${r.registre.statuts_ajoutes} statut(s), ${r.registre.notes_ajoutees} note(s), ` +
+        `${r.registre.entreprises_corrigees} entreprise(s) corrigée(s).`,
     );
-    console.log(
-      `Suivi : ${r.suivi.lignes} ligne(s), ${r.suivi.offres_creees} offre(s) créée(s), ${r.suivi.candidatures} candidature(s), ` +
-        `${r.suivi.statuts_ajoutes} statut(s).`,
-    );
+    if (r.suivi.ignore) console.log(`Suivi : non relu (${r.suivi.ignore}).`);
+    else
+      console.log(
+        `Suivi : ${r.suivi.lignes} ligne(s), ${r.suivi.offres_creees} offre(s) créée(s), ${r.suivi.candidatures} candidature(s), ` +
+          `${r.suivi.statuts_ajoutes} statut(s).`,
+      );
+    for (const f of r.suivi.fusions) console.log(`  doublon fusionné : #${f.doublon} → #${f.offre} (${f.entreprise})`);
     const non = [...r.lots.erreurs, ...r.registre.non_reconnues, ...r.suivi.non_reconnues];
     if (non.length) {
       console.log(`Lignes non reconnues (${non.length}) :`);
@@ -283,32 +299,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   'a-lire'(args) {
     const { v } = analyser(args, { limite: { type: 'string' }, complet: { type: 'boolean' } });
     const { db } = contexte(v);
-    const r = listerOffres(db, {
-      statuts: STATUTS_A_TRAITER,
-      sansNote: true,
-      taille: v.limite ? entier(v.limite, 'limite') : 500,
-      tri: 'id',
-      ordre: 'asc',
-    });
-    const offres = r.offres.map((o) => {
-      const d = offreParId(db, o.id)!;
-      const lecture = d.description ? 'description' : o.source === 'glassdoor' ? 'humain' : 'navigateur';
-      return {
-        id: o.id,
-        source: o.source,
-        url: o.url_canonique,
-        titre: o.titre,
-        entreprise: o.entreprise,
-        lieu: o.lieu,
-        contrat: o.contrat,
-        remuneration: o.remuneration,
-        teletravail: o.teletravail,
-        recue_le: o.recue_le,
-        lecture,
-        description: d.description ? (v.complet ? d.description : tronquer(d.description, 2500)) : null,
-      };
-    });
-    if (v.json) return json({ total: r.total, offres });
+    const r = offresALire(db, { limite: v.limite ? entier(v.limite, 'limite') : 500, complet: Boolean(v.complet) });
+    const offres = r.offres;
+    if (v.json) return json(r);
     if (!offres.length) return console.log('Aucune offre à lire.');
     for (const o of offres) {
       const mode = { description: 'description extraite', navigateur: 'à lire dans le navigateur', humain: 'page protégée : demander le texte' }[o.lecture];
@@ -333,13 +326,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
         entrees[0] = { ...entrees[0], id: entier(pos[0], 'id') };
       }
     }
-    const resultats = transaction(db, () =>
-      entrees.map((e) => {
-        const r = noterEntree(db, e, { origine: 'cli', origineOffre: 'manuel' });
-        if (Array.isArray(e.tags) && e.tags.length) modifierTags(db, r.id, e.tags, []);
-        return r;
-      }),
-    );
+    const resultats = sansErreur(() => noterOffres(db, entrees, 'cli'));
     json({ ok: true, notees: resultats.length, offres: resultats });
   },
 
@@ -398,28 +385,63 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { v, pos } = analyser(args, {});
     const { config, db } = contexte(v);
     const id = entier(pos[0], 'id');
-    const avant = offreParId(db, id);
-    if (!avant) erreur(`Offre ${id} introuvable`);
-    if (['nouvelle', 'a-lire', 'notee', 'ecartee'].includes(avant.statut)) {
-      ajouterStatut(db, id, 'go', { commentaire: 'candidater', origine: 'cli' });
-    }
-    const d = detailOffre(db, id)!;
-    const dossier = d.candidature?.dossier ?? `candidatures/${slug(`${d.entreprise ?? d.source} ${d.titre}`)}`;
-    const r = {
-      offre: d,
-      dossier_donnees: config.dossierDonnees,
-      dossier_suggere: dossier,
-      etapes: [
-        `Relire l'offre (${d.url_canonique ?? 'sans URL'}) et la note enregistrée`,
-        'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
-        `Créer le dossier ${dossier} avec l'annonce, le fit, les écarts et les messages`,
-        `Après l'envoi : cap-emploi statut ${id} envoyee --commentaire "canal, date"`,
-      ],
-    };
+    const r = sansErreur(() => preparerCandidature(db, config.dossierDonnees, id, 'cli'));
     if (v.json) return json(r);
-    console.log(afficherDetail(d));
-    console.log(`\nDossier suggéré : ${dossier}`);
+    console.log(afficherDetail(r.offre));
+    console.log(`\nDossier suggéré : ${r.dossier_suggere}`);
     console.log(r.etapes.map((e, i) => `${i + 1}. ${e}`).join('\n'));
+  },
+
+  candidature(args) {
+    const { v, pos } = analyser(args, {
+      dossier: { type: 'string' },
+      cv: { type: 'string' },
+      canal: { type: 'string' },
+      'envoyee-le': { type: 'string' },
+      message: { type: 'string' },
+      'prochaine-action': { type: 'string' },
+    });
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    const champs: ChampsCandidature = {
+      dossier: v.dossier as string | undefined,
+      cv: v.cv as string | undefined,
+      canal: v.canal as string | undefined,
+      envoyee_le: v['envoyee-le'] as string | undefined,
+      message: v.message as string | undefined,
+      prochaine_action: v['prochaine-action'] as string | undefined,
+    };
+    if (Object.values(champs).every((x) => x === undefined)) erreur('candidature : au moins une option attendue (--dossier, --canal…)');
+    const r = sansErreur(() => suivreCandidature(db, id, champs, 'cli'));
+    if (v.json) return json({ ok: true, id, statut: r.offre.statut, statut_ajoute: r.statut_ajoute, candidature: r.offre.candidature });
+    console.log(afficherDetail(r.offre).split('\n\nDescription :')[0]);
+  },
+
+  'prochaine-action'(args) {
+    const { v, pos } = analyser(args, {});
+    const { db } = contexte(v);
+    const id = entier(pos[0], 'id');
+    if (pos[1] === undefined) erreur('prochaine-action : texte attendu ("" ou - pour effacer)');
+    const texte = pos.slice(1).join(' ');
+    const r = sansErreur(() => suivreCandidature(db, id, { prochaine_action: texte === '-' ? null : texte }, 'cli'));
+    const action = r.offre.candidature?.prochaine_action ?? null;
+    if (v.json) return json({ ok: true, id, prochaine_action: action });
+    console.log(`#${id} : ${action ?? '(aucune prochaine action)'}`);
+  },
+
+  'generer-suivi'(args) {
+    const { v } = analyser(args, { sortie: { type: 'string', short: 'o' }, remplacer: { type: 'boolean' } });
+    const { config, db } = contexte(v);
+    const r = ecrireSuivi(db, config.dossierDonnees, { sortie: v.sortie as string | undefined, remplacer: Boolean(v.remplacer) });
+    if (v.json) return json({ ok: true, ...r });
+    console.log(`${r.fichier} : ${r.en_cours} en cours, ${r.sans_suite} envoyée(s) sans suite, ${r.closes} close(s).`);
+  },
+
+  async mcp(args) {
+    const { v } = analyser(args, {});
+    const { config, db } = contexte(v);
+    const { demarrerMcp } = await import('../mcp/serveur.ts');
+    await demarrerMcp(db, config);
   },
 
   async serve(args) {

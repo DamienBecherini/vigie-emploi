@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Base } from '../db/base.ts';
+import type { Config } from '../core/config.ts';
 import { transaction } from '../db/base.ts';
 import { SOURCES_JSONLD } from '../core/liens.ts';
 import { ajouterStatut, enregistrerOffre, modifierTags, offresDeLEntreprise, trouverOffre } from '../core/offres.ts';
@@ -194,4 +195,20 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     }
   }
   return resume;
+}
+
+/** Ingestion avec les réglages de la configuration (CLI et MCP). */
+export function ingererSelonConfig(
+  db: Base,
+  config: Pick<Config, 'emails' | 'telechargerJsonLd' | 'titresExclus' | 'employeursRefuses'>,
+  o: { garder?: boolean; telecharger?: boolean; dossierEmails?: string } = {},
+): Promise<ResumeIngest> {
+  return ingerer(db, {
+    dossierEmails: o.dossierEmails ?? config.emails,
+    garder: Boolean(o.garder),
+    telecharger: o.telecharger === false ? false : config.telechargerJsonLd,
+    titresExclus: config.titresExclus,
+    employeursRefuses: config.employeursRefuses,
+    pause: 400,
+  });
 }

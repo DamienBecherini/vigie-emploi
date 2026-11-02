@@ -16,6 +16,9 @@
 | 01/11/2026 | Lot d'alertes (2 offres) | Epsilon — Développeur PHP H/F ([offre](https://www.glassdoor.fr/job-listing/?jl=1010000000001)) · Zêta — Lead Dev - Paris ( ([offre](https://www.free-work.com/fr/tech-it/job-mission/developpeur-php/lead-dev-paris-3)) | Divers | 4 à 7/10 | Sans go |
 | 25/10/2026 | **Êta** | Développeur ([offre](https://www.linkedin.com/jobs/view/4200000004/)) · Fullstack ([offre](https://www.linkedin.com/jobs/view/4200000005/)) | Paris, 44-57 K€ · 45-75 K€ | 6 et 5,5/10 | Sans go |
 | — | Thêta | Support L2 | — | — | Hors axe |
+| 24/10/2026 | **Omega** (×2) / **Psi** | Postes Staff ([offre](https://www.linkedin.com/jobs/view/4200000010/), [offre](https://www.linkedin.com/jobs/view/4200000011/), [offre](https://www.linkedin.com/jobs/view/4200000012/)) | Paris | ≤ 2,5/10 | Niveau Staff |
+| 24/10/2026 | **Rho** / **Sigma** / **Tau** | Divers ([offre](https://www.linkedin.com/jobs/view/4200000013/), [offre](https://www.linkedin.com/jobs/view/4200000014/)) | IDF | 1/10 | Hors cible |
+| 24/10/2026 | **Upsilon**, **Phi** | Dev ([offre](https://www.linkedin.com/jobs/view/4200000015/)) · Ops ([offre](https://www.linkedin.com/jobs/view/4200000016/)) | — | 2 · 3 | Hors cible |
 | 20/10/2026 | Iota | Webmaster ([offre](https://www.welcometothejungle.com/fr/companies/iota/jobs/webmaster)) | Paris | 3/10 | Hors cible |
 
 Ligne de texte hors tableau.

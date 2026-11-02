@@ -110,4 +110,28 @@ describe('liste paginée', () => {
     expect(c.commande).toBe(`candidater ${id}`);
     expect((await app.request('/api/offres/999999')).status).toBe(404);
   });
+
+  it('API : saisie de la note et de la candidature depuis l’interface', async () => {
+    const app = creerApp(db, { dossierDonnees: '/tmp' });
+    const id = (db.prepare("SELECT id FROM offres WHERE source = 'hellowork' ORDER BY id LIMIT 1").get() as { id: number }).id;
+    const envoyer = (chemin: string, method: string, corps: unknown) =>
+      app.request(`/api/offres/${id}/${chemin}`, { method, body: JSON.stringify(corps), headers: { 'Content-Type': 'application/json' } });
+    const n = (await (await envoyer('note', 'POST', { note: 5.5, note_brute: 6, penalites: '-0,5 trajet', colle: 'PHP', ecarts: 'sur site' })).json()) as {
+      note: number;
+      notes: { note: number; origine: string; colle: string }[];
+    };
+    expect(n.note).toBe(5.5);
+    expect(n.notes[0]).toMatchObject({ note: 5.5, origine: 'interface', colle: 'PHP' });
+    expect((await envoyer('note', 'POST', { note: 11 })).status).toBe(400);
+
+    const c = (await (await envoyer('candidature', 'PUT', { prochaine_action: 'Relancer le 10/11', canal: 'Hellowork', envoyee_le: '03/11/2026' })).json()) as {
+      statut: string;
+      candidature: { prochaine_action: string; prochaine_action_origine: string; envoyee_le: string };
+    };
+    expect(c.statut).toBe('envoyee');
+    expect(c.candidature).toMatchObject({ prochaine_action: 'Relancer le 10/11', prochaine_action_origine: 'interface', envoyee_le: '2026-11-03' });
+    const efface = (await (await envoyer('candidature', 'PUT', { prochaine_action: null })).json()) as { candidature: { prochaine_action: null } };
+    expect(efface.candidature.prochaine_action).toBeNull();
+    expect((await envoyer('candidature', 'PUT', { canal: 3 })).status).toBe(400);
+  });
 });

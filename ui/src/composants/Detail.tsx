@@ -131,6 +131,216 @@ function EditeurLien({ offre }: { offre: DetailOffre }) {
   );
 }
 
+/** « 6,5 » ou « 6.5 » → 6.5 ; vide → null ; texte invalide → NaN (refusé avant l'envoi). */
+function lireNombre(s: string): number | null {
+  const t = s.trim().replace(',', '.');
+  return t === '' ? null : Number(t);
+}
+
+function useRafraichir(id: number) {
+  const client = useQueryClient();
+  return (d: DetailOffre) => {
+    client.setQueryData(['offre', id], d);
+    client.invalidateQueries({ queryKey: ['offres'] });
+    client.invalidateQueries({ queryKey: ['meta'] });
+  };
+}
+
+/** Saisie ou correction de la note : ajoute une entrée à l'historique (origine « interface »). */
+function EditeurNote({ offre }: { offre: DetailOffre }) {
+  const n = offre.notes[0];
+  const base = useId();
+  const rafraichir = useRafraichir(offre.id);
+  const [edition, setEdition] = useState(false);
+  const initial = () => ({
+    note: n?.note === null || n?.note === undefined ? '' : formaterNote(n.note),
+    note_brute: n?.note_brute === null || n?.note_brute === undefined ? '' : formaterNote(n.note_brute),
+    penalites: n?.penalites ?? '',
+    colle: n?.colle ?? '',
+    ecarts: n?.ecarts ?? '',
+  });
+  const [s, setS] = useState(initial);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const maj = useMutation({
+    mutationFn: () => {
+      const note = lireNombre(s.note);
+      const brute = lireNombre(s.note_brute);
+      for (const [nom, v] of [
+        ['Note', note],
+        ['Note brute', brute],
+      ] as const) {
+        if (v !== null && (!Number.isFinite(v) || v < 0 || v > 10)) throw new Error(`${nom} : nombre de 0 à 10 attendu`);
+      }
+      if (note === null) throw new Error('Note finale attendue');
+      return api.noter(offre.id, { note, note_brute: brute, penalites: s.penalites, colle: s.colle, ecarts: s.ecarts });
+    },
+    onSuccess: (d) => {
+      rafraichir(d);
+      setEdition(false);
+      setErreur(null);
+    },
+    onError: (e) => setErreur((e as Error).message),
+  });
+  if (!edition) {
+    return (
+      <button
+        type="button"
+        className="bouton mt-2"
+        onClick={() => {
+          setS(initial());
+          setErreur(null);
+          setEdition(true);
+        }}
+      >
+        {n ? 'Corriger la note' : 'Noter'}
+      </button>
+    );
+  }
+  const champ = (cle: keyof ReturnType<typeof initial>, libelle: string, opts: { court?: boolean; long?: boolean } = {}) => (
+    <div className={opts.court ? 'w-28 shrink-0' : 'w-full'}>
+      <label htmlFor={`${base}-${cle}`} className="etiquette">
+        {libelle}
+      </label>
+      {opts.long ? (
+        <textarea id={`${base}-${cle}`} className="champ min-h-16" value={s[cle]} onChange={(e) => setS({ ...s, [cle]: e.target.value })} />
+      ) : (
+        <input
+          id={`${base}-${cle}`}
+          className="champ"
+          inputMode={opts.court ? 'decimal' : undefined}
+          value={s[cle]}
+          onChange={(e) => setS({ ...s, [cle]: e.target.value })}
+        />
+      )}
+    </div>
+  );
+  return (
+    <form
+      className="mt-2 flex flex-col gap-2 rounded-md border border-slate-300 p-3 dark:border-slate-600"
+      aria-label="Saisie de la note"
+      onSubmit={(e) => {
+        e.preventDefault();
+        maj.mutate();
+      }}
+    >
+      <div className="flex flex-wrap gap-2">
+        {champ('note', 'Note /10', { court: true })}
+        {champ('note_brute', 'Note brute', { court: true })}
+        <div className="min-w-40 flex-1">{champ('penalites', 'Pénalités')}</div>
+      </div>
+      {champ('colle', 'Ce qui colle', { long: true })}
+      {champ('ecarts', 'Écarts', { long: true })}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" className="bouton-principal" disabled={maj.isPending}>
+          Enregistrer la note
+        </button>
+        <button type="button" className="bouton" onClick={() => setEdition(false)}>
+          Annuler
+        </button>
+        {erreur && (
+          <span role="alert" className="text-sm text-rose-700 dark:text-rose-300">
+            {erreur}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+}
+
+type SaisieSuivi = { prochaine_action: string; envoyee_le: string; canal: string };
+
+function suiviInitial(offre: DetailOffre): SaisieSuivi {
+  const c = offre.candidature;
+  return {
+    prochaine_action: c?.prochaine_action ?? '',
+    envoyee_le: c?.envoyee_le ? formaterDate(c.envoyee_le) : '',
+    canal: c?.canal ?? '',
+  };
+}
+
+/** Suivi de la candidature : prochaine action, date d'envoi, canal. */
+function EditeurCandidature({ offre }: { offre: DetailOffre }) {
+  const base = useId();
+  const rafraichir = useRafraichir(offre.id);
+  const initial = suiviInitial(offre);
+  const [s, setS] = useState(initial);
+  const [message, setMessage] = useState<string | null>(null);
+  const cle = JSON.stringify(initial);
+  useEffect(() => setS(JSON.parse(cle) as SaisieSuivi), [cle]);
+  const maj = useMutation({
+    mutationFn: () => {
+      // Seulement ce qui a changé : une date d'envoi inchangée ne refait pas passer l'offre en « envoyée ».
+      const champs: Record<string, string | null> = {};
+      for (const k of ['prochaine_action', 'envoyee_le', 'canal'] as const) {
+        if (s[k].trim() !== initial[k].trim()) champs[k] = s[k].trim() || null;
+      }
+      return api.candidature(offre.id, champs);
+    },
+    onSuccess: (d) => {
+      rafraichir(d);
+      setMessage('Candidature enregistrée.');
+    },
+    onError: (e) => setMessage((e as Error).message),
+  });
+  const modifie = JSON.stringify(s) !== cle;
+  return (
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        maj.mutate();
+      }}
+    >
+      <div>
+        <label htmlFor={`${base}-action`} className="etiquette">
+          Prochaine action
+        </label>
+        <textarea
+          id={`${base}-action`}
+          className="champ min-h-16"
+          placeholder="Relancer le …, au 1er contact : …"
+          value={s.prochaine_action}
+          onChange={(e) => setS({ ...s, prochaine_action: e.target.value })}
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <div className="w-40 shrink-0">
+          <label htmlFor={`${base}-envoi`} className="etiquette">
+            Envoyée le
+          </label>
+          <input
+            id={`${base}-envoi`}
+            className="champ"
+            placeholder="JJ/MM/AAAA"
+            value={s.envoyee_le}
+            onChange={(e) => setS({ ...s, envoyee_le: e.target.value })}
+            aria-describedby={`${base}-aide-envoi`}
+          />
+        </div>
+        <div className="min-w-40 flex-1">
+          <label htmlFor={`${base}-canal`} className="etiquette">
+            Canal
+          </label>
+          <input id={`${base}-canal`} className="champ" value={s.canal} onChange={(e) => setS({ ...s, canal: e.target.value })} />
+        </div>
+      </div>
+      <p id={`${base}-aide-envoi`} className="text-xs text-slate-600 dark:text-slate-400">
+        Une date d'envoi fait passer une offre pas encore envoyée en « Envoyée ». Un champ vidé est effacé.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" className="bouton" disabled={maj.isPending || !modifie}>
+          Enregistrer la candidature
+        </button>
+        {message && (
+          <span role="status" className="text-sm text-slate-700 dark:text-slate-300">
+            {message}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+}
+
 function ChangementStatut({ offre }: { offre: DetailOffre }) {
   const client = useQueryClient();
   const idStatut = useId();
@@ -272,13 +482,6 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             <Ligne libelle="Source">{`${o.source} · ${o.id_site}`}</Ligne>
             <Ligne libelle="Reçue le">{formaterDate(o.recue_le)}</Ligne>
             <Ligne libelle="Publiée le">{o.publiee_le ? formaterDate(o.publiee_le) : null}</Ligne>
-            {o.candidature && (
-              <>
-                <Ligne libelle="Dossier">{o.candidature.dossier}</Ligne>
-                <Ligne libelle="Canal">{o.candidature.canal}</Ligne>
-                <Ligne libelle="Envoyée le">{o.candidature.envoyee_le ? formaterDate(o.candidature.envoyee_le) : null}</Ligne>
-              </>
-            )}
           </dl>
 
           <section aria-labelledby={`${titre}-note`}>
@@ -312,6 +515,21 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             ) : (
               <p className="text-sm text-slate-600 dark:text-slate-400">Pas encore notée.</p>
             )}
+            <EditeurNote key={o.id} offre={o} />
+          </section>
+
+          <section aria-labelledby={`${titre}-candidature`}>
+            <h3 id={`${titre}-candidature`} className="mb-2 font-bold">
+              Candidature
+            </h3>
+            {o.candidature && (
+              <dl className="mb-2">
+                <Ligne libelle="Dossier">{o.candidature.dossier}</Ligne>
+                <Ligne libelle="CV">{o.candidature.cv}</Ligne>
+                <Ligne libelle="Conditions">{o.candidature.conditions}</Ligne>
+              </dl>
+            )}
+            <EditeurCandidature key={o.id} offre={o} />
           </section>
 
           <section aria-labelledby={`${titre}-tags`}>

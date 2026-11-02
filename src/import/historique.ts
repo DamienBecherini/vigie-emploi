@@ -9,15 +9,19 @@ import { entreesDuLot, noterEntree } from '../core/notation.ts';
 import {
   ajouterNote,
   ajouterStatut,
+  candidatureDe,
   enregistrerCandidature,
   enregistrerOffre,
+  fusionnerOffres,
   modifierTags,
-
+  trouverOffre,
   type ChampsOffre,
+  type Offre,
 } from '../core/offres.ts';
 import type { Statut } from '../core/statuts.ts';
-import { dateFr, empreinte, maintenant, sansMarkdown, trouverRemuneration } from '../core/texte.ts';
+import { dateFr, empreinte, estVide, maintenant, sansMarkdown, trouverRemuneration } from '../core/texte.ts';
 import { decouper, liensMarkdown, lignesTableaux, type LigneTableau } from './markdown.ts';
+import { MARQUE_SUIVI_GENERE } from '../export/suivi.ts';
 
 export interface LigneNonReconnue {
   fichier: string;
@@ -33,6 +37,7 @@ export interface RapportImport {
     offres: number;
     offres_creees: number;
     offres_sans_lien: number;
+    entreprises_corrigees: number;
     statuts_ajoutes: number;
     notes_ajoutees: number;
     liens_non_reconnus: { ligne: number; url: string }[];
@@ -42,6 +47,9 @@ export interface RapportImport {
     lignes: number;
     offres_creees: number;
     candidatures: number;
+    /** Raison pour laquelle _SUIVI.md n'a pas été relu (fichier généré). */
+    ignore?: string;
+    fusions: { offre: number; doublon: number; entreprise: string }[];
     statuts_ajoutes: number;
     notes_ajoutees: number;
     non_reconnues: LigneNonReconnue[];
@@ -58,12 +66,13 @@ function rapportVide(): RapportImport {
       offres: 0,
       offres_creees: 0,
       offres_sans_lien: 0,
+      entreprises_corrigees: 0,
       statuts_ajoutes: 0,
       notes_ajoutees: 0,
       liens_non_reconnus: [],
       non_reconnues: [],
     },
-    suivi: { lignes: 0, offres_creees: 0, candidatures: 0, statuts_ajoutes: 0, notes_ajoutees: 0, non_reconnues: [] },
+    suivi: { lignes: 0, offres_creees: 0, candidatures: 0, fusions: [], statuts_ajoutes: 0, notes_ajoutees: 0, non_reconnues: [] },
   };
 }
 
@@ -162,6 +171,40 @@ interface OffreRegistre {
   note: number | null;
 }
 
+/**
+ * Entreprises d'une cellule groupée du registre : séparées par « · » ou « / », sinon une par bloc en gras
+ * (« **A** (filiale), **B** »). `pieces` : une entrée par entreprise ; `parOffre` : « (×3) » compte trois fois.
+ */
+export function entreprisesDeCellule(cellule: string): { pieces: string[]; parOffre: string[] } {
+  let pieces = decouper(cellule, ' · ');
+  if (pieces.length < 2) pieces = decouper(cellule, ' / ');
+  if (pieces.length < 2) {
+    const gras = [...cellule.matchAll(/\*\*[^*]+\*\*/g)];
+    if (gras.length >= 2) {
+      pieces = gras.map((m, i) =>
+        cellule
+          .slice(m.index, gras[i + 1]?.index ?? cellule.length)
+          .replace(/[\s,;]+$/, '')
+          .replace(/\s+(et|and)$/i, ''),
+      );
+    }
+  }
+  const MULTIPLE = /\s*\(\s*[×x]\s*(\d+)\s*\)/i;
+  const parOffre: string[] = [];
+  const noms = pieces.map((p) => {
+    const fois = p.match(MULTIPLE);
+    const nom = sansMarkdown(p.replace(MULTIPLE, ''));
+    for (let i = 0; i < (fois ? Number(fois[1]) : 1); i++) parOffre.push(nom);
+    return nom;
+  });
+  return { pieces: noms, parOffre };
+}
+
+const cleLien = (url: string): string | null => {
+  const id = canoniser(url);
+  return id ? `${id.source}:${id.idSite}` : null;
+};
+
 export function offresDeLigneRegistre(l: LigneTableau): { offres: OffreRegistre[]; liensIgnores: string[] } {
   const entreprise = colonne(l, 'entreprise') ?? '';
   const poste = colonne(l, 'poste') ?? '';
@@ -169,8 +212,12 @@ export function offresDeLigneRegistre(l: LigneTableau): { offres: OffreRegistre[
   const notes = notesDeCellule(colonne(l, 'note') ?? '');
   const segments = decouper(poste, ' · ');
   const estLot = /^lot\b/i.test(sansMarkdown(entreprise));
-  let entreprises = decouper(entreprise, ' · ');
-  if (entreprises.length < 2) entreprises = decouper(entreprise, ' / ');
+  const { pieces: entreprises, parOffre } = entreprisesDeCellule(entreprise);
+  // Sinon, une entreprise par lien d'offre (dans l'ordre) quand les nombres concordent ; à défaut, la cellule entière.
+  const liensPoste = new Set(segments.flatMap((seg) => liensMarkdown(seg).map((x) => cleLien(x.url)).filter((x) => x !== null)));
+  const parSegment = entreprises.length === segments.length;
+  const parLien = !estLot && !parSegment && parOffre.length > 1 && parOffre.length === liensPoste.size;
+  let rang = 0;
   const conds = decouper(conditions, ' · ');
   const offres: OffreRegistre[] = [];
   const liensIgnores: string[] = [];
@@ -178,7 +225,7 @@ export function offresDeLigneRegistre(l: LigneTableau): { offres: OffreRegistre[
 
   segments.forEach((seg, k) => {
     const texte = sansMarkdown(sansListeDeLiens(seg));
-    let ent = entreprises.length === segments.length ? sansMarkdown(entreprises[k]) : sansMarkdown(entreprise);
+    let ent = parSegment ? entreprises[k] : sansMarkdown(entreprise);
     let titre = texte;
     if (estLot && texte.includes(' — ')) {
       const i = texte.indexOf(' — ');
@@ -196,7 +243,8 @@ export function offresDeLigneRegistre(l: LigneTableau): { offres: OffreRegistre[
       const cle = `${id.source}:${id.idSite}`;
       if (vus.has(cle)) continue;
       vus.add(cle);
-      offres.push({ source: id.source, idSite: id.idSite, url: id.url, titre, entreprise: ent, conditions: cond, note });
+      const entLien = parLien ? parOffre[rang++] : ent;
+      offres.push({ source: id.source, idSite: id.idSite, url: id.url, titre, entreprise: entLien, conditions: cond, note });
     }
   });
   // Liens placés dans les autres colonnes (entreprise, conditions).
@@ -269,6 +317,12 @@ function importerRegistre(db: Base, dossier: string, rapport: RapportImport): vo
           'import-registre',
         );
         if (creee) R.offres_creees++;
+        // Reprise d'une ancienne version : la cellule groupée entière avait été prise comme entreprise.
+        const celluleEntiere = [sansMarkdown(entreprise), sansMarkdown(sansListeDeLiens(entreprise))];
+        if (!creee && offre.entreprise !== o.entreprise && celluleEntiere.includes(offre.entreprise ?? '')) {
+          db.prepare('UPDATE offres SET entreprise = ?, maj_le = ? WHERE id = ?').run(o.entreprise, maintenant(), offre.id);
+          R.entreprises_corrigees++;
+        }
         if (o.note !== null && !db.prepare('SELECT 1 FROM notes WHERE offre_id = ?').get(offre.id)) {
           ajouterNote(db, offre.id, { note: o.note, ecarts: raison || null }, { origine: 'import-registre', le: le ?? maintenant() });
           R.notes_ajoutees++;
@@ -312,11 +366,42 @@ function offreDuDossier(dossierDonnees: string, cheminRelatif: string): ReturnTy
   return null;
 }
 
+const normaliser = (s: string | null | undefined) =>
+  (s ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/** Mots de 4 lettres ou plus (« cofondateur », « wordpress »…), pour comparer deux intitulés. */
+const mots = (s: string) => new Set(normaliser(s).split(' ').filter((m) => m.length >= 4));
+
+/**
+ * Offre sans lien du registre (source « registre ») de la même entreprise, dont l'intitulé partage au moins
+ * un mot avec celui du suivi. Seulement si elle est unique : sinon, pas de rattachement.
+ */
+export function jumelleDuRegistre(db: Base, entreprise: string, titre: string): Offre | null {
+  const ent = normaliser(entreprise);
+  if (!ent) return null;
+  const motsTitre = mots(titre);
+  const candidates = (db.prepare("SELECT * FROM offres WHERE source = 'registre'").all() as unknown as Offre[]).filter(
+    (o) => normaliser(o.entreprise) === ent && [...mots(o.titre)].some((m) => motsTitre.has(m)),
+  );
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
 function importerSuivi(db: Base, dossier: string, rapport: RapportImport): void {
   const chemin = join(dossier, 'candidatures', '_SUIVI.md');
   if (!existsSync(chemin)) return;
   const S = rapport.suivi;
-  const lignes = lignesTableaux(readFileSync(chemin, 'utf8'));
+  const texte = readFileSync(chemin, 'utf8');
+  // Après la bascule, _SUIVI.md est produit par generer-suivi : la base fait foi, on ne le relit pas.
+  if (MARQUE_SUIVI_GENERE.test(texte.slice(0, 600))) {
+    S.ignore = 'fichier généré par cap-emploi : la base fait foi';
+    return;
+  }
+  const lignes = lignesTableaux(texte);
   transaction(db, () => {
     for (const l of lignes) {
       const cellOffre = colonne(l, 'offre');
@@ -341,8 +426,22 @@ function importerSuivi(db: Base, dossier: string, rapport: RapportImport): void 
       const issue = colonne(l, 'issue') ?? '';
       const envoyeeLe = dateFr(envoye);
 
-      const source = id?.source ?? 'suivi';
-      const idSite = id?.idSite ?? `suivi-${dossierRel ? posix.basename(dossierRel) : empreinte(texteOffre)}`;
+      let source = id?.source ?? 'suivi';
+      let idSite = id?.idSite ?? `suivi-${dossierRel ? posix.basename(dossierRel) : empreinte(texteOffre)}`;
+      if (!id) {
+        // Offre sans lien déjà présente dans le registre (« Seyos / ICDC ») : on la rattache à celle du registre,
+        // et un doublon créé par une reprise précédente y est fusionné.
+        const jumelle = jumelleDuRegistre(db, entreprise, titre);
+        if (jumelle) {
+          const ancienne = trouverOffre(db, source, idSite);
+          if (ancienne) {
+            fusionnerOffres(db, jumelle.id, ancienne.id);
+            S.fusions.push({ offre: jumelle.id, doublon: ancienne.id, entreprise });
+          }
+          source = jumelle.source;
+          idSite = jumelle.id_site;
+        }
+      }
       const { offre, creee } = enregistrerOffre(
         db,
         source,
@@ -376,11 +475,27 @@ function importerSuivi(db: Base, dossier: string, rapport: RapportImport): void 
         ajouterNote(db, offre.id, { note: Number(noteSuivi[1].replace(',', '.')) }, { origine: 'import-suivi', le });
         S.notes_ajoutees++;
       }
-      enregistrerCandidature(db, offre.id, {
-        dossier: dossierRel,
-        envoyee_le: envoyeeLe ?? (envoye && !/^[—-]$/.test(envoye.trim()) ? sansMarkdown(envoye) : null),
-        canal: sansMarkdown(colonne(l, 'canal') ?? '') || null,
-      });
+      const envoi = sansMarkdown(envoye);
+      const canal = sansMarkdown(colonne(l, 'canal') ?? '');
+      const action = colonne(l, 'prochaine');
+      const avant = candidatureDe(db, offre.id);
+      // La prochaine action saisie dans l'interface, la CLI ou par MCP n'est pas remplacée par la reprise.
+      const actionLibre = !avant?.prochaine_action_origine || avant.prochaine_action_origine === 'import-suivi';
+      enregistrerCandidature(
+        db,
+        offre.id,
+        {
+          dossier: dossierRel ?? undefined,
+          // Date seule → AAAA-MM-JJ (ou AAAA-MM) ; « ≈ 25/08/2026 », « après le 20/08/2026 » gardés tels quels.
+          envoyee_le: estVide(envoi) ? null : /^\d{1,2}\/\d{1,2}\/\d{4}$|^\d{1,2}\/\d{4}$/.test(envoi) ? dateFr(envoi) : envoi,
+          canal: estVide(canal) ? null : canal,
+          libelle: sansListeDeLiens(cellOffre).replace(/\s+/g, ' ').trim(),
+          conditions: estVide(type) ? null : type,
+          etat: (/clos/i.test(l.section) ? issue : statutTexte).trim() || null,
+          prochaine_action: action !== undefined && actionLibre ? (estVide(sansMarkdown(action)) ? null : action) : undefined,
+        },
+        { origine: 'import-suivi' },
+      );
       S.candidatures++;
     }
   });

@@ -75,7 +75,30 @@ export interface Candidature {
   envoyee_le: string | null;
   canal: string | null;
   message: string | null;
+  prochaine_action: string | null;
+  prochaine_action_origine: string | null;
+  libelle: string | null;
+  conditions: string | null;
+  etat: string | null;
+  maj_le: string | null;
 }
+
+/** Champs modifiables d'une candidature : absent = inchangé, null ou chaîne vide = effacé. */
+export type ChampsCandidature = Partial<
+  Pick<Candidature, 'dossier' | 'cv' | 'envoyee_le' | 'canal' | 'message' | 'prochaine_action' | 'libelle' | 'conditions' | 'etat'>
+>;
+
+export const CHAMPS_CANDIDATURE = [
+  'dossier',
+  'cv',
+  'envoyee_le',
+  'canal',
+  'message',
+  'prochaine_action',
+  'libelle',
+  'conditions',
+  'etat',
+] as const satisfies readonly (keyof ChampsCandidature)[];
 
 export interface DetailOffre extends Offre {
   tags: string[];
@@ -322,23 +345,50 @@ export function modifierTags(db: Base, offreId: number, ajouts: string[], retrai
   return tagsOffre(db, offreId);
 }
 
+export function candidatureDe(db: Base, offreId: number): Candidature | null {
+  return (db.prepare('SELECT * FROM candidatures WHERE offre_id = ?').get(offreId) as Candidature | undefined) ?? null;
+}
+
+/**
+ * Crée ou met à jour la candidature d'une offre. Un champ absent (undefined) est conservé ; null ou ''
+ * l'efface. `origine` est retenue pour la prochaine action (la reprise de _SUIVI.md ne remplace pas
+ * un texte saisi dans l'interface, la CLI ou par MCP).
+ */
 export function enregistrerCandidature(
   db: Base,
   offreId: number,
-  c: Partial<Omit<Candidature, 'id' | 'offre_id'>>,
+  c: ChampsCandidature,
+  opts: { origine?: string } = {},
 ): Candidature {
-  const existante = db.prepare('SELECT * FROM candidatures WHERE offre_id = ?').get(offreId) as Candidature | undefined;
-  if (!existante) {
-    db.prepare(
-      'INSERT INTO candidatures (offre_id, dossier, cv, envoyee_le, canal, message) VALUES (?, ?, ?, ?, ?, ?)',
-    ).run(offreId, c.dossier ?? null, c.cv ?? null, c.envoyee_le ?? null, c.canal ?? null, c.message ?? null);
-  } else {
-    db.prepare(
-      `UPDATE candidatures SET dossier = COALESCE(?, dossier), cv = COALESCE(?, cv), envoyee_le = COALESCE(?, envoyee_le),
-         canal = COALESCE(?, canal), message = COALESCE(?, message) WHERE offre_id = ?`,
-    ).run(c.dossier ?? null, c.cv ?? null, c.envoyee_le ?? null, c.canal ?? null, c.message ?? null, offreId);
+  let actuelle = candidatureDe(db, offreId);
+  if (!actuelle) {
+    db.prepare('INSERT INTO candidatures (offre_id, maj_le) VALUES (?, ?)').run(offreId, maintenant());
+    actuelle = candidatureDe(db, offreId)!;
   }
-  return db.prepare('SELECT * FROM candidatures WHERE offre_id = ?').get(offreId) as unknown as Candidature;
+  const maj: string[] = [];
+  const params: (string | null)[] = [];
+  for (const k of CHAMPS_CANDIDATURE) {
+    if (c[k] === undefined) continue;
+    const v = nettoyerChamp(c[k]);
+    if (v === actuelle[k]) continue;
+    maj.push(`${k} = ?`);
+    params.push(v);
+    if (k === 'prochaine_action') {
+      maj.push('prochaine_action_origine = ?');
+      params.push(v === null ? null : (opts.origine ?? 'cli'));
+    }
+  }
+  if (maj.length) {
+    db.prepare(`UPDATE candidatures SET ${maj.join(', ')}, maj_le = ? WHERE offre_id = ?`).run(...params, maintenant(), offreId);
+    db.prepare('UPDATE offres SET maj_le = ? WHERE id = ?').run(maintenant(), offreId);
+  }
+  return candidatureDe(db, offreId)!;
+}
+
+/** Valeur d'un champ de candidature : texte nettoyé (espaces de bord retirés), null si vide. */
+function nettoyerChamp(v: string | null | undefined): string | null {
+  const t = (v ?? '').trim();
+  return t === '' ? null : t;
 }
 
 export function detailOffre(db: Base, id: number): DetailOffre | undefined {
@@ -353,8 +403,7 @@ export function detailOffre(db: Base, id: number): DetailOffre | undefined {
   const statuts = db
     .prepare('SELECT * FROM statuts WHERE offre_id = ? ORDER BY le DESC, id DESC')
     .all(id) as unknown as LigneStatut[];
-  const candidature = (db.prepare('SELECT * FROM candidatures WHERE offre_id = ?').get(id) as Candidature | undefined) ?? null;
-  return { ...offre, tags: tagsOffre(db, id), notes, statuts, candidature };
+  return { ...offre, tags: tagsOffre(db, id), notes, statuts, candidature: candidatureDe(db, id) };
 }
 
 /** Nombre d'offres d'une entreprise déjà en base (comparaison sans casse). */
@@ -363,4 +412,37 @@ export function offresDeLEntreprise(db: Base, entreprise: string, saufId?: numbe
     .prepare('SELECT COUNT(*) AS n FROM offres WHERE entreprise = ? COLLATE NOCASE AND id IS NOT ?')
     .get(entreprise.trim(), saufId ?? null) as { n: number };
   return r.n;
+}
+
+/**
+ * Fusionne l'offre `doublon` dans l'offre `cible` : notes, statuts, tags et candidature passent sur la cible,
+ * les champs vides de la cible sont complétés, puis le doublon est supprimé.
+ */
+export function fusionnerOffres(db: Base, cible: number, doublon: number): void {
+  if (cible === doublon) return;
+  const d = offreParId(db, doublon);
+  if (!d || !offreParId(db, cible)) throw new Error(`Fusion impossible : offre ${cible} ou ${doublon} introuvable`);
+  db.prepare('UPDATE notes SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
+  db.prepare('UPDATE statuts SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
+  db.prepare('INSERT OR IGNORE INTO offre_tags (offre_id, tag_id) SELECT ?, tag_id FROM offre_tags WHERE offre_id = ?').run(
+    cible,
+    doublon,
+  );
+  const cd = candidatureDe(db, doublon);
+  if (cd) {
+    if (!candidatureDe(db, cible)) {
+      db.prepare('UPDATE candidatures SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
+    } else {
+      const champs: ChampsCandidature = {};
+      const cc = candidatureDe(db, cible)!;
+      for (const k of CHAMPS_CANDIDATURE) if (cc[k] === null && cd[k] !== null) champs[k] = cd[k];
+      enregistrerCandidature(db, cible, champs, { origine: cd.prochaine_action_origine ?? undefined });
+    }
+  }
+  const complements: ChampsOffre = {};
+  for (const k of CHAMPS) complements[k] = d[k as keyof Offre] as string | null;
+  const c = offreParId(db, cible)!;
+  enregistrerOffre(db, c.source, c.id_site, complements, c.origine);
+  db.prepare('DELETE FROM offres WHERE id = ?').run(doublon);
+  recalculer(db, cible);
 }

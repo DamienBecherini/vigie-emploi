@@ -1,6 +1,6 @@
 {
   "name": "cap-emploi",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Suivi local des offres d'emploi et de mission : base SQLite, tableau de bord web et CLI pilotable par une IA.",
   "type": "module",
@@ -19,9 +19,11 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "entities": "^7.0.1",
     "hono": "^4.13.16",
-    "postal-mime": "^2.4.0"
+    "postal-mime": "^2.4.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

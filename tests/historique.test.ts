@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { ouvrirBase, type Base } from '../src/db/base.ts';
 import { importerHistorique, notesDeCellule, type RapportImport } from '../src/import/historique.ts';
 import { cellules, decouper } from '../src/import/markdown.ts';
-import { detailOffre, trouverOffre } from '../src/core/offres.ts';
+import { detailOffre, enregistrerCandidature, enregistrerOffre, modifierTags, offreParId, trouverOffre } from '../src/core/offres.ts';
+import { empreinte } from '../src/core/texte.ts';
 
 const DONNEES = join(import.meta.dirname, 'fixtures', 'donnees');
 
@@ -54,7 +55,7 @@ describe('reprise de l’historique', () => {
   });
 
   it('registre : lignes sans lien, liens et lignes non reconnus', () => {
-    expect(r.registre.lignes).toBe(6);
+    expect(r.registre.lignes).toBe(9);
     expect(r.registre.offres_sans_lien).toBe(2); // Thêta (aucun lien) et Iota (lien non reconnu)
     expect(r.registre.liens_non_reconnus.map((l) => l.url)).toEqual([
       'https://www.welcometothejungle.com/fr/companies/iota/jobs/webmaster',
@@ -69,12 +70,12 @@ describe('reprise de l’historique', () => {
     expect(d).toMatchObject({ statut: 'envoyee', note: 6, entreprise: 'ACME' });
     expect(d.candidature).toMatchObject({ dossier: 'candidatures/acme-developpeur-php', canal: 'LinkedIn', envoyee_le: '2026-10-20' });
     expect(trouverOffre(db, 'suivi', 'suivi-lambda-integrateur-api')).toMatchObject({ statut: 'go', note: 5.5 });
-    expect(r.suivi.lignes).toBe(5);
+    expect(r.suivi.lignes).toBe(7);
     const statuts = (db.prepare("SELECT entreprise, statut FROM offres WHERE origine = 'import-suivi' ORDER BY entreprise").all() as {
       entreprise: string;
       statut: string;
     }[]).map((x) => `${x.entreprise}:${x.statut}`);
-    expect(statuts).toEqual(['ACME:envoyee', 'Lambda:go', 'Mu:relancee', 'Nu:refus', 'Xi:abandonnee']);
+    expect(statuts).toEqual(['ACME:envoyee', 'Lambda:go', 'Mu:relancee', 'Nu:refus', 'Pi:envoyee', 'Xi:abandonnee']);
   });
 
   it('idempotent : une deuxième reprise n’ajoute rien', () => {
@@ -84,5 +85,85 @@ describe('reprise de l’historique', () => {
     expect(apres).toEqual(avant);
     expect(r2.lots.offres_creees + r2.registre.offres_creees + r2.suivi.offres_creees).toBe(0);
     expect(r2.registre.statuts_ajoutes + r2.suivi.statuts_ajoutes).toBe(0);
+  });
+});
+
+describe('reprise : corrections du sprint 2', () => {
+  let db: Base;
+  let r: RapportImport;
+  beforeAll(() => {
+    db = ouvrirBase(':memory:');
+    r = importerHistorique(db, DONNEES);
+  });
+
+  it('entreprises groupées : réparties par lien, « (×2) » compté deux fois', () => {
+    expect(trouverOffre(db, 'linkedin', '4200000010')).toMatchObject({ entreprise: 'Omega' });
+    expect(trouverOffre(db, 'linkedin', '4200000011')).toMatchObject({ entreprise: 'Omega' });
+    expect(trouverOffre(db, 'linkedin', '4200000012')).toMatchObject({ entreprise: 'Psi' });
+    // Nombre d'entreprises ≠ nombre de liens : la cellule entière est gardée.
+    expect(trouverOffre(db, 'linkedin', '4200000013')).toMatchObject({ entreprise: 'Rho / Sigma / Tau' });
+    // Séparées seulement par le gras : une par segment.
+    expect(trouverOffre(db, 'linkedin', '4200000015')).toMatchObject({ entreprise: 'Upsilon', note: 2 });
+    expect(trouverOffre(db, 'linkedin', '4200000016')).toMatchObject({ entreprise: 'Phi', note: 3 });
+  });
+
+  it('entreprises groupées : une reprise corrige les offres existantes', () => {
+    const o = trouverOffre(db, 'linkedin', '4200000012')!;
+    db.prepare('UPDATE offres SET entreprise = ? WHERE id = ?').run('Omega (×2) / Psi', o.id);
+    const r2 = importerHistorique(db, DONNEES);
+    expect(r2.registre.entreprises_corrigees).toBe(1);
+    expect(trouverOffre(db, 'linkedin', '4200000012')).toMatchObject({ entreprise: 'Psi' });
+  });
+
+  it('suivi sans lien rattaché à l’offre du registre (même entreprise, intitulé voisin)', () => {
+    const theta = db.prepare("SELECT * FROM offres WHERE entreprise = 'Thêta'").all() as { id: number; source: string }[];
+    expect(theta).toHaveLength(1);
+    expect(theta[0].source).toBe('registre');
+    const d = detailOffre(db, theta[0].id)!;
+    expect(d.statut).toBe('close');
+    expect(d.candidature).toMatchObject({ libelle: 'Thêta — Support L2', etat: 'Archivée, hors axe' });
+  });
+
+  it('doublon suivi / registre d’une reprise précédente : fusionné', () => {
+    const libelle = 'Thêta — Support L2';
+    const { offre } = enregistrerOffre(db, 'suivi', `suivi-${empreinte(libelle)}`, { titre: 'Support L2', entreprise: 'Thêta' }, 'import-suivi');
+    modifierTags(db, offre.id, ['doublon-test'], []);
+    const r2 = importerHistorique(db, DONNEES);
+    expect(r2.suivi.fusions).toHaveLength(1);
+    expect(offreParId(db, offre.id)).toBeUndefined();
+    const reste = offreParId(db, r2.suivi.fusions[0].offre)!;
+    expect(reste.source).toBe('registre');
+    expect(detailOffre(db, reste.id)!.tags).toContain('doublon-test');
+  });
+
+  it('suivi : prochaine action, conditions, libellé et envoi approximatif repris', () => {
+    const acme = detailOffre(db, trouverOffre(db, 'linkedin', '4200000099')!.id)!;
+    expect(acme.candidature).toMatchObject({
+      prochaine_action: 'Relancer',
+      prochaine_action_origine: 'import-suivi',
+      conditions: 'CDI Paris, télétravail partiel, 45-55 K€',
+      libelle: '**ACME** — Développeur PHP senior',
+      etat: 'Envoyée — GO (6/10)',
+    });
+    const pi = db.prepare("SELECT c.* FROM candidatures c JOIN offres o ON o.id = c.offre_id WHERE o.entreprise = 'Pi'").get();
+    expect(pi).toMatchObject({ envoyee_le: '≈ 25/08/2026', dossier: null });
+  });
+
+  it('suivi : une prochaine action saisie ailleurs n’est pas écrasée par la reprise', () => {
+    const id = trouverOffre(db, 'linkedin', '4200000099')!.id;
+    enregistrerCandidature(db, id, { prochaine_action: 'Appeler mardi' }, { origine: 'interface' });
+    importerHistorique(db, DONNEES);
+    expect(detailOffre(db, id)!.candidature).toMatchObject({ prochaine_action: 'Appeler mardi', prochaine_action_origine: 'interface' });
+  });
+
+  it('idempotent avec les corrections', () => {
+    const compte = () =>
+      db.prepare('SELECT (SELECT COUNT(*) FROM offres) o, (SELECT COUNT(*) FROM notes) n, (SELECT COUNT(*) FROM statuts) s, (SELECT COUNT(*) FROM candidatures) c').get();
+    const avant = compte();
+    const r2 = importerHistorique(db, DONNEES);
+    expect(compte()).toEqual(avant);
+    expect(r2.suivi.fusions).toHaveLength(0);
+    expect(r2.registre.entreprises_corrigees).toBe(0);
+    expect(r.suivi.fusions).toHaveLength(0);
   });
 });

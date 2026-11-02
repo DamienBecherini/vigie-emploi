@@ -2,14 +2,27 @@
 
 Ce fichier s'adresse à un agent (Claude Code ou autre) qui aide l'utilisateur à trier ses offres. L'application ne contacte aucun modèle d'IA : c'est l'agent qui lit, note et rend compte, l'application garde l'état.
 
+Deux façons de piloter : les **outils MCP** (`cap-emploi mcp`, à privilégier quand le client MCP est branché, voir [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)) ou la **CLI** avec `--json`. Les deux appellent le même noyau.
+
 ## Règles
 
-- Toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "erreur": "…"}`) avec un code de retour non nul.
+- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "erreur": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
+- `_SUIVI.md` se génère depuis la base (`generer_suivi` / `cap-emploi generer-suivi`) : ne pas l'éditer à la main une fois la bascule faite. Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `remplacer` seulement si l'utilisateur le demande.
 - Le dossier de données vient de `CAP_EMPLOI_DATA`, de `--data` ou de `cap-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
 - Ne pas télécharger LinkedIn, Indeed ni Glassdoor par script : lire ces pages dans le navigateur de l'utilisateur, ou lui demander le texte (Glassdoor bloque les robots). Les descriptions Hellowork et Free-Work sont déjà en base après `ingest`.
 - La grille de notation appartient à l'utilisateur (dans son dossier de données) : la lire avant de noter.
 
-## Flux « traite les e-mails »
+## Flux complet via MCP
+
+1. **Ingérer** : `ingerer_emails` (`garder: true` pour conserver les `.eml`). Relever `nouvelles`, `doublons`, `ecartees`, `a_lire`, `erreurs`.
+2. **Lire** : `offres_a_lire`. Selon `lecture` : texte dans `description` ; `navigateur` = ouvrir `url` dans le navigateur de l'utilisateur ; `humain` = lui demander le texte. `lire_offre` pour le détail complet.
+3. **Noter** selon la grille de l'utilisateur : `noter_lot` (`{ "offres": [ {id, note, note_brute, penalites, colle, ecarts, lu, tags}, … ] }`) ou `noter_offre` pour une seule. Déjà vue ? `lister_offres` avec `texte`.
+4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil, conditions, ce qui colle, écarts. Sans « go » : `changer_statut` → `ecartee` avec la raison en commentaire.
+5. **Candidater** sur son « go » : `candidater` (offre complète, dossier de données, `dossier_suggere`, étapes). Préparer le dossier, le CV et les messages selon ses consignes (dans le dossier de données).
+6. **Enregistrer la candidature** : `enregistrer_candidature` avec `dossier`, `cv`, `canal`, `message`, `prochaine_action` ; à l'envoi, `envoyee_le` (l'offre passe en `envoyee`). Ensuite : `changer_statut` (`relancee`, `entretien`, `refus`, `close`, `abandonnee`) et `enregistrer_candidature` pour la prochaine action.
+7. **Générer le suivi** : `generer_suivi` → `candidatures/_SUIVI.genere.md` (sections En cours, Envoyées sans suite, Closes).
+
+## Flux « traite les e-mails » (CLI)
 
 1. `cap-emploi ingest --json` : lit `<données>/emails/*.eml`, ajoute les nouvelles offres, supprime les e-mails traités. Relever `nouvelles`, `doublons`, `ecartees`, `a_lire`, `erreurs`.
 2. `cap-emploi a-lire --json` : offres à traiter sans note. Champ `lecture` :
@@ -46,7 +59,10 @@ Format d'une entrée de lot :
 | Meilleures offres non traitées | `cap-emploi list --statut notee --note-min 5 --tri note --json` |
 | Mes candidatures | `cap-emploi list --candidatures --json` |
 | Détail d'une offre | `cap-emploi show <id> --json` |
-| Envoi, relance, entretien, refus | `cap-emploi statut <id> envoyee --commentaire "canal, date"` |
+| Candidature (dossier, canal, envoi, prochaine action) | `cap-emploi candidature <id> --dossier candidatures/x --canal LinkedIn --envoyee-le 02/11/2026 --prochaine-action "…" --json` |
+| Prochaine action seule | `cap-emploi prochaine-action <id> "Relancer le 09/11" --json` |
+| Relance, entretien, refus | `cap-emploi statut <id> relancee --commentaire "canal, date"` |
+| Suivi des candidatures | `cap-emploi generer-suivi --json` (aperçu `candidatures/_SUIVI.genere.md`) |
 | Tags | `cap-emploi tag <id> +a-reprendre -urgent --json` |
 | Note seule | `cap-emploi noter <id> --json '{"note": 6, "note_brute": 6.5, "penalites": "…", "colle": "…", "ecarts": "…"}'` |
 

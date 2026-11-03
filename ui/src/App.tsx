@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   flexRender,
   getCoreRowModel,
@@ -38,6 +38,7 @@ import {
   ChevronsRight,
   Columns3,
   Funnel,
+  RefreshCw,
   Moon,
   Palette as PaletteIcone,
   SlidersHorizontal,
@@ -89,6 +90,24 @@ const COLONNES: ColumnDef<LigneOffre>[] = [
 ];
 
 const VISIBILITE_DEFAUT: VisibilityState = { lieu: true, contrat: false, teletravail: true, publiee_le: false, id: false, tags: true };
+
+/** Recharge toutes les données depuis la base (modifications faites par la CLI ou une IA). */
+function BoutonRafraichir() {
+  const client = useQueryClient();
+  const enCours = useIsFetching() > 0;
+  return (
+    <button
+      type="button"
+      className="bouton"
+      onClick={() => client.invalidateQueries()}
+      aria-label="Rafraîchir les données"
+      title="Rafraîchir les données"
+      aria-busy={enCours}
+    >
+      <RefreshCw className={`size-4 ${enCours ? 'animate-spin' : ''}`} aria-hidden="true" />
+    </button>
+  );
+}
 
 function useSombreSysteme(): boolean {
   const [sombre, setSombre] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -342,6 +361,7 @@ export function App() {
           <button type="button" className="bouton" onClick={() => setReglages(true)} aria-haspopup="dialog">
             <SlidersHorizontal className="size-4" aria-hidden="true" /> Réglages de la note
           </button>
+          <BoutonRafraichir />
           <Preferences />
         </div>
       </header>

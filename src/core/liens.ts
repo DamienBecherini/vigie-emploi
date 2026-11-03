@@ -2,10 +2,10 @@
 import { gunzipSync } from 'node:zlib';
 import { decodeHTML } from 'entities';
 
-export type Source = 'linkedin' | 'indeed' | 'glassdoor' | 'hellowork' | 'free-work';
-export const SOURCES_CONNUES: Source[] = ['linkedin', 'indeed', 'glassdoor', 'hellowork', 'free-work'];
-/** Sources dont la page publique est lue par l'application (JSON-LD). Jamais LinkedIn, Indeed ni Glassdoor. */
-export const SOURCES_JSONLD: Source[] = ['hellowork', 'free-work'];
+export type Source = 'linkedin' | 'indeed' | 'glassdoor' | 'hellowork' | 'free-work' | 'collective';
+export const SOURCES_CONNUES: Source[] = ['linkedin', 'indeed', 'glassdoor', 'hellowork', 'free-work', 'collective'];
+/** Sources dont la page publique est lue par l'application (JSON-LD ou données de page). Jamais LinkedIn, Indeed ni Glassdoor. */
+export const SOURCES_JSONLD: Source[] = ['hellowork', 'free-work', 'collective'];
 
 export interface OffreIdentifiee {
   source: Source;
@@ -67,6 +67,10 @@ export function canoniser(url: string): OffreIdentifiee | null {
   if ((m = url.match(/(https:\/\/www\.free-work\.com\/fr\/tech-it\/job-mission\/[^?#\s)]+)/))) {
     const propre = m[1].replace(/\/+$/, '');
     return { source: 'free-work', idSite: propre.slice(propre.lastIndexOf('/') + 1), url: propre };
+  }
+  if ((m = url.match(/collective\.work\/jobs\/(?:[a-z]{2}\/)?([a-z0-9][a-z0-9-]*[a-z0-9])/i))) {
+    const slug = m[1].toLowerCase();
+    return { source: 'collective', idSite: slug, url: `https://www.collective.work/jobs/fr/${slug}` };
   }
   return null;
 }

@@ -147,7 +147,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         'Sert aussi à vérifier si une offre ou une entreprise a déjà été vue (texte). Renvoie total, page, pages et offres.',
       inputSchema: {
         statuts: z.array(z.enum(STATUTS)).optional().describe(`Statuts retenus, parmi : ${STATUTS.join(', ')}`),
-        sources: z.array(z.string()).optional().describe('Sources : linkedin, indeed, glassdoor, hellowork, free-work, registre, suivi, manuel'),
+        sources: z.array(z.string()).optional().describe('Sources : linkedin, indeed, glassdoor, hellowork, free-work, collective, registre, suivi, manuel'),
         tags: z.array(z.string()).optional().describe('Tags (toutes requises)'),
         note_min: z.number().optional().describe('Note minimale (incluse)'),
         note_max: z.number().optional().describe('Note maximale (incluse)'),

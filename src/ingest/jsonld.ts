@@ -1,4 +1,4 @@
-// Lecture du JSON-LD JobPosting des pages publiques (Hellowork, Free-Work).
+// Lecture du JSON-LD JobPosting des pages publiques (Hellowork, Free-Work) et des données de page Collective.
 // L'application ne télécharge jamais LinkedIn, Indeed ni Glassdoor (CGU, protections anti-robots).
 import { texteHtmlLignes } from '../core/liens.ts';
 import { dateIso } from '../core/texte.ts';
@@ -52,7 +52,44 @@ const CONTRATS: Record<string, string> = {
   PERMANENT: 'CDI',
 };
 
-/** Extrait l'offre d'une page HTML contenant un JSON-LD JobPosting. */
+const CONTRATS_COLLECTIVE: Record<string, string> = { FREELANCE: 'Freelance', PERMANENT: 'CDI', FIXED_TERM: 'CDD', INTERNSHIP: 'Stage' };
+const MODES_COLLECTIVE: Record<string, string> = { REMOTE: 'full remote', HYBRID: 'hybride', ON_SITE: 'sur site', ONSITE: 'sur site' };
+
+/** Offre d'une page Collective (Next.js : props.pageProps.project du script __NEXT_DATA__). */
+export function extraireCollective(page: string): DetailJsonLd | null {
+  const m = page.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!m) return null;
+  let p: Json | undefined;
+  try {
+    p = ((JSON.parse(m[1]) as Json).props as Json | undefined)?.pageProps as Json | undefined;
+    p = p?.project as Json | undefined;
+  } catch {
+    return null;
+  }
+  if (!p || !p.name) return null;
+  const texte = (h: unknown) => (h ? texteHtmlLignes(String(h)) : '');
+  const profil = texte(p.profileWanted);
+  const description = [texte(p.description), profil && `Profil recherché\n${profil}`].filter(Boolean).join('\n\n');
+  const salaire =
+    p.minSalary || p.maxSalary
+      ? `${[p.minSalary, p.maxSalary].filter(Boolean).join('-')} ${String(p.salaryCurrency ?? '€')} ${String(p.salaryFrequency ?? '')}`.trim()
+      : null;
+  const budget = typeof p.budgetBrief === 'string' && p.budgetBrief.trim() ? `${p.budgetBrief.trim()}/j` : null;
+  const contrats = ((p.contractTypes as string[] | undefined) ?? []).map((c) => CONTRATS_COLLECTIVE[c] ?? c);
+  const modes = ((p.workPreferences as string[] | undefined) ?? []).map((w) => MODES_COLLECTIVE[w] ?? w.toLowerCase());
+  return {
+    titre: String(p.name),
+    entreprise: ((p.company as Json | undefined)?.name as string | undefined) ?? null,
+    lieu: ((p.location as Json | undefined)?.fullNameFrench as string | undefined) ?? null,
+    contrat: contrats.length ? contrats.join(', ') : null,
+    remuneration: salaire ?? budget,
+    teletravail: modes.length ? modes.join(', ') : null,
+    publiee_le: dateIso((p.publishedAt as string | undefined) ?? null),
+    description: description || null,
+  };
+}
+
+/** Extrait l'offre d'une page HTML contenant un JSON-LD JobPosting (ou, à défaut, des données de page Collective). */
 export function extraireJsonLd(page: string): DetailJsonLd | null {
   for (const m of page.matchAll(/<script[^>]*ld(?:\+|&#x2B;)json[^>]*>([\s\S]*?)<\/script>/gi)) {
     let d: unknown;
@@ -83,5 +120,5 @@ export function extraireJsonLd(page: string): DetailJsonLd | null {
       description: description || null,
     };
   }
-  return null;
+  return extraireCollective(page);
 }

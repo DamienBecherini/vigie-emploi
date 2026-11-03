@@ -57,5 +57,11 @@ export async function lireEmail(contenu: Buffer | string): Promise<EmailLu> {
       }
     });
   }
-  return { sujet, date, offres: [...offres.values()] };
+  // Collective : les liens disent « Voir l'offre » ; l'intitulé est dans le texte (« Offre : … Postuler »).
+  const liste = [...offres.values()];
+  if (liste.length === 1 && !liste[0].titre && msg.html) {
+    const m = texteHtml(msg.html).match(/Offre\s*:\s*(.+?)\s+Postuler\b/);
+    if (m) liste[0].titre = m[1].trim().slice(0, 140);
+  }
+  return { sujet, date, offres: liste };
 }

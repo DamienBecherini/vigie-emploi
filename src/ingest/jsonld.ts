@@ -74,7 +74,9 @@ export function extraireCollective(page: string): DetailJsonLd | null {
     p.minSalary || p.maxSalary
       ? `${[p.minSalary, p.maxSalary].filter(Boolean).join('-')} ${String(p.salaryCurrency ?? '€')} ${String(p.salaryFrequency ?? '')}`.trim()
       : null;
-  const budget = typeof p.budgetBrief === 'string' && p.budgetBrief.trim() ? `${p.budgetBrief.trim()}/j` : null;
+  // Budget libre (« 500 - 524€ », « 650€/jour », « CDI 51-55K / Freelance : 500-520 TJM ») : « /j » seulement s'il n'a pas d'unité.
+  const brut = typeof p.budgetBrief === 'string' ? p.budgetBrief.trim() : '';
+  const budget = brut ? (/jour|\/j\b|tjm|k€|k\b|an\b|mois|mensuel|annuel/i.test(brut) ? brut : `${brut}/j`) : null;
   const contrats = ((p.contractTypes as string[] | undefined) ?? []).map((c) => CONTRATS_COLLECTIVE[c] ?? c);
   const modes = ((p.workPreferences as string[] | undefined) ?? []).map((w) => MODES_COLLECTIVE[w] ?? w.toLowerCase());
   return {

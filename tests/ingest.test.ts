@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -104,6 +104,17 @@ describe('ingestion', () => {
     const java = trouverOffre(db, 'linkedin', '4100000003')!;
     expect(java.statut).toBe('ecartee');
     expect(detailOffre(db, java.id)!.statuts[0].commentaire).toBe('intitulé exclu : Java');
+  });
+
+  it('garde un e-mail dont aucune offre n’est reconnue', async () => {
+    writeFileSync(
+      join(dossier, 'emails', 'inconnu.eml'),
+      'From: Plateforme <contact@exemple.test>\r\nTo: moi@exemple.test\r\nSubject: Nouvelle opportunite\r\nDate: Mon, 3 Nov 2026 10:00:00 +0100\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUne mission pourrait vous plaire.\r\n',
+    );
+    const r = await ingerer(db, { dossierEmails: join(dossier, 'emails'), telecharger: false });
+    expect(r.sans_offre).toEqual(['inconnu.eml']);
+    expect(r.fichiers_supprimes).toBe(4);
+    expect(readdirSync(join(dossier, 'emails'))).toEqual(['inconnu.eml']);
   });
 
   it('--keep garde les e-mails ; une deuxième passe ne trouve que des doublons', async () => {

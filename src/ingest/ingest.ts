@@ -48,6 +48,8 @@ export interface ResumeIngest {
   /** Nouvelles offres dont la description a été lue (JSON-LD). */
   avec_description: number;
   erreurs: { fichier?: string; url?: string; message: string }[];
+  /** E-mails lus sans aucune offre reconnue : conservés (format inconnu, à signaler). */
+  sans_offre: string[];
   detail: { nouvelles: OffreIngeree[]; ecartees: OffreIngeree[]; doublons: OffreIngeree[] };
 }
 
@@ -75,6 +77,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     a_lire: 0,
     avec_description: 0,
     erreurs: [],
+    sans_offre: [],
     detail: { nouvelles: [], ecartees: [], doublons: [] },
   };
 
@@ -100,7 +103,9 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
         if (!deja) offres.set(off.url, off);
         else if (off.titre.length > deja.titre.length) deja.titre = off.titre;
       }
-      lus.push(chemin);
+      // Aucune offre reconnue : format inconnu, l'e-mail est gardé pour ne rien perdre.
+      if (email.offres.length === 0) resume.sans_offre.push(f);
+      else lus.push(chemin);
     } catch (e) {
       resume.erreurs.push({ fichier: f, message: (e as Error).message });
     }
@@ -203,7 +208,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     'INSERT INTO ingestions (le, fichiers, nouvelles, doublons, ecartees, erreurs) VALUES (?, ?, ?, ?, ?, ?)',
   ).run(maintenant(), resume.fichiers, resume.nouvelles, resume.doublons, resume.ecartees, resume.erreurs.length);
 
-  // 3. Suppression des e-mails lus sans erreur (toutes leurs offres sont en base).
+  // 3. Suppression des e-mails lus sans erreur et dont les offres sont en base.
   if (!o.garder) {
     for (const chemin of lus) {
       rmSync(chemin);

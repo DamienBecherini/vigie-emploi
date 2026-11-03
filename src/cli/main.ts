@@ -279,6 +279,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     console.log(v.keep ? 'E-mails conservés (--keep).' : `${r.fichiers_supprimes} e-mail(s) supprimé(s).`);
     for (const e of r.detail.ecartees) console.log(`  écartée #${e.id} ${tronquer(e.titre, 70)} (${e.motif})`);
     for (const e of r.erreurs) console.log(`  erreur ${e.fichier ?? e.url} : ${e.message}`);
+    for (const f of r.sans_offre) console.log(`  aucune offre reconnue, e-mail conservé : ${f}`);
     if (r.nouvelles) console.log('Suite : cap-emploi a-lire');
   },
 

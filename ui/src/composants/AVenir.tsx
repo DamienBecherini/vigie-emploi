@@ -1,4 +1,5 @@
 // Bandeau « À venir » de l'écran principal : échéances en retard et des 7 prochains jours, et statistiques.
+import { ChartColumn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type EcheanceOffre } from '../api.ts';
 import { BadgeType, dateEvenement } from './Journal.tsx';
@@ -34,7 +35,9 @@ function Statistiques() {
   ];
   return (
     <details className="relative" data-menu>
-      <summary className="bouton cursor-pointer list-none">Statistiques</summary>
+      <summary className="bouton cursor-pointer list-none">
+        <ChartColumn className="size-4" aria-hidden="true" /> Statistiques
+      </summary>
       <div className="absolute right-0 z-20 mt-1 w-72 rounded-md border border-slate-300 bg-white p-3 text-sm shadow-lg dark:border-slate-600 dark:bg-slate-900">
         <h2 className="mb-2 font-bold">Candidatures par étape</h2>
         <ul className="space-y-1">

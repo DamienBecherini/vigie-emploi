@@ -7,11 +7,13 @@
     <title>cap-emploi</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
-      // Thème et zoom appliqués avant le rendu (pas de flash).
+      // Thème, palette et zoom appliqués avant le rendu (pas de flash).
       try {
         var t = localStorage.getItem('cap-emploi:theme') || 'systeme';
         var sombre = t === 'sombre' || (t === 'systeme' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', sombre);
+        var v = JSON.parse(localStorage.getItem(sombre ? 'cap-emploi:palette-vars-sombre' : 'cap-emploi:palette-vars-claire') || '{}');
+        for (var k in v) document.documentElement.style.setProperty(k, v[k]);
         var z = Number(localStorage.getItem('cap-emploi:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
       } catch (e) {}

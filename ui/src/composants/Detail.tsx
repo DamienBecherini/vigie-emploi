@@ -1,3 +1,4 @@
+import { ExternalLink, Send, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIBELLES_STATUTS, STATUTS, type Statut } from '../../../src/core/statuts.ts';
@@ -416,7 +417,7 @@ function BoutonCandidater({ offre, annoncer }: { offre: DetailOffre; annoncer: (
   });
   return (
     <button type="button" className="bouton-principal" onClick={() => maj.mutate()} disabled={maj.isPending}>
-      Candidater
+      <Send className="size-4" aria-hidden="true" /> Candidater
     </button>
   );
 }
@@ -472,7 +473,7 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
           )}
         </div>
         <button type="button" className="bouton" onClick={fermer} aria-label="Fermer le détail (Échap)">
-          Fermer
+          <X className="size-4" aria-hidden="true" /> Fermer
         </button>
       </div>
       {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
@@ -482,7 +483,7 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             <BoutonCandidater offre={o} annoncer={annoncer} />
             {o.url_canonique && (
               <a className="bouton" href={o.url_canonique} target="_blank" rel="noreferrer noopener">
-                Ouvrir l'offre ↗
+                <ExternalLink className="size-4" aria-hidden="true" /> Ouvrir l'offre
               </a>
             )}
           </div>

@@ -1,5 +1,6 @@
 // Panneau « Réglages de la note » : poids, barèmes, règles bloquantes, inventaire, seuil, exemples de référence,
 // aperçu de l'impact avant d'enregistrer, historique des versions et restauration.
+import { X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LIBELLES_NIVEAUX, NIVEAUX, noteExemple, validerGrille, type Grille, type Niveau } from '../../../src/core/grille.ts';
@@ -623,7 +624,7 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
             )}
           </div>
           <button type="button" className="bouton" onClick={fermer} aria-label="Fermer les réglages (Échap)">
-            Fermer
+            <X className="size-4" aria-hidden="true" /> Fermer
           </button>
         </div>
         {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}

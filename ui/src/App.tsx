@@ -16,6 +16,35 @@ import { Filtres } from './composants/Filtres.tsx';
 import { Detail } from './composants/Detail.tsx';
 import { AVenir } from './composants/AVenir.tsx';
 import { Reglages } from './composants/Reglages.tsx';
+import { ChoixTheme, type Mode } from './composants/Theme.tsx';
+import {
+  appliquerPalette,
+  PALETTE_CLAIRE_DEFAUT,
+  PALETTE_SOMBRE_DEFAUT,
+  PALETTES_CLAIRES,
+  PALETTES_SOMBRES,
+  PERSO_DEFAUT,
+  trouverPalette,
+  variablesPalette,
+  type Palette,
+} from './theme.ts';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Columns3,
+  Funnel,
+  Moon,
+  Palette as PaletteIcone,
+  SlidersHorizontal,
+  Sun,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 
 const TAILLES = [25, 50, 100, 200, 500];
 
@@ -61,38 +90,89 @@ const COLONNES: ColumnDef<LigneOffre>[] = [
 
 const VISIBILITE_DEFAUT: VisibilityState = { lieu: true, contrat: false, teletravail: true, publiee_le: false, id: false, tags: true };
 
-function Preferences() {
-  const [theme, setTheme] = usePreferenceTexte('theme', 'systeme');
-  const [zoom, setZoom] = usePreference<number>('zoom', 100);
+function useSombreSysteme(): boolean {
+  const [sombre, setSombre] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const appliquer = () =>
-      document.documentElement.classList.toggle('dark', theme === 'sombre' || (theme === 'systeme' && media.matches));
-    appliquer();
-    media.addEventListener('change', appliquer);
-    return () => media.removeEventListener('change', appliquer);
-  }, [theme]);
+    const maj = () => setSombre(media.matches);
+    media.addEventListener('change', maj);
+    return () => media.removeEventListener('change', maj);
+  }, []);
+  return sombre;
+}
+
+function enregistrer(cle: string, valeur: unknown) {
+  try {
+    localStorage.setItem(`cap-emploi:${cle}`, JSON.stringify(valeur));
+  } catch {
+    /* stockage indisponible : la préférence vaut pour la session */
+  }
+}
+
+function Preferences() {
+  const [mode, setMode] = usePreferenceTexte('theme', 'systeme') as [Mode, (m: Mode) => void];
+  const [paletteClaire, setPaletteClaire] = usePreferenceTexte('palette-claire', PALETTE_CLAIRE_DEFAUT);
+  const [paletteSombre, setPaletteSombre] = usePreferenceTexte('palette-sombre', PALETTE_SOMBRE_DEFAUT);
+  const [persoClaire, setPersoClaire] = usePreference<Palette>('palette-perso-claire', PERSO_DEFAUT);
+  const [persoSombre, setPersoSombre] = usePreference<Palette>('palette-perso-sombre', PERSO_DEFAUT);
+  const [zoom, setZoom] = usePreference<number>('zoom', 100);
+  const [fenetre, setFenetre] = useState(false);
+  const sombreSysteme = useSombreSysteme();
+  const sombre = mode === 'sombre' || (mode === 'systeme' && sombreSysteme);
+  const claire = trouverPalette(PALETTES_CLAIRES, paletteClaire, persoClaire);
+  const foncee = trouverPalette(PALETTES_SOMBRES, paletteSombre, persoSombre);
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', sombre);
+    appliquerPalette(sombre ? foncee : claire);
+    // Variables reprises par le script de index.html au chargement suivant (pas de flash de couleurs).
+    enregistrer('palette-vars-claire', variablesPalette(claire));
+    enregistrer('palette-vars-sombre', variablesPalette(foncee));
+  }, [sombre, claire, foncee]);
   useEffect(() => {
     document.documentElement.style.fontSize = `${zoom}%`;
   }, [zoom]);
-  const suivant = { systeme: 'clair', clair: 'sombre', sombre: 'systeme' } as Record<string, string>;
-  const libelle = { systeme: 'Thème : système', clair: 'Thème : clair', sombre: 'Thème : sombre' } as Record<string, string>;
+  const fermer = useCallback(() => setFenetre(false), []);
   return (
     <div className="flex items-center gap-1">
-      <button type="button" className="bouton" onClick={() => setTheme(suivant[theme] ?? 'systeme')} aria-label={`${libelle[theme]} (changer)`}>
-        {theme === 'sombre' ? '☾' : theme === 'clair' ? '☀' : '◐'} <span className="hidden sm:inline">{libelle[theme]}</span>
+      <button
+        type="button"
+        className="bouton"
+        onClick={() => setMode(sombre ? 'clair' : 'sombre')}
+        aria-label={sombre ? 'Passer au thème clair' : 'Passer au thème sombre'}
+        title={sombre ? 'Passer au thème clair' : 'Passer au thème sombre'}
+      >
+        {sombre ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
+      </button>
+      <button type="button" className="bouton" onClick={() => setFenetre(true)} aria-haspopup="dialog" title="Thème et palettes">
+        <PaletteIcone className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">Thème</span>
       </button>
       <div role="group" aria-label="Taille du texte" className="flex items-center">
-        <button type="button" className="bouton rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label="Réduire le texte">
-          A−
+        <button type="button" className="bouton rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label="Réduire le texte" title="Réduire le texte">
+          <ZoomOut className="size-4" aria-hidden="true" />
         </button>
-        <span className="border-y border-slate-300 bg-white px-2 py-1 text-sm tabular-nums dark:border-slate-600 dark:bg-slate-800" aria-live="polite">
+        <button
+          type="button"
+          className="border-y border-slate-300 bg-white px-2 py-1 text-sm tabular-nums hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700"
+          onClick={() => setZoom(100)}
+          aria-live="polite"
+          aria-label={`Taille du texte ${zoom} % (revenir à 100 %)`}
+          title="Revenir à 100 %"
+        >
           {zoom} %
-        </span>
-        <button type="button" className="bouton rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label="Agrandir le texte">
-          A+
+        </button>
+        <button type="button" className="bouton rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label="Agrandir le texte" title="Agrandir le texte">
+          <ZoomIn className="size-4" aria-hidden="true" />
         </button>
       </div>
+      {fenetre && (
+        <ChoixTheme
+          fermer={fermer}
+          mode={mode}
+          setMode={setMode}
+          clair={{ palettes: PALETTES_CLAIRES, choisie: paletteClaire, choisir: setPaletteClaire, perso: persoClaire, setPerso: setPersoClaire }}
+          sombre={{ palettes: PALETTES_SOMBRES, choisie: paletteSombre, choisir: setPaletteSombre, perso: persoSombre, setPerso: setPersoSombre }}
+        />
+      )}
     </div>
   );
 }
@@ -100,7 +180,9 @@ function Preferences() {
 function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<LigneOffre>> }) {
   return (
     <details className="relative" data-menu>
-      <summary className="bouton cursor-pointer list-none">Colonnes</summary>
+      <summary className="bouton cursor-pointer list-none">
+        <Columns3 className="size-4" aria-hidden="true" /> Colonnes
+      </summary>
       <div className="absolute right-0 z-20 mt-1 w-52 rounded-md border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
         {table.getAllLeafColumns().map((col) => (
           <label key={col.id} className="flex items-center gap-2 px-1 py-0.5 text-sm">
@@ -258,7 +340,7 @@ export function App() {
             ))}
           </nav>
           <button type="button" className="bouton" onClick={() => setReglages(true)} aria-haspopup="dialog">
-            Réglages de la note
+            <SlidersHorizontal className="size-4" aria-hidden="true" /> Réglages de la note
           </button>
           <Preferences />
         </div>
@@ -274,7 +356,7 @@ export function App() {
           <AVenir choisir={(id) => modifier({ offre: String(id) })} />
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>
-              {filtresOuverts ? 'Masquer les filtres' : 'Afficher les filtres'}
+              <Funnel className="size-4" aria-hidden="true" /> {filtresOuverts ? 'Masquer les filtres' : 'Afficher les filtres'}
             </button>
             <p className="text-sm text-slate-700 dark:text-slate-300" aria-live="polite">
               {liste.isLoading ? 'Chargement…' : `${total.toLocaleString('fr-FR')} offre${total > 1 ? 's' : ''}`}
@@ -334,9 +416,13 @@ export function App() {
                               }
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
-                              <span aria-hidden="true" className="text-xs">
-                                {sens === 'asc' ? '▲' : sens === 'desc' ? '▼' : '↕'}
-                              </span>
+                              {sens === 'asc' ? (
+                                <ArrowUp className="size-3.5" aria-hidden="true" />
+                              ) : sens === 'desc' ? (
+                                <ArrowDown className="size-3.5" aria-hidden="true" />
+                              ) : (
+                                <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+                              )}
                             </button>
                           ) : (
                             flexRender(h.column.columnDef.header, h.getContext())
@@ -387,19 +473,19 @@ export function App() {
 
           <nav aria-label="Pagination" className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: null })}>
-              « Première
+              <ChevronsLeft className="size-4" aria-hidden="true" /> Première
             </button>
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: page - 1 > 1 ? String(page - 1) : null })}>
-              ‹ Précédente
+              <ChevronLeft className="size-4" aria-hidden="true" /> Précédente
             </button>
             <span className="tabular-nums">
               Page {page} / {pages}
             </span>
             <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(page + 1) })}>
-              Suivante ›
+              Suivante <ChevronRight className="size-4" aria-hidden="true" />
             </button>
             <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(pages) })}>
-              Dernière »
+              Dernière <ChevronsRight className="size-4" aria-hidden="true" />
             </button>
           </nav>
         </main>

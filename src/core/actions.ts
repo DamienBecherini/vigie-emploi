@@ -165,10 +165,17 @@ export interface PreparationCandidature {
   etapes: string[];
 }
 
-/** Passe l'offre en « go » (si elle n'était pas plus avancée) et rassemble ce qu'il faut pour candidater. */
+/** Statuts de fin : « candidater » les rouvre (l'utilisateur reprend l'offre). */
+const STATUTS_ROUVRABLES: Statut[] = ['abandonnee', 'refus', 'close'];
+
+/**
+ * Passe l'offre en « go » et rassemble ce qu'il faut pour candidater. Une candidature en cours
+ * (go, envoyee, relancee, entretien) garde son statut ; une offre abandonnée, refusée ou close est rouverte.
+ */
 export function preparerCandidature(db: Base, dossierDonnees: string, id: number, origine: string): PreparationCandidature {
   const avant = offreOuErreur(db, id);
   if (STATUTS_AVANT_GO.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: 'candidater', origine });
+  else if (STATUTS_ROUVRABLES.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: `candidater (reprise après « ${avant.statut} »)`, origine });
   const d = detailOffre(db, id)!;
   const dossier = d.candidature?.dossier ?? `candidatures/${slug(`${d.entreprise ?? d.source} ${d.titre}`)}`;
   return {

@@ -99,7 +99,7 @@ function Preferences() {
 
 function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<LigneOffre>> }) {
   return (
-    <details className="relative">
+    <details className="relative" data-menu>
       <summary className="bouton cursor-pointer list-none">Colonnes</summary>
       <div className="absolute right-0 z-20 mt-1 w-52 rounded-md border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
         {table.getAllLeafColumns().map((col) => (
@@ -168,6 +168,23 @@ export function App() {
     getCoreRowModel: getCoreRowModel(),
     getRowId: (r) => String(r.id),
   });
+
+  // Menus déroulants (<details data-menu>) : un clic ailleurs ou Échap les referme.
+  useEffect(() => {
+    const ouverts = () => document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]');
+    const clic = (e: MouseEvent) => {
+      for (const d of ouverts()) if (!d.contains(e.target as Node)) d.open = false;
+    };
+    const clavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') for (const d of ouverts()) d.open = false;
+    };
+    document.addEventListener('mousedown', clic);
+    document.addEventListener('keydown', clavier);
+    return () => {
+      document.removeEventListener('mousedown', clic);
+      document.removeEventListener('keydown', clavier);
+    };
+  }, []);
 
   const fermer = useCallback(() => modifier({ offre: null }), [modifier]);
   const annoncer = useCallback((m: string) => {

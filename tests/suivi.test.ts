@@ -72,6 +72,19 @@ describe('suivi généré depuis la base', () => {
   });
 });
 
+describe('candidater : statut', () => {
+  it('rouvre une offre abandonnée, ne fait pas reculer une candidature en cours', () => {
+    const db = ouvrirBase(':memory:');
+    const { offre } = enregistrerOffre(db, 'linkedin', '4277777777', { titre: 'Dev', entreprise: 'Upsilon' }, 'manuel');
+    ajouterStatut(db, offre.id, 'abandonnee', { commentaire: 'abandon', origine: 'cli' });
+    const r = preparerCandidature(db, DONNEES, offre.id, 'cli');
+    expect(r.offre.statut).toBe('go');
+    expect(r.offre.statuts[0].commentaire).toBe('candidater (reprise après « abandonnee »)');
+    ajouterStatut(db, offre.id, 'entretien', { commentaire: 'appel', origine: 'cli' });
+    expect(preparerCandidature(db, DONNEES, offre.id, 'cli').offre.statut).toBe('entretien');
+  });
+});
+
 describe('candidature : date d’envoi et statut', () => {
   it('une date JJ/MM/AAAA est rangée en ISO et fait passer l’offre en « envoyee »', () => {
     const db = ouvrirBase(':memory:');

@@ -435,10 +435,24 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
     window.addEventListener('keydown', clavier);
     return () => window.removeEventListener('keydown', clavier);
   }, [fermer]);
+  // Un clic hors du panneau le ferme, sauf sur une ligne du tableau (qui ouvre une autre offre),
+  // dans un menu déroulant ou dans une fenêtre modale ouverte par-dessus (réglages).
+  const panneau = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const clic = (e: MouseEvent) => {
+      const cible = e.target as Element | null;
+      if (e.button !== 0 || !cible?.isConnected || panneau.current?.contains(cible)) return;
+      if (cible.closest('tbody tr, details[data-menu], [aria-modal="true"]')) return;
+      fermer();
+    };
+    document.addEventListener('mousedown', clic);
+    return () => document.removeEventListener('mousedown', clic);
+  }, [fermer]);
   const o = q.data;
   const n = o?.notes[0];
   return (
     <aside
+      ref={panneau}
       role="complementary"
       aria-labelledby={titre}
       className="fixed inset-y-0 right-0 z-30 flex w-full max-w-2xl flex-col border-l border-slate-300 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"

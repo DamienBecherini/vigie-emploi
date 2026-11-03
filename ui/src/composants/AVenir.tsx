@@ -33,7 +33,7 @@ function Statistiques() {
     ['Proposition', s.propositions],
   ];
   return (
-    <details className="relative">
+    <details className="relative" data-menu>
       <summary className="bouton cursor-pointer list-none">Statistiques</summary>
       <div className="absolute right-0 z-20 mt-1 w-72 rounded-md border border-slate-300 bg-white p-3 text-sm shadow-lg dark:border-slate-600 dark:bg-slate-900">
         <h2 className="mb-2 font-bold">Candidatures par étape</h2>

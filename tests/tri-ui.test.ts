@@ -12,23 +12,15 @@ describe('tri sur plusieurs niveaux (tableau de bord)', () => {
     expect(ecrireNiveaux(lireNiveaux('recue_le,note'))).toBe('recue_le:desc,note:desc');
   });
 
-  it('clic simple : un seul niveau, inversé au second clic', () => {
-    const date = lireNiveaux('recue_le:desc');
-    expect(basculerNiveau(date, 'note', false)).toEqual([{ colonne: 'note', ordre: 'desc' }]);
-    expect(basculerNiveau(date, 'recue_le', false)).toEqual([{ colonne: 'recue_le', ordre: 'asc' }]);
-    // Clic simple sur une colonne d'un tri à deux niveaux : on repart d'un seul niveau, décroissant.
-    expect(basculerNiveau(lireNiveaux('recue_le:desc,note:desc'), 'note', false)).toEqual([{ colonne: 'note', ordre: 'desc' }]);
-  });
-
-  it('Maj + clic : ajoute un niveau, puis l’inverse, puis le retire', () => {
-    let n = lireNiveaux('recue_le:desc');
-    n = basculerNiveau(n, 'note', true);
+  it('comme Thunderbird : le tri précédent devient secondaire', () => {
+    // Trier par note puis par date : date en principal, note à date égale.
+    let n = basculerNiveau(lireNiveaux('recue_le:desc'), 'note');
+    expect(ecrireNiveaux(n)).toBe('note:desc,recue_le:desc');
+    n = basculerNiveau(n, 'recue_le');
     expect(ecrireNiveaux(n)).toBe('recue_le:desc,note:desc');
-    n = basculerNiveau(n, 'note', true);
-    expect(ecrireNiveaux(n)).toBe('recue_le:desc,note:asc');
-    n = basculerNiveau(n, 'note', true);
-    expect(ecrireNiveaux(n)).toBe('recue_le:desc');
-    // Le dernier niveau ne disparaît pas : il revient en décroissant.
-    expect(ecrireNiveaux(basculerNiveau(lireNiveaux('note:asc'), 'note', true))).toBe('note:desc');
+    // Second clic sur le principal : il s'inverse, le secondaire reste.
+    expect(ecrireNiveaux(basculerNiveau(n, 'recue_le'))).toBe('recue_le:asc,note:desc');
+    // Une troisième colonne chasse le plus ancien niveau : deux niveaux au plus.
+    expect(ecrireNiveaux(basculerNiveau(n, 'entreprise'))).toBe('entreprise:desc,recue_le:desc');
   });
 });

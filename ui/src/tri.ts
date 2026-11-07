@@ -21,18 +21,18 @@ export function ecrireNiveaux(niveaux: Niveau[]): string {
   return niveaux.map((n) => `${n.colonne}:${n.ordre}`).join(',');
 }
 
+/** Niveaux gardés : le tri principal et le précédent, comme Thunderbird. */
+export const NIVEAUX_MAX = 2;
+
 /**
- * Clic sur un en-tête. Sans Maj : la colonne devient le seul niveau (décroissant, ou inversé si elle l'était déjà).
- * Avec Maj : ajoute la colonne comme niveau suivant (décroissant) ; si elle y est déjà, décroissant → croissant → retirée.
+ * Clic sur un en-tête, à la manière de Thunderbird. Sur le tri principal : il s'inverse, le secondaire reste.
+ * Sur une autre colonne : elle devient le tri principal (décroissant) et l'ancien principal passe en secondaire.
  */
-export function basculerNiveau(niveaux: Niveau[], colonne: string, ajouter: boolean): Niveau[] {
-  const actuel = niveaux.find((n) => n.colonne === colonne);
-  if (!ajouter) {
-    const seul = niveaux.length === 1 && actuel;
-    return [{ colonne, ordre: seul && actuel.ordre === 'desc' ? 'asc' : 'desc' }];
+export function basculerNiveau(niveaux: Niveau[], colonne: string): Niveau[] {
+  const [principal] = niveaux;
+  if (principal?.colonne === colonne) {
+    return [{ colonne, ordre: principal.ordre === 'desc' ? 'asc' : 'desc' }, ...niveaux.slice(1)];
   }
-  if (!actuel) return [...niveaux, { colonne, ordre: 'desc' }];
-  if (actuel.ordre === 'desc') return niveaux.map((n) => (n.colonne === colonne ? { ...n, ordre: 'asc' } : n));
   const reste = niveaux.filter((n) => n.colonne !== colonne);
-  return reste.length ? reste : [{ colonne, ordre: 'desc' }];
+  return [{ colonne, ordre: 'desc' as const }, ...reste].slice(0, NIVEAUX_MAX);
 }

@@ -413,8 +413,8 @@ export function App() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">
-                Offres, triées par {niveaux.map((n) => `${n.colonne} (${n.ordre === 'asc' ? 'croissant' : 'décroissant'})`).join(', puis ')}. Maj + clic sur un
-                en-tête ajoute un niveau de tri.
+                Offres, triées par {niveaux.map((n) => `${n.colonne} (${n.ordre === 'asc' ? 'croissant' : 'décroissant'})`).join(', puis ')}. Un clic sur un en-tête
+                en fait le tri principal ; le tri précédent devient secondaire.
               </caption>
               <thead className="bg-slate-100 text-left dark:bg-slate-800">
                 {table.getHeaderGroups().map((hg) => (
@@ -434,8 +434,8 @@ export function App() {
                             <button
                               type="button"
                               className="inline-flex items-center gap-1 rounded hover:underline"
-                              title="Clic : trier sur cette colonne. Maj + clic : ajouter un niveau de tri (puis inverser, puis retirer)."
-                              onClick={(e) => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id, e.shiftKey)), ordre: null, page: null })}
+                              title="Clic : tri principal sur cette colonne (le tri précédent devient secondaire). Second clic : inverser."
+                              onClick={() => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id)), ordre: null, page: null })}
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
                               {sens === 'asc' ? (

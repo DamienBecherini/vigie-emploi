@@ -69,9 +69,23 @@ export function offreDeLEntree(
   origine: Origine,
   opts: { creer?: boolean; recueLe?: string | null } = {},
 ): { id: number; creee: boolean } | null {
+  // Champs de l'entrée : ils complètent ceux qui manquent en base (jamais d'écrasement), que l'offre soit
+  // désignée par son id ou par son URL.
+  const champs = {
+    titre: e.titre,
+    entreprise: e.entreprise,
+    lieu: e.lieu,
+    contrat: e.contrat,
+    remuneration: e.remuneration,
+    teletravail: e.teletravail,
+    publiee_le: datePubliee(e.publiee),
+    stack: e.stack,
+    description: e.description,
+  };
   if (e.id !== undefined) {
     const o = offreParId(db, Number(e.id));
     if (!o) throw new Error(`Offre ${e.id} introuvable`);
+    enregistrerOffre(db, o.source, o.id_site, champs, origine);
     return { id: o.id, creee: false };
   }
   if (!e.url) throw new Error('Entrée sans "id" ni "url"');
@@ -86,19 +100,7 @@ export function offreDeLEntree(
     db,
     source,
     idSite,
-    {
-      url_canonique: ident?.url ?? e.url,
-      titre: e.titre,
-      entreprise: e.entreprise,
-      lieu: e.lieu,
-      contrat: e.contrat,
-      remuneration: e.remuneration,
-      teletravail: e.teletravail,
-      publiee_le: datePubliee(e.publiee),
-      stack: e.stack,
-      description: e.description,
-      recue_le: opts.recueLe ?? null,
-    },
+    { ...champs, url_canonique: ident?.url ?? e.url, recue_le: opts.recueLe ?? null },
     origine,
   );
   return { id: offre.id, creee };

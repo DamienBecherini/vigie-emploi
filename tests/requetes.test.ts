@@ -111,6 +111,13 @@ describe('liste paginée', () => {
     expect(nouvelle.creee).toBe(true);
   });
 
+  it('noter par id : les champs du lot complètent ceux qui manquent, sans écraser', () => {
+    const { offre } = enregistrerOffre(db, 'linkedin', '777001', { titre: 'Développeur PHP', lieu: 'Paris' }, 'email');
+    noterEntree(db, { id: offre.id, note: 5, entreprise: 'Satelia', lieu: 'Lyon', contrat: 'CDI' });
+    const apres = listerOffres(db, { q: 'Satelia', taille: 5 }).offres.find((o) => o.id === offre.id)!;
+    expect(apres).toMatchObject({ entreprise: 'Satelia', contrat: 'CDI', lieu: 'Paris', titre: 'Développeur PHP' });
+  });
+
   it('API : liste, détail, statut, tags', async () => {
     const app = creerApp(db, { dossierDonnees: '/tmp' });
     const liste = (await (await app.request('/api/offres?source=hellowork&taille=5&tri=note&ordre=desc')).json()) as { total: number; offres: { id: number }[] };

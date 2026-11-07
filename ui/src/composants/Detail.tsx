@@ -368,7 +368,7 @@ function ChangementStatut({ offre }: { offre: DetailOffre }) {
         maj.mutate();
       }}
     >
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         <div className="w-40 shrink-0">
           <label htmlFor={idStatut} className="etiquette">
             Nouveau statut
@@ -381,19 +381,17 @@ function ChangementStatut({ offre }: { offre: DetailOffre }) {
             ))}
           </select>
         </div>
-        <div className="flex-1">
+        <div className="min-w-48 flex-1">
           <label htmlFor={idCom} className="etiquette">
             Commentaire
           </label>
           <input id={idCom} className="champ" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
         </div>
-      </div>
-      <div>
         <button type="submit" className="bouton" disabled={maj.isPending}>
           Enregistrer le statut
         </button>
-        {maj.isError && <span className="ml-2 text-sm text-rose-700 dark:text-rose-300">{(maj.error as Error).message}</span>}
       </div>
+      {maj.isError && <span className="text-sm text-rose-700 dark:text-rose-300">{(maj.error as Error).message}</span>}
     </form>
   );
 }
@@ -487,6 +485,24 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
               </a>
             )}
           </div>
+          <section aria-labelledby={`${titre}-statut`}>
+            <h3 id={`${titre}-statut`} className="mb-2 font-bold">
+              Statut
+            </h3>
+            <ChangementStatut offre={o} />
+            <details className="mt-2 text-sm">
+              <summary className="cursor-pointer text-slate-600 dark:text-slate-400">Historique des statuts ({o.statuts.length})</summary>
+              <ol className="mt-2 space-y-1 border-l-2 border-slate-300 pl-3 dark:border-slate-600">
+              {o.statuts.map((s) => (
+                <li key={s.id}>
+                  <span className="text-slate-600 tabular-nums dark:text-slate-400">{formaterDate(s.le.slice(0, 10))}</span>{' '}
+                  <BadgeStatut statut={s.statut} /> {s.commentaire && <span className="break-words">{s.commentaire}</span>}
+                </li>
+              ))}
+              {!o.statuts.length && <li className="text-slate-500 dark:text-slate-400">Aucun historique</li>}
+              </ol>
+            </details>
+          </section>
           <dl>
             <Ligne libelle="Lien">
               <EditeurLien key={o.id} offre={o} />
@@ -586,21 +602,6 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             <EditeurTags offre={o} />
           </section>
 
-          <section aria-labelledby={`${titre}-statut`}>
-            <h3 id={`${titre}-statut`} className="mb-2 font-bold">
-              Statut
-            </h3>
-            <ChangementStatut offre={o} />
-            <ol className="mt-3 space-y-1 border-l-2 border-slate-300 pl-3 text-sm dark:border-slate-600">
-              {o.statuts.map((s) => (
-                <li key={s.id}>
-                  <span className="text-slate-600 tabular-nums dark:text-slate-400">{formaterDate(s.le.slice(0, 10))}</span>{' '}
-                  <BadgeStatut statut={s.statut} /> {s.commentaire && <span className="break-words">{s.commentaire}</span>}
-                </li>
-              ))}
-              {!o.statuts.length && <li className="text-slate-500 dark:text-slate-400">Aucun historique</li>}
-            </ol>
-          </section>
 
           <section aria-labelledby={`${titre}-desc`}>
             <h3 id={`${titre}-desc`} className="mb-2 font-bold">

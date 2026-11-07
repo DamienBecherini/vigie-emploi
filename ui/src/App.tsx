@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { STATUTS_A_TRAITER } from '../../src/core/statuts.ts';
 import { api, type LigneOffre } from './api.ts';
+import { basculerNiveau, ecrireNiveaux, lireNiveaux } from './tri.ts';
 import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FILTRES } from './etat.ts';
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
@@ -238,20 +239,23 @@ export function App() {
 
   const page = Number(params.get('page') ?? 1);
   const taille = Number(params.get('taille') ?? 50);
-  const tri = params.get('tri') ?? 'recue_le';
-  const ordre = params.get('ordre') === 'asc' ? 'asc' : 'desc';
+  // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
+  const ordreDefaut = params.get('ordre') === 'asc' ? 'asc' : 'desc';
+  const niveaux = useMemo(() => lireNiveaux(params.get('tri'), ordreDefaut), [params, ordreDefaut]);
+  const tri = ecrireNiveaux(niveaux);
   const offreChoisie = params.get('offre') ? Number(params.get('offre')) : null;
 
   const requete = new URLSearchParams(params);
   requete.delete('offre');
-  if (!requete.has('tri')) requete.set('tri', tri);
+  requete.set('tri', tri);
+  requete.delete('ordre');
   if (!requete.has('taille')) requete.set('taille', String(taille));
   const cle = requete.toString();
 
   const liste = useQuery({ queryKey: ['offres', cle], queryFn: () => api.offres(requete), placeholderData: keepPreviousData });
   const meta = useQuery({ queryKey: ['meta'], queryFn: api.meta });
 
-  const tri2: SortingState = useMemo(() => [{ id: tri, desc: ordre === 'desc' }], [tri, ordre]);
+  const tri2: SortingState = useMemo(() => niveaux.map((n) => ({ id: n.colonne, desc: n.ordre === 'desc' })), [niveaux]);
   const table = useReactTable({
     data: liste.data?.offres ?? [],
     columns: COLONNES,
@@ -262,9 +266,8 @@ export function App() {
     onColumnVisibilityChange: (maj) => setVisibilite(typeof maj === 'function' ? maj(visibilite) : maj),
     onSortingChange: (maj) => {
       const s = typeof maj === 'function' ? maj(tri2) : maj;
-      const premier = s[0];
-      if (!premier) modifier({ tri: null, ordre: null, page: null });
-      else modifier({ tri: premier.id, ordre: premier.desc ? 'desc' : 'asc', page: null });
+      if (!s.length) modifier({ tri: null, ordre: null, page: null });
+      else modifier({ tri: ecrireNiveaux(s.map((x) => ({ colonne: x.id, ordre: x.desc ? 'desc' : 'asc' }))), ordre: null, page: null });
     },
     getCoreRowModel: getCoreRowModel(),
     getRowId: (r) => String(r.id),
@@ -409,13 +412,17 @@ export function App() {
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table className="w-full border-collapse text-sm">
-              <caption className="sr-only">Offres, triées par {tri} ({ordre === 'asc' ? 'croissant' : 'décroissant'})</caption>
+              <caption className="sr-only">
+                Offres, triées par {niveaux.map((n) => `${n.colonne} (${n.ordre === 'asc' ? 'croissant' : 'décroissant'})`).join(', puis ')}. Maj + clic sur un
+                en-tête ajoute un niveau de tri.
+              </caption>
               <thead className="bg-slate-100 text-left dark:bg-slate-800">
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
                     {hg.headers.map((h) => {
                       const triable = h.column.getCanSort();
                       const sens = h.column.getIsSorted();
+                      const rang = niveaux.findIndex((n) => n.colonne === h.column.id);
                       return (
                         <th
                           key={h.id}
@@ -427,13 +434,8 @@ export function App() {
                             <button
                               type="button"
                               className="inline-flex items-center gap-1 rounded hover:underline"
-                              onClick={() =>
-                                modifier({
-                                  tri: h.column.id,
-                                  ordre: sens === 'desc' ? 'asc' : 'desc',
-                                  page: null,
-                                })
-                              }
+                              title="Clic : trier sur cette colonne. Maj + clic : ajouter un niveau de tri (puis inverser, puis retirer)."
+                              onClick={(e) => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id, e.shiftKey)), ordre: null, page: null })}
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
                               {sens === 'asc' ? (
@@ -442,6 +444,11 @@ export function App() {
                                 <ArrowDown className="size-3.5" aria-hidden="true" />
                               ) : (
                                 <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+                              )}
+                              {niveaux.length > 1 && rang >= 0 && (
+                                <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={`niveau de tri ${rang + 1}`}>
+                                  {rang + 1}
+                                </span>
                               )}
                             </button>
                           ) : (

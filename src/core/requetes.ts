@@ -25,8 +25,41 @@ export interface Filtres {
 export interface OptionsListe extends Filtres {
   page?: number;
   taille?: number;
+  /** Une colonne, ou plusieurs niveaux séparés par des virgules : `recue_le:desc,note:desc`. */
   tri?: string;
+  /** Sens des niveaux qui n'en précisent pas (desc par défaut). */
   ordre?: 'asc' | 'desc';
+}
+
+export interface NiveauTri {
+  colonne: ColonneTri;
+  ordre: 'asc' | 'desc';
+}
+
+/**
+ * Lit les niveaux de tri : `note`, `recue_le:desc,note:asc`… Les colonnes inconnues et les doublons sont ignorés ;
+ * un niveau sans sens prend `ordre`. Sans niveau valide : réception la plus récente d'abord.
+ */
+export function niveauxTri(tri?: string, ordre?: 'asc' | 'desc'): NiveauTri[] {
+  const parDefaut = ordre === 'asc' ? 'asc' : 'desc';
+  const niveaux: NiveauTri[] = [];
+  for (const morceau of (tri ?? '').split(',')) {
+    const [col, sens] = morceau.trim().split(':').map((x) => x.trim().toLowerCase());
+    if (!(COLONNES_TRI as readonly string[]).includes(col ?? '')) continue;
+    if (niveaux.some((n) => n.colonne === col)) continue;
+    niveaux.push({ colonne: col as ColonneTri, ordre: sens === 'asc' || sens === 'desc' ? sens : parDefaut });
+  }
+  return niveaux.length ? niveaux : [{ colonne: 'recue_le', ordre: parDefaut }];
+}
+
+/** Clause ORDER BY des niveaux (valeurs vides en dernier, départage par id décroissant). */
+function ordreSql(niveaux: NiveauTri[]): string {
+  const parts = niveaux.map(({ colonne, ordre }) => {
+    const collation = colonne === 'titre' || colonne === 'entreprise' ? 'COLLATE NOCASE ' : '';
+    return `(o.${colonne} IS NULL), o.${colonne} ${collation}${ordre.toUpperCase()}`;
+  });
+  if (!niveaux.some((n) => n.colonne === 'id')) parts.push('o.id DESC');
+  return parts.join(', ');
 }
 
 export interface LigneListe extends Omit<Offre, 'description'> {
@@ -119,12 +152,9 @@ function echapperLike(s: string): string {
 export function listerOffres(db: Base, o: OptionsListe = {}): ResultatListe {
   const taille = Math.min(Math.max(Math.trunc(o.taille ?? 50), 1), TAILLE_MAX);
   const page = Math.max(Math.trunc(o.page ?? 1), 1);
-  const tri: ColonneTri = (COLONNES_TRI as readonly string[]).includes(o.tri ?? '') ? (o.tri as ColonneTri) : 'recue_le';
-  const ordre = o.ordre === 'asc' ? 'ASC' : 'DESC';
   const { where, params } = clauses(o);
   const sqlWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = (db.prepare(`SELECT COUNT(*) AS n FROM offres o ${sqlWhere}`).get(...params) as { n: number }).n;
-  const tri2 = tri === 'id' ? '' : ', o.id DESC';
   const lignes = db
     .prepare(
       `SELECT o.id, o.source, o.id_site, o.url_canonique, o.titre, o.entreprise, o.lieu, o.contrat, o.remuneration,
@@ -133,7 +163,7 @@ export function listerOffres(db: Base, o: OptionsListe = {}): ResultatListe {
               (o.description IS NOT NULL AND o.description <> '') AS a_description,
               (SELECT group_concat(t.nom, ',') FROM offre_tags ot JOIN tags t ON t.id = ot.tag_id WHERE ot.offre_id = o.id) AS tags
        FROM offres o ${sqlWhere}
-       ORDER BY (o.${tri} IS NULL), o.${tri} ${tri === 'titre' || tri === 'entreprise' ? 'COLLATE NOCASE ' : ''}${ordre}${tri2}
+       ORDER BY ${ordreSql(niveauxTri(o.tri, o.ordre))}
        LIMIT ? OFFSET ?`,
     )
     .all(...params, taille, (page - 1) * taille) as unknown as (Omit<LigneListe, 'tags' | 'a_description'> & {

@@ -91,6 +91,7 @@ Format d'une entrée de lot :
 |---|---|
 | Déjà vue ? | `cap-emploi list --texte "entreprise" --json` |
 | Meilleures offres non traitées | `cap-emploi list --statut notee --note-min 5 --tri note --json` |
+| Par lot reçu, meilleures notes d'abord | `cap-emploi list --statut notee --tri recue_le:desc,note:desc --json` |
 | Mes candidatures | `cap-emploi list --candidatures --json` |
 | Détail d'une offre | `cap-emploi show <id> --json` |
 | Candidature (dossier, canal, envoi, prochaine action) | `cap-emploi candidature <id> --dossier candidatures/x --canal LinkedIn --envoyee-le 02/11/2026 --prochaine-action "…" --json` |

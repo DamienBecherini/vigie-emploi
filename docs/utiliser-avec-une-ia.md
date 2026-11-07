@@ -8,7 +8,7 @@ Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon
 
 | Outil | Rôle |
 |---|---|
-| `lister_offres` | Liste paginée, mêmes filtres que `cap-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri) |
+| `lister_offres` | Liste paginée, mêmes filtres que `cap-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `recue_le:desc,note:desc`) |
 | `lire_offre` | Détail complet : description, notes, historique des statuts, tags, candidature |
 | `offres_a_lire` | Offres à traiter sans note, avec `lecture` = `description`, `navigateur` ou `humain` |
 | `grille` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |

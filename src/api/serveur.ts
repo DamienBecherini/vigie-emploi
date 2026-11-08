@@ -45,11 +45,13 @@ import {
 import { fichierSur, fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
 import { pageFichier } from './fichier.ts';
+import { Veille } from './veille.ts';
 
 /** Champs de candidature modifiables depuis l'interface. */
 const CHAMPS_EDITABLES = CHAMPS_CANDIDATURE.filter((k) => k !== 'etat' && k !== 'libelle');
 
 const DOSSIER_UI = join(RACINE_APP, 'dist', 'ui');
+const VERSION = (JSON.parse(readFileSync(join(RACINE_APP, 'package.json'), 'utf8')) as { version: string }).version;
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -96,7 +98,7 @@ export function optionsDepuisRequete(q: Record<string, string | undefined>): Opt
   };
 }
 
-export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono {
+export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>, veille: Veille = new Veille(0)): Hono {
   const app = new Hono();
 
   app.onError((err, c) => c.json({ ok: false, erreur: err.message }, 400));
@@ -106,10 +108,24 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
   app.use('*', async (c, next) => {
     const hote = (c.req.header('host') ?? '').replace(/:\d+$/, '').toLowerCase();
     if (hote && !['localhost', '127.0.0.1', '[::1]'].includes(hote)) return c.text('Hôte refusé', 403);
+    if (c.req.path !== '/api/sante') veille.signaler();
     await next();
   });
 
-  app.get('/api/sante', (c) => c.json({ ok: true, dossier: config.dossierDonnees }));
+  // Contrat « service local » : état, occupation, temps avant l'arrêt automatique.
+  app.get('/api/sante', (c) =>
+    c.json({
+      ok: true,
+      dossier: config.dossierDonnees,
+      etat: 'pret',
+      contrat: 1,
+      service: 'cap-emploi',
+      version: VERSION,
+      occupe: false,
+      activite: '',
+      inactivite: { delai_s: veille.delaiS, restant_s: veille.restantS() },
+    }),
+  );
   app.get('/api/meta', (c) => c.json({ ...meta(db), statutsPossibles: STATUTS }));
   app.get('/api/offres', (c) => c.json(listerOffres(db, optionsDepuisRequete(c.req.query()))));
 
@@ -315,8 +331,16 @@ export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>): Hono
   return app;
 }
 
-export function demarrerServeur(o: { db: Base; config: Config; port: number; hote?: string }): Promise<void> {
-  const app = creerApp(o.db, o.config);
+export function demarrerServeur(o: {
+  db: Base;
+  config: Config;
+  port: number;
+  hote?: string;
+  /** Minutes sans activité avant l'arrêt (0 ou absent : jamais). */
+  inactiviteMin?: number;
+}): Promise<void> {
+  const veille = new Veille((o.inactiviteMin ?? 0) * 60);
+  const app = creerApp(o.db, o.config, veille);
   const hote = o.hote ?? '127.0.0.1';
   return new Promise((resolve, reject) => {
     const serveur = serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
@@ -332,5 +356,16 @@ export function demarrerServeur(o: { db: Base; config: Config; port: number; hot
       }
       reject(err);
     });
+    const surveillance = setInterval(() => {
+      if (!veille.expiree()) return;
+      clearInterval(surveillance);
+      console.log(`Aucune activité depuis ${Math.round(veille.delaiS / 60)} min : arrêt du tableau de bord.`);
+      serveur.close(() => {
+        o.db.close();
+        process.exit(0);
+      });
+      if ('closeAllConnections' in serveur) serveur.closeAllConnections();  // sinon les connexions keep-alive retardent l'arrêt
+    }, 1000);
+    surveillance.unref();
   });
 }

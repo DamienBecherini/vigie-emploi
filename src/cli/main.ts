@@ -103,7 +103,8 @@ Commandes
   generer-suivi [--sortie <fichier>] [--remplacer]
                         Génère le suivi des candidatures depuis la base : par défaut
                         candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
-  serve [--port 4410]   Lance le tableau de bord (http://localhost:4410)
+  serve [--port 4410] [--inactivite <minutes>]
+                        Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
   mcp                   Serveur MCP (transport stdio) pour piloter cap-emploi depuis une IA
 
 Options générales
@@ -747,10 +748,10 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   async serve(args) {
-    const { v } = analyser(args, { port: { type: 'string' } });
+    const { v } = analyser(args, { port: { type: 'string' }, inactivite: { type: 'string' } });
     const { config, db } = contexte(v);
     const port = v.port ? entier(v.port, 'port') : config.port;
-    await demarrerServeur({ db, config, port });
+    await demarrerServeur({ db, config, port, inactiviteMin: nombre(v.inactivite, 'inactivite') ?? 0 });
   },
 
   aide() {

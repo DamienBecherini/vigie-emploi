@@ -88,7 +88,7 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 | `cap-emploi stats` | Candidatures par étape (envoyée, réponse, entretien, proposition) et délai moyen avant la première réponse |
 | `cap-emploi generer-suivi [--sortie <fichier>] [--remplacer]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--remplacer` |
 | `cap-emploi mcp` | Serveur MCP (stdio) pour une IA |
-| `cap-emploi serve [--port 4410]` | Lance le tableau de bord sur http://localhost:4410 |
+| `cap-emploi serve [--port 4410] [--inactivite <minutes>]` | Lance le tableau de bord sur http://localhost:4410 ; avec `--inactivite`, il s'arrête seul après ce temps sans visite (`GET /api/sante` donne le temps restant) |
 
 Statuts : `nouvelle`, `a-lire`, `notee`, `ecartee`, `go`, `envoyee`, `relancee`, `entretien`, `refus`, `close`, `abandonnee`. « Mes candidatures » regroupe `envoyee` et les suivants.
 

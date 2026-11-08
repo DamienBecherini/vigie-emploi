@@ -65,7 +65,7 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 |---|---|
 | `cap-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`nouvelle`, ou `ecartee` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
 | `cap-emploi import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par cap-emploi n'est pas relu |
-| `cap-emploi list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` |
+| `cap-emploi list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` ; tri sur plusieurs niveaux : `--tri recue_le:desc,note:desc` |
 | `cap-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
 | `cap-emploi a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
 | `cap-emploi noter <id> --json '{…}'` | Enregistre une note pour une offre |
@@ -133,7 +133,7 @@ Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée 
 
 `cap-emploi serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement).
 
-- Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne, colonnes masquables.
+- Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne à la Thunderbird (le dernier en-tête cliqué devient le tri principal, le précédent passe en secondaire : cliquer Note puis Reçue le trie par date, puis par note à date égale ; l'adresse garde les niveaux), colonnes masquables.
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
 - Vues rapides : à traiter, notées ≥ seuil de la grille (4,5 par défaut), mes candidatures.
 - **Réglages de la note** (bouton de l'en-tête) : curseurs des poids (total normalisé affiché), seuil, barèmes télétravail et rémunération, règles bloquantes (activer, effet, plafond, ajout, suppression), inventaire (ajout, modification, suppression, filtre), exemples de référence recalculés en direct ; **aperçu avant d'enregistrer** (offres dont la note change, offres qui franchissent le seuil, cliquables) ; résumé du changement obligatoire ; historique des versions et restauration.

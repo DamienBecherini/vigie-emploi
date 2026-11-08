@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ouvrirBase, transaction, type Base } from '../src/db/base.ts';
 import { ajouterNote, ajouterStatut, enregistrerOffre, modifierTags } from '../src/core/offres.ts';
-import { listerOffres, meta, requeteFts } from '../src/core/requetes.ts';
+import { listerOffres, meta, niveauxTri, requeteFts } from '../src/core/requetes.ts';
 import { noterEntree } from '../src/core/notation.ts';
 import { creerApp } from '../src/api/serveur.ts';
 
@@ -53,6 +53,29 @@ describe('liste paginée', () => {
     expect(asc.offres[0].note).toBe(0);
   });
 
+  it('tri sur deux niveaux : date de réception, puis note à date égale', () => {
+    const r = listerOffres(db, { tri: 'recue_le:desc,note:desc', taille: 120 });
+    const lignes = r.offres.map((o) => ({ date: o.recue_le as string, note: o.note }));
+    for (let k = 1; k < lignes.length; k++) {
+      const [a, b] = [lignes[k - 1], lignes[k]];
+      expect(a.date >= b.date).toBe(true);
+      if (a.date === b.date && a.note !== null && b.note !== null) expect(a.note).toBeGreaterThanOrEqual(b.note);
+      if (a.date === b.date && a.note === null) expect(b.note).toBeNull();
+    }
+    const asc = listerOffres(db, { tri: 'recue_le:asc,note:asc', taille: 5 });
+    expect(asc.offres[0].recue_le).toBe('2026-10-01');
+  });
+
+  it('niveaux de tri : sens par défaut, colonnes inconnues et doublons ignorés', () => {
+    expect(niveauxTri('recue_le,note:asc', 'desc')).toEqual([
+      { colonne: 'recue_le', ordre: 'desc' },
+      { colonne: 'note', ordre: 'asc' },
+    ]);
+    expect(niveauxTri('note, inconnue ,note:asc', 'asc')).toEqual([{ colonne: 'note', ordre: 'asc' }]);
+    expect(niveauxTri('note;DROP TABLE offres')).toEqual([{ colonne: 'recue_le', ordre: 'desc' }]);
+    expect(niveauxTri(undefined)).toEqual([{ colonne: 'recue_le', ordre: 'desc' }]);
+  });
+
   it('filtres combinés', () => {
     expect(listerOffres(db, { sources: ['hellowork'] }).total).toBe(40);
     expect(listerOffres(db, { statuts: ['ecartee'] }).total).toBe(23);
@@ -86,6 +109,13 @@ describe('liste paginée', () => {
     expect(() => noterEntree(db, { id: r1.id, note: 12 })).toThrow(/0-10/);
     const nouvelle = noterEntree(db, { url: 'https://www.hellowork.com/fr-fr/emplois/9999.html', titre: 'Nouvelle', note: 5 });
     expect(nouvelle.creee).toBe(true);
+  });
+
+  it('noter par id : les champs du lot complètent ceux qui manquent, sans écraser', () => {
+    const { offre } = enregistrerOffre(db, 'linkedin', '777001', { titre: 'Développeur PHP', lieu: 'Paris' }, 'email');
+    noterEntree(db, { id: offre.id, note: 5, entreprise: 'Satelia', lieu: 'Lyon', contrat: 'CDI' });
+    const apres = listerOffres(db, { q: 'Satelia', taille: 5 }).offres.find((o) => o.id === offre.id)!;
+    expect(apres).toMatchObject({ entreprise: 'Satelia', contrat: 'CDI', lieu: 'Paris', titre: 'Développeur PHP' });
   });
 
   it('API : liste, détail, statut, tags', async () => {

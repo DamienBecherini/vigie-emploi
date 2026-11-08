@@ -62,6 +62,7 @@ Commandes
       --depuis AAAA-MM-JJ  --jusqua AAAA-MM-JJ (date de réception)  --texte "mots"
       --contrat CDI  --teletravail remote  --candidatures  --page N  --taille N
       --tri note|recue_le|publiee_le|titre|entreprise|…  --ordre asc|desc
+      --tri recue_le:desc,note:desc  (plusieurs niveaux : date, puis note à date égale)
   show <id>             Détail d'une offre (notes, statuts, tags, candidature)
   a-lire [--limite N] [--complet]
                         Offres à traiter sans note, avec l'URL à lire (ou la description déjà extraite)

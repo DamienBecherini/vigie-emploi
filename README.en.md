@@ -20,7 +20,7 @@
 
 postuler-juste is a local kit to look for a permanent job or freelance assignments with an AI agent (Claude Code, Cursor, Codex…). The AI triages the offers you receive through e-mail alerts, scores each one with **your** grid, prepares the applications you approve (application file, tailored résumé, message) and keeps track of the follow-up. Everything stays on your computer.
 
-> The dashboard and the CLI messages are available in English: `init --langue en` (or the language selector in the dashboard header). The AI instructions and workspace templates are still in French for now; an English version is coming. Your agent can of course talk to you in English and write English résumés.
+> Everything is available in English with `init --langue en`: the AI instructions and workspace templates (your agent works and writes in English: résumés, messages, application files), the sample scoring grid, the MCP server, the dashboard and the CLI messages. The language selector in the dashboard header switches the dashboard only. Command names, statuses and the workspace's file names stay in French: they are identifiers.
 
 The name means "apply *right*", in both senses of the French word *juste*:
 
@@ -76,7 +76,7 @@ npx postuler-juste init ~/my-search --langue en
 
 Nothing to clone or build: npx downloads the application and runs `init`. The workspace remembers the version used (`npx -y postuler-juste@<version>`, in `.mcp.json` and in the AI instructions). For a permanently installed command: `npm install -g postuler-juste`, then `postuler-juste init ~/my-search`. To contribute, install from the repository (see [Installation](#installation)).
 
-`init` creates your workspace (`--gabarit moderne` or `compact` to change the résumé template; `--langue en` for an English dashboard and CLI, French being the default) and prints the starting prompt to give your AI. Then:
+`init` creates your workspace (`--gabarit moderne` or `compact` to change the résumé template; `--langue en` for English AI instructions, grid, dashboard and CLI, French being the default) and prints the starting prompt to give your AI. Then:
 
 1. drop your résumé into `~/my-search/a-deposer/`;
 2. open your AI in `~/my-search` (Claude Code: `cd ~/my-search` then `claude`, and accept the MCP server);
@@ -134,7 +134,7 @@ npm install -g postuler-juste          # or a permanently installed command
 
 Command written by `init` into `.mcp.json` and into the workspace instructions:
 
-- run through `npx`: `npx -y postuler-juste@<version>` (on Windows, `cmd /c npx …` for the MCP server). The npx cache can be cleared, so its path is never written. The version is pinned so that the database and the application stay in step; if needed, npx downloads it again (connection required). The application instructions (`AGENTS.md`) are copied into `procedures/application.md`. To change versions, replace the number in `.mcp.json` and in the instructions, or switch to a global installation;
+- run through `npx`: `npx -y postuler-juste@<version>` (on Windows, `cmd /c npx …` for the MCP server). The npx cache can be cleared, so its path is never written. The version is pinned so that the database and the application stay in step; if needed, npx downloads it again (connection required). The application instructions (`AGENTS.md`, or `AGENTS.en.md` for an English workspace) are copied into `procedures/application.md`. To change versions, replace the number in `.mcp.json` and in the instructions, or switch to a global installation;
 - installed (`npm install -g`, or from the repository): `node <path>/bin/postuler-juste.js`, with the absolute path of the installation.
 
 From the repository (contributors):
@@ -197,7 +197,7 @@ To designate it, in order of precedence:
 | `titresExclus` | Regular expressions (case-insensitive): titles discarded without reading | `[]` |
 | `employeursRefuses` | Regular expressions: refused employers (title, company, start of description) | `[]` |
 | `terminal` | Command opening a terminal with the agent (dashboard buttons); `{dossier}` and `{invite}` are substituted | Windows: `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]`; elsewhere: none |
-| `langue` | Language of the dashboard, the CLI messages and the generated tracking file: `fr` or `en` (written by `init --langue`); the selector in the dashboard header takes precedence, for that browser | `fr` |
+| `langue` | Language of the dashboard, the CLI messages, the MCP server and the generated tracking file: `fr` or `en` (written by `init --langue`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser | `fr` |
 
 Environment variables also recognised: `POSTULER_JUSTE_CONFIG` (config file), `POSTULER_JUSTE_BASE` (database), `POSTULER_JUSTE_PORT`, `POSTULER_JUSTE_LANGUE`.
 
@@ -335,7 +335,7 @@ ui/                 React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query i
 docs/adr/           architecture decisions (in French)
 ```
 
-See also [`AGENTS.md`](AGENTS.md) (driving by an AI), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server) and the architecture decisions in [`docs/adr/`](docs/adr/) (in French).
+See also [`AGENTS.en.md`](AGENTS.en.md) (driving by an AI; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server) and the architecture decisions in [`docs/adr/`](docs/adr/) (in French).
 
 ## License
 

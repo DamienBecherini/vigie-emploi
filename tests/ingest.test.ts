@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -81,6 +81,14 @@ describe('ingestion', () => {
   afterEach(() => {
     db.close();
     rmSync(dossier, { recursive: true, force: true });
+  });
+
+  it('supprime aussi les e-mails aux noms à crochets et points de suspension (Windows)', async () => {
+    const emails = join(dossier, 'emails');
+    renameSync(join(emails, 'linkedin.eml'), join(emails, '___Potentiel-SPAM___  [Damien x Celad] Nouvelle opportunité ... - 2026-10-28 1330.eml'));
+    const r = await ingerer(db, { dossierEmails: emails, telechargeur });
+    expect(r.erreurs.filter((e) => /non supprimé/.test(e.message))).toEqual([]);
+    expect(readdirSync(emails)).toEqual([]);
   });
 
   it('ajoute, écarte, télécharge seulement Hellowork / Free-Work, puis supprime les .eml', async () => {

@@ -1,6 +1,6 @@
 // Ingestion de la boîte de réception : .eml → offres en base, puis suppression des e-mails traités.
-import { readdirSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, unlinkSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import type { Base } from '../db/base.ts';
 import type { Config } from '../core/config.ts';
 import { transaction } from '../db/base.ts';
@@ -210,9 +210,16 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
 
   // 3. Suppression des e-mails lus sans erreur et dont les offres sont en base.
   if (!o.garder) {
+    // unlinkSync et non rmSync : sous Windows, rmSync ne supprimait rien, sans erreur, sur certains noms
+    // (crochets, « ... »), et l'e-mail revenait au lot suivant. Chaque suppression est vérifiée.
     for (const chemin of lus) {
-      rmSync(chemin);
-      resume.fichiers_supprimes++;
+      try {
+        unlinkSync(chemin);
+        if (existsSync(chemin)) throw new Error('fichier toujours présent après suppression');
+        resume.fichiers_supprimes++;
+      } catch (e) {
+        resume.erreurs.push({ fichier: basename(chemin), message: `e-mail lu mais non supprimé : ${(e as Error).message}` });
+      }
     }
   }
   return resume;

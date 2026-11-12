@@ -18,7 +18,13 @@ export interface EmailLu {
   sujet: string;
   date: string | null;
   offres: OffreEmail[];
+  /** Accusé de réception d'une candidature déjà envoyée (pas une alerte) : ses liens ne sont pas de nouvelles offres. */
+  confirmation: boolean;
 }
+
+/** Objets des accusés de réception de candidature (LinkedIn, Free-Work, Indeed, Welcome to the Jungle, ATS…). */
+export const SUJET_CONFIRMATION =
+  /confirmation de (votre |ta )?candidature|(votre|ta) candidature (a (bien )?été|est) (envoyée|transmise|reçue|enregistrée)|candidature (bien )?(envoyée|reçue|transmise)|nous avons (bien )?reçu (votre|ta) candidature|merci pour (votre|ta) candidature|application (was )?(sent|submitted|received)|thank you for (your )?appl/i;
 
 /** Textes de liens qui ne sont pas des intitulés d'offres. */
 const LIENS_GENERIQUES =
@@ -63,5 +69,5 @@ export async function lireEmail(contenu: Buffer | string): Promise<EmailLu> {
     const m = texteHtml(msg.html).match(/Offre\s*:\s*(.+?)\s+Postuler\b/);
     if (m) liste[0].titre = m[1].trim().slice(0, 140);
   }
-  return { sujet, date, offres: liste };
+  return { sujet, date, offres: liste, confirmation: SUJET_CONFIRMATION.test(sujet) };
 }

@@ -291,6 +291,10 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     for (const e of r.detail.ecartees) console.log(`  écartée #${e.id} ${tronquer(e.titre, 70)} (${e.motif})`);
     for (const e of r.erreurs) console.log(`  erreur ${e.fichier ?? e.url} : ${e.message}`);
     for (const f of r.sans_offre) console.log(`  aucune offre reconnue, e-mail conservé : ${f}`);
+    for (const c of r.confirmations) {
+      const connues = c.offres_connues.map((x) => `#${x.id} (${x.statut})`).join(', ');
+      console.log(`  accusé de candidature (pas une alerte) : ${c.sujet}${connues ? ` → ${connues}` : ' → offre absente de la base'}`);
+    }
     if (r.nouvelles) console.log('Suite : postuler-juste a-lire');
   },
 

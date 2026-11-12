@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -81,6 +81,19 @@ describe('ingestion', () => {
   afterEach(() => {
     db.close();
     rmSync(dossier, { recursive: true, force: true });
+  });
+
+  it('un accusé de réception de candidature ne crée pas d’offre', async () => {
+    const emails = join(dossier, 'emails');
+    const brut = readFileSync(join(emails, 'indeed.eml'), 'utf8').replace(/^Subject: .*$/m, 'Subject: Confirmation de votre candidature Developpeur web');
+    rmSync(emails, { recursive: true, force: true });
+    mkdirSync(emails);
+    writeFileSync(join(emails, 'confirmation.eml'), brut);
+    const r = await ingerer(db, { dossierEmails: emails, telechargeur });
+    expect(r.nouvelles).toBe(0);
+    expect(r.confirmations).toHaveLength(1);
+    expect(r.confirmations[0].sujet).toMatch(/Confirmation de votre candidature/);
+    expect(readdirSync(emails)).toEqual([]);
   });
 
   it('supprime aussi les e-mails aux noms à crochets et points de suspension (Windows)', async () => {

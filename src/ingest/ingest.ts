@@ -50,6 +50,11 @@ export interface ResumeIngest {
   erreurs: { fichier?: string; url?: string; message: string }[];
   /** E-mails lus sans aucune offre reconnue : conservés (format inconnu, à signaler). */
   sans_offre: string[];
+  /**
+   * Accusés de réception de candidature : leurs liens ne deviennent pas des offres. `offres_connues` = offres
+   * de l'e-mail déjà en base (id, statut). À l'IA de vérifier que la candidature est enregistrée comme envoyée.
+   */
+  confirmations: { fichier: string; sujet: string; date: string | null; offres_connues: { id: number; statut: string; titre: string }[] }[];
   detail: { nouvelles: OffreIngeree[]; ecartees: OffreIngeree[]; doublons: OffreIngeree[] };
 }
 
@@ -78,6 +83,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     avec_description: 0,
     erreurs: [],
     sans_offre: [],
+    confirmations: [],
     detail: { nouvelles: [], ecartees: [], doublons: [] },
   };
 
@@ -98,6 +104,15 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     const chemin = join(o.dossierEmails, f);
     try {
       const email = await lireEmail(readFileSync(chemin));
+      if (email.confirmation) {
+        const connues = email.offres
+          .map((off) => trouverOffre(db, off.source, off.idSite))
+          .filter((x): x is NonNullable<typeof x> => Boolean(x))
+          .map((x) => ({ id: x.id, statut: x.statut, titre: x.titre }));
+        resume.confirmations.push({ fichier: f, sujet: email.sujet, date: email.date, offres_connues: connues });
+        lus.push(chemin);
+        continue;
+      }
       for (const off of email.offres) {
         const deja = offres.get(off.url);
         if (!deja) offres.set(off.url, off);

@@ -1,4 +1,5 @@
-import { LIBELLES_STATUTS, type Statut } from '../../../src/core/statuts.ts';
+import type { Statut } from '../../../src/core/statuts.ts';
+import { nombre, statutAffiche, t } from '../i18n/index.ts';
 
 const COULEURS: Record<Statut, string> = {
   nouvelle: 'bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100',
@@ -18,17 +19,17 @@ const COULEURS: Record<Statut, string> = {
 export function BadgeStatut({ statut }: { statut: Statut }) {
   return (
     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COULEURS[statut] ?? ''}`}>
-      {LIBELLES_STATUTS[statut] ?? statut}
+      {statutAffiche(statut)}
     </span>
   );
 }
 
 export function formaterNote(n: number | null): string {
-  return n === null ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+  return n === null ? '—' : nombre(n, 1);
 }
 
 export function BadgeNote({ note }: { note: number | null }) {
-  if (note === null) return <span className="text-slate-500 dark:text-slate-400" aria-label="sans note">—</span>;
+  if (note === null) return <span className="text-slate-500 dark:text-slate-400" aria-label={t('badge.sansNote')}>—</span>;
   const c =
     note >= 6
       ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-slate-950'

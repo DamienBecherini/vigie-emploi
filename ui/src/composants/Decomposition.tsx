@@ -3,18 +3,19 @@ import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type DetailOffre, type Note, type SaisieSousNotes } from '../api.ts';
 import { formaterNote } from './Badges.tsx';
+import { drapeauAffiche, nombre, pourcent, t, type CleUi } from '../i18n/index.ts';
 
-const virgule = (n: number, d = 2) => n.toLocaleString('fr-FR', { maximumFractionDigits: d });
+const virgule = (n: number, d = 2) => nombre(n, d);
 
-const ORIGINES: Record<string, string> = { ia: 'IA', interface: 'saisie à la main', calcul: 'barème', neutre: 'valeur neutre' };
+const ORIGINES: Record<string, CleUi> = { ia: 'origine.ia', interface: 'origine.interface', calcul: 'origine.calcul', neutre: 'origine.neutre' };
 
 export function BadgeAncienneGrille() {
   return (
     <span
       className="inline-block rounded-full border border-slate-400 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-500 dark:text-slate-300"
-      title="Note globale donnée avant la grille à critères : elle n'est pas recalculée quand la grille change"
+      title={t('decomp.ancienneTitre')}
     >
-      ancienne grille
+      {t('decomp.ancienne')}
     </span>
   );
 }
@@ -26,23 +27,23 @@ export function DecompositionNote({ note }: { note: Note }) {
     <div className="space-y-2">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <caption className="sr-only">Décomposition de la note</caption>
+          <caption className="sr-only">{t('decomp.legende')}</caption>
           <thead className="text-left text-slate-600 dark:text-slate-300">
             <tr>
               <th scope="col" className="py-1 pr-2">
-                Critère
+                {t('decomp.critere')}
               </th>
               <th scope="col" className="px-2 py-1 text-right">
-                Sous-note
+                {t('decomp.sousNote')}
               </th>
               <th scope="col" className="px-2 py-1 text-right">
-                Poids
+                {t('decomp.poids')}
               </th>
               <th scope="col" className="px-2 py-1 text-right">
-                Apport
+                {t('decomp.apport')}
               </th>
               <th scope="col" className="py-1 pl-2">
-                Justification
+                {t('decomp.justification')}
               </th>
             </tr>
           </thead>
@@ -51,12 +52,12 @@ export function DecompositionNote({ note }: { note: Note }) {
               <tr key={c.id} className="border-t border-slate-200 align-top dark:border-slate-700">
                 <th scope="row" className="py-1 pr-2 text-left font-semibold">
                   {c.libelle}
-                  <span className="block text-xs font-normal text-slate-600 dark:text-slate-400">{ORIGINES[c.origine] ?? c.origine}</span>
+                  <span className="block text-xs font-normal text-slate-600 dark:text-slate-400">{ORIGINES[c.origine] ? t(ORIGINES[c.origine]) : c.origine}</span>
                 </th>
                 <td className={`px-2 py-1 text-right font-semibold tabular-nums ${c.origine === 'neutre' ? 'text-amber-800 dark:text-amber-300' : ''}`}>
                   {virgule(c.note, 1)}
                 </td>
-                <td className="px-2 py-1 text-right tabular-nums">{Math.round(c.poids_normalise * 100)} %</td>
+                <td className="px-2 py-1 text-right tabular-nums">{pourcent(c.poids_normalise * 100)}</td>
                 <td className="px-2 py-1 text-right tabular-nums">{virgule(c.contribution)}</td>
                 <td className="py-1 pl-2 break-words">{c.justification ?? '—'}</td>
               </tr>
@@ -65,7 +66,7 @@ export function DecompositionNote({ note }: { note: Note }) {
           <tfoot>
             <tr className="border-t-2 border-slate-300 dark:border-slate-600">
               <th scope="row" className="py-1 pr-2 text-left">
-                Moyenne pondérée
+                {t('decomp.moyenne')}
               </th>
               <td colSpan={3} className="px-2 py-1 text-right font-semibold tabular-nums">
                 {virgule(d.moyenne)}
@@ -79,25 +80,25 @@ export function DecompositionNote({ note }: { note: Note }) {
         <ul className="text-sm">
           {d.regles.map((r) => (
             <li key={r.id} className="font-semibold text-rose-800 dark:text-rose-200">
-              Règle bloquante : {r.libelle} → {r.effet === 'zero' ? 'note à 0' : `plafond ${virgule(r.valeur!)}`}
-              {!r.effective && <span className="font-normal"> (sans effet : la moyenne est déjà en dessous)</span>}
+              {t('decomp.regle', { libelle: r.libelle, effet: r.effet === 'zero' ? t('decomp.noteA0') : t('decomp.plafond', { valeur: virgule(r.valeur!) }) })}
+              {!r.effective && <span className="font-normal">{t('decomp.sansEffet')}</span>}
             </li>
           ))}
         </ul>
       )}
       {d.bloquants_ignores.length > 0 && (
-        <p className="text-sm text-slate-600 dark:text-slate-400">Règles signalées mais inactives ou retirées de la grille : {d.bloquants_ignores.join(', ')}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{t('decomp.ignorees', { regles: d.bloquants_ignores.join(', ') })}</p>
       )}
       {d.drapeaux.length > 0 && (
-        <ul className="text-sm text-amber-900 dark:text-amber-200" aria-label="Drapeaux">
+        <ul className="text-sm text-amber-900 dark:text-amber-200" aria-label={t('decomp.drapeaux')}>
           {d.drapeaux.map((f) => (
-            <li key={f.code}>⚑ {f.message}</li>
+            <li key={f.code}>⚑ {drapeauAffiche(f)}</li>
           ))}
         </ul>
       )}
       <p className="text-sm text-slate-700 dark:text-slate-300">
-        Note exacte {virgule(d.note_exacte, 3)}, affichée {formaterNote(d.note)} · grille v{note.grille_version}
-        {note.recalculee_le && ` · recalculée le ${note.recalculee_le.slice(8, 10)}/${note.recalculee_le.slice(5, 7)}`}
+        {t('decomp.exacte', { exacte: virgule(d.note_exacte, 3), note: formaterNote(d.note), version: note.grille_version })}
+        {note.recalculee_le && t('decomp.recalculee', { date: `${note.recalculee_le.slice(8, 10)}/${note.recalculee_le.slice(5, 7)}` })}
       </p>
     </div>
   );
@@ -135,13 +136,13 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
     mutationFn: () => {
       const criteres: SaisieSousNotes['criteres'] = {};
       for (const [id, l] of Object.entries(s.lignes)) {
-        const t = l.note.trim().replace(',', '.');
-        if (t === '') {
+        const brut = l.note.trim().replace(',', '.');
+        if (brut === '') {
           criteres[id] = null;
           continue;
         }
-        const v = Number(t);
-        if (!Number.isFinite(v) || v < 0 || v > 10) throw new Error(`${id} : sous-note de 0 à 10 attendue`);
+        const v = Number(brut);
+        if (!Number.isFinite(v) || v < 0 || v > 10) throw new Error(t('sousNotes.invalide', { critere: id }));
         criteres[id] = { note: v, justification: l.justification.trim() || null };
       }
       const nb = (x: string) => (x.trim() ? Number(x.replace(/\s/g, '').replace(',', '.')) : null);
@@ -183,14 +184,14 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
           setEdition(true);
         }}
       >
-        {n?.decomposition ? 'Corriger les sous-notes' : 'Noter par critères'}
+        {n?.decomposition ? t('sousNotes.corriger') : t('sousNotes.noter')}
       </button>
     );
   }
   return (
     <form
       className="mt-2 space-y-3 rounded-md border border-slate-300 p-3 dark:border-slate-600"
-      aria-label="Correction des sous-notes"
+      aria-label={t('sousNotes.formulaire')}
       onSubmit={(e) => {
         e.preventDefault();
         maj.mutate();
@@ -208,14 +209,14 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
                 id={`${base}-${c.id}`}
                 className="champ tabular-nums"
                 inputMode="decimal"
-                placeholder="0 à 10"
+                placeholder={t('sousNotes.exemple')}
                 value={s.lignes[c.id]?.note ?? ''}
                 onChange={(e) => setS({ ...s, lignes: { ...s.lignes, [c.id]: { ...s.lignes[c.id], note: e.target.value } } })}
               />
             </div>
             <div className="min-w-48 flex-1">
               <label htmlFor={`${base}-${c.id}-j`} className="etiquette">
-                Justification
+                {t('decomp.justification')}
               </label>
               <input
                 id={`${base}-${c.id}-j`}
@@ -227,48 +228,48 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
           </div>
         ))}
       <fieldset className="flex flex-wrap gap-2">
-        <legend className="mb-1 text-sm font-semibold">Données des critères calculés (vide : déduites de l'offre)</legend>
+        <legend className="mb-1 text-sm font-semibold">{t('sousNotes.calcules')}</legend>
         <div className="w-36">
           <label htmlFor={`${base}-jours`} className="etiquette">
-            Jours sur site
+            {t('sousNotes.joursSurSite')}
           </label>
           <select id={`${base}-jours`} className="champ" value={s.jours} onChange={(e) => setS({ ...s, jours: e.target.value })}>
-            <option value="">Selon l'offre</option>
-            <option value="0">0 (full remote)</option>
+            <option value="">{t('sousNotes.selonOffre')}</option>
+            <option value="0">{t('sousNotes.fullRemote')}</option>
             {[1, 2, 3, 4, 5].map((j) => (
               <option key={j} value={j}>
-                {j} j / semaine
+                {t('sousNotes.joursSemaine', { n: j })}
               </option>
             ))}
           </select>
         </div>
         <div className="w-28">
           <label htmlFor={`${base}-min`} className="etiquette">
-            Salaire min
+            {t('sousNotes.salaireMin')}
           </label>
           <input id={`${base}-min`} className="champ" inputMode="decimal" placeholder="55000" value={s.min} onChange={(e) => setS({ ...s, min: e.target.value })} />
         </div>
         <div className="w-28">
           <label htmlFor={`${base}-max`} className="etiquette">
-            Salaire max
+            {t('sousNotes.salaireMax')}
           </label>
           <input id={`${base}-max`} className="champ" inputMode="decimal" placeholder="65000" value={s.max} onChange={(e) => setS({ ...s, max: e.target.value })} />
         </div>
         <div className="w-28">
           <label htmlFor={`${base}-unite`} className="etiquette">
-            Unité
+            {t('sousNotes.unite')}
           </label>
           <select id={`${base}-unite`} className="champ" value={s.unite} onChange={(e) => setS({ ...s, unite: e.target.value as typeof s.unite })}>
-            <option value="an">€ / an</option>
-            <option value="mois">€ / mois</option>
-            <option value="jour">€ / jour</option>
-            <option value="heure">€ / heure</option>
+            <option value="an">{t('sousNotes.parAn')}</option>
+            <option value="mois">{t('sousNotes.parMois')}</option>
+            <option value="jour">{t('sousNotes.parJour')}</option>
+            <option value="heure">{t('sousNotes.parHeure')}</option>
           </select>
         </div>
       </fieldset>
       {grille.regles.length > 0 && (
         <fieldset>
-          <legend className="mb-1 text-sm font-semibold">Règles bloquantes qui s'appliquent</legend>
+          <legend className="mb-1 text-sm font-semibold">{t('sousNotes.regles')}</legend>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {grille.regles.map((r) => (
               <label key={r.id} className="flex items-center gap-1.5 text-sm">
@@ -284,7 +285,7 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
                   }}
                 />
                 {r.libelle}
-                {!r.actif && <span className="text-xs text-slate-500 dark:text-slate-400">(inactive)</span>}
+                {!r.actif && <span className="text-xs text-slate-500 dark:text-slate-400">{t('sousNotes.inactive')}</span>}
               </label>
             ))}
           </div>
@@ -292,10 +293,10 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
       )}
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" className="bouton-principal" disabled={maj.isPending}>
-          Recalculer et enregistrer
+          {t('sousNotes.recalculer')}
         </button>
         <button type="button" className="bouton" onClick={() => setEdition(false)}>
-          Annuler
+          {t('commun.annuler')}
         </button>
         {erreur && (
           <span role="alert" className="text-sm text-rose-700 dark:text-rose-300">
@@ -303,7 +304,7 @@ export function EditeurSousNotes({ offre }: { offre: DetailOffre }) {
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-600 dark:text-slate-400">Une nouvelle note s'ajoute à l'historique (origine interface) ; la note finale reste calculée.</p>
+      <p className="text-xs text-slate-600 dark:text-slate-400">{t('sousNotes.aide')}</p>
     </form>
   );
 }

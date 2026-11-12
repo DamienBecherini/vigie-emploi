@@ -3,12 +3,13 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIBELLES_NIVEAUX, NIVEAUX, noteExemple, validerGrille, type Grille, type Niveau } from '../../../src/core/grille.ts';
+import { NIVEAUX, noteExemple, validerGrille, type Grille, type Niveau } from '../../../src/core/grille.ts';
+import { niveauAffiche, nombre, pourcent, t } from '../i18n/index.ts';
 import { api, type ChangementNote, type Impact } from '../api.ts';
 import { useDebounce } from '../etat.ts';
 import { BadgeNote, formaterDate, formaterNote } from './Badges.tsx';
 
-const virgule = (n: number, d = 1) => n.toLocaleString('fr-FR', { maximumFractionDigits: d });
+const virgule = (n: number, d = 1) => nombre(n, d);
 
 /** Champ numérique : accepte la virgule ; une saisie vide ou invalide n'est pas reportée. */
 function ChampNombre(props: {
@@ -77,7 +78,7 @@ function Section({ titre, children, aide }: { titre: string; children: React.Rea
 function Poids({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }) {
   const somme = g.criteres.reduce((s, c) => s + c.poids, 0);
   return (
-    <Section titre="Poids des critères" aide="Les poids sont relatifs : leur somme est ramenée à 100 %. Les critères « calcul » sont notés par le barème, les autres par l'IA.">
+    <Section titre={t('poids.titre')} aide={t('poids.aide')}>
       <ul className="space-y-2">
         {g.criteres.map((c, i) => {
           const pct = somme > 0 ? (c.poids / somme) * 100 : 0;
@@ -85,7 +86,7 @@ function Poids({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void })
             <li key={c.id} className="grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_3.5rem] items-center gap-2 text-sm">
               <label htmlFor={`poids-${c.id}`} title={c.description}>
                 <span className="font-semibold">{c.libelle}</span>{' '}
-                <span className="text-xs text-slate-600 dark:text-slate-400">({c.source === 'ia' ? 'IA' : 'calcul'})</span>
+                <span className="text-xs text-slate-600 dark:text-slate-400">({c.source === 'ia' ? t('poids.ia') : t('poids.calcul')})</span>
               </label>
               <input
                 id={`poids-${c.id}`}
@@ -96,47 +97,47 @@ function Poids({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void })
                 value={c.poids}
                 className="accent-blue-700 dark:accent-blue-400"
                 onChange={(e) => maj((x) => void (x.criteres[i].poids = Number(e.target.value)))}
-                aria-valuetext={`${c.poids}, soit ${Math.round(pct)} %`}
+                aria-valuetext={t('poids.valeur', { poids: c.poids, pct: Math.round(pct) })}
               />
               <span className="text-right tabular-nums">{c.poids}</span>
-              <span className="text-right font-semibold tabular-nums">{Math.round(pct)} %</span>
+              <span className="text-right font-semibold tabular-nums">{pourcent(pct)}</span>
             </li>
           );
         })}
       </ul>
       <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-        Total des poids : <strong className="tabular-nums">{somme}</strong>, normalisé à 100 %.
-        {somme === 0 && <span className="ml-1 text-rose-700 dark:text-rose-300">Au moins un critère doit avoir un poids.</span>}
+        {t('poids.total')}<strong className="tabular-nums">{somme}</strong>{t('poids.normalise')}
+        {somme === 0 && <span className="ml-1 text-rose-700 dark:text-rose-300">{t('poids.aucun')}</span>}
       </p>
     </Section>
   );
 }
 
 function Baremes({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }) {
-  const t = g.baremes.teletravail;
+  const tt = g.baremes.teletravail;
   const r = g.baremes.remuneration;
   const idRef = useId();
   return (
-    <Section titre="Barèmes" aide="Sous-notes calculées par l'application. Inconnu = valeur neutre et un drapeau sur l'offre.">
-      <h4 className="mb-1 text-sm font-semibold">Télétravail : sous-note selon les jours sur site par semaine</h4>
+    <Section titre={t('baremes.titre')} aide={t('baremes.aide')}>
+      <h4 className="mb-1 text-sm font-semibold">{t('baremes.teletravail')}</h4>
       <div className="flex flex-wrap gap-2">
-        {t.jours_sur_site.map((v, j) => (
+        {tt.jours_sur_site.map((v, j) => (
           <ChampNombre
             key={j}
             className="w-20"
-            libelle={j === 0 ? '0 j (remote)' : `${j} j`}
+            libelle={j === 0 ? t('baremes.remote') : t('baremes.jours', { n: j })}
             valeur={v}
             changer={(n) => n !== undefined && maj((x) => void (x.baremes.teletravail.jours_sur_site[j] = n))}
           />
         ))}
-        <ChampNombre className="w-20" libelle="Inconnu" valeur={t.inconnu} changer={(n) => n !== undefined && maj((x) => void (x.baremes.teletravail.inconnu = n))} />
+        <ChampNombre className="w-20" libelle={t('baremes.inconnu')} valeur={tt.inconnu} changer={(n) => n !== undefined && maj((x) => void (x.baremes.teletravail.inconnu = n))} />
       </div>
 
-      <h4 className="mt-4 mb-1 text-sm font-semibold">Rémunération : plancher = 5, cible haute = 10, sous le plancher = 0, linéaire entre</h4>
+      <h4 className="mt-4 mb-1 text-sm font-semibold">{t('baremes.remuneration')}</h4>
       <div className="flex flex-wrap items-end gap-2">
         <div className="w-48">
           <label htmlFor={idRef} className="etiquette">
-            Valeur retenue d'une fourchette
+            {t('baremes.reference')}
           </label>
           <select
             id={idRef}
@@ -144,20 +145,20 @@ function Baremes({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void 
             value={r.reference}
             onChange={(e) => maj((x) => void (x.baremes.remuneration.reference = e.target.value as Grille['baremes']['remuneration']['reference']))}
           >
-            <option value="milieu">Milieu</option>
-            <option value="min">Bas de fourchette</option>
-            <option value="max">Haut de fourchette</option>
+            <option value="milieu">{t('baremes.milieu')}</option>
+            <option value="min">{t('baremes.bas')}</option>
+            <option value="max">{t('baremes.haut')}</option>
           </select>
         </div>
-        <ChampNombre className="w-24" libelle="Inconnue" valeur={r.inconnue} changer={(n) => n !== undefined && maj((x) => void (x.baremes.remuneration.inconnue = n))} />
+        <ChampNombre className="w-24" libelle={t('baremes.inconnue')} valeur={r.inconnue} changer={(n) => n !== undefined && maj((x) => void (x.baremes.remuneration.inconnue = n))} />
       </div>
       <fieldset className="mt-2">
-        <legend className="text-sm font-semibold">Salaire (K€ brut annuel ; un salaire mensuel compte × 12)</legend>
+        <legend className="text-sm font-semibold">{t('baremes.salaire')}</legend>
         <div className="flex flex-wrap gap-2">
           {(['plancher', 'cible_basse', 'cible_haute'] as const).map((k) => (
             <ChampNombre
               key={k}
-              libelle={{ plancher: 'Plancher', cible_basse: 'Cible basse', cible_haute: 'Cible haute' }[k]}
+              libelle={{ plancher: t('baremes.plancher'), cible_basse: t('baremes.cibleBasse'), cible_haute: t('baremes.cibleHaute') }[k]}
               valeur={r.salaire[k]}
               changer={(n) => n !== undefined && maj((x) => void (x.baremes.remuneration.salaire[k] = n))}
             />
@@ -165,13 +166,13 @@ function Baremes({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void 
         </div>
       </fieldset>
       <fieldset className="mt-2">
-        <legend className="text-sm font-semibold">TJM (€ par jour ; un taux horaire compte × 7)</legend>
+        <legend className="text-sm font-semibold">{t('baremes.tjm')}</legend>
         <div className="flex flex-wrap gap-2">
           {(['plancher', 'plancher_full_remote', 'cible_basse', 'cible_haute'] as const).map((k) => (
             <ChampNombre
               key={k}
               className={k === 'plancher_full_remote' ? 'w-36' : 'w-28'}
-              libelle={{ plancher: 'Plancher', plancher_full_remote: 'Plancher full remote', cible_basse: 'Cible basse', cible_haute: 'Cible haute' }[k]}
+              libelle={{ plancher: t('baremes.plancher'), plancher_full_remote: t('baremes.plancherFullRemote'), cible_basse: t('baremes.cibleBasse'), cible_haute: t('baremes.cibleHaute') }[k]}
               valeur={r.tjm[k]}
               vide={k === 'plancher_full_remote'}
               changer={(n) =>
@@ -184,7 +185,7 @@ function Baremes({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void 
           ))}
         </div>
       </fieldset>
-      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">La cible basse sert de repère (affichée à l'IA) ; le calcul va du plancher à la cible haute.</p>
+      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t('baremes.aideCible')}</p>
     </Section>
   );
 }
@@ -192,7 +193,7 @@ function Baremes({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void 
 function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }) {
   const [nouvelle, setNouvelle] = useState({ id: '', libelle: '' });
   return (
-    <Section titre="Règles bloquantes" aide="L'IA signale les règles qui s'appliquent à une offre ; l'application met la note à 0 ou la plafonne. Une règle désactivée est ignorée (les offres concernées sont recalculées).">
+    <Section titre={t('regles.titre')} aide={t('regles.aide')}>
       <ul className="space-y-2">
         {g.regles.map((r, i) => (
           <li key={r.id} className="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-2 dark:bg-slate-800/60">
@@ -203,7 +204,7 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
                 checked={r.actif}
                 onChange={(e) => maj((x) => void (x.regles[i].actif = e.target.checked))}
               />
-              Active
+              {t('regles.active')}
             </label>
             <div className="min-w-52 flex-1">
               <label htmlFor={`regle-${r.id}`} className="etiquette">
@@ -213,7 +214,7 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
             </div>
             <div className="w-32">
               <label htmlFor={`effet-${r.id}`} className="etiquette">
-                Effet
+                {t('regles.effet')}
               </label>
               <select
                 id={`effet-${r.id}`}
@@ -230,16 +231,16 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
                   })
                 }
               >
-                <option value="zero">Note à 0</option>
-                <option value="plafond">Plafond</option>
-                <option value="plafond_critere">Plafond si critère faible</option>
+                <option value="zero">{t('regles.zero')}</option>
+                <option value="plafond">{t('regles.plafond')}</option>
+                <option value="plafond_critere">{t('regles.plafondCritere')}</option>
               </select>
             </div>
             {r.effet === 'plafond_critere' && (
               <>
                 <div className="w-40">
                   <label htmlFor={`critere-${r.id}`} className="etiquette">
-                    Critère
+                    {t('regles.critere')}
                   </label>
                   <select
                     id={`critere-${r.id}`}
@@ -254,14 +255,14 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
                     ))}
                   </select>
                 </div>
-                <ChampNombre className="w-24" libelle="Sous le seuil" valeur={r.seuil} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].seuil = n))} />
+                <ChampNombre className="w-24" libelle={t('regles.sousSeuil')} valeur={r.seuil} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].seuil = n))} />
               </>
             )}
             {r.effet === 'plafond' && (
-              <ChampNombre className="w-24" libelle="Plafond" valeur={r.valeur} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].valeur = n))} />
+              <ChampNombre className="w-24" libelle={t('regles.plafond')} valeur={r.valeur} changer={(n) => n !== undefined && maj((x) => void (x.regles[i].valeur = n))} />
             )}
-            <button type="button" className="bouton" onClick={() => maj((x) => void x.regles.splice(i, 1))} aria-label={`Supprimer la règle ${r.libelle}`}>
-              Supprimer
+            <button type="button" className="bouton" onClick={() => maj((x) => void x.regles.splice(i, 1))} aria-label={t('regles.supprimerLibelle', { libelle: r.libelle })}>
+              {t('regles.supprimer')}
             </button>
           </li>
         ))}
@@ -278,18 +279,18 @@ function Regles({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => void }
       >
         <div className="w-40">
           <label htmlFor="regle-nouvelle-id" className="etiquette">
-            Identifiant
+            {t('regles.identifiant')}
           </label>
-          <input id="regle-nouvelle-id" className="champ" placeholder="ex. esn-regie" value={nouvelle.id} onChange={(e) => setNouvelle({ ...nouvelle, id: e.target.value })} />
+          <input id="regle-nouvelle-id" className="champ" placeholder={t('regles.identifiantExemple')} value={nouvelle.id} onChange={(e) => setNouvelle({ ...nouvelle, id: e.target.value })} />
         </div>
         <div className="min-w-52 flex-1">
           <label htmlFor="regle-nouvelle-libelle" className="etiquette">
-            Libellé
+            {t('regles.libelle')}
           </label>
           <input id="regle-nouvelle-libelle" className="champ" value={nouvelle.libelle} onChange={(e) => setNouvelle({ ...nouvelle, libelle: e.target.value })} />
         </div>
         <button type="submit" className="bouton">
-          Ajouter une règle
+          {t('regles.ajouter')}
         </button>
       </form>
     </Section>
@@ -300,75 +301,75 @@ function Inventaire({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => vo
   const [filtre, setFiltre] = useState('');
   const [nouvelle, setNouvelle] = useState<{ techno: string; niveau: Niveau; precision: string }>({ techno: '', niveau: 'moyen', precision: '' });
   const f = filtre.trim().toLowerCase();
-  const lignes = g.inventaire.map((t, i) => ({ t, i })).filter(({ t }) => !f || `${t.techno} ${t.precision ?? ''}`.toLowerCase().includes(f));
-  const compte = (n: Niveau) => g.inventaire.filter((t) => t.niveau === n).length;
+  const lignes = g.inventaire.map((x, i) => ({ x, i })).filter(({ x }) => !f || `${x.techno} ${x.precision ?? ''}`.toLowerCase().includes(f));
+  const compte = (n: Niveau) => g.inventaire.filter((x) => x.niveau === n).length;
   return (
-    <Section titre="Inventaire de compétences" aide="Sert à l'IA pour le critère technique. Fort / moyen / léger / zéro.">
+    <Section titre={t('inventaire.titre')} aide={t('inventaire.aide')}>
       <div className="mb-2 flex flex-wrap items-end gap-3">
         <div className="w-64">
           <label htmlFor="inv-filtre" className="etiquette">
-            Filtrer
+            {t('inventaire.filtrer')}
           </label>
           <input id="inv-filtre" type="search" className="champ" value={filtre} onChange={(e) => setFiltre(e.target.value)} />
         </div>
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          {NIVEAUX.map((n) => `${LIBELLES_NIVEAUX[n]} ${compte(n)}`).join(' · ')}
+          {NIVEAUX.map((n) => `${niveauAffiche(n)} ${compte(n)}`).join(' · ')}
         </p>
       </div>
       <div className="max-h-80 overflow-y-auto rounded border border-slate-200 dark:border-slate-700">
         <table className="w-full text-sm">
-          <caption className="sr-only">Inventaire de compétences</caption>
+          <caption className="sr-only">{t('inventaire.titre')}</caption>
           <thead className="sticky top-0 bg-slate-100 text-left dark:bg-slate-800">
             <tr>
               <th scope="col" className="px-2 py-1">
-                Technologie
+                {t('inventaire.techno')}
               </th>
               <th scope="col" className="px-2 py-1">
-                Niveau
+                {t('inventaire.niveau')}
               </th>
               <th scope="col" className="px-2 py-1">
-                Précision
+                {t('inventaire.precision')}
               </th>
               <th scope="col" className="px-2 py-1">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t('inventaire.actions')}</span>
               </th>
             </tr>
           </thead>
           <tbody>
-            {lignes.map(({ t, i }) => (
+            {lignes.map(({ x, i }) => (
               <tr key={i} className="border-t border-slate-200 dark:border-slate-700">
                 <td className="px-2 py-1">
-                  <input aria-label="Technologie" className="champ" value={t.techno} onChange={(e) => maj((x) => void (x.inventaire[i].techno = e.target.value))} />
+                  <input aria-label={t('inventaire.techno')} className="champ" value={x.techno} onChange={(e) => maj((y) => void (y.inventaire[i].techno = e.target.value))} />
                 </td>
                 <td className="px-2 py-1">
                   <select
-                    aria-label={`Niveau de ${t.techno}`}
+                    aria-label={t('inventaire.niveauDe', { techno: x.techno })}
                     className="champ w-24"
-                    value={t.niveau}
-                    onChange={(e) => maj((x) => void (x.inventaire[i].niveau = e.target.value as Niveau))}
+                    value={x.niveau}
+                    onChange={(e) => maj((y) => void (y.inventaire[i].niveau = e.target.value as Niveau))}
                   >
                     {NIVEAUX.map((n) => (
                       <option key={n} value={n}>
-                        {LIBELLES_NIVEAUX[n]}
+                        {niveauAffiche(n)}
                       </option>
                     ))}
                   </select>
                 </td>
                 <td className="px-2 py-1">
                   <input
-                    aria-label={`Précision pour ${t.techno}`}
+                    aria-label={t('inventaire.precisionPour', { techno: x.techno })}
                     className="champ"
-                    value={t.precision ?? ''}
+                    value={x.precision ?? ''}
                     onChange={(e) =>
-                      maj((x) => {
-                        if (e.target.value) x.inventaire[i].precision = e.target.value;
-                        else delete x.inventaire[i].precision;
+                      maj((y) => {
+                        if (e.target.value) y.inventaire[i].precision = e.target.value;
+                        else delete y.inventaire[i].precision;
                       })
                     }
                   />
                 </td>
                 <td className="px-2 py-1 text-right">
-                  <button type="button" className="bouton" onClick={() => maj((x) => void x.inventaire.splice(i, 1))} aria-label={`Retirer ${t.techno}`}>
+                  <button type="button" className="bouton" onClick={() => maj((y) => void y.inventaire.splice(i, 1))} aria-label={t('inventaire.retirer', { techno: x.techno })}>
                     ×
                   </button>
                 </td>
@@ -394,30 +395,30 @@ function Inventaire({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => vo
       >
         <div className="min-w-40 flex-1">
           <label htmlFor="inv-techno" className="etiquette">
-            Nouvelle technologie
+            {t('inventaire.nouvelle')}
           </label>
           <input id="inv-techno" className="champ" value={nouvelle.techno} onChange={(e) => setNouvelle({ ...nouvelle, techno: e.target.value })} />
         </div>
         <div className="w-28">
           <label htmlFor="inv-niveau" className="etiquette">
-            Niveau
+            {t('inventaire.niveau')}
           </label>
           <select id="inv-niveau" className="champ" value={nouvelle.niveau} onChange={(e) => setNouvelle({ ...nouvelle, niveau: e.target.value as Niveau })}>
             {NIVEAUX.map((n) => (
               <option key={n} value={n}>
-                {LIBELLES_NIVEAUX[n]}
+                {niveauAffiche(n)}
               </option>
             ))}
           </select>
         </div>
         <div className="min-w-40 flex-1">
           <label htmlFor="inv-precision" className="etiquette">
-            Précision
+            {t('inventaire.precision')}
           </label>
           <input id="inv-precision" className="champ" value={nouvelle.precision} onChange={(e) => setNouvelle({ ...nouvelle, precision: e.target.value })} />
         </div>
         <button type="submit" className="bouton">
-          Ajouter
+          {t('inventaire.ajouter')}
         </button>
       </form>
     </Section>
@@ -426,7 +427,7 @@ function Inventaire({ g, maj }: { g: Grille; maj: (f: (g: Grille) => void) => vo
 
 function Exemples({ g }: { g: Grille }) {
   return (
-    <Section titre="Exemples de référence" aide="Servis à l'IA avec la grille pour caler ses sous-notes. Leur note est recalculée avec les réglages en cours (lecture seule : modifier le fichier grille.json).">
+    <Section titre={t('exemples.titre')} aide={t('exemples.aide')}>
       <ul className="space-y-2">
         {g.exemples.map((e, i) => {
           const d = noteExemple(g, e);
@@ -439,13 +440,13 @@ function Exemples({ g }: { g: Grille }) {
               </p>
               <p className="mt-1 text-slate-700 dark:text-slate-300">
                 {d.criteres.map((c) => `${c.libelle} ${virgule(c.note)}`).join(' · ')}
-                {d.regles.length > 0 && ` · règle : ${d.regles.map((r) => r.libelle).join(', ')}`}
+                {d.regles.length > 0 && t('exemples.regle', { regles: d.regles.map((r) => r.libelle).join(', ') })}
               </p>
               {e.commentaire && <p className="mt-1 italic">{e.commentaire}</p>}
             </li>
           );
         })}
-        {!g.exemples.length && <li className="text-sm text-slate-600 dark:text-slate-400">Aucun exemple dans la grille.</li>}
+        {!g.exemples.length && <li className="text-sm text-slate-600 dark:text-slate-400">{t('exemples.aucun')}</li>}
       </ul>
     </Section>
   );
@@ -476,21 +477,20 @@ function ListeChangements({ titre, liste, choisir }: { titre: string; liste: Cha
 function Apercu({ impact, chargement, erreur, choisir }: { impact?: Impact; chargement: boolean; erreur: string | null; choisir: (id: number) => void }) {
   return (
     <div role="status" aria-live="polite" className="rounded-md border border-blue-300 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
-      <h3 className="font-bold">Aperçu avant d'enregistrer</h3>
+      <h3 className="font-bold">{t('apercu.titre')}</h3>
       {erreur ? (
         <p className="text-sm text-rose-800 dark:text-rose-200">{erreur}</p>
       ) : chargement && !impact ? (
-        <p className="text-sm">Calcul…</p>
+        <p className="text-sm">{t('apercu.calcul')}</p>
       ) : impact ? (
         <>
           <p className="text-sm">
-            <strong>{impact.changees}</strong> offre{impact.changees > 1 ? 's' : ''} sur {impact.offres_recalculees} notée{impact.offres_recalculees > 1 ? 's' : ''} avec
-            sous-notes change{impact.changees > 1 ? 'nt' : ''} de note ; {impact.montent.length} passe{impact.montent.length > 1 ? 'nt' : ''} au-dessus du seuil (
-            {virgule(impact.seuil_apres)}), {impact.descendent.length} en dessous.
-            {impact.offres_recalculees === 0 && ' Les anciennes notes globales ne sont pas recalculées.'}
+            {t('apercu.changees', { n: impact.changees, total: impact.offres_recalculees })}{' '}
+            {t('apercu.montent', { n: impact.montent.length, seuil: virgule(impact.seuil_apres) })}, {t('apercu.descendent', { n: impact.descendent.length })}
+            {impact.offres_recalculees === 0 && t('apercu.anciennes')}
           </p>
-          <ListeChangements titre="Passent au-dessus du seuil" liste={impact.montent} choisir={choisir} />
-          <ListeChangements titre="Repassent sous le seuil" liste={impact.descendent} choisir={choisir} />
+          <ListeChangements titre={t('apercu.listeMontent')} liste={impact.montent} choisir={choisir} />
+          <ListeChangements titre={t('apercu.listeDescendent')} liste={impact.descendent} choisir={choisir} />
         </>
       ) : null}
     </div>
@@ -500,7 +500,7 @@ function Apercu({ impact, chargement, erreur, choisir }: { impact?: Impact; char
 function Historique({ actuelle, restaurer }: { actuelle: number | null; restaurer: (v: number) => void }) {
   const q = useQuery({ queryKey: ['grille-historique', actuelle], queryFn: api.historiqueGrille });
   return (
-    <Section titre="Historique des versions">
+    <Section titre={t('historique.titre')}>
       <ol className="space-y-1 text-sm">
         {(q.data ?? []).map((v) => (
           <li key={v.version} className="flex flex-wrap items-center gap-2">
@@ -511,16 +511,16 @@ function Historique({ actuelle, restaurer }: { actuelle: number | null; restaure
             <span className="rounded-full bg-slate-200 px-2 text-xs dark:bg-slate-700">{v.auteur}</span>
             <span className="min-w-0 flex-1 break-words">{v.resume}</span>
             {v.version === actuelle ? (
-              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">courante</span>
+              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">{t('historique.courante')}</span>
             ) : (
               <button
                 type="button"
                 className="bouton"
                 onClick={() => {
-                  if (window.confirm(`Revenir à la version ${v.version} ? Une nouvelle version sera créée et les notes recalculées.`)) restaurer(v.version);
+                  if (window.confirm(t('historique.confirmer', { version: v.version }))) restaurer(v.version);
                 }}
               >
-                Restaurer
+                {t('historique.restaurer')}
               </button>
             )}
           </li>
@@ -589,8 +589,8 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
     mutationFn: () => api.enregistrerGrille(validation.grille!, resume),
     onSuccess: (r) => {
       setResume('');
-      setMessage(`Version ${r.version} enregistrée : ${r.impact.changees} note(s) recalculée(s) changent.`);
-      annoncer(`Grille v${r.version} enregistrée`);
+      setMessage(t('reglages.enregistree', { version: r.version, n: r.impact.changees }));
+      annoncer(t('reglages.annonce', { version: r.version }));
       rafraichir();
     },
     onError: (e) => setMessage((e as Error).message),
@@ -598,7 +598,7 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
   const restaurer = useMutation({
     mutationFn: (v: number) => api.restaurerGrille(v),
     onSuccess: (r) => {
-      setMessage(`Version ${r.version} créée (${r.resume}) : ${r.impact.changees} note(s) changent.`);
+      setMessage(t('reglages.restauree', { version: r.version, resume: r.resume, n: r.impact.changees }));
       rafraichir();
     },
     onError: (e) => setMessage((e as Error).message),
@@ -615,34 +615,33 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
         <div className="flex items-start gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
           <div className="min-w-0 flex-1">
             <h2 id={titre} ref={entete} tabIndex={-1} className="text-lg font-bold">
-              Réglages de la note
+              {t('reglages.titre')}
             </h2>
             {q.data?.version && (
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                {reference?.nom} · version {q.data.version} du {formaterDate(q.data.le?.slice(0, 10) ?? null)} ({q.data.auteur}) : {q.data.resume}
+                {t('reglages.version', { nom: reference?.nom, version: q.data.version, date: formaterDate(q.data.le?.slice(0, 10) ?? null), auteur: q.data.auteur, resume: q.data.resume })}
               </p>
             )}
           </div>
-          <button type="button" className="bouton" onClick={fermer} aria-label="Fermer les réglages (Échap)">
-            <X className="size-4" aria-hidden="true" /> Fermer
+          <button type="button" className="bouton" onClick={fermer} aria-label={t('reglages.fermer')}>
+            <X className="size-4" aria-hidden="true" /> {t('theme.fermer')}
           </button>
         </div>
         {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
         {q.data && !q.data.grille && (
           <p className="p-4 text-sm">
-            Pas encore de grille de notation. La créer avec <code>postuler-juste grille --init</code> (copie de l'exemple dans{' '}
-            <code>profil/grille.json</code> du dossier de données), puis rouvrir ce panneau.
+            {t('reglages.pasDeGrille1')}<code>postuler-juste grille --init</code>{t('reglages.pasDeGrille2')}
+            <code>profil/grille.json</code>{t('reglages.pasDeGrille3')}
           </p>
         )}
         {brouillon && (
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              La note finale est calculée par l'application : moyenne pondérée des sous-notes, puis règles bloquantes, puis arrondi au demi-point. Changer un réglage
-              recalcule toutes les notes qui ont des sous-notes ; les anciennes notes globales restent figées.
+              {t('reglages.explication')}
             </p>
             <Poids g={brouillon} maj={maj} />
-            <Section titre="Seuil « à regarder »" aide="Utilisé par la vue rapide « Notées ≥ … » du tableau.">
-              <ChampNombre libelle="Seuil" valeur={brouillon.seuil} changer={(n) => n !== undefined && maj((x) => void (x.seuil = n))} />
+            <Section titre={t('reglages.seuilTitre')} aide={t('reglages.seuilAide')}>
+              <ChampNombre libelle={t('reglages.seuil')} valeur={brouillon.seuil} changer={(n) => n !== undefined && maj((x) => void (x.seuil = n))} />
             </Section>
             <Baremes g={brouillon} maj={maj} />
             <Regles g={brouillon} maj={maj} />
@@ -663,22 +662,22 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
             <div className="flex flex-wrap items-end gap-2">
               <div className="min-w-64 flex-1">
                 <label htmlFor="resume-grille" className="etiquette">
-                  Résumé du changement
+                  {t('reglages.resume')}
                 </label>
                 <input
                   id="resume-grille"
                   className="champ"
-                  placeholder="ex. Télétravail plus important"
+                  placeholder={t('reglages.resumeExemple')}
                   value={resume}
                   onChange={(e) => setResume(e.target.value)}
                   disabled={!modifie}
                 />
               </div>
               <button type="submit" className="bouton-principal" disabled={!modifie || !validation.grille || !resume.trim() || enregistrer.isPending}>
-                Enregistrer la version
+                {t('reglages.enregistrer')}
               </button>
               <button type="button" className="bouton" disabled={!modifie} onClick={() => reference && setBrouillon(structuredClone(reference))}>
-                Annuler les changements
+                {t('reglages.annuler')}
               </button>
             </div>
             {message && (

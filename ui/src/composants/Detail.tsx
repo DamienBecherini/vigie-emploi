@@ -1,7 +1,8 @@
 import { ExternalLink, Send, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIBELLES_STATUTS, STATUTS, type Statut } from '../../../src/core/statuts.ts';
+import { STATUTS, type Statut } from '../../../src/core/statuts.ts';
+import { statutAffiche, t } from '../i18n/index.ts';
 import { api, type DetailOffre } from '../api.ts';
 import { BadgeNote, BadgeStatut, formaterDate, formaterNote } from './Badges.tsx';
 import { FichiersDuDossier, Journal } from './Journal.tsx';
@@ -32,7 +33,7 @@ function EditeurTags({ offre }: { offre: DetailOffre }) {
   const ajouter = () => {
     const nouveaux = saisie
       .split(/[,\s]+/)
-      .map((t) => t.trim().toLowerCase())
+      .map((x) => x.trim().toLowerCase())
       .filter(Boolean);
     if (!nouveaux.length) return;
     maj.mutate([...new Set([...offre.tags, ...nouveaux])]);
@@ -40,16 +41,16 @@ function EditeurTags({ offre }: { offre: DetailOffre }) {
   };
   return (
     <div>
-      <ul className="mb-2 flex flex-wrap gap-1" aria-label="Tags de l'offre">
-        {offre.tags.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">Aucun tag</li>}
-        {offre.tags.map((t) => (
-          <li key={t} className="flex items-center gap-1 rounded-full bg-slate-200 py-0.5 pr-1 pl-2 text-xs dark:bg-slate-700">
-            {t}
+      <ul className="mb-2 flex flex-wrap gap-1" aria-label={t('tags.liste')}>
+        {offre.tags.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">{t('tags.aucun')}</li>}
+        {offre.tags.map((x) => (
+          <li key={x} className="flex items-center gap-1 rounded-full bg-slate-200 py-0.5 pr-1 pl-2 text-xs dark:bg-slate-700">
+            {x}
             <button
               type="button"
               className="rounded-full px-1 hover:bg-slate-300 dark:hover:bg-slate-600"
-              aria-label={`Retirer le tag ${t}`}
-              onClick={() => maj.mutate(offre.tags.filter((x) => x !== t))}
+              aria-label={t('tags.retirer', { tag: x })}
+              onClick={() => maj.mutate(offre.tags.filter((y) => y !== x))}
             >
               ×
             </button>
@@ -64,11 +65,11 @@ function EditeurTags({ offre }: { offre: DetailOffre }) {
         }}
       >
         <label htmlFor={id} className="sr-only">
-          Ajouter des tags
+          {t('tags.ajouterLibelle')}
         </label>
-        <input id={id} className="champ" placeholder="nouveau-tag" value={saisie} onChange={(e) => setSaisie(e.target.value)} />
+        <input id={id} className="champ" placeholder={t('tags.nouveau')} value={saisie} onChange={(e) => setSaisie(e.target.value)} />
         <button type="submit" className="bouton">
-          Ajouter
+          {t('tags.ajouter')}
         </button>
       </form>
     </div>
@@ -96,7 +97,7 @@ function EditeurLien({ offre }: { offre: DetailOffre }) {
             {offre.url_canonique}
           </a>
         ) : (
-          <span className="text-slate-500 dark:text-slate-400">Aucun lien enregistré</span>
+          <span className="text-slate-500 dark:text-slate-400">{t('lien.aucun')}</span>
         )}
         <button
           type="button"
@@ -106,7 +107,7 @@ function EditeurLien({ offre }: { offre: DetailOffre }) {
             setEdition(true);
           }}
         >
-          {offre.url_canonique ? 'Modifier' : 'Ajouter un lien'}
+          {offre.url_canonique ? t('lien.modifier') : t('lien.ajouter')}
         </button>
       </div>
     );
@@ -120,14 +121,14 @@ function EditeurLien({ offre }: { offre: DetailOffre }) {
       }}
     >
       <label htmlFor={id} className="sr-only">
-        Lien de l'offre
+        {t('lien.libelle')}
       </label>
       <input id={id} className="champ min-w-0 flex-1" type="url" placeholder="https://…" value={saisie} onChange={(e) => setSaisie(e.target.value)} autoFocus />
       <button type="submit" className="bouton">
-        Enregistrer
+        {t('commun.enregistrer')}
       </button>
       <button type="button" className="bouton" onClick={() => setEdition(false)}>
-        Annuler
+        {t('commun.annuler')}
       </button>
       {maj.isError && <p className="w-full text-sm text-rose-700 dark:text-rose-300">{(maj.error as Error).message}</p>}
     </form>
@@ -169,12 +170,12 @@ function EditeurNote({ offre }: { offre: DetailOffre }) {
       const note = lireNombre(s.note);
       const brute = lireNombre(s.note_brute);
       for (const [nom, v] of [
-        ['Note', note],
-        ['Note brute', brute],
+        [t('note.sur10'), note],
+        [t('note.brute'), brute],
       ] as const) {
-        if (v !== null && (!Number.isFinite(v) || v < 0 || v > 10)) throw new Error(`${nom} : nombre de 0 à 10 attendu`);
+        if (v !== null && (!Number.isFinite(v) || v < 0 || v > 10)) throw new Error(t('note.nombre', { nom }));
       }
-      if (note === null) throw new Error('Note finale attendue');
+      if (note === null) throw new Error(t('note.finaleAttendue'));
       return api.noter(offre.id, { note, note_brute: brute, penalites: s.penalites, colle: s.colle, ecarts: s.ecarts });
     },
     onSuccess: (d) => {
@@ -195,7 +196,7 @@ function EditeurNote({ offre }: { offre: DetailOffre }) {
           setEdition(true);
         }}
       >
-        {n ? 'Note globale (ancienne grille)' : 'Note globale'}
+        {n ? t('note.globaleAncienne') : t('note.globale')}
       </button>
     );
   }
@@ -220,25 +221,25 @@ function EditeurNote({ offre }: { offre: DetailOffre }) {
   return (
     <form
       className="mt-2 flex flex-col gap-2 rounded-md border border-slate-300 p-3 dark:border-slate-600"
-      aria-label="Saisie de la note"
+      aria-label={t('note.saisie')}
       onSubmit={(e) => {
         e.preventDefault();
         maj.mutate();
       }}
     >
       <div className="flex flex-wrap gap-2">
-        {champ('note', 'Note /10', { court: true })}
-        {champ('note_brute', 'Note brute', { court: true })}
-        <div className="min-w-40 flex-1">{champ('penalites', 'Pénalités')}</div>
+        {champ('note', t('note.sur10'), { court: true })}
+        {champ('note_brute', t('note.brute'), { court: true })}
+        <div className="min-w-40 flex-1">{champ('penalites', t('note.penalites'))}</div>
       </div>
-      {champ('colle', 'Ce qui colle', { long: true })}
-      {champ('ecarts', 'Écarts', { long: true })}
+      {champ('colle', t('note.colle'), { long: true })}
+      {champ('ecarts', t('note.ecarts'), { long: true })}
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" className="bouton-principal" disabled={maj.isPending}>
-          Enregistrer la note
+          {t('note.enregistrer')}
         </button>
         <button type="button" className="bouton" onClick={() => setEdition(false)}>
-          Annuler
+          {t('commun.annuler')}
         </button>
         {erreur && (
           <span role="alert" className="text-sm text-rose-700 dark:text-rose-300">
@@ -281,7 +282,7 @@ function EditeurCandidature({ offre }: { offre: DetailOffre }) {
     },
     onSuccess: (d) => {
       rafraichir(d);
-      setMessage('Candidature enregistrée.');
+      setMessage(t('candidature.enregistree'));
     },
     onError: (e) => setMessage((e as Error).message),
   });
@@ -296,12 +297,12 @@ function EditeurCandidature({ offre }: { offre: DetailOffre }) {
     >
       <div>
         <label htmlFor={`${base}-action`} className="etiquette">
-          Prochaine action
+          {t('candidature.prochaineAction')}
         </label>
         <textarea
           id={`${base}-action`}
           className="champ min-h-16"
-          placeholder="Relancer le …, au 1er contact : …"
+          placeholder={t('candidature.prochaineExemple')}
           value={s.prochaine_action}
           onChange={(e) => setS({ ...s, prochaine_action: e.target.value })}
         />
@@ -309,12 +310,12 @@ function EditeurCandidature({ offre }: { offre: DetailOffre }) {
       <div className="flex flex-wrap gap-2">
         <div className="w-40 shrink-0">
           <label htmlFor={`${base}-envoi`} className="etiquette">
-            Envoyée le
+            {t('candidature.envoyeeLe')}
           </label>
           <input
             id={`${base}-envoi`}
             className="champ"
-            placeholder="JJ/MM/AAAA"
+            placeholder={t('candidature.formatDate')}
             value={s.envoyee_le}
             onChange={(e) => setS({ ...s, envoyee_le: e.target.value })}
             aria-describedby={`${base}-aide-envoi`}
@@ -322,17 +323,17 @@ function EditeurCandidature({ offre }: { offre: DetailOffre }) {
         </div>
         <div className="min-w-40 flex-1">
           <label htmlFor={`${base}-canal`} className="etiquette">
-            Canal
+            {t('candidature.canal')}
           </label>
           <input id={`${base}-canal`} className="champ" value={s.canal} onChange={(e) => setS({ ...s, canal: e.target.value })} />
         </div>
       </div>
       <p id={`${base}-aide-envoi`} className="text-xs text-slate-600 dark:text-slate-400">
-        Une date d'envoi fait passer une offre pas encore envoyée en « Envoyée ». Un champ vidé est effacé.
+        {t('candidature.aide')}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" className="bouton" disabled={maj.isPending || !modifie}>
-          Enregistrer la candidature
+          {t('candidature.enregistrer')}
         </button>
         {message && (
           <span role="status" className="text-sm text-slate-700 dark:text-slate-300">
@@ -371,24 +372,24 @@ function ChangementStatut({ offre }: { offre: DetailOffre }) {
       <div className="flex flex-wrap items-end gap-2">
         <div className="w-40 shrink-0">
           <label htmlFor={idStatut} className="etiquette">
-            Nouveau statut
+            {t('detail.nouveauStatut')}
           </label>
           <select id={idStatut} className="champ" value={statut} onChange={(e) => setStatut(e.target.value as Statut)}>
             {STATUTS.map((s) => (
               <option key={s} value={s}>
-                {LIBELLES_STATUTS[s]}
+                {statutAffiche(s)}
               </option>
             ))}
           </select>
         </div>
         <div className="min-w-48 flex-1">
           <label htmlFor={idCom} className="etiquette">
-            Commentaire
+            {t('detail.commentaire')}
           </label>
           <input id={idCom} className="champ" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
         </div>
         <button type="submit" className="bouton" disabled={maj.isPending}>
-          Enregistrer le statut
+          {t('detail.enregistrerStatut')}
         </button>
       </div>
       {maj.isError && <span className="text-sm text-rose-700 dark:text-rose-300">{(maj.error as Error).message}</span>}
@@ -406,16 +407,16 @@ function BoutonCandidater({ offre, annoncer }: { offre: DetailOffre; annoncer: (
       client.invalidateQueries({ queryKey: ['meta'] });
       try {
         await navigator.clipboard.writeText(r.commande);
-        annoncer(`« ${r.commande} » copié dans le presse-papiers. Offre passée en Go.`);
+        annoncer(t('detail.copie', { commande: r.commande }));
       } catch {
-        annoncer(`Copie impossible : tapez « ${r.commande} ». Offre passée en Go.`);
+        annoncer(t('detail.copieImpossible', { commande: r.commande }));
       }
     },
     onError: (e) => annoncer((e as Error).message),
   });
   return (
     <button type="button" className="bouton-principal" onClick={() => maj.mutate()} disabled={maj.isPending}>
-      <Send className="size-4" aria-hidden="true" /> Candidater
+      <Send className="size-4" aria-hidden="true" /> {t('detail.candidater')}
     </button>
   );
 }
@@ -459,7 +460,7 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
       <div className="flex items-start gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
         <div className="min-w-0 flex-1">
           <h2 id={titre} ref={entete} tabIndex={-1} className="text-lg leading-snug font-bold">
-            {o ? o.titre || '(sans titre)' : 'Chargement…'}
+            {o ? o.titre || t('liste.sansTitre') : t('detail.chargement')}
           </h2>
           {o && (
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
@@ -470,8 +471,8 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             </p>
           )}
         </div>
-        <button type="button" className="bouton" onClick={fermer} aria-label="Fermer le détail (Échap)">
-          <X className="size-4" aria-hidden="true" /> Fermer
+        <button type="button" className="bouton" onClick={fermer} aria-label={t('detail.fermerEchap')}>
+          <X className="size-4" aria-hidden="true" /> {t('detail.fermer')}
         </button>
       </div>
       {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
@@ -481,17 +482,17 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             <BoutonCandidater offre={o} annoncer={annoncer} />
             {o.url_canonique && (
               <a className="bouton" href={o.url_canonique} target="_blank" rel="noreferrer noopener">
-                <ExternalLink className="size-4" aria-hidden="true" /> Ouvrir l'offre
+                <ExternalLink className="size-4" aria-hidden="true" /> {t('detail.ouvrirOffre')}
               </a>
             )}
           </div>
           <section aria-labelledby={`${titre}-statut`}>
             <h3 id={`${titre}-statut`} className="mb-2 font-bold">
-              Statut
+              {t('detail.statut')}
             </h3>
             <ChangementStatut offre={o} />
             <details className="mt-2 text-sm">
-              <summary className="cursor-pointer text-slate-600 dark:text-slate-400">Historique des statuts ({o.statuts.length})</summary>
+              <summary className="cursor-pointer text-slate-600 dark:text-slate-400">{t('detail.historique', { n: o.statuts.length })}</summary>
               <ol className="mt-2 space-y-1 border-l-2 border-slate-300 pl-3 dark:border-slate-600">
               {o.statuts.map((s) => (
                 <li key={s.id}>
@@ -499,27 +500,27 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
                   <BadgeStatut statut={s.statut} /> {s.commentaire && <span className="break-words">{s.commentaire}</span>}
                 </li>
               ))}
-              {!o.statuts.length && <li className="text-slate-500 dark:text-slate-400">Aucun historique</li>}
+              {!o.statuts.length && <li className="text-slate-500 dark:text-slate-400">{t('detail.aucunHistorique')}</li>}
               </ol>
             </details>
           </section>
           <dl>
-            <Ligne libelle="Lien">
+            <Ligne libelle={t('detail.lien')}>
               <EditeurLien key={o.id} offre={o} />
             </Ligne>
-            <Ligne libelle="Lieu">{o.lieu}</Ligne>
-            <Ligne libelle="Contrat">{o.contrat}</Ligne>
-            <Ligne libelle="Rémunération">{o.remuneration}</Ligne>
-            <Ligne libelle="Télétravail">{o.teletravail}</Ligne>
-            <Ligne libelle="Stack">{o.stack}</Ligne>
-            <Ligne libelle="Source">{`${o.source} · ${o.id_site}`}</Ligne>
-            <Ligne libelle="Reçue le">{formaterDate(o.recue_le)}</Ligne>
-            <Ligne libelle="Publiée le">{o.publiee_le ? formaterDate(o.publiee_le) : null}</Ligne>
+            <Ligne libelle={t('detail.lieu')}>{o.lieu}</Ligne>
+            <Ligne libelle={t('detail.contrat')}>{o.contrat}</Ligne>
+            <Ligne libelle={t('detail.remuneration')}>{o.remuneration}</Ligne>
+            <Ligne libelle={t('detail.teletravail')}>{o.teletravail}</Ligne>
+            <Ligne libelle={t('detail.stack')}>{o.stack}</Ligne>
+            <Ligne libelle={t('detail.source')}>{`${o.source} · ${o.id_site}`}</Ligne>
+            <Ligne libelle={t('detail.recueLe')}>{formaterDate(o.recue_le)}</Ligne>
+            <Ligne libelle={t('detail.publieeLe')}>{o.publiee_le ? formaterDate(o.publiee_le) : null}</Ligne>
           </dl>
 
           <section aria-labelledby={`${titre}-note`}>
             <h3 id={`${titre}-note`} className="mb-2 font-bold">
-              Note
+              {t('detail.note')}
             </h3>
             {n ? (
               <div className="space-y-1 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
@@ -528,8 +529,8 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
                   {n.decomposition ? null : (
                     <>
                       <BadgeAncienneGrille />
-                      {n.note_brute !== null && <span>brute {formaterNote(n.note_brute)}</span>}
-                      {n.penalites && <span>pénalités : {n.penalites}</span>}
+                      {n.note_brute !== null && <span>{t('detail.brute', { note: formaterNote(n.note_brute) })}</span>}
+                      {n.penalites && <span>{t('detail.penalites', { texte: n.penalites })}</span>}
                     </>
                   )}
                   <span className="text-slate-600 dark:text-slate-400">
@@ -539,22 +540,22 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
                 {n.decomposition && <DecompositionNote note={n} />}
                 {n.colle && (
                   <p>
-                    <span className="font-semibold">Ce qui colle : </span>
+                    <span className="font-semibold">{t('detail.colle')}</span>
                     {n.colle}
                   </p>
                 )}
                 {n.ecarts && (
                   <p>
-                    <span className="font-semibold">Écarts : </span>
+                    <span className="font-semibold">{t('detail.ecarts')}</span>
                     {n.ecarts}
                   </p>
                 )}
                 {o.notes.length > 1 && (
-                  <p className="text-slate-600 dark:text-slate-400">{o.notes.length - 1} note(s) précédente(s)</p>
+                  <p className="text-slate-600 dark:text-slate-400">{t('detail.precedentes', { n: o.notes.length - 1 })}</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-400">Pas encore notée.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">{t('detail.pasNotee')}</p>
             )}
             <div className="flex flex-wrap gap-2">
               <EditeurSousNotes key={`sn-${o.id}`} offre={o} />
@@ -564,13 +565,13 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
 
           <section aria-labelledby={`${titre}-candidature`}>
             <h3 id={`${titre}-candidature`} className="mb-2 font-bold">
-              Candidature
+              {t('detail.candidature')}
             </h3>
             {o.candidature && (
               <dl className="mb-2">
-                <Ligne libelle="Dossier">{o.candidature.dossier}</Ligne>
-                <Ligne libelle="CV">{o.candidature.cv}</Ligne>
-                <Ligne libelle="Conditions">{o.candidature.conditions}</Ligne>
+                <Ligne libelle={t('detail.dossier')}>{o.candidature.dossier}</Ligne>
+                <Ligne libelle={t('detail.cv')}>{o.candidature.cv}</Ligne>
+                <Ligne libelle={t('detail.conditions')}>{o.candidature.conditions}</Ligne>
               </dl>
             )}
             <EditeurCandidature key={o.id} offre={o} />
@@ -578,10 +579,10 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
 
           <section aria-labelledby={`${titre}-journal`}>
             <h3 id={`${titre}-journal`} className="mb-2 font-bold">
-              Journal{' '}
+              {t('detail.journal')}{' '}
               {o.evenements.some((e) => e.en_retard) && (
                 <span className="ml-1 rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">
-                  {o.evenements.filter((e) => e.en_retard).length} en retard
+                  {t('detail.enRetard', { n: o.evenements.filter((e) => e.en_retard).length })}
                 </span>
               )}
             </h3>
@@ -590,14 +591,14 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
 
           <section aria-labelledby={`${titre}-fichiers`}>
             <h3 id={`${titre}-fichiers`} className="mb-2 font-bold">
-              Fichiers du dossier
+              {t('detail.fichiers')}
             </h3>
             <FichiersDuDossier offre={o} />
           </section>
 
           <section aria-labelledby={`${titre}-tags`}>
             <h3 id={`${titre}-tags`} className="mb-2 font-bold">
-              Tags
+              {t('detail.tags')}
             </h3>
             <EditeurTags offre={o} />
           </section>
@@ -605,13 +606,13 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
 
           <section aria-labelledby={`${titre}-desc`}>
             <h3 id={`${titre}-desc`} className="mb-2 font-bold">
-              Description
+              {t('detail.description')}
             </h3>
             {o.description ? (
               <div className="text-sm leading-relaxed whitespace-pre-line">{o.description}</div>
             ) : (
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Pas de description en base{o.url_canonique ? ' : ouvrir l’offre sur le site.' : '.'}
+                {o.url_canonique ? t('detail.sansDescriptionLien') : t('detail.sansDescription')}
               </p>
             )}
           </section>

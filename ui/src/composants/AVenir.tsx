@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, type EcheanceOffre } from '../api.ts';
 import { usePreference } from '../etat.ts';
 import { BadgeType, dateEvenement } from './Journal.tsx';
+import { nombre, t } from '../i18n/index.ts';
 
 /** Nombre d'échéances visibles avant la barre de défilement. */
 const VISIBLES = 10;
@@ -32,16 +33,16 @@ function Element({ e, choisir }: { e: EcheanceOffre; choisir: (id: number) => vo
 function Statistiques() {
   const q = useQuery({ queryKey: ['statistiques'], queryFn: api.statistiques });
   const s = q.data;
-  if (!s) return <p className="text-sm text-slate-600 dark:text-slate-400">Chargement des statistiques…</p>;
+  if (!s) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('stats.chargement')}</p>;
   const etapes: [string, number][] = [
-    ['Envoyées', s.envoyees],
-    ['Réponse', s.reponses],
-    ['Entretien', s.entretiens],
-    ['Proposition', s.propositions],
+    [t('stats.envoyees'), s.envoyees],
+    [t('stats.reponse'), s.reponses],
+    [t('stats.entretien'), s.entretiens],
+    [t('stats.proposition'), s.propositions],
   ];
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-950">
-      <h3 className="mb-2 font-bold">Candidatures par étape</h3>
+      <h3 className="mb-2 font-bold">{t('stats.titre')}</h3>
       <ul className="space-y-1">
         {etapes.map(([nom, n]) => (
           <li key={nom} className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-2">
@@ -58,8 +59,8 @@ function Statistiques() {
       </ul>
       <p className="mt-2 text-slate-700 dark:text-slate-300">
         {s.delai_moyen_reponse_jours === null
-          ? 'Délai avant la première réponse : pas assez de données datées.'
-          : `Délai moyen avant la première réponse : ${s.delai_moyen_reponse_jours.toLocaleString('fr-FR')} j (${s.delai_base} candidature${s.delai_base > 1 ? 's' : ''}).`}
+          ? t('stats.pasAssez')
+          : t('stats.delai', { jours: nombre(s.delai_moyen_reponse_jours), n: s.delai_base })}
       </p>
     </div>
   );
@@ -100,34 +101,34 @@ export function AVenir({ choisir }: { choisir: (id: number) => void }) {
     >
       <div className="flex flex-wrap items-center gap-2 px-1">
         <h2 id="a-venir-titre" className="font-bold">
-          À venir
+          {t('avenir.titre')}
         </h2>
         {r && (
           <p className="text-sm text-slate-700 dark:text-slate-300">
-            {r.en_retard.length > 0 && <strong className="text-rose-800 dark:text-rose-300">{r.en_retard.length} en retard · </strong>}
-            {r.a_venir.length} échéance{r.a_venir.length > 1 ? 's' : ''} d'ici 7 jours
+            {r.en_retard.length > 0 && <strong className="text-rose-800 dark:text-rose-300">{t('avenir.enRetard', { n: r.en_retard.length })}</strong>}
+            {t('avenir.echeances', { n: r.a_venir.length })}
           </p>
         )}
         <button type="button" className="bouton ml-auto" aria-pressed={stats} onClick={() => setStats(!stats)}>
-          <ChartColumn className="size-4" aria-hidden="true" /> {stats ? 'Masquer les statistiques' : 'Statistiques'}
+          <ChartColumn className="size-4" aria-hidden="true" /> {stats ? t('avenir.masquerStats') : t('avenir.stats')}
         </button>
       </div>
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1 basis-96">
           {q.isError && <p className="px-1 text-sm text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
           {rien && (
-            <p className="px-1 text-sm text-slate-600 dark:text-slate-400">Aucune échéance en retard ni dans les 7 prochains jours.</p>
+            <p className="px-1 text-sm text-slate-600 dark:text-slate-400">{t('avenir.rien')}</p>
           )}
           <div
             ref={ref}
             className={max ? 'overflow-y-auto pr-1' : ''}
             style={max ? { maxHeight: `${max}px` } : undefined}
             tabIndex={max ? 0 : undefined}
-            aria-label={max ? 'Échéances (liste défilante)' : undefined}
+            aria-label={max ? t('avenir.defilante') : undefined}
           >
             {r && r.en_retard.length > 0 && (
               <div className="mt-1 rounded-md border border-rose-300 bg-rose-50 dark:border-rose-800 dark:bg-rose-950">
-                <h3 className="px-2 pt-1 text-xs font-bold tracking-wide text-rose-900 uppercase dark:text-rose-200">En retard</h3>
+                <h3 className="px-2 pt-1 text-xs font-bold tracking-wide text-rose-900 uppercase dark:text-rose-200">{t('avenir.retard')}</h3>
                 <ul>
                   {r.en_retard.map((e) => (
                     <Element key={e.id} e={e} choisir={choisir} />

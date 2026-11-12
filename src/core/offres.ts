@@ -279,8 +279,23 @@ export function ajouterStatut(db: Base, offreId: number, statut: string, opts: O
     origine,
     opts.le ?? maintenant(),
   );
+  if (statut === 'envoyee') dateEnvoiParDefaut(db, offreId, opts.le);
   recalculer(db, offreId);
   return true;
+}
+
+/**
+ * Passage en « envoyee » sans date d'envoi : la date du statut devient la date d'envoi (sinon le suivi
+ * affiche « — » et le délai de réponse ne se calcule pas), et une prochaine action « Envoyer… » est effacée.
+ */
+function dateEnvoiParDefaut(db: Base, offreId: number, le?: string): void {
+  const d = new Date();
+  const jour = le && /^\d{4}-\d{2}-\d{2}/.test(le) ? le.slice(0, 10) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  db.prepare('INSERT INTO candidatures (offre_id, envoyee_le) VALUES (?, ?) ON CONFLICT (offre_id) DO UPDATE SET envoyee_le = COALESCE(envoyee_le, excluded.envoyee_le)').run(offreId, jour);
+  const colonnes = db.prepare("SELECT name FROM pragma_table_info('candidatures')").all() as { name: string }[];
+  if (colonnes.some((c) => c.name === 'prochaine_action')) {
+    db.prepare("UPDATE candidatures SET prochaine_action = NULL WHERE offre_id = ? AND prochaine_action LIKE 'envoyer%'").run(offreId);
+  }
 }
 
 export interface EntreeNote {

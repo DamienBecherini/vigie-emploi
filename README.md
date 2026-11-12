@@ -21,6 +21,14 @@ alertes e-mail (.eml)  →  tri et notation par l'IA (grille)  →  tes « go »
 3. **Candidatures** : sur ton « go », l'IA prépare le dossier, un CV ciblé qui tient en deux pages et le message adapté au formulaire et à sa limite de caractères. **C'est toi qui envoies.**
 4. **Suivi** : tu racontes (« envoyé hier », « entretien jeudi 14 h ») ; l'IA tient le journal, les échéances et le tableau de suivi.
 
+![Tableau de bord : offres notées, échéances à venir](docs/captures/tableau-de-bord.png)
+
+*Le tableau de bord (données fictives) : notes calculées par la grille, statuts, échéances à venir.*
+
+Trois gabarits de CV sont fournis (« sobre », « moderne », « compact ») ; l'IA peut aussi adapter la feuille de style à un modèle que tu lui montres.
+
+<img src="docs/captures/cv-moderne.png" alt="CV fictif rendu avec le gabarit « moderne »" width="420">
+
 L'application **n'appelle aucun modèle d'IA** : c'est ton agent qui lit et rédige, l'application garde l'état (base SQLite, tableau de bord web, CLI, serveur MCP).
 
 ## Ce qu'il faut

@@ -68,6 +68,17 @@ describe('serveur MCP (stdio)', () => {
         'offres_a_lire',
         'modifier_grille',
         'renoter',
+        // Espace, fichiers et CV (client MCP sans accès aux fichiers)
+        'etat_espace',
+        'initialiser_espace',
+        'lister_fichiers',
+        'lire_fichier',
+        'ecrire_fichier',
+        'deplacer_fichier',
+        'generer_cv',
+        'compter',
+        'lister_gabarits',
+        'choisir_gabarit',
       ].sort(),
     );
     const noter = tools.find((t) => t.name === 'noter_offre')!;

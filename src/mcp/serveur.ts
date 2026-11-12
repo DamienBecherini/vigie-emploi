@@ -3,9 +3,8 @@
 // stdout est réservé au protocole : rien d'autre ne doit y être écrit.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import type { Config } from '../core/config.ts';
+import type { OptionsConfig } from '../core/config.ts';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
 import { listerOffres, TAILLE_MAX } from '../core/requetes.ts';
@@ -36,11 +35,22 @@ import {
   restaurerGrille,
   versionGrille,
 } from '../core/grille-stockage.ts';
+import { messageNonInitialise, ouvrirEtat, type EtatMcp } from './etat.ts';
+import { enregistrerOutilsEspace } from './espace.ts';
+import { sur } from './resultats.ts';
 
 const ORIGINE = 'mcp';
 
-const INSTRUCTIONS = `postuler-juste garde l'état des offres d'emploi et de mission de l'utilisateur (base SQLite locale) :
+const INSTRUCTIONS = `postuler-juste aide l'utilisateur dans sa recherche d'emploi ou de missions. Son espace de travail (un dossier)
+contient ses consignes, son contexte, ses CV et ses dossiers de candidature ; la base SQLite garde l'état des offres :
 offres, notes, statuts, tags, candidatures. L'application n'appelle aucun modèle : c'est toi qui lis et notes.
+Début de session : si l'espace n'existe pas (etat_espace), proposer de le créer (initialiser_espace, dossier confirmé par
+l'utilisateur). Les consignes de l'espace font foi : AGENTS.md (ressource « consignes » ou lire_fichier AGENTS.md), à lire
+avant tout ; prompts demarrage, traiter-emails, preparer-go, cv-cible. Sans accès direct aux fichiers ni terminal (Claude Desktop…) :
+lister_fichiers / lire_fichier / ecrire_fichier (chemins relatifs à l'espace) au lieu de lire le disque, generer_cv (capture: true
+pour voir le rendu) au lieu de « postuler-juste cv », compter au lieu de « postuler-juste compter ».
+Honnêteté d'abord : n'écrire dans un CV ou un message que ce que _CONTEXTE.md permet de revendiquer. C'est l'utilisateur qui envoie
+ses candidatures.
 Flux habituel : ingerer_emails → offres_a_lire → grille (lire la grille de notation : critères, barèmes, règles,
 inventaire, exemples) → (lire chaque offre, noter ses critères) → noter_lot avec criteres / entrees / bloquants
 (l'application calcule la note finale, ne la donne pas) → résumer à l'utilisateur → sur son « go » : candidater, préparer le dossier, enregistrer_candidature
@@ -109,34 +119,25 @@ const entreeLot = z.object({
   ...champsNote,
 });
 
-function resultat(x: unknown): CallToolResult {
-  return { content: [{ type: 'text', text: JSON.stringify(x, null, 2) }] };
-}
-
-function echec(e: unknown): CallToolResult {
-  return { isError: true, content: [{ type: 'text', text: `Erreur : ${(e as Error).message}` }] };
-}
-
-/** Exécute l'outil et transforme toute exception en résultat d'erreur lisible par l'IA. */
-function sur<A>(fn: (a: A) => unknown | Promise<unknown>) {
-  return async (a: A): Promise<CallToolResult> => {
-    try {
-      return resultat(await fn(a));
-    } catch (e) {
-      return echec(e);
-    }
-  };
-}
-
 function normaliserEntree(e: z.infer<typeof entreeLot>): EntreeLot {
   if (e.id === undefined && !e.url) throw new Error('Chaque note doit avoir un "id" ou une "url"');
   return e as EntreeLot;
 }
 
-export function creerServeurMcp(db: Base, config: Config): McpServer {
+export function creerServeurMcp(etat: EtatMcp): McpServer {
   const serveur = new McpServer({ name: 'postuler-juste', version: '0.4.0' }, { instructions: INSTRUCTIONS });
   const lecture = { readOnlyHint: true, openWorldHint: false };
-  const chargerGrille = () => grilleCourante(db, config.dossierDonnees);
+  /** Base de l'espace ; erreur claire tant que l'espace n'est pas initialisé. */
+  const base = (): Base => {
+    if (!etat.db) throw new Error(messageNonInitialise(etat));
+    return etat.db;
+  };
+  const donnees = (): string => {
+    base();
+    return etat.config.dossierDonnees;
+  };
+  enregistrerOutilsEspace(serveur, etat, donnees);
+  const chargerGrille = () => grilleCourante(base(), donnees());
 
   serveur.registerTool(
     'lister_offres',
@@ -167,7 +168,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur((a) =>
-      listerOffres(db, {
+      listerOffres(base(), {
         statuts: a.statuts,
         sources: a.sources,
         tags: a.tags,
@@ -199,8 +200,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur(({ id }) => {
-      offreOuErreur(db, id);
-      return detailOffre(db, id);
+      offreOuErreur(base(), id);
+      return detailOffre(base(), id);
     }),
   );
 
@@ -218,7 +219,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
       annotations: lecture,
     },
-    sur((a) => offresALire(db, { limite: a.limite, complet: a.complet })),
+    sur((a) => offresALire(base(), { limite: a.limite, complet: a.complet })),
   );
 
   serveur.registerTool(
@@ -233,7 +234,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       inputSchema: entreeLot.shape,
     },
     sur((e) => {
-      const [r] = noterOffres(db, [normaliserEntree(e)], ORIGINE, { grille: chargerGrille });
+      const [r] = noterOffres(base(), [normaliserEntree(e)], ORIGINE, { grille: chargerGrille });
       return { ok: true, ...r };
     }),
   );
@@ -251,7 +252,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
     },
     sur(({ offres, essai }) => {
-      const r = noterOffres(db, offres.map(normaliserEntree), ORIGINE, { grille: chargerGrille, essai });
+      const r = noterOffres(base(), offres.map(normaliserEntree), ORIGINE, { grille: chargerGrille, essai });
       return { ok: true, essai: Boolean(essai), notees: essai ? 0 : r.length, offres: r };
     }),
   );
@@ -268,10 +269,10 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur(({ version }) => {
-      const v = version ? versionGrille(db, version) : grilleObligatoire(db, config.dossierDonnees);
+      const v = version ? versionGrille(base(), version) : grilleObligatoire(base(), donnees());
       const somme = v.grille.criteres.reduce((s, c) => s + c.poids, 0);
       return {
-        fichier: cheminGrille(config.dossierDonnees),
+        fichier: cheminGrille(donnees()),
         version: v.version,
         le: v.le,
         auteur: v.auteur,
@@ -318,12 +319,12 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     },
     sur(({ changement, resume, essai, restaurer_version }) => {
       if (restaurer_version !== undefined) {
-        const r = restaurerGrille(db, config.dossierDonnees, restaurer_version, { auteur: ORIGINE, resume });
+        const r = restaurerGrille(base(), donnees(), restaurer_version, { auteur: ORIGINE, resume });
         return { ok: true, enregistree: true, version: r.version.version, impact: r.impact };
       }
       if (!changement) throw new Error('changement ou restaurer_version attendu');
       if (!essai && !resume?.trim()) throw new Error('resume attendu (ou essai: true pour un aperçu)');
-      const r = modifierGrille(db, config.dossierDonnees, changement, { auteur: ORIGINE, resume: resume ?? '', essai });
+      const r = modifierGrille(base(), donnees(), changement, { auteur: ORIGINE, resume: resume ?? '', essai });
       return { ok: true, enregistree: r.enregistree, version: r.version, impact: r.impact };
     }),
   );
@@ -337,7 +338,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         "figées. Utile après une correction des champs télétravail / rémunération des offres ; un changement de grille recalcule déjà tout.",
       inputSchema: {},
     },
-    sur(() => ({ ok: true, ...renoter(db, config.dossierDonnees) })),
+    sur(() => ({ ok: true, ...renoter(base(), donnees()) })),
   );
 
   serveur.registerTool(
@@ -349,8 +350,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur(() => {
-      grilleCourante(db, config.dossierDonnees);
-      return { versions: historiqueGrille(db) };
+      grilleCourante(base(), donnees());
+      return { versions: historiqueGrille(base()) };
     }),
   );
 
@@ -368,9 +369,9 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
     },
     sur(({ id, statut, commentaire }) => {
-      offreOuErreur(db, id);
-      ajouterStatut(db, id, statut, { commentaire: commentaire ?? null, origine: ORIGINE });
-      return { ok: true, id, statut: detailOffre(db, id)!.statut };
+      offreOuErreur(base(), id);
+      ajouterStatut(base(), id, statut, { commentaire: commentaire ?? null, origine: ORIGINE });
+      return { ok: true, id, statut: detailOffre(base(), id)!.statut };
     }),
   );
 
@@ -386,8 +387,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
     },
     sur(({ id, ajouter, retirer }) => {
-      offreOuErreur(db, id);
-      return { ok: true, id, tags: transaction(db, () => modifierTags(db, id, ajouter ?? [], retirer ?? [])) };
+      offreOuErreur(base(), id);
+      return { ok: true, id, tags: transaction(base(), () => modifierTags(base(), id, ajouter ?? [], retirer ?? [])) };
     }),
   );
 
@@ -399,9 +400,9 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       inputSchema: { id, url: z.string().nullable().describe('Nouvelle URL, ou null pour effacer') },
     },
     sur(({ id, url }) => {
-      offreOuErreur(db, id);
-      modifierLien(db, id, url);
-      return { ok: true, id, url: detailOffre(db, id)!.url_canonique };
+      offreOuErreur(base(), id);
+      modifierLien(base(), id, url);
+      return { ok: true, id, url: detailOffre(base(), id)!.url_canonique };
     }),
   );
 
@@ -415,7 +416,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         'Ensuite : créer le dossier selon les consignes de l’utilisateur, puis enregistrer_candidature.',
       inputSchema: { id },
     },
-    sur(({ id }) => preparerCandidature(db, config.dossierDonnees, id, ORIGINE)),
+    sur(({ id }) => preparerCandidature(base(), donnees(), id, ORIGINE)),
   );
 
   serveur.registerTool(
@@ -436,7 +437,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
     },
     sur(({ id, ...champs }) => {
-      const r = suivreCandidature(db, id, champs, ORIGINE);
+      const r = suivreCandidature(base(), id, champs, ORIGINE);
       return { ok: true, id, statut: r.offre.statut, statut_ajoute: r.statut_ajoute, candidature: r.offre.candidature };
     }),
   );
@@ -478,7 +479,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         ...champsEvenement,
       },
     },
-    sur(({ id, ...saisie }) => ({ ok: true, evenement: ajouterEvenement(db, id, saisie, ORIGINE) })),
+    sur(({ id, ...saisie }) => ({ ok: true, evenement: ajouterEvenement(base(), id, saisie, ORIGINE) })),
   );
 
   serveur.registerTool(
@@ -497,7 +498,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         ...champsEvenement,
       },
     },
-    sur(({ evenement_id, ...saisie }) => ({ ok: true, evenement: modifierEvenement(db, evenement_id, saisie) })),
+    sur(({ evenement_id, ...saisie }) => ({ ok: true, evenement: modifierEvenement(base(), evenement_id, saisie) })),
   );
 
   serveur.registerTool(
@@ -512,8 +513,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur(({ id }) => {
-      offreOuErreur(db, id);
-      return { id, evenements: journal(db, id) };
+      offreOuErreur(base(), id);
+      return { id, evenements: journal(base(), id) };
     }),
   );
 
@@ -527,7 +528,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       inputSchema: { jours: z.number().int().min(0).max(366).optional().describe('Horizon en jours (7 par défaut)') },
       annotations: lecture,
     },
-    sur(({ jours }) => echeances(db, { jours })),
+    sur(({ jours }) => echeances(base(), { jours })),
   );
 
   serveur.registerTool(
@@ -543,8 +544,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
     },
     sur(({ evenement_id, fait }) => {
-      evenementOuErreur(db, evenement_id);
-      return { ok: true, evenement: marquerFait(db, evenement_id, fait ?? true) };
+      evenementOuErreur(base(), evenement_id);
+      return { ok: true, evenement: marquerFait(base(), evenement_id, fait ?? true) };
     }),
   );
 
@@ -560,8 +561,8 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       annotations: lecture,
     },
     sur(({ id }) => {
-      offreOuErreur(db, id);
-      return fichiersDossier(db, config.dossierDonnees, id);
+      offreOuErreur(base(), id);
+      return fichiersDossier(base(), donnees(), id);
     }),
   );
 
@@ -570,7 +571,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     {
       title: 'Ingérer les e-mails',
       description:
-        `Lit les e-mails d'alertes (.eml) de la boîte de réception (${config.emails}), ajoute les nouvelles offres (doublons ignorés, ` +
+        `Lit les e-mails d'alertes (.eml) de la boîte de réception (emails/), ajoute les nouvelles offres (doublons ignorés, ` +
         "intitulés exclus mis en « ecartee »), lit les descriptions publiques Hellowork / Free-Work, puis SUPPRIME les e-mails traités, sauf avec garder: true. " +
         'Renvoie nouvelles, doublons, ecartees, a_lire, erreurs et le détail. Suite : offres_a_lire.',
       inputSchema: {
@@ -579,7 +580,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
       },
       annotations: { destructiveHint: true, openWorldHint: true },
     },
-    sur((a) => ingererSelonConfig(db, config, { garder: a.garder, telecharger: a.telecharger })),
+    sur((a) => ingererSelonConfig(base(), etat.config, { garder: a.garder, telecharger: a.telecharger })),
   );
 
   serveur.registerTool(
@@ -594,23 +595,30 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
         sortie: z.string().optional().describe('Fichier de sortie imposé (chemin absolu)'),
       },
     },
-    sur((a) => ({ ok: true, ...ecrireSuivi(db, config.dossierDonnees, { remplacer: a.remplacer, sortie: a.sortie }) })),
+    sur((a) => ({ ok: true, ...ecrireSuivi(base(), donnees(), { remplacer: a.remplacer, sortie: a.sortie }) })),
   );
 
   return serveur;
 }
 
-export async function demarrerMcp(db: Base, config: Config): Promise<void> {
-  const serveur = creerServeurMcp(db, config);
+/**
+ * Lance le serveur sur stdio. Le dossier de données vient de --data, POSTULER_JUSTE_DATA ou du fichier de config,
+ * sinon du dossier par défaut (~/ma-recherche) ; s'il n'existe pas encore, le serveur démarre quand même
+ * (outil initialiser_espace).
+ */
+export async function demarrerMcp(options: OptionsConfig = {}): Promise<void> {
+  const etat = ouvrirEtat(options);
+  const serveur = creerServeurMcp(etat);
   const transport = new StdioServerTransport();
   const fermer = async () => {
     await serveur.close().catch(() => undefined);
-    db.close();
+    etat.db?.close();
     process.exit(0);
   };
   process.stdin.on('end', fermer);
   process.on('SIGINT', fermer);
   process.on('SIGTERM', fermer);
   await serveur.connect(transport);
-  process.stderr.write(`postuler-juste MCP prêt (données : ${config.dossierDonnees})\n`);
+  const d = etat.config.dossierDonnees;
+  process.stderr.write(`postuler-juste MCP prêt (données : ${d}${etat.db ? '' : ', espace non initialisé'})\n`);
 }

@@ -98,7 +98,7 @@ describe('ingestion', () => {
 
   it('supprime aussi les e-mails aux noms à crochets et points de suspension (Windows)', async () => {
     const emails = join(dossier, 'emails');
-    renameSync(join(emails, 'linkedin.eml'), join(emails, '___Potentiel-SPAM___  [Damien x Celad] Nouvelle opportunité ... - 2026-10-28 1330.eml'));
+    renameSync(join(emails, 'linkedin.eml'), join(emails, '___Potentiel-SPAM___  [Prénom x Celad] Nouvelle opportunité ... - 2026-10-28 1330.eml'));
     const r = await ingerer(db, { dossierEmails: emails, telechargeur });
     expect(r.erreurs.filter((e) => /non supprimé/.test(e.message))).toEqual([]);
     expect(readdirSync(emails)).toEqual([]);

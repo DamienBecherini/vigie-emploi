@@ -1,19 +1,62 @@
 # postuler-juste
 
-Application locale de suivi des offres d'emploi et de mission : une base SQLite, un tableau de bord web et une CLI qu'une IA (Claude Code ou autre) peut piloter.
+**Ta recherche d'emploi ou de missions, pilotée par ton IA, sans jamais te faire mentir.**
 
-- **Ingestion** des e-mails d'alertes (`.eml` de LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work) : décodage des liens de suivi, dédoublonnage, exclusion sur l'intitulé, lecture du JSON-LD public de Hellowork et Free-Work.
-- **Notation** par l'IA de l'utilisateur, via la CLI ou MCP : l'application n'appelle aucun modèle d'IA. L'IA note des critères, l'application calcule la note avec une **grille transparente et réglable** (poids, barèmes, règles bloquantes, inventaire de compétences), versionnée, et recalcule toutes les notes quand elle change.
-- **Statuts** (de `nouvelle` à `entretien`, `refus`, `close`…), **tags**, **candidatures**, avec historique.
-- **Tableau de bord** paginé côté serveur, prévu pour des dizaines de milliers d'offres ; notes et suivi des candidatures éditables.
-- **Serveur MCP** (`postuler-juste mcp`) : une IA pilote l'application par des outils (voir [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)).
-- **Journal des candidatures** : messages, entretiens, tests, propositions (montant, jours), décisions, notes, datés ; une date future non faite est une **échéance** (bandeau « À venir », prochaine action du suivi). Les documents restent dans le dossier de candidature : un événement n'en garde que le chemin.
-- **Fichiers du dossier** de candidature listés et ouverts depuis le tableau de bord (Markdown rendu, PDF tel quel).
-- **Suivi des candidatures** (`_SUIVI.md`) généré depuis la base ; **statistiques** minimales (candidatures par étape, délai de réponse).
+postuler-juste est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **ta** grille, prépare les candidatures que tu valides (dossier, CV ciblé, message) et tient le suivi. Tout reste sur ton ordinateur.
 
-Le code ne contient aucune donnée personnelle : tout vit dans un **dossier de données** choisi par l'utilisateur.
+Postuler *juste*, dans les deux sens :
 
-## Installation
+- **juste comme ciblé** : une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne te présente que les offres qui valent le coup ;
+- **juste comme honnête** : l'IA s'appuie sur un inventaire de ce que tu peux revendiquer ou non, construit avec toi au démarrage. Elle n'écrit dans un CV que ce que tu peux défendre en entretien.
+
+## Comment ça marche
+
+```
+alertes e-mail (.eml)  →  tri et notation par l'IA (grille)  →  tes « go »
+        →  dossier + CV ciblé (PDF 2 pages) + message  →  envoi par toi  →  suivi (journal, échéances, relances)
+```
+
+1. **Démarrage guidé** : tu déposes ton CV (et l'export PDF de ton profil LinkedIn) dans `a-deposer/`. L'IA les lit, lit tes pages publiques si elle le peut, puis t'interroge par petits groupes de questions : cibles, parcours, preuves, ce qui vend, risques, interdits, conditions. Elle en tire ton **contexte** (`_CONTEXTE.md`), ta **grille** et un premier **CV**, que tu valides.
+2. **Tri des alertes** : un filtre de ta messagerie enregistre les alertes (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) dans `emails/`. L'IA les ingère, écarte le hors-cible, note le reste critère par critère (l'application calcule la note), et te présente les meilleures offres.
+3. **Candidatures** : sur ton « go », l'IA prépare le dossier, un CV ciblé qui tient en deux pages et le message adapté au formulaire et à sa limite de caractères. **C'est toi qui envoies.**
+4. **Suivi** : tu racontes (« envoyé hier », « entretien jeudi 14 h ») ; l'IA tient le journal, les échéances et le tableau de suivi.
+
+L'application **n'appelle aucun modèle d'IA** : c'est ton agent qui lit et rédige, l'application garde l'état (base SQLite, tableau de bord web, CLI, serveur MCP).
+
+## Ce qu'il faut
+
+- **Node.js 24** ou plus.
+- **Chrome, Edge ou Chromium** (pour les CV en PDF).
+- **Un agent IA** qui travaille dans un dossier : Claude Code de préférence (serveur MCP et skills fournis) ; Cursor, Codex ou un autre agent lisent les mêmes consignes (`AGENTS.md`) et utilisent la CLI.
+- Facultatif : un **navigateur piloté par l'IA** avec tes sessions (par exemple Claude in Chrome), pour lire les offres LinkedIn, Indeed ou Glassdoor. Sans lui, tu colles le texte des offres quand l'IA le demande.
+
+## Démarrer
+
+```sh
+git clone https://github.com/<compte>/postuler-juste.git
+cd postuler-juste
+npm install
+npm run build
+node bin/postuler-juste.js init ~/ma-recherche
+```
+
+`init` crée ton espace de travail et affiche le prompt de démarrage à donner à ton IA. Ensuite :
+
+1. glisse ton CV dans `~/ma-recherche/a-deposer/` ;
+2. ouvre ton IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et accepte le serveur MCP) ;
+3. colle le prompt affiché par `init`.
+
+Le démarrage se fait en deux sessions d'environ une demi-heure chacune.
+
+## Confidentialité
+
+Ton espace de travail (CV, contexte, base, candidatures) reste sur ton disque. Rien n'est envoyé ailleurs que vers l'IA que tu utilises. L'application ne télécharge que les pages publiques des offres Hellowork et Free-Work ; elle ne lit jamais LinkedIn, Indeed ni Glassdoor par script.
+
+## Référence
+
+Le reste de ce document décrit l'application en détail : commandes, configuration, grille, tableau de bord.
+
+### Installation
 
 Prérequis : Node.js 24 ou plus (SQLite est intégré à Node via `node:sqlite`, rien à compiler).
 
@@ -29,7 +72,7 @@ Sans `npm link`, remplacer `postuler-juste` par `node <chemin>/bin/postuler-just
 
 Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi`, les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
 
-## Créer son espace de travail
+### Créer son espace de travail
 
 ```sh
 postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste]
@@ -39,7 +82,7 @@ Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/
 
 Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp postuler-juste-test`).
 
-## CV en PDF
+### CV en PDF
 
 ```sh
 postuler-juste cv "cv/<nom>.md" [--gabarit <dossier>]
@@ -47,7 +90,7 @@ postuler-juste cv "cv/<nom>.md" [--gabarit <dossier>]
 
 Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `POSTULER_JUSTE_NAVIGATEUR` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--gabarit`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `modele/cv/LISEZMOI.md`.
 
-## Configuration du dossier de données
+### Configuration du dossier de données
 
 Le dossier de données contient la base et la boîte de réception :
 
@@ -78,7 +121,7 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 
 Variables d'environnement reconnues aussi : `POSTULER_JUSTE_CONFIG` (fichier de config), `POSTULER_JUSTE_BASE` (base), `POSTULER_JUSTE_PORT`.
 
-## Commandes
+### Commandes
 
 Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et `--config`. `postuler-juste --help` donne la liste complète.
 
@@ -134,7 +177,7 @@ Format d'une note (celui des lots) :
 
 Avec `criteres` (ou `entrees`, `bloquants`), la note est **calculée** avec la grille ; un champ `note` fourni est ignoré et signalé dans `avertissements`. La réponse contient la note, la valeur exacte et la décomposition. Sans `criteres`, c'est une note globale de l'ancienne grille (`note`, `note_brute`, `penalites`), qui reste figée. Champs facultatifs : `id` (à la place de `url`), `description`, `tags`. Les champs descriptifs ne complètent que ce qui manque ; la dernière note fait foi.
 
-## Grille de notation
+### Grille de notation
 
 La grille vit dans `<données>/profil/grille.json` (modèle générique : [`exemples/grille.json`](exemples/grille.json), copié par `postuler-juste grille --init`). Elle contient :
 
@@ -150,7 +193,7 @@ Calcul : moyenne pondérée des sous-notes → règles bloquantes (zéro, plafon
 
 Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée une **version** (numéro, date, auteur, résumé) et **recalcule toutes les notes à critères**, sans relire d'offre. Les anciennes notes globales restent telles quelles (badge « ancienne grille »). On peut revenir à une version précédente (elle devient une nouvelle version).
 
-## Tableau de bord
+### Tableau de bord
 
 `postuler-juste serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement).
 
@@ -167,7 +210,7 @@ Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée 
 
 Développement de l'interface : `postuler-juste serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `POSTULER_JUSTE_API` pour en changer).
 
-## Suivi des candidatures généré
+### Suivi des candidatures généré
 
 `postuler-juste generer-suivi` écrit le suivi au format de l'ancien `_SUIVI.md` : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par postuler-juste le … : ne pas éditer à la main ».
 
@@ -177,7 +220,7 @@ Tant qu'une candidature n'a pas bougé depuis la reprise, ses cellules sont ré�
 
 Bascule : comparer `_SUIVI.genere.md` à `_SUIVI.md`, puis `postuler-juste generer-suivi --remplacer`. Après la bascule, la base fait foi.
 
-## Journal et échéances
+### Journal et échéances
 
 **La base sait ce qui s'est passé et quand ; le dossier Markdown garde les documents.** Un événement a un type, une date (ou date-heure), un résumé, et au besoin : sens (envoyé / reçu), canal, interlocuteurs, montant + unité, jours, détails, fichiers (chemins relatifs au dossier de données). Une date future non faite est une échéance ; passée et non faite, elle est en retard.
 
@@ -185,7 +228,7 @@ Reprise (`import-historique`) : les sections « Suivi » des dossiers actifs (`c
 
 Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot noté ou le registre ne change plus de statut ; l'alerte laisse une trace au journal (« Revue le … », une par jour).
 
-## Développement
+### Développement
 
 ```sh
 npm test            # Vitest (fixtures fictives dans tests/fixtures)
@@ -213,3 +256,11 @@ docs/adr/           décisions d'architecture
 ```
 
 Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md) et [`docs/adr/0004-grille-de-notation.md`](docs/adr/0004-grille-de-notation.md).
+
+## In English
+
+postuler-juste is a local, AI-driven job and freelance search kit, in French first. Your coding agent (Claude Code, Cursor, Codex…) triages job alert e-mails, scores each offer against your own transparent grid, drafts applications you approve (tailored two-page PDF résumé, message within the form's character limit) and keeps the follow-up journal. The app itself calls no AI model: it stores state (SQLite, web dashboard, CLI, MCP server). Its core rule: the agent only writes what you can defend in an interview, based on an inventory of claimable skills built with you during onboarding. The workspace templates and prompts are in French; contributions for other languages are welcome.
+
+## Licence
+
+Code sous licence MIT (voir `LICENSE`). Polices des gabarits de CV sous licence SIL Open Font License : Amiri (gabarit « sobre ») et Source Sans 3 (gabarits « moderne » et « compact ») ; texte de la licence dans le dossier `fonts/` de chaque gabarit.

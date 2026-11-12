@@ -630,7 +630,7 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
         {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
         {q.data && !q.data.grille && (
           <p className="p-4 text-sm">
-            Pas encore de grille de notation. La créer avec <code>cap-emploi grille --init</code> (copie de l'exemple dans{' '}
+            Pas encore de grille de notation. La créer avec <code>postuler-juste grille --init</code> (copie de l'exemple dans{' '}
             <code>profil/grille.json</code> du dossier de données), puis rouvrir ce panneau.
           </p>
         )}

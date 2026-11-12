@@ -1,4 +1,4 @@
-// Interface en ligne de commande de cap-emploi (pensée pour être pilotée par une IA : sorties JSON stables).
+// Interface en ligne de commande de postuler-juste (pensée pour être pilotée par une IA : sorties JSON stables).
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { chargerConfig, type Config } from '../core/config.ts';
@@ -50,12 +50,12 @@ import {
 import { initialiserEspace } from '../init/init.ts';
 import { GABARIT_DEFAUT, genererCv, trouverNavigateur } from '../cv/cv.ts';
 
-const AIDE = `cap-emploi — offres, notes et candidatures (base SQLite locale)
+const AIDE = `postuler-juste — offres, notes et candidatures (base SQLite locale)
 
-Usage : cap-emploi <commande> [options]
+Usage : postuler-juste <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--nom-mcp cap-emploi]
+  init <dossier> [--port 4410] [--nom-mcp postuler-juste]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA
   cv <cv.md>… [--gabarit <dossier>]
@@ -113,10 +113,10 @@ Commandes
                         candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
   serve [--port 4410] [--inactivite <minutes>]
                         Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
-  mcp                   Serveur MCP (transport stdio) pour piloter cap-emploi depuis une IA
+  mcp                   Serveur MCP (transport stdio) pour piloter postuler-juste depuis une IA
 
 Options générales
-  --data <dossier>      Dossier de données (sinon CAP_EMPLOI_DATA ou cap-emploi.config.json)
+  --data <dossier>      Dossier de données (sinon POSTULER_JUSTE_DATA ou postuler-juste.config.json)
   --config <fichier>    Fichier de configuration
   --json                Sortie JSON (toutes les commandes)
 `;
@@ -290,7 +290,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     for (const e of r.detail.ecartees) console.log(`  écartée #${e.id} ${tronquer(e.titre, 70)} (${e.motif})`);
     for (const e of r.erreurs) console.log(`  erreur ${e.fichier ?? e.url} : ${e.message}`);
     for (const f of r.sans_offre) console.log(`  aucune offre reconnue, e-mail conservé : ${f}`);
-    if (r.nouvelles) console.log('Suite : cap-emploi a-lire');
+    if (r.nouvelles) console.log('Suite : postuler-juste a-lire');
   },
 
   'import-historique'(args) {
@@ -423,7 +423,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       console.log(`#${o.id} [${o.source}] ${tronquer(o.titre, 80)}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
       console.log(`    ${o.url ?? '(sans URL)'} · ${mode}`);
     }
-    console.log(`${r.total} offre(s) à traiter. Détail JSON (descriptions comprises) : cap-emploi a-lire --json`);
+    console.log(`${r.total} offre(s) à traiter. Détail JSON (descriptions comprises) : postuler-juste a-lire --json`);
   },
 
   noter(args) {
@@ -719,7 +719,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
     const r = fichiersDossier(db, config.dossierDonnees, id);
     if (v.json) return json({ ok: true, ...r });
-    if (!r.dossier) return console.log(`#${id} : pas de dossier de candidature (cap-emploi candidature ${id} --dossier candidatures/…)`);
+    if (!r.dossier) return console.log(`#${id} : pas de dossier de candidature (postuler-juste candidature ${id} --dossier candidatures/…)`);
     if (!r.existe) return console.log(`#${id} : dossier ${r.dossier} absent du dossier de données`);
     console.log(`${r.dossier} (${r.fichiers.length} fichier(s)) :`);
     for (const f of r.fichiers) {
@@ -764,7 +764,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
 
   init(args) {
     const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' } });
-    if (pos.length !== 1) erreur('Usage : cap-emploi init <dossier> [--port 4410] [--nom-mcp cap-emploi]');
+    if (pos.length !== 1) erreur('Usage : postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste]');
     const r = initialiserEspace({
       dossier: pos[0],
       port: v.port ? entier(v.port, 'port') : undefined,
@@ -786,7 +786,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
 
   cv(args) {
     const { v, pos } = analyser(args, { gabarit: { type: 'string' } });
-    if (!pos.length) erreur('Usage : cap-emploi cv <cv.md>… [--gabarit <dossier>]');
+    if (!pos.length) erreur('Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>]');
     let choisi = v.gabarit as string | undefined;
     if (!choisi) {
       let espace: string | null = null;
@@ -800,7 +800,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     const gabarit = choisi;
     const navigateur = trouverNavigateur();
-    if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans CAP_EMPLOI_NAVIGATEUR)');
+    if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)');
     const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur)));
     if (v.json) return json({ ok: true, gabarit, cv: resultats });
     for (const r of resultats) {

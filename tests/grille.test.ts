@@ -259,7 +259,7 @@ describe('stockage, versions et renotation', () => {
   let ids: number[];
 
   beforeEach(() => {
-    dossier = mkdtempSync(join(tmpdir(), 'cap-emploi-grille-'));
+    dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-grille-'));
     db = ouvrirBase(':memory:');
     ids = [];
     for (let i = 0; i < 3; i++) {

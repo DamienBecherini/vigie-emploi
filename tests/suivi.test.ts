@@ -30,7 +30,7 @@ describe('suivi généré depuis la base', () => {
   });
 
   it('en-tête « ne pas éditer » et sections', () => {
-    expect(md).toContain('Fichier généré par cap-emploi le 02/11/2026 à 10:30 : ne pas éditer à la main.');
+    expect(md).toContain('Fichier généré par postuler-juste le 02/11/2026 à 10:30 : ne pas éditer à la main.');
     expect(md).toMatch(/## En cours[\s\S]*## Envoyées sans suite[\s\S]*## Closes/);
   });
 
@@ -104,7 +104,7 @@ describe('candidature : date d’envoi et statut', () => {
 describe('écriture du suivi', () => {
   let dossier: string;
   beforeAll(() => {
-    dossier = mkdtempSync(join(tmpdir(), 'cap-emploi-suivi-'));
+    dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-suivi-'));
     cpSync(DONNEES, dossier, { recursive: true });
   });
   afterAll(() => rmSync(dossier, { recursive: true, force: true }));

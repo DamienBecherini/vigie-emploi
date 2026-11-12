@@ -401,7 +401,7 @@ function importerSuivi(db: Base, dossier: string, rapport: RapportImport): void 
   const texte = readFileSync(chemin, 'utf8');
   // Après la bascule, _SUIVI.md est produit par generer-suivi : la base fait foi, on ne le relit pas.
   if (MARQUE_SUIVI_GENERE.test(texte.slice(0, 600))) {
-    S.ignore = 'fichier généré par cap-emploi : la base fait foi';
+    S.ignore = 'fichier généré par postuler-juste : la base fait foi';
     return;
   }
   const lignes = lignesTableaux(texte);

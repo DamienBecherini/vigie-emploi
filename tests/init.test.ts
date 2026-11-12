@@ -21,7 +21,7 @@ function fichiers(dossier: string, prefixe = ''): string[] {
 
 describe('init : création d’un espace de travail', () => {
   const espace = join(racine, 'mon-espace');
-  const r = initialiserEspace({ dossier: espace, port: 4411, nomMcp: 'cap-emploi-test', env: { CAP_EMPLOI_NAVIGATEUR: '/nulle/part' } });
+  const r = initialiserEspace({ dossier: espace, port: 4411, nomMcp: 'postuler-juste-test', env: { POSTULER_JUSTE_NAVIGATEUR: '/nulle/part' } });
 
   it('copie le modèle, le gabarit de CV et la grille d’exemple', () => {
     const copies = fichiers(espace);
@@ -52,9 +52,9 @@ describe('init : création d’un espace de travail', () => {
 
   it('déclare le serveur MCP avec le dossier de données', () => {
     const mcp = JSON.parse(readFileSync(join(espace, '.mcp.json'), 'utf8'));
-    const s = mcp.mcpServers['cap-emploi-test'];
+    const s = mcp.mcpServers['postuler-juste-test'];
     expect(s.args[1]).toBe('mcp');
-    expect(s.env.CAP_EMPLOI_DATA).toBe(espace);
+    expect(s.env.POSTULER_JUSTE_DATA).toBe(espace);
   });
 
   it('signale l’absence de navigateur et donne le prompt de démarrage', () => {
@@ -89,5 +89,27 @@ describe('cv : Markdown -> HTML', () => {
     expect(html).toContain('<section class="two-col"><h2>Langues</h2>');
     expect(html).toContain('<section class=""><h2>Résumé</h2>');
     expect(html).toContain('<p class="job-role"><strong>Développeuse back-end — Entreprise Exemple');
+  });
+});
+
+describe('anciens noms (cap-emploi) encore reconnus', () => {
+  it('lit cap-emploi.config.json, CAP_EMPLOI_DATA et data/cap-emploi.sqlite', () => {
+    const ancien = join(racine, 'ancien');
+    mkdirSync(join(ancien, 'data'), { recursive: true });
+    writeFileSync(join(ancien, 'cap-emploi.config.json'), JSON.stringify({ dossierDonnees: '.', port: 4500 }));
+    writeFileSync(join(ancien, 'data', 'cap-emploi.sqlite'), '');
+    const parConfig = chargerConfig({ cwd: ancien, env: {} });
+    expect(parConfig.port).toBe(4500);
+    expect(parConfig.base).toBe(join(ancien, 'data', 'cap-emploi.sqlite'));
+    const parVariable = chargerConfig({ cwd: racine, env: { CAP_EMPLOI_DATA: ancien } });
+    expect(parVariable.dossierDonnees).toBe(ancien);
+  });
+
+  it('préfère la nouvelle base quand elle existe', () => {
+    const neuf = join(racine, 'neuf');
+    mkdirSync(join(neuf, 'data'), { recursive: true });
+    writeFileSync(join(neuf, 'data', 'cap-emploi.sqlite'), '');
+    writeFileSync(join(neuf, 'data', 'postuler-juste.sqlite'), '');
+    expect(chargerConfig({ cwd: racine, env: { POSTULER_JUSTE_DATA: neuf } }).base).toBe(join(neuf, 'data', 'postuler-juste.sqlite'));
   });
 });

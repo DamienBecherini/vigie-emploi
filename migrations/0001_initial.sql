@@ -1,4 +1,4 @@
--- Schéma initial de cap-emploi.
+-- Schéma initial de postuler-juste.
 -- Les colonnes offres.statut et offres.note reprennent la dernière ligne de statuts / notes
 -- (dénormalisées pour trier et filtrer vite sur des dizaines de milliers d'offres).
 

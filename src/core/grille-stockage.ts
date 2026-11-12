@@ -148,7 +148,7 @@ export function grilleObligatoire(db: Base, dossierDonnees: string): VersionGril
   const g = grilleCourante(db, dossierDonnees);
   if (!g) {
     throw new Error(
-      `Pas de grille de notation : créer ${cheminGrille(dossierDonnees)} (modèle : exemples/grille.json, ou « cap-emploi grille --init »)`,
+      `Pas de grille de notation : créer ${cheminGrille(dossierDonnees)} (modèle : exemples/grille.json, ou « postuler-juste grille --init »)`,
     );
   }
   return g;

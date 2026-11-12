@@ -1,6 +1,6 @@
 // Résolution de la configuration : dossier de données, port, listes d'exclusion.
 // Le code ne contient aucune donnée personnelle : tout ce qui est propre à l'utilisateur
-// vit dans son dossier de données ou dans un cap-emploi.config.json non versionné.
+// vit dans son dossier de données ou dans un postuler-juste.config.json non versionné.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 export interface Config {
   /** Dossier de données de l'utilisateur (contient data/, emails/, candidatures/…). */
   dossierDonnees: string;
-  /** Base SQLite : <dossierDonnees>/data/cap-emploi.sqlite par défaut. */
+  /** Base SQLite : <dossierDonnees>/data/postuler-juste.sqlite par défaut. */
   base: string;
   /** Boîte de réception des .eml : <dossierDonnees>/emails par défaut. */
   emails: string;
@@ -38,7 +38,20 @@ interface ConfigFichier {
 }
 
 export const RACINE_APP = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const NOM_FICHIER_CONFIG = 'cap-emploi.config.json';
+export const NOM_FICHIER_CONFIG = 'postuler-juste.config.json';
+/** Ancien nom de l'application (cap-emploi) : fichier de config, base et variables encore reconnus. */
+export const ANCIEN_FICHIER_CONFIG = 'cap-emploi.config.json';
+const ANCIENNE_BASE = 'cap-emploi.sqlite';
+
+/** Variable d'environnement POSTULER_JUSTE_<nom>, ou son ancien nom CAP_EMPLOI_<nom>. */
+export function variable(env: NodeJS.ProcessEnv, nom: string): string | undefined {
+  return env[`POSTULER_JUSTE_${nom}`] || env[`CAP_EMPLOI_${nom}`] || undefined;
+}
+
+/** Le fichier de config de ce dossier, sous son nom actuel ou l'ancien. */
+function configDuDossier(dossier: string): string[] {
+  return [join(dossier, NOM_FICHIER_CONFIG), join(dossier, ANCIEN_FICHIER_CONFIG)];
+}
 
 function lireJson(chemin: string): ConfigFichier {
   const texte = readFileSync(chemin, 'utf8').replace(/^﻿/, '');
@@ -60,20 +73,22 @@ export interface OptionsConfig {
 
 /**
  * Ordre de priorité :
- * 1. option --data, sinon variable CAP_EMPLOI_DATA, sinon "dossierDonnees" du fichier de config ;
- * 2. fichier de config : --config, CAP_EMPLOI_CONFIG, ./cap-emploi.config.json, <data>/cap-emploi.config.json,
+ * 1. option --data, sinon variable POSTULER_JUSTE_DATA, sinon "dossierDonnees" du fichier de config ;
+ * 2. fichier de config : --config, POSTULER_JUSTE_CONFIG, ./postuler-juste.config.json, <data>/postuler-juste.config.json,
  *    puis celui à la racine de l'application.
+ * Les anciens noms (CAP_EMPLOI_*, cap-emploi.config.json, data/cap-emploi.sqlite) restent reconnus.
  */
 export function chargerConfig(opts: OptionsConfig = {}): Config {
   const env = opts.env ?? process.env;
   const cwd = opts.cwd ?? process.cwd();
   const candidats: string[] = [];
   if (opts.fichierConfig) candidats.push(resolve(cwd, opts.fichierConfig));
-  if (env.CAP_EMPLOI_CONFIG) candidats.push(resolve(cwd, env.CAP_EMPLOI_CONFIG));
-  candidats.push(join(cwd, NOM_FICHIER_CONFIG));
-  const donneesImposees = opts.dossierDonnees ?? env.CAP_EMPLOI_DATA;
-  if (donneesImposees) candidats.push(join(resolve(cwd, donneesImposees), NOM_FICHIER_CONFIG));
-  candidats.push(join(RACINE_APP, NOM_FICHIER_CONFIG));
+  const configEnv = variable(env, 'CONFIG');
+  if (configEnv) candidats.push(resolve(cwd, configEnv));
+  candidats.push(...configDuDossier(cwd));
+  const donneesImposees = opts.dossierDonnees ?? variable(env, 'DATA');
+  if (donneesImposees) candidats.push(...configDuDossier(resolve(cwd, donneesImposees)));
+  candidats.push(...configDuDossier(RACINE_APP));
 
   let fichier: string | null = null;
   let brut: ConfigFichier = {};
@@ -95,16 +110,20 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
       : null;
   if (!dossier) {
     throw new Error(
-      'Dossier de données non configuré : définir CAP_EMPLOI_DATA, passer --data <dossier> ' +
-        `ou créer ${NOM_FICHIER_CONFIG} avec "dossierDonnees" (voir cap-emploi.config.example.json).`,
+      'Dossier de données non configuré : définir POSTULER_JUSTE_DATA, passer --data <dossier> ' +
+        `ou créer ${NOM_FICHIER_CONFIG} avec "dossierDonnees" (voir postuler-juste.config.example.json).`,
     );
   }
   const relatif = (p: string | undefined, defaut: string) => (p ? (isAbsolute(p) ? p : join(dossier, p)) : defaut);
+  // Base par défaut : data/postuler-juste.sqlite, ou l'ancienne data/cap-emploi.sqlite si elle seule existe.
+  const baseNeuve = join(dossier, 'data', 'postuler-juste.sqlite');
+  const baseAncienne = join(dossier, 'data', ANCIENNE_BASE);
+  const baseDefaut = !existsSync(baseNeuve) && existsSync(baseAncienne) ? baseAncienne : baseNeuve;
   return {
     dossierDonnees: dossier,
-    base: relatif(env.CAP_EMPLOI_BASE ?? brut.base, join(dossier, 'data', 'cap-emploi.sqlite')),
+    base: relatif(variable(env, 'BASE') ?? brut.base, baseDefaut),
     emails: relatif(brut.emails, join(dossier, 'emails')),
-    port: Number(env.CAP_EMPLOI_PORT ?? brut.port ?? 4410),
+    port: Number(variable(env, 'PORT') ?? brut.port ?? 4410),
     telechargerJsonLd: brut.telechargerJsonLd ?? true,
     titresExclus: compiler(brut.titresExclus),
     employeursRefuses: compiler(brut.employeursRefuses),

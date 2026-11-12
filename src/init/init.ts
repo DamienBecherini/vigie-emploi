@@ -7,7 +7,7 @@ import { EXEMPLE_GRILLE } from '../core/grille-stockage.ts';
 import { GABARIT_DEFAUT, trouverNavigateur } from '../cv/cv.ts';
 
 export const MODELE = join(RACINE_APP, 'modele');
-export const BINAIRE = join(RACINE_APP, 'bin', 'cap-emploi.js');
+export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
 
 export interface OptionsInit {
   dossier: string;
@@ -61,14 +61,14 @@ export function inviteDemarrage(espace: string): string {
 }
 
 export function initialiserEspace(o: OptionsInit): ResultatInit {
-  if (!o.dossier) erreurUtilisateur('Dossier à créer attendu : cap-emploi init <dossier>');
+  if (!o.dossier) erreurUtilisateur('Dossier à créer attendu : postuler-juste init <dossier>');
   const dossier = resolve(o.dossier);
   if (existsSync(dossier)) {
     if (!statSync(dossier).isDirectory()) erreurUtilisateur(`${dossier} existe et n'est pas un dossier`);
     if (readdirSync(dossier).length) erreurUtilisateur(`Le dossier ${dossier} n'est pas vide : choisir un dossier neuf ou vide`);
   }
   const port = o.port ?? 4410;
-  const nomMcp = o.nomMcp ?? 'cap-emploi';
+  const nomMcp = o.nomMcp ?? 'postuler-juste';
   if (!/^[\w-]+$/.test(nomMcp)) erreurUtilisateur(`Nom de serveur MCP invalide : ${nomMcp} (lettres, chiffres, - et _)`);
 
   const espace = oblique(dossier);
@@ -86,7 +86,7 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   writeFileSync(config, `${JSON.stringify({ dossierDonnees: '.', port }, null, 2)}\n`, 'utf8');
 
   const mcp = join(dossier, '.mcp.json');
-  const serveur = { command: process.execPath, args: [BINAIRE, 'mcp'], env: { CAP_EMPLOI_DATA: dossier } };
+  const serveur = { command: process.execPath, args: [BINAIRE, 'mcp'], env: { POSTULER_JUSTE_DATA: dossier } };
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
@@ -94,7 +94,7 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   if (!navigateur) {
     avertissements.push(
       'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. ' +
-        'Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans CAP_EMPLOI_NAVIGATEUR.',
+        'Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans POSTULER_JUSTE_NAVIGATEUR.',
     );
   }
 

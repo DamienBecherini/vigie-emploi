@@ -186,7 +186,7 @@ export function preparerCandidature(db: Base, dossierDonnees: string, id: number
       `Relire l'offre (${d.url_canonique ?? 'sans URL'}) et la note enregistrée`,
       'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
       `Créer le dossier ${dossier} avec l'annonce, le fit, les écarts et les messages`,
-      `Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou cap-emploi candidature ${id} --dossier ${dossier}`,
+      `Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou postuler-juste candidature ${id} --dossier ${dossier}`,
       `Après l'envoi : enregistrer la date d'envoi (envoyee_le), l'offre passe en « envoyee »`,
     ],
   };

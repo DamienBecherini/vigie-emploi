@@ -127,7 +127,7 @@ export function noterEntree(
   const aCriteres = estNoteACriteres(e);
   const grille = opts.grille ?? null;
   if (aCriteres && !grille) {
-    throw new Error('Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (cap-emploi grille --init)');
+    throw new Error('Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (postuler-juste grille --init)');
   }
   const saisie = aCriteres ? verifierSaisie(grille!.grille, { criteres: e.criteres, entrees: e.entrees, bloquants: e.bloquants }) : null;
   const cible = offreDeLEntree(db, e, opts.origineOffre ?? 'manuel', { recueLe: opts.recueLe })!;

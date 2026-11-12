@@ -1,10 +1,11 @@
 {
-  "name": "cap-emploi",
+  "name": "postuler-juste",
   "version": "0.4.0",
   "private": true,
-  "description": "Suivi local des offres d'emploi et de mission : base SQLite, tableau de bord web et CLI pilotable par une IA.",
+  "description": "Recherche d'emploi et de missions pilotée par une IA : tri des offres avec une grille transparente, candidatures et CV honnêtes, suivi. Base SQLite, tableau de bord web, CLI et serveur MCP.",
   "type": "module",
   "bin": {
+    "postuler-juste": "bin/postuler-juste.js",
     "cap-emploi": "bin/cap-emploi.js"
   },
   "engines": {
@@ -15,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json",
     "test": "vitest run",
     "dev:ui": "vite",
-    "cap-emploi": "node bin/cap-emploi.js"
+    "postuler-juste": "node bin/postuler-juste.js"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
@@ -41,5 +42,6 @@
     "typescript": "^5.9.3",
     "vite": "^8.3.5",
     "vitest": "^5.0.4"
-  }
+  },
+  "license": "MIT"
 }

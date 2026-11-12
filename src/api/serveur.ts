@@ -193,7 +193,7 @@ export function creerApp(
       dossier: config.dossierDonnees,
       etat: 'pret',
       contrat: 1,
-      service: 'cap-emploi',
+      service: 'postuler-juste',
       version: VERSION,
       occupe: false,
       activite: '',
@@ -390,7 +390,7 @@ export function creerApp(
   // Interface compilée : fichiers de dist/ui, sinon index.html (application d'une seule page).
   app.get('*', (c) => {
     if (!existsSync(join(DOSSIER_UI, 'index.html'))) {
-      return c.text("Interface non compilée : lancer « npm run build » dans le dossier de cap-emploi.", 503);
+      return c.text("Interface non compilée : lancer « npm run build » dans le dossier de postuler-juste.", 503);
     }
     const demande = normalize(decodeURIComponent(new URL(c.req.url).pathname)).replace(/^[\\/]+/, '');
     let chemin = join(DOSSIER_UI, demande);
@@ -427,7 +427,7 @@ export function demarrerServeur(o: {
     serveur.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         console.error(`Le port ${o.port} est déjà utilisé : le tableau de bord tourne sans doute déjà sur http://localhost:${o.port}/`);
-        console.error(`Sinon, choisissez un autre port : cap-emploi serve --port ${o.port + 1}`);
+        console.error(`Sinon, choisissez un autre port : postuler-juste serve --port ${o.port + 1}`);
         process.exit(1);
       }
       reject(err);

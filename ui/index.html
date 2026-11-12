@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>cap-emploi</title>
+    <title>postuler-juste</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
       // Thème, palette et zoom appliqués avant le rendu (pas de flash).
       try {
-        var t = localStorage.getItem('cap-emploi:theme') || 'systeme';
+        var t = localStorage.getItem('postuler-juste:theme') || 'systeme';
         var sombre = t === 'sombre' || (t === 'systeme' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', sombre);
-        var v = JSON.parse(localStorage.getItem(sombre ? 'cap-emploi:palette-vars-sombre' : 'cap-emploi:palette-vars-claire') || '{}');
+        var v = JSON.parse(localStorage.getItem(sombre ? 'postuler-juste:palette-vars-sombre' : 'postuler-juste:palette-vars-claire') || '{}');
         for (var k in v) document.documentElement.style.setProperty(k, v[k]);
-        var z = Number(localStorage.getItem('cap-emploi:zoom'));
+        var z = Number(localStorage.getItem('postuler-juste:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
       } catch (e) {}
     </script>

@@ -9,7 +9,7 @@ import { dateFr } from '../core/texte.ts';
 import { prochaineEcheance, texteEcheance, type Evenement } from '../core/evenements.ts';
 
 /** Repère d'un fichier généré (lu par import-historique, qui ne relit pas un suivi généré). */
-export const MARQUE_SUIVI_GENERE = /Fichier généré par cap-emploi/;
+export const MARQUE_SUIVI_GENERE = /Fichier généré par (postuler-juste|cap-emploi)/;
 
 export const FICHIER_SUIVI = posix.join('candidatures', '_SUIVI.md');
 export const FICHIER_APERCU = posix.join('candidatures', '_SUIVI.genere.md');
@@ -178,8 +178,8 @@ export function genererSuivi(db: Base, dossierDonnees: string, le: Date = new Da
   const md: string[] = [
     '# Suivi des candidatures',
     '',
-    `> **Fichier généré par cap-emploi le ${quand} : ne pas éditer à la main.** Les changements se font dans la base`,
-    '> (tableau de bord, CLI ou outils MCP), puis `cap-emploi generer-suivi`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
+    `> **Fichier généré par postuler-juste le ${quand} : ne pas éditer à la main.** Les changements se font dans la base`,
+    '> (tableau de bord, CLI ou outils MCP), puis `postuler-juste generer-suivi`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
     '',
     '## En cours',
     '',
@@ -202,7 +202,7 @@ export function genererSuivi(db: Base, dossierDonnees: string, le: Date = new Da
     '|---|---|',
     ...closes.map(ligneClose),
     '',
-    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `cap-emploi serve`, ou `cap-emploi list --statut ecartee`).',
+    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `postuler-juste serve`, ou `postuler-juste list --statut ecartee`).',
     '',
   );
   return { markdown: md.join('\n'), en_cours: enCours.length, sans_suite: sansSuite.length, closes: closes.length };

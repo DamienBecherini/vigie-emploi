@@ -85,7 +85,7 @@ export function lanceurTerminal(modele: string[] | null | undefined, plateforme:
     if (!choisi || !choisi.length) {
       return Promise.reject(
         new Error(
-          `Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans cap-emploi.config.json, ` +
+          `Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans postuler-juste.config.json, ` +
             `ou lancer « claude ${ACTIONS_AGENT[action]} » dans ${dossierDonnees}.`,
         ),
       );

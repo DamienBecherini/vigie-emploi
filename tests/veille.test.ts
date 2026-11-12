@@ -36,7 +36,7 @@ describe('GET /api/sante', () => {
 
   it('suit le contrat « service local » et garde les anciens champs', async () => {
     const d = await sante(creerApp({} as Base, { dossierDonnees: '/d' }, new Veille(3600, () => 0)));
-    expect(d).toMatchObject({ ok: true, dossier: '/d', etat: 'pret', contrat: 1, service: 'cap-emploi', occupe: false, activite: '' });
+    expect(d).toMatchObject({ ok: true, dossier: '/d', etat: 'pret', contrat: 1, service: 'postuler-juste', occupe: false, activite: '' });
     expect(d.inactivite).toEqual({ delai_s: 3600, restant_s: 3600 });
     expect(typeof d.version).toBe('string');
   });

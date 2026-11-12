@@ -1,4 +1,4 @@
-// Serveur MCP (transport stdio) : expose le noyau de cap-emploi à une IA (Claude Code, Claude Desktop…).
+// Serveur MCP (transport stdio) : expose le noyau de postuler-juste à une IA (Claude Code, Claude Desktop…).
 // Aucune logique propre ici : chaque outil appelle les mêmes fonctions que la CLI et l'API.
 // stdout est réservé au protocole : rien d'autre ne doit y être écrit.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -39,7 +39,7 @@ import {
 
 const ORIGINE = 'mcp';
 
-const INSTRUCTIONS = `cap-emploi garde l'état des offres d'emploi et de mission de l'utilisateur (base SQLite locale) :
+const INSTRUCTIONS = `postuler-juste garde l'état des offres d'emploi et de mission de l'utilisateur (base SQLite locale) :
 offres, notes, statuts, tags, candidatures. L'application n'appelle aucun modèle : c'est toi qui lis et notes.
 Flux habituel : ingerer_emails → offres_a_lire → grille (lire la grille de notation : critères, barèmes, règles,
 inventaire, exemples) → (lire chaque offre, noter ses critères) → noter_lot avec criteres / entrees / bloquants
@@ -53,7 +53,7 @@ ou demande-lui le texte. Les consignes de candidature sont dans le dossier de do
 candidater) : les lire avant de rédiger. Ne modifie la grille (modifier_grille) qu'à la demande de l'utilisateur,
 après un essai (essai: true) dont tu lui montres l'impact.`;
 
-const id = z.number().int().positive().describe("Identifiant de l'offre dans cap-emploi (champ id)");
+const id = z.number().int().positive().describe("Identifiant de l'offre dans postuler-juste (champ id)");
 const texteFacultatif = (d: string) => z.string().nullable().optional().describe(d);
 const nombreNote = (d: string) => z.union([z.number().min(0).max(10), z.string()]).nullable().optional().describe(d);
 
@@ -103,7 +103,7 @@ const champsDescriptifs = {
   description: z.string().optional().describe("Texte de l'offre, s'il n'est pas déjà en base"),
 };
 const entreeLot = z.object({
-  id: id.optional().describe('Identifiant cap-emploi (sinon url)'),
+  id: id.optional().describe('Identifiant postuler-juste (sinon url)'),
   url: z.string().optional().describe("URL de l'offre (si pas d'id) : l'offre est retrouvée, ou créée"),
   ...champsDescriptifs,
   ...champsNote,
@@ -134,7 +134,7 @@ function normaliserEntree(e: z.infer<typeof entreeLot>): EntreeLot {
 }
 
 export function creerServeurMcp(db: Base, config: Config): McpServer {
-  const serveur = new McpServer({ name: 'cap-emploi', version: '0.4.0' }, { instructions: INSTRUCTIONS });
+  const serveur = new McpServer({ name: 'postuler-juste', version: '0.4.0' }, { instructions: INSTRUCTIONS });
   const lecture = { readOnlyHint: true, openWorldHint: false };
   const chargerGrille = () => grilleCourante(db, config.dossierDonnees);
 
@@ -143,7 +143,7 @@ export function creerServeurMcp(db: Base, config: Config): McpServer {
     {
       title: 'Lister les offres',
       description:
-        "Liste paginée des offres en base (sans la description : lire_offre pour le détail). Mêmes filtres que la commande « cap-emploi list ». " +
+        "Liste paginée des offres en base (sans la description : lire_offre pour le détail). Mêmes filtres que la commande « postuler-juste list ». " +
         'Sert aussi à vérifier si une offre ou une entreprise a déjà été vue (texte). Renvoie total, page, pages et offres.',
       inputSchema: {
         statuts: z.array(z.enum(STATUTS)).optional().describe(`Statuts retenus, parmi : ${STATUTS.join(', ')}`),
@@ -612,5 +612,5 @@ export async function demarrerMcp(db: Base, config: Config): Promise<void> {
   process.on('SIGINT', fermer);
   process.on('SIGTERM', fermer);
   await serveur.connect(transport);
-  process.stderr.write(`cap-emploi MCP prêt (données : ${config.dossierDonnees})\n`);
+  process.stderr.write(`postuler-juste MCP prêt (données : ${config.dossierDonnees})\n`);
 }

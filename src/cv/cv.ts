@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
-import { RACINE_APP } from '../core/config.ts';
+import { RACINE_APP, variable } from '../core/config.ts';
 
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
@@ -243,9 +243,10 @@ const NAVIGATEURS_LINUX = [
   '/snap/bin/chromium',
 ];
 
-/** Premier Chrome / Edge / Chromium trouvé (CAP_EMPLOI_NAVIGATEUR pour l'imposer), ou null. */
+/** Premier Chrome / Edge / Chromium trouvé (POSTULER_JUSTE_NAVIGATEUR pour l'imposer), ou null. */
 export function trouverNavigateur(env: NodeJS.ProcessEnv = process.env): string | null {
-  if (env.CAP_EMPLOI_NAVIGATEUR) return existsSync(env.CAP_EMPLOI_NAVIGATEUR) ? env.CAP_EMPLOI_NAVIGATEUR : null;
+  const impose = variable(env, 'NAVIGATEUR');
+  if (impose) return existsSync(impose) ? impose : null;
   const liste =
     process.platform === 'win32'
       ? [

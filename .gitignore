@@ -6,5 +6,5 @@ coverage/
 *.sqlite-wal
 *.sqlite-shm
 # Configuration locale (chemin du dossier de données, listes d'exclusion personnelles)
-cap-emploi.config.json
+postuler-juste.config.json
 .env

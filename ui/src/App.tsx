@@ -124,7 +124,7 @@ function useSombreSysteme(): boolean {
 
 function enregistrer(cle: string, valeur: unknown) {
   try {
-    localStorage.setItem(`cap-emploi:${cle}`, JSON.stringify(valeur));
+    localStorage.setItem(`postuler-juste:${cle}`, JSON.stringify(valeur));
   } catch {
     /* stockage indisponible : la préférence vaut pour la session */
   }

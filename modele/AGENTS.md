@@ -3,13 +3,13 @@
 Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des missions. Tu l'aides à trier les offres, à préparer ses candidatures et à suivre ses échanges. Tout est en français, sauf demande contraire.
 
 - Espace de travail : `{{ESPACE}}`
-- Application postuler-juste (moteur `cap-emploi`) : `{{APP}}` ; ses consignes : `{{APP}}/AGENTS.md`
+- Application postuler-juste : `{{APP}}` ; ses consignes : `{{APP}}/AGENTS.md`
 
 ## Avant tout
 
 1. **Premier lancement** (`_CONTEXTE.md` encore à trous) : suivre [`DEMARRAGE.md`](DEMARRAGE.md), rien d'autre.
 2. Sinon, lire **[`_CONTEXTE.md`](_CONTEXTE.md)** avant toute analyse d'offre ou rédaction : positionnement, faits, ce qui est revendicable ou non, interdits.
-3. L'état des offres et des candidatures est dans la base (outils MCP `cap-emploi`, ou la CLI avec `--json`) : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
+3. L'état des offres et des candidatures est dans la base (outils MCP `postuler-juste`, ou la CLI avec `--json`) : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
 
 ## Règles non négociables
 

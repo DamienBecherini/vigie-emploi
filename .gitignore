@@ -8,3 +8,5 @@ coverage/
 # Configuration locale (chemin du dossier de données, listes d'exclusion personnelles)
 postuler-juste.config.json
 .env
+# Extension Claude Desktop construite par npm run mcpb
+build/

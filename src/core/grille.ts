@@ -649,15 +649,17 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
     for (const e of g.exemples) e.bloquants = e.bloquants.filter((b) => b !== id);
   }
   const cle = (s: string) => s.trim().toLowerCase();
-  for (const t of ch.inventaire?.ajouter ?? []) {
-    const i = g.inventaire.findIndex((x) => cle(x.techno) === cle(t.techno));
-    if (i >= 0) g.inventaire[i] = t;
-    else g.inventaire.push(t);
-  }
+  // Retraits d'abord, ajouts ensuite : une techno retirée puis ajoutée dans le même changement
+  // est remplacée, jamais perdue (les ajouts d'un appel ne peuvent pas être effacés par ses retraits).
   for (const t of ch.inventaire?.retirer ?? []) {
     const avant = g.inventaire.length;
     g.inventaire = g.inventaire.filter((x) => cle(x.techno) !== cle(t));
     if (g.inventaire.length === avant) throw new Error(`Technologie absente de l'inventaire : ${t}`);
+  }
+  for (const t of ch.inventaire?.ajouter ?? []) {
+    const i = g.inventaire.findIndex((x) => cle(x.techno) === cle(t.techno));
+    if (i >= 0) g.inventaire[i] = t;
+    else g.inventaire.push(t);
   }
   return validerGrille(g, 'après changement');
 }

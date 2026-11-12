@@ -285,10 +285,15 @@ export interface ResultatCv {
   html: string;
   pdf: string;
   pages: number;
+  /** Image PNG du rendu (option capture), pour un contrôle visuel sans visionneuse PDF. */
+  capture?: string;
 }
 
+/** A4 à 96 ppp : largeur et hauteur d'une page en pixels. */
+const A4_PX = { largeur: 794, hauteur: 1123 };
+
 /** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
-export function genererCv(markdown: string, dossierGabarit: string, navigateur: string): ResultatCv {
+export function genererCv(markdown: string, dossierGabarit: string, navigateur: string, o: { capture?: boolean } = {}): ResultatCv {
   const md = resolve(markdown);
   if (!existsSync(md)) throw Object.assign(new Error(`CV introuvable : ${md}`), { utilisateur: true });
   const gabarit = resolve(dossierGabarit);
@@ -317,5 +322,24 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
       env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
     },
   );
-  return { markdown: md, html, pdf, pages: compterPages(pdf) };
+  const pages = compterPages(pdf);
+  const resultat: ResultatCv = { markdown: md, html, pdf, pages };
+  if (o.capture) {
+    const png = join(apercu, `${nom}.png`);
+    execFileSync(
+      navigateur,
+      [
+        '--headless=new',
+        '--disable-gpu',
+        '--hide-scrollbars',
+        `--window-size=${A4_PX.largeur},${A4_PX.hauteur * Math.max(1, pages)}`,
+        '--virtual-time-budget=4000',
+        `--screenshot=${png}`,
+        urlFichier(html),
+      ],
+      { stdio: 'pipe', env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env },
+    );
+    resultat.capture = png;
+  }
+  return resultat;
 }

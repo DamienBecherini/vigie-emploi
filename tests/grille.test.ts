@@ -241,6 +241,9 @@ describe('calcul de la note', () => {
     expect(() => appliquerChangement(exemple(), { poids: { inconnu: 3 } })).toThrow(/Critère inconnu/);
     expect(() => appliquerChangement(exemple(), { regles: [{ id: 'neuve' }] })).toThrow(/libelle.*effet/);
     expect(() => appliquerChangement(exemple(), { inventaire: { retirer: ['Cobol'] } })).toThrow(/absente/);
+    // Retirer puis ajouter la même techno dans un appel la remplace (elle n'est jamais perdue).
+    const g3 = appliquerChangement(exemple(), { inventaire: { retirer: ['PHP'], ajouter: [{ techno: 'php', niveau: 'moyen' }] } });
+    expect(g3.inventaire.filter((t) => t.techno.toLowerCase() === 'php')).toEqual([{ techno: 'php', niveau: 'moyen' }]);
   });
 
   it('exemples de référence et consignes pour l’IA', () => {

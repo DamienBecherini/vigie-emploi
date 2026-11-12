@@ -58,9 +58,10 @@ Commandes
   init <dossier> [--port 4410] [--nom-mcp postuler-juste]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA
-  cv <cv.md>… [--gabarit <dossier>]
+  cv <cv.md>… [--gabarit <dossier>] [--capture]
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
-                        Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application
+                        Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
+                        --capture : image PNG du rendu dans <gabarit>/apercu/ (contrôle visuel)
   ingest [--keep] [--no-fetch] [--emails <dossier>]
                         Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
                         puis supprime les e-mails traités (sauf --keep)
@@ -785,8 +786,8 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   cv(args) {
-    const { v, pos } = analyser(args, { gabarit: { type: 'string' } });
-    if (!pos.length) erreur('Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>]');
+    const { v, pos } = analyser(args, { gabarit: { type: 'string' }, capture: { type: 'boolean' } });
+    if (!pos.length) erreur('Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>] [--capture]');
     let choisi = v.gabarit as string | undefined;
     if (!choisi) {
       let espace: string | null = null;
@@ -801,11 +802,11 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const gabarit = choisi;
     const navigateur = trouverNavigateur();
     if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)');
-    const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur)));
+    const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur, { capture: Boolean(v.capture) })));
     if (v.json) return json({ ok: true, gabarit, cv: resultats });
     for (const r of resultats) {
       console.log(`${String(r.pages).padStart(2)} page(s)  ${r.pdf}${r.pages > 2 ? '  <-- DÉPASSE 2 PAGES' : ''}`);
-      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}\nPAGES : ${r.pages}`);
+      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}`);
     }
   },
 

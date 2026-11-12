@@ -180,10 +180,10 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
         {
           url_canonique: off.url,
           titre: detail?.titre ?? off.titre,
-          entreprise: detail?.entreprise,
-          lieu: detail?.lieu,
+          entreprise: detail?.entreprise ?? off.entreprise,
+          lieu: detail?.lieu ?? off.lieu,
           contrat: detail?.contrat,
-          remuneration: detail?.remuneration,
+          remuneration: detail?.remuneration ?? off.remuneration,
           teletravail: detail?.teletravail,
           publiee_le: detail?.publiee_le,
           description: detail?.description,

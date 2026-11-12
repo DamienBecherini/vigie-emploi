@@ -12,6 +12,10 @@ export interface OffreEmail {
   sujet: string;
   /** Date de l'e-mail (AAAA-MM-JJ). */
   recueLe: string | null;
+  /** Champs séparés du titre quand l'e-mail les colle ensemble (Glassdoor). */
+  entreprise?: string;
+  lieu?: string;
+  remuneration?: string;
 }
 
 export interface EmailLu {
@@ -69,5 +73,47 @@ export async function lireEmail(contenu: Buffer | string): Promise<EmailLu> {
     const m = texteHtml(msg.html).match(/Offre\s*:\s*(.+?)\s+Postuler\b/);
     if (m) liste[0].titre = m[1].trim().slice(0, 140);
   }
+  for (const o of liste) {
+    if (o.source === 'glassdoor' && o.titre) Object.assign(o, decouperGlassdoor(o.titre));
+  }
   return { sujet, date, offres: liste, confirmation: SUJET_CONFIRMATION.test(sujet) };
+}
+
+/** Champs tirés du bloc d'une offre Glassdoor, dont le lien contient tout à la suite. */
+export interface BlocGlassdoor {
+  titre: string;
+  entreprise?: string;
+  lieu?: string;
+  remuneration?: string;
+}
+
+/** Mentions de genre qui terminent l'intitulé (le lieu suit). */
+const GENRE = /^(.*?(?:\(?\b(?:H\s*\/\s*F|F\s*\/\s*H)(?:\s*\/\s*[NX])?\)?|\((?:m\s*\/\s*w\s*\/\s*d|w\s*\/\s*m\s*\/\s*d|f\s*\/\s*m\s*\/\s*d)\)))\s+(.+)$/i;
+
+/**
+ * Glassdoor met dans le lien : « Entreprise 4.0 ★ Intitulé (H/F) Lieu 50 k € - 65 k € (Estimation de l'employeur) 17h
+ * Candidature facile ». On sépare ce qui peut l'être sans risque ; le reste reste dans l'intitulé.
+ */
+export function decouperGlassdoor(brut: string): BlocGlassdoor {
+  let t = brut.replace(/\s+/g, ' ').trim();
+  t = t.replace(/\s+Candidature\b.*$/i, '').trim();
+  t = t.replace(/\s+\d{1,2}\s*(?:h|j|d)\+?$/i, '').trim();
+  const r: BlocGlassdoor = { titre: t };
+  const salaire = t.match(/\s+(\d[\d\s.,]*\s*k?\s*€(?:\s*-\s*\d[\d\s.,]*\s*k?\s*€)?)(?:\s*\(Estimation[^)]*\)?)?$/i);
+  if (salaire && salaire.index !== undefined) {
+    r.remuneration = salaire[1].replace(/\s+/g, ' ').trim();
+    t = t.slice(0, salaire.index).trim();
+  }
+  const note = t.match(/^(.+?)\s+\d[.,]\d\s*★\s+(.+)$/);
+  if (note) {
+    r.entreprise = note[1].trim();
+    t = note[2].trim();
+  }
+  const genre = t.match(GENRE);
+  if (genre && genre[2].length <= 40) {
+    t = genre[1].trim();
+    r.lieu = genre[2].trim();
+  }
+  r.titre = t;
+  return r;
 }

@@ -2,6 +2,8 @@
 
 # postuler-juste
 
+**Français** · [English](README.en.md)
+
 **Votre recherche d'emploi ou de missions, pilotée par votre IA, sans jamais vous faire mentir.**
 
 [![Licence : MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
@@ -10,7 +12,6 @@
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://nodejs.org/api/sqlite.html)
 [![MCP](https://img.shields.io/badge/serveur-MCP-6E56CF)](https://modelcontextprotocol.io)
 [![Agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Cursor%20%C2%B7%20Codex-D97757)](#ce-quil-faut)
-[![Langue](https://img.shields.io/badge/langue-FR-0A7EA4)](#in-english)
 [![Données](https://img.shields.io/badge/donn%C3%A9es-100%20%25%20locales-2EA043)](#confidentialité)
 
 </div>
@@ -320,10 +321,6 @@ docs/adr/           décisions d'architecture
 ```
 
 Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md) et [`docs/adr/0004-grille-de-notation.md`](docs/adr/0004-grille-de-notation.md).
-
-## In English
-
-postuler-juste is a local, AI-driven job and freelance search kit, in French first. Your coding agent (Claude Code, Cursor, Codex…) triages job alert e-mails, scores each offer against your own transparent grid, drafts applications you approve (tailored two-page PDF résumé, message within the form's character limit) and keeps the follow-up journal. The app itself calls no AI model: it stores state (SQLite, web dashboard, CLI, MCP server). Its core rule: the agent only writes what you can defend in an interview, based on an inventory of claimable skills built with you during onboarding. The workspace templates and prompts are in French; contributions for other languages are welcome.
 
 ## Licence
 

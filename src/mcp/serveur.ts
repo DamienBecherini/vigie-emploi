@@ -3,7 +3,10 @@
 // stdout est réservé au protocole : rien d'autre ne doit y être écrit.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod';
+import { RACINE_APP } from '../core/config.ts';
 import type { OptionsConfig } from '../core/config.ts';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
@@ -125,7 +128,8 @@ function normaliserEntree(e: z.infer<typeof entreeLot>): EntreeLot {
 }
 
 export function creerServeurMcp(etat: EtatMcp): McpServer {
-  const serveur = new McpServer({ name: 'postuler-juste', version: '0.4.0' }, { instructions: INSTRUCTIONS });
+  const VERSION_APP = (JSON.parse(readFileSync(join(RACINE_APP, 'package.json'), 'utf8')) as { version: string }).version;
+  const serveur = new McpServer({ name: 'postuler-juste', version: VERSION_APP }, { instructions: INSTRUCTIONS });
   const lecture = { readOnlyHint: true, openWorldHint: false };
   /** Base de l'espace ; erreur claire tant que l'espace n'est pas initialisé. */
   const base = (): Base => {

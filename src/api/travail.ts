@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Base } from '../db/base.ts';
+import { LANGUE_DEFAUT, tl, type Langue } from '../i18n/index.ts';
 
 /** Actions lançables depuis l'interface, et l'invite passée à l'agent (commande du dossier de données). */
 export const ACTIONS_AGENT = {
@@ -79,14 +80,17 @@ export function environnementPropre(env: NodeJS.ProcessEnv = process.env): NodeJ
   return Object.fromEntries(Object.entries(env).filter(([k]) => !/^CLAUDECODE$|^CLAUDE_CODE_/i.test(k)));
 }
 
-export function lanceurTerminal(modele: string[] | null | undefined, plateforme: NodeJS.Platform = process.platform): Lanceur {
+export function lanceurTerminal(
+  modele: string[] | null | undefined,
+  plateforme: NodeJS.Platform = process.platform,
+  langue: Langue = LANGUE_DEFAUT,
+): Lanceur {
   const choisi = modele ?? (plateforme === 'win32' ? TERMINAL_WINDOWS : null);
   return (action, dossierDonnees) => {
     if (!choisi || !choisi.length) {
       return Promise.reject(
         new Error(
-          `Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans postuler-juste.config.json, ` +
-            `ou lancer « claude ${ACTIONS_AGENT[action]} » dans ${dossierDonnees}.`,
+          tl(langue, 'api.sansTerminal', { invite: ACTIONS_AGENT[action], dossier: dossierDonnees }),
         ),
       );
     }
@@ -99,7 +103,7 @@ export function lanceurTerminal(modele: string[] | null | undefined, plateforme:
         stdio: 'ignore',
         windowsHide: false,
       });
-      p.once('error', (e) => reject(new Error(`Impossible d'ouvrir le terminal (${programme}) : ${e.message}`)));
+      p.once('error', (e) => reject(new Error(tl(langue, 'api.terminalImpossible', { programme, message: e.message }))));
       p.once('spawn', () => {
         p.unref();
         resolve();

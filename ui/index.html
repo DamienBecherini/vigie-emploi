@@ -7,7 +7,7 @@
     <title>postuler-juste</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
-      // Thème, palette et zoom appliqués avant le rendu (pas de flash).
+      // Thème, palette, zoom et langue choisie appliqués avant le rendu (pas de flash).
       try {
         var t = localStorage.getItem('postuler-juste:theme') || 'systeme';
         var sombre = t === 'sombre' || (t === 'systeme' && matchMedia('(prefers-color-scheme: dark)').matches);
@@ -16,6 +16,8 @@
         for (var k in v) document.documentElement.style.setProperty(k, v[k]);
         var z = Number(localStorage.getItem('postuler-juste:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
+        var l = localStorage.getItem('postuler-juste:langue');
+        if (l === 'fr' || l === 'en') document.documentElement.lang = l;
       } catch (e) {}
     </script>
   </head>

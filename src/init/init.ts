@@ -3,10 +3,21 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { NOM_FICHIER_CONFIG, RACINE_APP } from '../core/config.ts';
-import { EXEMPLE_GRILLE } from '../core/grille-stockage.ts';
+import { exempleGrille } from '../core/grille-stockage.ts';
 import { DOSSIER_GABARITS, GABARIT_DEFAUT, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
+import { estLangue, LANGUE_DEFAUT, LANGUES, tl, type Langue } from '../i18n/index.ts';
 
 export const MODELE = join(RACINE_APP, 'modele');
+
+/**
+ * Modèle de l'espace dans la langue voulue : modele-<langue>/ s'il existe (consignes de l'IA traduites,
+ * à venir pour l'anglais), sinon modele/ (français).
+ */
+export function modeleDeLangue(langue: Langue, racine: string = RACINE_APP): string {
+  if (langue === 'fr') return join(racine, 'modele');
+  const traduit = join(racine, `modele-${langue}`);
+  return existsSync(traduit) ? traduit : join(racine, 'modele');
+}
 export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
 /** Consignes de l'application pour l'agent (AGENTS.md à la racine de l'application). */
 export const CONSIGNES_APP = join(RACINE_APP, 'AGENTS.md');
@@ -62,6 +73,8 @@ export interface OptionsInit {
   nomMcp?: string;
   /** Gabarit de CV livré à installer (défaut : sobre). */
   gabarit?: string;
+  /** Langue de l'interface, de la CLI et du suivi, écrite dans la config (défaut : fr). */
+  langue?: Langue;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -73,6 +86,7 @@ export interface ResultatInit {
   mcp: string;
   nom_mcp: string;
   port: number;
+  langue: Langue;
   navigateur: string | null;
   avertissements: string[];
   invite: string;
@@ -99,35 +113,36 @@ function personnaliser(dossier: string, valeurs: Record<string, string>): void {
   }
 }
 
-export function inviteDemarrage(espace: string): string {
-  return (
-    `Tu vas m'aider dans ma recherche d'emploi. Mon espace de travail est ${espace}. ` +
-    `Lis ${espace}/AGENTS.md puis ${espace}/DEMARRAGE.md, et suis le démarrage : ` +
-    `vérifie d'abord de quels outils tu disposes, lis ce que j'ai déposé dans a-deposer/, ` +
-    `puis pose-moi tes questions, quelques-unes à la fois.`
-  );
+/** Prompt de démarrage à coller dans l'IA (en anglais, il lui demande aussi de parler anglais). */
+export function inviteDemarrage(espace: string, langue: Langue = LANGUE_DEFAUT): string {
+  return tl(langue, 'init.invite', { espace });
 }
 
 export function initialiserEspace(o: OptionsInit): ResultatInit {
-  if (!o.dossier) erreurUtilisateur('Dossier à créer attendu : postuler-juste init <dossier>');
+  const langue = o.langue ?? LANGUE_DEFAUT;
+  if (!estLangue(langue)) erreurUtilisateur(tl(LANGUE_DEFAUT, 'init.langueInconnue', { langue: String(langue), langues: LANGUES.join(', ') }));
+  const m = (cle: Parameters<typeof tl>[1], params?: Parameters<typeof tl>[2]) => tl(langue, cle, params);
+  if (!o.dossier) erreurUtilisateur(m('init.dossierAttendu'));
   const dossier = resolve(o.dossier);
   if (existsSync(dossier)) {
-    if (!statSync(dossier).isDirectory()) erreurUtilisateur(`${dossier} existe et n'est pas un dossier`);
-    if (readdirSync(dossier).length) erreurUtilisateur(`Le dossier ${dossier} n'est pas vide : choisir un dossier neuf ou vide`);
+    if (!statSync(dossier).isDirectory()) erreurUtilisateur(m('init.pasUnDossier', { dossier }));
+    if (readdirSync(dossier).length) erreurUtilisateur(m('init.nonVide', { dossier }));
   }
   const port = o.port ?? 4410;
   const nomMcp = o.nomMcp ?? 'postuler-juste';
-  if (!/^[\w-]+$/.test(nomMcp)) erreurUtilisateur(`Nom de serveur MCP invalide : ${nomMcp} (lettres, chiffres, - et _)`);
+  if (!/^[\w-]+$/.test(nomMcp)) erreurUtilisateur(m('init.nomMcpInvalide', { nom: nomMcp }));
 
   const gabarit = o.gabarit ? join(DOSSIER_GABARITS, o.gabarit) : GABARIT_DEFAUT;
   if (!existsSync(join(gabarit, 'gabarit.css'))) {
-    erreurUtilisateur(`Gabarit inconnu : ${o.gabarit} (disponibles : ${listerGabarits().map((g) => g.nom).join(', ')})`);
+    erreurUtilisateur(m('init.gabaritInconnu', { gabarit: o.gabarit, liste: listerGabarits().map((g) => g.nom).join(', ') }));
   }
   const espace = oblique(dossier);
   const lance = lancement();
   const { commande, app } = lance;
 
-  cpSync(MODELE, dossier, { recursive: true });
+  // Modèle traduit (modele-en/…) s'il existe ; sinon le modèle français, signalé par un avertissement.
+  const modele = modeleDeLangue(langue);
+  cpSync(modele, dossier, { recursive: true });
   // npm ne livre pas les .gitignore d'un paquet : le modèle le garde sous le nom « gitignore ».
   if (existsSync(join(dossier, 'gitignore'))) renameSync(join(dossier, 'gitignore'), join(dossier, '.gitignore'));
   // Consignes de l'application : lues sur place, sauf depuis le cache de npx (purgeable) où on en copie une version.
@@ -139,35 +154,23 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   }
   cpSync(gabarit, join(dossier, 'cv', 'gabarit'), { recursive: true });
   mkdirSync(join(dossier, 'profil'), { recursive: true });
-  cpSync(EXEMPLE_GRILLE, join(dossier, 'profil', 'grille.json'));
+  cpSync(exempleGrille(langue), join(dossier, 'profil', 'grille.json'));
   mkdirSync(join(dossier, 'data'), { recursive: true });
   personnaliser(dossier, { ESPACE: espace, APP: app, CMD: commande, DOC_APP: docApp });
 
   const config = join(dossier, NOM_FICHIER_CONFIG);
-  writeFileSync(config, `${JSON.stringify({ dossierDonnees: '.', port }, null, 2)}\n`, 'utf8');
+  writeFileSync(config, `${JSON.stringify({ dossierDonnees: '.', port, langue }, null, 2)}\n`, 'utf8');
 
   const mcp = join(dossier, '.mcp.json');
   const serveur = { ...lance.mcp, env: { POSTULER_JUSTE_DATA: dossier } };
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
-  if (lance.mode === 'npx') {
-    avertissements.push(
-      `Lancé par npx : le serveur MCP et les consignes utilisent « ${commande} » (version figée). ` +
-        'Au premier lancement, npx la télécharge (connexion nécessaire), puis la garde en cache. ' +
-        'Pour un chemin fixe, installer plutôt avec « npm install -g postuler-juste » puis relancer init.',
-    );
-  }
-  if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) {
-    avertissements.push(`Tableau de bord non compilé : lancer « npm run build » dans ${app} avant « postuler-juste serve ».`);
-  }
+  if (langue !== 'fr' && modele === MODELE) avertissements.push(m('init.modeleFrancais'));
+  if (lance.mode === 'npx') avertissements.push(m('init.npx', { commande }));
+  if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) avertissements.push(m('init.nonCompile', { app }));
   const navigateur = trouverNavigateur(o.env);
-  if (!navigateur) {
-    avertissements.push(
-      'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. ' +
-        'Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans POSTULER_JUSTE_NAVIGATEUR.',
-    );
-  }
+  if (!navigateur) avertissements.push(m('init.sansNavigateur'));
 
   return {
     ok: true,
@@ -177,8 +180,9 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
     mcp: oblique(mcp),
     nom_mcp: nomMcp,
     port,
+    langue,
     navigateur,
     avertissements,
-    invite: inviteDemarrage(espace),
+    invite: inviteDemarrage(espace, langue),
   };
 }

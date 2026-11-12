@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FilePenLine, Mail } from 'lucide-react';
 import { api, type ActionAgent } from '../api.ts';
+import { t, type CleUi } from '../i18n/index.ts';
 
 /**
  * Écoute le flux du serveur (Server-Sent Events) : la base a changé (CLI, agent, autre onglet) → toutes les
@@ -29,14 +30,10 @@ export function useNotifications(): void {
   }, [client]);
 }
 
-const ACTIONS: Record<ActionAgent, string> = {
-  'traiter-emails': 'Terminal ouvert : l’agent trie les e-mails. Les offres apparaissent ici au fil de la notation.',
-  'preparer-go': 'Terminal ouvert : l’agent prépare les candidatures en « go ».',
+const ACTIONS: Record<ActionAgent, CleUi> = {
+  'traiter-emails': 'agent.emailsLance',
+  'preparer-go': 'agent.goLance',
 };
-
-function pluriel(n: number, mot: string): string {
-  return `${n} ${mot}${n > 1 ? 's' : ''}`;
-}
 
 /** N'affiche rien tant qu'il n'y a pas de travail en attente. */
 export function ActionsAgent({ className = '' }: { className?: string }) {
@@ -47,7 +44,7 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
   const lancer = useMutation({
     mutationFn: api.lancerAgent,
     onSuccess: (_r, action) => {
-      setMessage(ACTIONS[action]);
+      setMessage(t(ACTIONS[action]));
       setRecent(action);
       window.setTimeout(() => setRecent(null), 8000);
     },
@@ -59,16 +56,16 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
   if (!emails && !go.length && !message && !lancer.isError) return null;
 
   return (
-    <section aria-label="Travail pour l’agent" className={`flex flex-col gap-2 ${className}`}>
+    <section aria-label={t('agent.section')} className={`flex flex-col gap-2 ${className}`}>
       {emails > 0 && (
         <button
           type="button"
           className="bouton bouton-actif justify-center"
           disabled={lancer.isPending || recent === 'traiter-emails'}
           onClick={() => lancer.mutate('traiter-emails')}
-          title="Ouvre un terminal où l’agent ingère les e-mails, lit et note les offres"
+          title={t('agent.emailsTitre')}
         >
-          <Mail className="size-4" aria-hidden="true" /> Traiter {pluriel(emails, 'e-mail')}
+          <Mail className="size-4" aria-hidden="true" /> {t('agent.emails', { n: emails })}
         </button>
       )}
       {go.length > 0 && (
@@ -77,9 +74,9 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
           className="bouton bouton-actif justify-center"
           disabled={lancer.isPending || recent === 'preparer-go'}
           onClick={() => lancer.mutate('preparer-go')}
-          title={`Ouvre un terminal où l’agent prépare : ${go.map((o) => `${o.entreprise ?? '?'} (n° ${o.id})`).join(', ')}`}
+          title={t('agent.goTitre', { liste: go.map((o) => t('agent.goOffre', { entreprise: o.entreprise ?? '?', id: o.id })).join(', ') })}
         >
-          <FilePenLine className="size-4" aria-hidden="true" /> Préparer {pluriel(go.length, 'candidature')}
+          <FilePenLine className="size-4" aria-hidden="true" /> {t('agent.go', { n: go.length })}
         </button>
       )}
       <p className="text-xs text-slate-700 dark:text-slate-300" role="status">

@@ -21,7 +21,7 @@ import {
 } from '../core/offres.ts';
 import { estStatut, STATUTS } from '../core/statuts.ts';
 import { modifierSousNotes, noterOffres, preparerCandidature, suivreCandidature, type SaisieSousNotes } from '../core/actions.ts';
-import { noteExemple, LIBELLES_NIVEAUX, NIVEAUX, validerGrille } from '../core/grille.ts';
+import { noteExemple, NIVEAUX, validerGrille } from '../core/grille.ts';
 import {
   apercuGrille,
   enregistrerGrille,
@@ -46,6 +46,9 @@ import {
 import { fichierSur, fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
 import { pageFichier } from './fichier.ts';
+import { LANGUE_DEFAUT, tl, type CleServeur } from '../i18n/index.ts';
+import { libelleNiveau } from '../i18n/libelles.ts';
+import type { Params } from '../i18n/outil.ts';
 import { Veille } from './veille.ts';
 import { Diffusion, surveiller } from './diffusion.ts';
 import { estActionAgent, etatTravail, lanceurTerminal, type Lanceur } from './travail.ts';
@@ -126,14 +129,17 @@ function origineEtrangere(origine: string | undefined, site: string | undefined)
 
 export function creerApp(
   db: Base,
-  config: Pick<Config, 'dossierDonnees'> & Partial<Pick<Config, 'emails' | 'terminal'>>,
+  config: Pick<Config, 'dossierDonnees'> & Partial<Pick<Config, 'emails' | 'terminal' | 'langue'>>,
   veille: Veille = new Veille(0),
   options: OptionsApp = {},
 ): Hono {
   const app = new Hono();
   const diffusion = options.diffusion ?? new Diffusion();
-  const lanceur = options.lanceur ?? lanceurTerminal(config.terminal);
+  const lanceur = options.lanceur ?? lanceurTerminal(config.terminal, process.platform, config.langue ?? LANGUE_DEFAUT);
   const emails = config.emails ?? join(config.dossierDonnees, 'emails');
+  // Langue des messages renvoyés à l'interface (celle-ci peut afficher une autre langue : sélecteur de l'en-tête).
+  const langue = config.langue ?? LANGUE_DEFAUT;
+  const m = (cle: CleServeur, params?: Params) => tl(langue, cle, params);
 
   app.onError((err, c) => c.json({ ok: false, erreur: err.message }, 400));
 
@@ -142,10 +148,10 @@ export function creerApp(
   // Les écritures venues d'une autre origine (formulaire d'une page tierce) sont refusées.
   app.use('*', async (c, next) => {
     const hote = (c.req.header('host') ?? '').replace(/:\d+$/, '').toLowerCase();
-    if (hote && !HOTES_LOCAUX.includes(hote)) return c.text('Hôte refusé', 403);
+    if (hote && !HOTES_LOCAUX.includes(hote)) return c.text(m('api.hoteRefuse'), 403);
     const ecriture = c.req.method !== 'GET' && c.req.method !== 'HEAD';
     if (ecriture && origineEtrangere(c.req.header('origin'), c.req.header('sec-fetch-site'))) {
-      return c.json({ ok: false, erreur: 'Origine refusée' }, 403);
+      return c.json({ ok: false, erreur: m('api.origineRefusee') }, 403);
     }
     if (!ROUTES_PASSIVES.includes(c.req.path)) veille.signaler();
     await next();
@@ -178,9 +184,9 @@ export function creerApp(
 
   app.post('/api/travail/:action', async (c) => {
     const action = c.req.param('action');
-    if (!estActionAgent(action)) return c.json({ ok: false, erreur: 'Action inconnue' }, 404);
+    if (!estActionAgent(action)) return c.json({ ok: false, erreur: m('api.actionInconnue') }, 404);
     if (!(c.req.header('content-type') ?? '').includes('application/json')) {
-      return c.json({ ok: false, erreur: 'Requête JSON attendue' }, 415);
+      return c.json({ ok: false, erreur: m('api.jsonAttendu') }, 415);
     }
     await lanceur(action, config.dossierDonnees);
     return c.json({ ok: true, action });
@@ -194,6 +200,7 @@ export function creerApp(
       etat: 'pret',
       contrat: 1,
       service: 'postuler-juste',
+      langue,
       version: VERSION,
       occupe: false,
       activite: '',
@@ -205,14 +212,14 @@ export function creerApp(
 
   app.get('/api/offres/:id', (c) => {
     const d = detailOffre(db, Number(c.req.param('id')));
-    return d ? c.json(d) : c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    return d ? c.json(d) : c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
   });
 
   app.post('/api/offres/:id/statut', async (c) => {
     const id = Number(c.req.param('id'));
     const corps = (await c.req.json()) as { statut?: string; commentaire?: string };
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
-    if (!corps.statut || !estStatut(corps.statut)) return c.json({ ok: false, erreur: 'Statut inconnu' }, 400);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
+    if (!corps.statut || !estStatut(corps.statut)) return c.json({ ok: false, erreur: m('api.statutInconnu') }, 400);
     ajouterStatut(db, id, corps.statut, { commentaire: corps.commentaire ?? null, origine: 'interface' });
     return c.json(detailOffre(db, id));
   });
@@ -220,7 +227,7 @@ export function creerApp(
   app.put('/api/offres/:id/tags', async (c) => {
     const id = Number(c.req.param('id'));
     const corps = (await c.req.json()) as { tags?: string[] };
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const voulus = new Set((corps.tags ?? []).map((t) => String(t)));
     const actuels = tagsOffre(db, id);
     const tags = transaction(db, () =>
@@ -237,7 +244,7 @@ export function creerApp(
   app.put('/api/offres/:id/lien', async (c) => {
     const id = Number(c.req.param('id'));
     const corps = (await c.req.json()) as { url?: string | null };
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     modifierLien(db, id, corps.url ?? null);
     return c.json(detailOffre(db, id));
   });
@@ -245,7 +252,7 @@ export function creerApp(
   /** Bouton « Candidater » : passe l'offre en go et renvoie la commande à copier. */
   app.post('/api/offres/:id/candidater', (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const r = preparerCandidature(db, config.dossierDonnees, id, 'interface');
     return c.json({ ok: true, commande: `candidater ${id}`, offre: r.offre });
   });
@@ -253,7 +260,7 @@ export function creerApp(
   /** Saisie ou correction d'une note depuis le panneau de détail (nouvelle entrée d'historique). */
   app.post('/api/offres/:id/note', async (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const corps = (await c.req.json()) as Pick<EntreeLot, 'note' | 'note_brute' | 'penalites' | 'colle' | 'ecarts'>;
     const { note, note_brute, penalites, colle, ecarts } = corps;
     noterOffres(db, [{ id, note, note_brute, penalites, colle, ecarts, lu: true }], 'interface');
@@ -263,7 +270,7 @@ export function creerApp(
   /** Correction des sous-notes (et des entrées des critères calculés) : nouvelle note calculée avec la grille. */
   app.put('/api/offres/:id/sous-notes', async (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const corps = (await c.req.json()) as SaisieSousNotes;
     modifierSousNotes(db, id, corps, 'interface', grilleObligatoire(db, config.dossierDonnees));
     return c.json(detailOffre(db, id));
@@ -274,7 +281,7 @@ export function creerApp(
     v
       ? {
           ...v,
-          niveaux: NIVEAUX.map((n) => ({ valeur: n, libelle: LIBELLES_NIVEAUX[n] })),
+          niveaux: NIVEAUX.map((n) => ({ valeur: n, libelle: libelleNiveau(n, langue) })),
           exemples: v.grille.exemples.map((e) => noteExemple(v.grille, e, v.version)),
         }
       : { version: null, grille: null, exemples: [] };
@@ -309,13 +316,13 @@ export function creerApp(
   /** Candidature : prochaine action, date d'envoi, canal… (null ou '' efface un champ, absent = inchangé). */
   app.put('/api/offres/:id/candidature', async (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const corps = (await c.req.json()) as Record<string, unknown>;
     const champs: ChampsCandidature = {};
     for (const k of CHAMPS_EDITABLES) {
       if (!(k in corps)) continue;
       const v = corps[k];
-      if (v !== null && typeof v !== 'string') return c.json({ ok: false, erreur: `Champ ${k} : texte attendu` }, 400);
+      if (v !== null && typeof v !== 'string') return c.json({ ok: false, erreur: m('api.champTexte', { champ: k }) }, 400);
       champs[k] = v;
     }
     return c.json(suivreCandidature(db, id, champs, 'interface').offre);
@@ -324,13 +331,13 @@ export function creerApp(
   // Journal de la candidature (événements et échéances).
   app.get('/api/offres/:id/evenements', (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     return c.json(journal(db, id));
   });
 
   app.post('/api/offres/:id/evenements', async (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     const corps = (await c.req.json()) as SaisieEvenement;
     ajouterEvenement(db, id, corps, 'interface');
     return c.json(detailOffre(db, id));
@@ -362,7 +369,7 @@ export function creerApp(
   // Fichiers du dossier de candidature : liste, puis lecture (dossier de données uniquement).
   app.get('/api/offres/:id/fichiers', (c) => {
     const id = Number(c.req.param('id'));
-    if (!offreParId(db, id)) return c.json({ ok: false, erreur: 'Offre introuvable' }, 404);
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     return c.json(fichiersDossier(db, config.dossierDonnees, id));
   });
 
@@ -372,7 +379,7 @@ export function creerApp(
     try {
       chemin = brut.split('/').map(decodeURIComponent).join('/');
     } catch {
-      return c.text('Chemin mal encodé', 400);
+      return c.text(m('api.cheminMalEncode'), 400);
     }
     let fichier: { absolu: string; relatif: string };
     try {
@@ -385,12 +392,12 @@ export function creerApp(
     return c.body(p.corps, 200, p.entetes);
   });
 
-  app.all('/api/*', (c) => c.json({ ok: false, erreur: 'Route inconnue' }, 404));
+  app.all('/api/*', (c) => c.json({ ok: false, erreur: m('api.routeInconnue') }, 404));
 
   // Interface compilée : fichiers de dist/ui, sinon index.html (application d'une seule page).
   app.get('*', (c) => {
     if (!existsSync(join(DOSSIER_UI, 'index.html'))) {
-      return c.text("Interface non compilée : lancer « npm run build » dans le dossier de postuler-juste.", 503);
+      return c.text(m('api.nonCompilee'), 503);
     }
     const demande = normalize(decodeURIComponent(new URL(c.req.url).pathname)).replace(/^[\\/]+/, '');
     let chemin = join(DOSSIER_UI, demande);
@@ -417,17 +424,18 @@ export function demarrerServeur(o: {
   const diffusion = new Diffusion();
   const arreterSurveillance = surveiller({ db: o.db, diffusion, base: o.config.base, emails: o.config.emails });
   const app = creerApp(o.db, o.config, veille, { diffusion });
+  const langue = o.config.langue ?? LANGUE_DEFAUT;
   const hote = o.hote ?? '127.0.0.1';
   return new Promise((resolve, reject) => {
     const serveur = serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
-      console.log(`Tableau de bord : http://localhost:${info.port}/  (données : ${o.config.dossierDonnees})`);
-      console.log('Ctrl+C pour arrêter.');
+      console.log(tl(langue, 'serveur.demarre', { port: info.port, dossier: o.config.dossierDonnees }));
+      console.log(tl(langue, 'serveur.arreter'));
       resolve();
     });
     serveur.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
-        console.error(`Le port ${o.port} est déjà utilisé : le tableau de bord tourne sans doute déjà sur http://localhost:${o.port}/`);
-        console.error(`Sinon, choisissez un autre port : postuler-juste serve --port ${o.port + 1}`);
+        console.error(tl(langue, 'serveur.portUtilise', { port: o.port }));
+        console.error(tl(langue, 'serveur.autrePort', { suivant: o.port + 1 }));
         process.exit(1);
       }
       reject(err);
@@ -435,7 +443,7 @@ export function demarrerServeur(o: {
     const surveillance = setInterval(() => {
       if (!veille.expiree()) return;
       clearInterval(surveillance);
-      console.log(`Aucune activité depuis ${Math.round(veille.delaiS / 60)} min : arrêt du tableau de bord.`);
+      console.log(tl(langue, 'serveur.inactivite', { minutes: Math.round(veille.delaiS / 60) }));
       arreterSurveillance();
       serveur.close(() => {
         o.db.close();

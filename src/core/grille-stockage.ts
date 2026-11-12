@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
 import { RACINE_APP } from './config.ts';
+import type { Langue } from '../i18n/outil.ts';
 import {
   appliquerChangement,
   calculerNote,
@@ -33,6 +34,13 @@ export interface VersionGrille extends InfoVersion {
 }
 
 export const EXEMPLE_GRILLE = join(RACINE_APP, 'exemples', 'grille.json');
+
+/** Grille d'exemple de la langue : exemples/grille.<langue>.json s'il existe (anglais : phase de traduction à venir), sinon la française. */
+export function exempleGrille(langue: Langue = 'fr'): string {
+  if (langue === 'fr') return EXEMPLE_GRILLE;
+  const traduite = join(RACINE_APP, 'exemples', `grille.${langue}.json`);
+  return existsSync(traduite) ? traduite : EXEMPLE_GRILLE;
+}
 
 export function cheminGrille(dossierDonnees: string): string {
   return join(dossierDonnees, 'profil', 'grille.json');
@@ -155,12 +163,12 @@ export function grilleObligatoire(db: Base, dossierDonnees: string): VersionGril
 }
 
 /** Copie la grille d'exemple dans le dossier de données si aucune grille n'existe. */
-export function initialiserGrille(db: Base, dossierDonnees: string): { cree: boolean; chemin: string; version: VersionGrille } {
+export function initialiserGrille(db: Base, dossierDonnees: string, langue: Langue = 'fr'): { cree: boolean; chemin: string; version: VersionGrille } {
   const chemin = cheminGrille(dossierDonnees);
   const cree = !existsSync(chemin) && !derniereVersion(db);
   if (cree) {
     mkdirSync(dirname(chemin), { recursive: true });
-    copyFileSync(EXEMPLE_GRILLE, chemin);
+    copyFileSync(exempleGrille(langue), chemin);
   }
   return { cree, chemin, version: grilleObligatoire(db, dossierDonnees) };
 }

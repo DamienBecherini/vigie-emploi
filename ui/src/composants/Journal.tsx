@@ -1,8 +1,9 @@
 // Journal de la candidature (événements datés, échéances) et fichiers du dossier, dans le panneau de détail.
 import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LIBELLES_TYPES, TYPES_EVENEMENT, type Sens, type TypeEvenement } from '../../../src/core/statuts.ts';
+import { TYPES_EVENEMENT, type Sens, type TypeEvenement } from '../../../src/core/statuts.ts';
 import { api, urlFichier, type DetailOffre, type Evenement, type FichiersDossier, type SaisieEvenement } from '../api.ts';
+import { dateCourte, nombre as nombreLocal, t, typeAffiche } from '../i18n/index.ts';
 
 const deux = (n: number) => String(n).padStart(2, '0');
 
@@ -11,11 +12,12 @@ function aujourdhui(): string {
   return `${d.getFullYear()}-${deux(d.getMonth() + 1)}-${deux(d.getDate())}`;
 }
 
-/** « 05/11/2026 » ou « 05/11/2026 à 14 h 30 ». */
+/** « 05/11/2026 » ou « 05/11/2026 à 14 h 30 » (anglais : « 05/11/2026 at 14:30 »). */
 export function dateEvenement(le: string): string {
   const m = le.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!m) return le;
-  return `${m[3]}/${m[2]}/${m[1]}${m[4] ? ` à ${m[4]} h ${m[5]}` : ''}`;
+  const date = `${m[3]}/${m[2]}/${m[1]}`;
+  return m[4] ? t('journal.date', { date, heure: t('journal.heure', { h: m[4], m: m[5] }) }) : date;
 }
 
 function estFutur(date: string, heure: string): boolean {
@@ -27,7 +29,7 @@ function estFutur(date: string, heure: string): boolean {
 }
 
 function taille(o: number): string {
-  return o < 1024 ? `${o} o` : o < 1024 * 1024 ? `${Math.ceil(o / 1024)} Ko` : `${(o / 1024 / 1024).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo`;
+  return o < 1024 ? t('fichiers.octets', { n: o }) : o < 1024 * 1024 ? t('fichiers.ko', { n: Math.ceil(o / 1024) }) : t('fichiers.mo', { n: nombreLocal(o / 1024 / 1024, 1) });
 }
 
 /** Nom court d'un fichier lié : relatif au dossier de candidature quand il y est. */
@@ -103,16 +105,16 @@ function saisieDe(e: Evenement | null): Saisie {
 }
 
 function nombre(s: string, nom: string): number | null {
-  const t = s.trim().replace(/[\s  ]/g, '').replace(',', '.');
-  if (!t) return null;
-  const n = Number(t);
-  if (!Number.isFinite(n)) throw new Error(`${nom} : nombre attendu`);
+  const brut = s.trim().replace(/[\s  ]/g, '').replace(',', '.');
+  if (!brut) return null;
+  const n = Number(brut);
+  if (!Number.isFinite(n)) throw new Error(t('journal.nombreAttendu', { nom }));
   return n;
 }
 
 function versApi(s: Saisie): SaisieEvenement {
-  if (!s.resume.trim()) throw new Error('Résumé attendu');
-  if (!s.date) throw new Error('Date attendue');
+  if (!s.resume.trim()) throw new Error(t('journal.resumeAttendu'));
+  if (!s.date) throw new Error(t('journal.dateAttendue'));
   const vide = (t: string) => t.trim() || null;
   return {
     type: s.type,
@@ -123,9 +125,9 @@ function versApi(s: Saisie): SaisieEvenement {
     details: vide(s.details),
     canal: vide(s.canal),
     interlocuteurs: vide(s.interlocuteurs),
-    montant: nombre(s.montant, 'Montant'),
+    montant: nombre(s.montant, t('journal.montant')),
     unite: vide(s.unite),
-    jours: nombre(s.jours, 'Jours'),
+    jours: nombre(s.jours, t('journal.jours')),
     fichiers: s.fichiers,
   };
 }
@@ -172,7 +174,7 @@ function FormulaireEvenement(props: {
   return (
     <form
       className="flex flex-col gap-2 rounded-md border border-slate-300 p-3 dark:border-slate-600"
-      aria-label={props.evenement ? "Modifier l'événement" : 'Ajouter un événement'}
+      aria-label={props.evenement ? t('journal.modifierEvenement') : t('journal.ajouterEvenement')}
       onSubmit={(e) => {
         e.preventDefault();
         setErreur(null);
@@ -182,7 +184,7 @@ function FormulaireEvenement(props: {
       <div className="flex flex-wrap gap-2">
         <div className="w-44 shrink-0">
           <label htmlFor={`${base}-type`} className="etiquette">
-            Type
+            {t('journal.type')}
           </label>
           <select
             id={`${base}-type`}
@@ -193,9 +195,9 @@ function FormulaireEvenement(props: {
               setS({ ...s, type, sens: type === 'message' && !s.sens ? 'envoye' : type === 'message' || type === 'proposition' ? s.sens : '' });
             }}
           >
-            {TYPES_EVENEMENT.map((t) => (
-              <option key={t} value={t}>
-                {LIBELLES_TYPES[t]}
+            {TYPES_EVENEMENT.map((x) => (
+              <option key={x} value={x}>
+                {typeAffiche(x)}
               </option>
             ))}
           </select>
@@ -203,71 +205,71 @@ function FormulaireEvenement(props: {
         {(s.type === 'message' || s.type === 'proposition') && (
           <div className="w-32 shrink-0">
             <label htmlFor={`${base}-sens`} className="etiquette">
-              Sens
+              {t('journal.sens')}
             </label>
             <select id={`${base}-sens`} className="champ" value={s.sens} onChange={(e) => setS({ ...s, sens: e.target.value as Saisie['sens'] })}>
               <option value="">—</option>
-              <option value="envoye">Envoyé</option>
-              <option value="recu">Reçu</option>
+              <option value="envoye">{t('journal.envoye')}</option>
+              <option value="recu">{t('journal.recu')}</option>
             </select>
           </div>
         )}
         <div className="w-40 shrink-0">
           <label htmlFor={`${base}-date`} className="etiquette">
-            Date
+            {t('journal.dateChamp')}
           </label>
           <input id={`${base}-date`} type="date" className="champ" required value={s.date} onChange={(e) => setS({ ...s, date: e.target.value })} />
         </div>
         <div className="w-28 shrink-0">
           <label htmlFor={`${base}-heure`} className="etiquette">
-            Heure
+            {t('journal.heureChamp')}
           </label>
           <input id={`${base}-heure`} type="time" className="champ" value={s.heure} onChange={(e) => setS({ ...s, heure: e.target.value })} />
         </div>
       </div>
       <div>
         <label htmlFor={`${base}-resume`} className="etiquette">
-          Résumé
+          {t('journal.resume')}
         </label>
         <input
           id={`${base}-resume`}
           className="champ"
           required
-          placeholder={s.type === 'message' ? 'Relance envoyée, réponse de la RH…' : 'Appel avec…, devis envoyé…'}
+          placeholder={s.type === 'message' ? t('journal.exempleMessage') : t('journal.exempleAutre')}
           value={s.resume}
           onChange={(e) => setS({ ...s, resume: e.target.value })}
         />
       </div>
       <div className="flex flex-wrap gap-2">
-        {champ('canal', 'Canal', { placeholder: 'LinkedIn, Malt, e-mail, Zoom…' })}
-        {champ('interlocuteurs', 'Interlocuteurs')}
+        {champ('canal', t('journal.canal'), { placeholder: t('journal.exempleCanal') })}
+        {champ('interlocuteurs', t('journal.interlocuteurs'))}
       </div>
       {s.type === 'proposition' && (
         <div className="flex flex-wrap gap-2">
-          {champ('montant', 'Montant', { court: true, placeholder: '3 000' })}
-          {champ('unite', 'Unité', { court: true, placeholder: '€ HT' })}
-          {champ('jours', 'Jours', { court: true, placeholder: '6' })}
+          {champ('montant', t('journal.montant'), { court: true, placeholder: t('journal.exempleMontant') })}
+          {champ('unite', t('journal.unite'), { court: true, placeholder: t('journal.exempleUnite') })}
+          {champ('jours', t('journal.jours'), { court: true, placeholder: '6' })}
         </div>
       )}
       <div>
         <label htmlFor={`${base}-details`} className="etiquette">
-          Détails
+          {t('journal.details')}
         </label>
         <textarea id={`${base}-details`} className="champ min-h-16" value={s.details} onChange={(e) => setS({ ...s, details: e.target.value })} />
       </div>
       <div>
         <label htmlFor={`${base}-fichier`} className="etiquette">
-          Fichiers du dossier liés
+          {t('journal.fichiersLies')}
         </label>
         {s.fichiers.length > 0 && (
-          <ul className="mb-1 flex flex-wrap gap-1" aria-label="Fichiers liés">
+          <ul className="mb-1 flex flex-wrap gap-1" aria-label={t('journal.listeFichiers')}>
             {s.fichiers.map((f) => (
               <li key={f} className="flex items-center gap-1 rounded-full bg-slate-200 py-0.5 pr-1 pl-2 text-xs dark:bg-slate-700">
                 {nomFichier(f, props.offre.candidature?.dossier ?? null)}
                 <button
                   type="button"
                   className="rounded-full px-1 hover:bg-slate-300 dark:hover:bg-slate-600"
-                  aria-label={`Retirer ${f}`}
+                  aria-label={t('journal.retirer', { fichier: f })}
                   onClick={() => setS({ ...s, fichiers: s.fichiers.filter((x) => x !== f) })}
                 >
                   ×
@@ -284,7 +286,7 @@ function FormulaireEvenement(props: {
             disabled={!disponibles.length}
             onChange={(e) => e.target.value && setS({ ...s, fichiers: [...s.fichiers, e.target.value] })}
           >
-            <option value="">{disponibles.length ? 'Lier un fichier du dossier…' : 'Aucun autre fichier dans le dossier'}</option>
+            <option value="">{disponibles.length ? t('journal.lierFichier') : t('journal.aucunAutre')}</option>
             {disponibles.map((f) => (
               <option key={f.chemin} value={f.chemin}>
                 {f.nom}
@@ -293,7 +295,7 @@ function FormulaireEvenement(props: {
           </select>
         ) : (
           <p id={`${base}-fichier`} className="text-xs text-slate-600 dark:text-slate-400">
-            Pas de dossier de candidature : renseigner le dossier pour lier ses fichiers.
+            {t('journal.sansDossier')}
           </p>
         )}
       </div>
@@ -304,14 +306,14 @@ function FormulaireEvenement(props: {
           checked={fait}
           onChange={(e) => setS({ ...s, fait: e.target.checked === faitAuto && !props.evenement ? null : e.target.checked })}
         />
-        Fait {fait ? '' : '— c’est une échéance (à faire)'}
+        {t('journal.fait')} {fait ? '' : t('journal.echeance')}
       </label>
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" className="bouton-principal" disabled={maj.isPending}>
-          {props.evenement ? 'Enregistrer' : "Ajouter l'événement"}
+          {props.evenement ? t('commun.enregistrer') : t('journal.ajouter')}
         </button>
         <button type="button" className="bouton" onClick={props.fermer}>
-          Annuler
+          {t('commun.annuler')}
         </button>
         {erreur && (
           <span role="alert" className="text-sm text-rose-700 dark:text-rose-300">
@@ -335,7 +337,7 @@ const COULEURS_TYPES: Record<TypeEvenement, string> = {
 export function BadgeType({ type }: { type: TypeEvenement }) {
   return (
     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COULEURS_TYPES[type]}`}>
-      {LIBELLES_TYPES[type]}
+      {typeAffiche(type)}
     </span>
   );
 }
@@ -347,8 +349,8 @@ function LigneEvenement({ offre, e, modifier }: { offre: DetailOffre; e: Eveneme
   const infos = [
     e.canal,
     e.interlocuteurs,
-    e.montant !== null ? `${e.montant.toLocaleString('fr-FR')} ${e.unite ?? ''}`.trim() : null,
-    e.jours !== null ? `${e.jours.toLocaleString('fr-FR')} j` : null,
+    e.montant !== null ? `${nombreLocal(e.montant)} ${e.unite ?? ''}`.trim() : null,
+    e.jours !== null ? t('journal.jourCourt', { n: nombreLocal(e.jours) }) : null,
   ].filter(Boolean);
   const cadre = e.en_retard
     ? 'border-rose-400 bg-rose-50 dark:border-rose-700 dark:bg-rose-950'
@@ -360,22 +362,22 @@ function LigneEvenement({ offre, e, modifier }: { offre: DetailOffre; e: Eveneme
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold tabular-nums">{dateEvenement(e.le)}</span>
         <BadgeType type={e.type} />
-        {e.sens && <span className="text-xs text-slate-600 dark:text-slate-300">{e.sens === 'envoye' ? '→ envoyé' : '← reçu'}</span>}
-        {e.en_retard && <span className="rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">En retard</span>}
+        {e.sens && <span className="text-xs text-slate-600 dark:text-slate-300">{e.sens === 'envoye' ? t('journal.versEnvoye') : t('journal.versRecu')}</span>}
+        {e.en_retard && <span className="rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">{t('journal.enRetard')}</span>}
         {e.echeance && !e.en_retard && (
-          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950 dark:bg-amber-300 dark:text-slate-950">À faire</span>
+          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950 dark:bg-amber-300 dark:text-slate-950">{t('journal.aFaire')}</span>
         )}
       </div>
       <p className="mt-1 break-words">{e.resume}</p>
       {infos.length > 0 && <p className="text-xs text-slate-600 dark:text-slate-400">{infos.join(' · ')}</p>}
       {e.details && (
         <details className="mt-1">
-          <summary className="cursor-pointer text-xs text-slate-600 dark:text-slate-400">Détails</summary>
+          <summary className="cursor-pointer text-xs text-slate-600 dark:text-slate-400">{t('journal.details')}</summary>
           <p className="mt-1 text-sm whitespace-pre-line">{e.details}</p>
         </details>
       )}
       {e.fichiers.length > 0 && (
-        <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label="Fichiers liés">
+        <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t('journal.listeFichiers')}>
           {e.fichiers.map((f) => (
             <li key={f}>
               <a className="text-blue-700 underline dark:text-blue-300" href={urlFichier(f)} target="_blank" rel="noreferrer noopener">
@@ -388,26 +390,26 @@ function LigneEvenement({ offre, e, modifier }: { offre: DetailOffre; e: Eveneme
       <div className="mt-2 flex flex-wrap gap-1">
         {e.echeance ? (
           <button type="button" className="bouton" disabled={fait.isPending} onClick={() => fait.mutate(true)}>
-            ✓ Marquer fait
+            {t('journal.marquerFait')}
           </button>
         ) : (
-          <button type="button" className="bouton" disabled={fait.isPending} onClick={() => fait.mutate(false)} aria-label={`Rouvrir : ${e.resume}`}>
-            Rouvrir
+          <button type="button" className="bouton" disabled={fait.isPending} onClick={() => fait.mutate(false)} aria-label={t('journal.rouvrirLibelle', { resume: e.resume })}>
+            {t('journal.rouvrir')}
           </button>
         )}
-        <button type="button" className="bouton" onClick={modifier} aria-label={`Modifier : ${e.resume}`}>
-          Modifier
+        <button type="button" className="bouton" onClick={modifier} aria-label={t('journal.modifierLibelle', { resume: e.resume })}>
+          {t('journal.modifier')}
         </button>
         <button
           type="button"
           className="bouton"
           disabled={supprimer.isPending}
-          aria-label={`Supprimer : ${e.resume}`}
+          aria-label={t('journal.supprimerLibelle', { resume: e.resume })}
           onClick={() => {
-            if (window.confirm(`Supprimer l'événement « ${e.resume} » ?`)) supprimer.mutate();
+            if (window.confirm(t('journal.confirmer', { resume: e.resume }))) supprimer.mutate();
           }}
         >
-          Supprimer
+          {t('journal.supprimer')}
         </button>
         <span className="ml-auto self-center text-xs text-slate-500 dark:text-slate-400">{e.origine}</span>
       </div>
@@ -425,13 +427,13 @@ export function Journal({ offre }: { offre: DetailOffre }) {
         <FormulaireEvenement offre={offre} evenement={null} fichiers={fichiers.data} fermer={() => setEdition(null)} />
       ) : (
         <button type="button" className="bouton" onClick={() => setEdition('nouveau')}>
-          + Ajouter un événement
+          {t('journal.nouveau')}
         </button>
       )}
       {offre.evenements.length === 0 ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">Journal vide.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{t('journal.vide')}</p>
       ) : (
-        <ol className="space-y-2" aria-label="Journal, échéances en tête">
+        <ol className="space-y-2" aria-label={t('journal.liste')}>
           {offre.evenements.map((e) =>
             enCours?.id === e.id ? (
               <li key={e.id}>
@@ -449,11 +451,11 @@ export function Journal({ offre }: { offre: DetailOffre }) {
 
 export function FichiersDuDossier({ offre }: { offre: DetailOffre }) {
   const q = useFichiers(offre.id);
-  if (q.isLoading) return <p className="text-sm text-slate-600 dark:text-slate-400">Chargement…</p>;
+  if (q.isLoading) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.chargement')}</p>;
   if (q.isError) return <p className="text-sm text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>;
   const f = q.data!;
-  if (!f.dossier) return <p className="text-sm text-slate-600 dark:text-slate-400">Pas de dossier de candidature.</p>;
-  if (!f.existe) return <p className="text-sm text-slate-600 dark:text-slate-400">Dossier {f.dossier} introuvable dans le dossier de données.</p>;
+  if (!f.dossier) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.sansDossier')}</p>;
+  if (!f.existe) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.introuvable', { dossier: f.dossier })}</p>;
   return (
     <div>
       <p className="mb-1 text-xs text-slate-600 dark:text-slate-400">{f.dossier}</p>
@@ -464,13 +466,13 @@ export function FichiersDuDossier({ offre }: { offre: DetailOffre }) {
               {x.nom}
             </a>
             <span className="text-xs text-slate-600 tabular-nums dark:text-slate-400">
-              {taille(x.taille)} · {new Date(x.modifie_le).toLocaleDateString('fr-FR')}
+              {taille(x.taille)} · {dateCourte(new Date(x.modifie_le))}
             </span>
           </li>
         ))}
-        {!f.fichiers.length && <li className="px-2 py-1 text-slate-600 dark:text-slate-400">Dossier vide.</li>}
+        {!f.fichiers.length && <li className="px-2 py-1 text-slate-600 dark:text-slate-400">{t('fichiers.vide')}</li>}
       </ul>
-      {f.tronque && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">Liste coupée : trop de fichiers.</p>}
+      {f.tronque && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{t('fichiers.tronque')}</p>}
     </div>
   );
 }

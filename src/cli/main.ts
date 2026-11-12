@@ -1,7 +1,9 @@
 // Interface en ligne de commande de postuler-juste (pensée pour être pilotée par une IA : sorties JSON stables).
+// Les messages suivent la langue configurée (clé « langue », français par défaut) ; les noms des commandes,
+// des options et des statuts restent en français, et les sorties --json ne changent pas avec la langue.
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { chargerConfig, type Config } from '../core/config.ts';
+import { chargerConfig, langueConfiguree, type Config } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
 import { ingererSelonConfig } from '../ingest/ingest.ts';
 import { importerHistorique } from '../import/historique.ts';
@@ -17,16 +19,14 @@ import {
 } from '../core/offres.ts';
 import { entreesDuLot, type EntreeLot } from '../core/notation.ts';
 import { noterOffres, offresALire, preparerCandidature, suivreCandidature } from '../core/actions.ts';
-import { estStatut, LIBELLES_STATUTS, STATUTS } from '../core/statuts.ts';
+import { estStatut, STATUTS } from '../core/statuts.ts';
 import { ecrireSuivi } from '../export/suivi.ts';
 import { demarrerServeur } from '../api/serveur.ts';
 import {
   ajouterEvenement,
-  dateEvenementFr,
   echeances,
   evenementOuErreur,
   journal,
-  LIBELLES_TYPES,
   marquerFait,
   TYPES_EVENEMENT,
   type EvenementJournal,
@@ -34,7 +34,7 @@ import {
 } from '../core/evenements.ts';
 import { fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
-import { consignesIa, LIBELLES_NIVEAUX, noteExemple, type Decomposition } from '../core/grille.ts';
+import { consignesIa, noteExemple, type Decomposition } from '../core/grille.ts';
 import {
   cheminGrille,
   grilleCourante,
@@ -50,83 +50,12 @@ import {
 import { initialiserEspace } from '../init/init.ts';
 import { compterTexte } from '../core/compter.ts';
 import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
+import { decimal, definirLangue, estLangue, langueCourante, LANGUES, t } from '../i18n/index.ts';
+import { libelleNiveau, libelleStatut, libelleType, messageDrapeau } from '../i18n/libelles.ts';
 
-const AIDE = `postuler-juste — offres, notes et candidatures (base SQLite locale)
-
-Usage : postuler-juste <commande> [options]
-
-Commandes
-  init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--gabarit sobre|moderne|compact]
-                        Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
-                        et affiche le prompt de démarrage à donner à l'IA
-  compter <fichier>     Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
-                        « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
-  gabarits              Gabarits de CV livrés (sobre, moderne, compact…)
-  gabarit <nom>         Installe ce gabarit dans cv/gabarit de l'espace (l'ancien est gardé à côté)
-  cv <cv.md>… [--gabarit <dossier>] [--capture]
-                        CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
-                        Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
-                        --capture : image PNG du rendu dans <gabarit>/apercu/ (contrôle visuel)
-  ingest [--keep] [--no-fetch] [--emails <dossier>]
-                        Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
-                        puis supprime les e-mails traités (sauf --keep)
-  import-historique     Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md s'ils existent (idempotent)
-  list [filtres]        Liste paginée des offres
-      --statut a,b  --note-min N  --note-max N  --sans-note  --source s1,s2  --tag t
-      --depuis AAAA-MM-JJ  --jusqua AAAA-MM-JJ (date de réception)  --texte "mots"
-      --contrat CDI  --teletravail remote  --candidatures  --page N  --taille N
-      --tri note|recue_le|publiee_le|titre|entreprise|…  --ordre asc|desc
-      --tri recue_le:desc,note:desc  (plusieurs niveaux : date, puis note à date égale)
-  show <id>             Détail d'une offre (notes, statuts, tags, candidature)
-  a-lire [--limite N] [--complet]
-                        Offres à traiter sans note, avec l'URL à lire (ou la description déjà extraite)
-  noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "entrees": {…}, "bloquants": [], "colle": "…"}'
-  noter --fichier lot.json [--essai]
-                        Enregistre des notes (format des lots). Avec « criteres », la note est calculée avec la
-                        grille (voir « grille ») ; sans, c'est une note globale (ancienne grille).
-                        --essai : calcule et affiche sans rien enregistrer
-  grille [--consignes] [--json]
-                        Grille de notation courante : critères, poids, barèmes, règles, inventaire, exemples
-  grille --historique | --version N | --restaurer N [--resume "…"] | --init
-  grille --modifier '{"poids": {"technique": 40}, …}' --resume "…" [--essai]
-                        Changement partiel (poids, seuil, baremes, regles, inventaire) ; recalcule les notes
-  renoter               Recalcule toutes les notes à critères avec la grille courante
-  statut <id> <statut> [--commentaire "…"]
-                        Statuts : ${STATUTS.join(', ')}
-  tag <id> +ajout -retrait
-  lien <id> <url|->       Enregistre (ou efface avec -) le lien de l'offre
-  candidater <id>       Passe l'offre en « go » et affiche tout ce qu'il faut pour préparer la candidature
-  candidature <id> [--dossier d] [--cv f] [--canal c] [--envoyee-le JJ/MM/AAAA] [--message m]
-                   [--prochaine-action "…"]
-                        Enregistre la candidature (option vide "" pour effacer un champ) ;
-                        avec --envoyee-le, l'offre passe en « envoyee »
-  prochaine-action <id> "texte"
-                        Prochaine action de la candidature ("" ou - pour l'effacer)
-  evenement <id> --type ${TYPES_EVENEMENT.join('|')} [--le "JJ/MM/AAAA HH:MM"] --resume "…"
-                   [--sens envoye|recu] [--canal c] [--interlocuteurs "…"] [--details "…"]
-                   [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier candidatures/x/devis.md]…
-                   [--fait | --no-fait]
-                        Ajoute un événement au journal de la candidature ; daté dans le futur (et pas fait),
-                        c'est une échéance. --le par défaut : maintenant ; « demain », « +3 » acceptés
-  journal <id>          Journal de la candidature (échéances d'abord, puis du plus récent au plus ancien)
-  echeances [--jours 7] Échéances en retard et à venir sur N jours
-  fait <evenement_id> [--no-fait]
-                        Marque une échéance comme faite (--no-fait : la rouvrir)
-  fichiers <id>         Fichiers du dossier de candidature (chemins à citer dans --fichier)
-  stats                 Candidatures par étape (envoyée, réponse, entretien, proposition), délai de réponse
-  generer-suivi [--sortie <fichier>] [--remplacer]
-                        Génère le suivi des candidatures depuis la base : par défaut
-                        candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
-  serve [--port 4410] [--inactivite <minutes>]
-                        Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
-  mcp                   Serveur MCP (transport stdio) pour piloter postuler-juste depuis une IA ; sans dossier
-                        configuré : ~/ma-recherche, créé au besoin par l'outil initialiser_espace
-
-Options générales
-  --data <dossier>      Dossier de données (sinon POSTULER_JUSTE_DATA ou postuler-juste.config.json)
-  --config <fichier>    Fichier de configuration
-  --json                Sortie JSON (toutes les commandes)
-`;
+function aide(): string {
+  return t('cli.aide', { statuts: STATUTS.join(', '), types: TYPES_EVENEMENT.join('|') });
+}
 
 type Valeurs = Record<string, string | boolean | string[] | undefined>;
 
@@ -140,14 +69,14 @@ function json(x: unknown): void {
 
 function entier(v: unknown, nom: string): number {
   const n = Number(v);
-  if (!Number.isInteger(n) || n <= 0) erreur(`${nom} invalide : ${String(v)}`);
+  if (!Number.isInteger(n) || n <= 0) erreur(t('cli.invalide', { nom, valeur: String(v) }));
   return n;
 }
 
 function nombre(v: unknown, nom: string): number | undefined {
   if (v === undefined) return undefined;
   const n = Number(String(v).replace(',', '.'));
-  if (!Number.isFinite(n)) erreur(`${nom} invalide : ${String(v)}`);
+  if (!Number.isFinite(n)) erreur(t('cli.invalide', { nom, valeur: String(v) }));
   return n;
 }
 
@@ -160,14 +89,22 @@ function liste(v: unknown): string[] | undefined {
 }
 
 function tronquer(s: string | null | undefined, n: number): string {
-  const t = (s ?? '').replace(/\s+/g, ' ');
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+  const x = (s ?? '').replace(/\s+/g, ' ');
+  return x.length > n ? `${x.slice(0, n - 1)}…` : x;
 }
 
 function tableau(entetes: string[], lignes: string[][]): string {
   const largeurs = entetes.map((e, i) => Math.max(e.length, ...lignes.map((l) => (l[i] ?? '').length)));
   const ligne = (l: string[]) => l.map((c, i) => (c ?? '').padEnd(largeurs[i])).join('  ').trimEnd();
   return [ligne(entetes), largeurs.map((w) => '-'.repeat(w)).join('  '), ...lignes.map(ligne)].join('\n');
+}
+
+/** Date d'un événement : « 05/11/2026 14 h 30 » (français) ou « 05/11/2026 14:30 » (anglais). */
+function dateEvenement(le: string): string {
+  const m = le.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!m) return le;
+  const heure = m[4] ? (langueCourante() === 'fr' ? ` ${m[4]} h ${m[5]}` : ` ${m[4]}:${m[5]}`) : '';
+  return `${m[3]}/${m[2]}/${m[1]}${heure}`;
 }
 
 const OPTIONS_GENERALES = {
@@ -204,40 +141,54 @@ function contexte(v: Valeurs): Contexte {
 
 function afficherDetail(d: DetailOffre): string {
   const l: string[] = [];
+  const langue = langueCourante();
   l.push(`#${d.id} ${d.titre}${d.entreprise ? ` — ${d.entreprise}` : ''}`);
-  l.push(`Statut : ${LIBELLES_STATUTS[d.statut] ?? d.statut} · Note : ${d.note ?? '—'} · Source : ${d.source} (${d.id_site})`);
-  if (d.url_canonique) l.push(`URL : ${d.url_canonique}`);
-  const infos = [d.lieu, d.contrat, d.remuneration, d.teletravail && `télétravail : ${d.teletravail}`].filter(Boolean);
+  l.push(t('cli.detail.statut', { statut: libelleStatut(d.statut, langue), note: d.note ?? '—', source: d.source, id_site: d.id_site }));
+  if (d.url_canonique) l.push(t('cli.detail.url', { url: d.url_canonique }));
+  const infos = [d.lieu, d.contrat, d.remuneration, d.teletravail && t('cli.detail.teletravail', { valeur: d.teletravail })].filter(Boolean);
   if (infos.length) l.push(infos.join(' · '));
-  l.push(`Reçue le ${d.recue_le ?? '—'} · publiée le ${d.publiee_le ?? '—'}`);
-  if (d.stack) l.push(`Stack : ${d.stack}`);
-  if (d.tags.length) l.push(`Tags : ${d.tags.join(', ')}`);
+  l.push(t('cli.detail.dates', { recue: d.recue_le ?? '—', publiee: d.publiee_le ?? '—' }));
+  if (d.stack) l.push(t('cli.detail.stack', { stack: d.stack }));
+  if (d.tags.length) l.push(t('cli.detail.tags', { tags: d.tags.join(', ') }));
   const n = d.notes[0];
   if (n?.decomposition) {
-    l.push('', `Note ${n.note} (grille v${n.grille_version}, exacte ${n.note_exacte}) le ${n.notee_le}`, ...lignesDecomposition(n.decomposition));
-    if (n.colle) l.push(`Ce qui colle : ${n.colle}`);
-    if (n.ecarts) l.push(`Écarts : ${n.ecarts}`);
+    l.push(
+      '',
+      t('cli.detail.noteGrille', { note: n.note, version: n.grille_version, exacte: n.note_exacte, le: n.notee_le }),
+      ...lignesDecomposition(n.decomposition),
+    );
+    if (n.colle) l.push(t('cli.detail.colle', { texte: n.colle }));
+    if (n.ecarts) l.push(t('cli.detail.ecarts', { texte: n.ecarts }));
   } else if (n) {
-    l.push('', `Note ${n.note ?? '—'} (ancienne grille ; brute ${n.note_brute ?? '—'}${n.penalites ? `, pénalités : ${n.penalites}` : ''}) le ${n.notee_le}`);
-    if (n.colle) l.push(`Ce qui colle : ${n.colle}`);
-    if (n.ecarts) l.push(`Écarts : ${n.ecarts}`);
+    l.push(
+      '',
+      t('cli.detail.noteAncienne', {
+        note: n.note ?? '—',
+        brute: n.note_brute ?? '—',
+        penalites: n.penalites ? t('cli.detail.penalites', { penalites: n.penalites }) : '',
+        le: n.notee_le,
+      }),
+    );
+    if (n.colle) l.push(t('cli.detail.colle', { texte: n.colle }));
+    if (n.ecarts) l.push(t('cli.detail.ecarts', { texte: n.ecarts }));
   }
   if (d.candidature) {
     const c = d.candidature;
-    l.push('', `Candidature : ${[c.dossier, c.canal, c.envoyee_le && `envoyée le ${c.envoyee_le}`].filter(Boolean).join(' · ')}`);
-    if (c.prochaine_action) l.push(`Prochaine action : ${c.prochaine_action}`);
+    const infosCandidature = [c.dossier, c.canal, c.envoyee_le && t('cli.detail.envoyeeLe', { date: c.envoyee_le })].filter(Boolean).join(' · ');
+    l.push('', t('cli.detail.candidature', { infos: infosCandidature }));
+    if (c.prochaine_action) l.push(t('cli.detail.prochaineAction', { texte: c.prochaine_action }));
   }
-  if (d.evenements.length) l.push('', 'Journal :', ...d.evenements.map(ligneJournal));
+  if (d.evenements.length) l.push('', t('cli.detail.journal'), ...d.evenements.map(ligneJournal));
   if (d.statuts.length) {
-    l.push('', 'Historique des statuts :');
+    l.push('', t('cli.detail.historique'));
     for (const s of d.statuts) l.push(`  ${s.le.slice(0, 10)}  ${s.statut.padEnd(10)} ${tronquer(s.commentaire, 100)}`);
   }
-  if (d.description) l.push('', 'Description :', d.description);
+  if (d.description) l.push('', t('cli.detail.description'), d.description);
   return l.join('\n');
 }
 
 function virgule(n: number, d = 2): string {
-  return String(Math.round(n * 10 ** d) / 10 ** d).replace('.', ',');
+  return decimal(n, langueCourante(), d);
 }
 
 /** Décomposition d'une note : un critère par ligne, puis règles et drapeaux. */
@@ -245,30 +196,34 @@ function lignesDecomposition(d: Decomposition): string[] {
   const l = d.criteres.map(
     (c) =>
       `  ${c.libelle.padEnd(26)} ${virgule(c.note, 1).padStart(4)} × ${String(Math.round(c.poids_normalise * 100)).padStart(3)} % = ${virgule(c.contribution).padStart(5)}` +
-      `  ${c.origine === 'neutre' ? '(neutre) ' : c.origine === 'interface' ? '(main) ' : ''}${tronquer(c.justification, 90)}`,
+      `  ${c.origine === 'neutre' ? t('cli.decomp.neutre') : c.origine === 'interface' ? t('cli.decomp.main') : ''}${tronquer(c.justification, 90)}`,
   );
-  l.push(`  ${'Moyenne pondérée'.padEnd(26)} ${virgule(d.moyenne)}`);
-  for (const r of d.regles) l.push(`  Règle : ${r.libelle} → ${r.effet === 'zero' ? '0' : `plafond ${virgule(r.valeur!)}`}${r.effective ? '' : ' (sans effet)'}`);
-  for (const b of d.bloquants_ignores) l.push(`  Règle ignorée (inconnue ou désactivée) : ${b}`);
-  for (const f of d.drapeaux) l.push(`  ⚑ ${f.message}`);
-  l.push(`  Note : ${virgule(d.note_exacte)} → ${virgule(d.note, 1)}`);
+  l.push(`  ${t('cli.decomp.moyenne').padEnd(26)} ${virgule(d.moyenne)}`);
+  for (const r of d.regles) {
+    const effet = r.effet === 'zero' ? '0' : t('cli.decomp.plafond', { valeur: virgule(r.valeur!) });
+    l.push(`  ${t('cli.decomp.regle', { libelle: r.libelle, effet, sansEffet: r.effective ? '' : t('cli.decomp.sansEffet') })}`);
+  }
+  for (const b of d.bloquants_ignores) l.push(`  ${t('cli.decomp.ignoree', { regle: b })}`);
+  for (const f of d.drapeaux) l.push(`  ⚑ ${messageDrapeau(f, langueCourante())}`);
+  l.push(`  ${t('cli.decomp.note', { exacte: virgule(d.note_exacte), note: virgule(d.note, 1) })}`);
   return l;
 }
 
 function afficherImpact(i: Impact): void {
-  console.log(`${i.offres_recalculees} offre(s) à critères recalculée(s), ${i.changees} changent de note.`);
+  console.log(t('cli.impact.resume', { recalculees: i.offres_recalculees, changees: i.changees }));
   const ligne = (c: Impact['changements'][number]) =>
     `  #${String(c.id).padEnd(5)} ${String(c.avant ?? '—').padStart(4)} → ${String(c.apres).padEnd(4)} ${tronquer(`${c.entreprise ?? ''} ${c.titre}`, 80)}`;
-  if (i.montent.length) console.log(`Passent au-dessus du seuil ${i.seuil_apres} (${i.montent.length}) :\n${i.montent.map(ligne).join('\n')}`);
-  if (i.descendent.length) console.log(`Repassent sous le seuil ${i.seuil_apres} (${i.descendent.length}) :\n${i.descendent.map(ligne).join('\n')}`);
+  const seuil = i.seuil_apres;
+  if (i.montent.length) console.log(`${t('cli.impact.montent', { seuil, n: i.montent.length })}\n${i.montent.map(ligne).join('\n')}`);
+  if (i.descendent.length) console.log(`${t('cli.impact.descendent', { seuil, n: i.descendent.length })}\n${i.descendent.map(ligne).join('\n')}`);
 }
 
 function ligneJournal(e: EvenementJournal): string {
-  const etat = e.en_retard ? 'EN RETARD ' : e.echeance ? 'à faire   ' : '          ';
+  const etat = (e.en_retard ? t('cli.journal.enRetard') : e.echeance ? t('cli.journal.aFaire') : '').padEnd(10);
   const sens = e.sens ? ` ${e.sens === 'envoye' ? '→' : '←'}` : '';
   const montant = e.montant !== null ? ` · ${e.montant} ${e.unite ?? ''}`.trimEnd() : '';
   const fichiers = e.fichiers.length ? ` · ${e.fichiers.join(', ')}` : '';
-  return `  #${String(e.id).padEnd(5)} ${dateEvenementFr(e.le).padEnd(19)} ${etat}${e.type.padEnd(11)}${sens} ${tronquer(e.resume, 90)}${montant}${fichiers}`;
+  return `  #${String(e.id).padEnd(5)} ${dateEvenement(e.le).padEnd(19)} ${etat}${e.type.padEnd(11)}${sens} ${tronquer(e.resume, 90)}${montant}${fichiers}`;
 }
 
 function sansErreur<T>(fn: () => T): T {
@@ -290,18 +245,25 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     });
     if (v.json) return json(r);
     console.log(
-      `${r.fichiers} e-mail(s), ${r.offres_trouvees} offre(s) : ${r.nouvelles} nouvelle(s) (${r.avec_description} avec description, ` +
-        `${r.a_lire} à lire dans le navigateur), ${r.doublons} doublon(s), ${r.ecartees} écartée(s) sur l'intitulé.`,
+      t('cli.ingest.resume', {
+        fichiers: r.fichiers,
+        offres: r.offres_trouvees,
+        nouvelles: r.nouvelles,
+        avecDescription: r.avec_description,
+        aLire: r.a_lire,
+        doublons: r.doublons,
+        ecartees: r.ecartees,
+      }),
     );
-    console.log(v.keep ? 'E-mails conservés (--keep).' : `${r.fichiers_supprimes} e-mail(s) supprimé(s).`);
-    for (const e of r.detail.ecartees) console.log(`  écartée #${e.id} ${tronquer(e.titre, 70)} (${e.motif})`);
-    for (const e of r.erreurs) console.log(`  erreur ${e.fichier ?? e.url} : ${e.message}`);
-    for (const f of r.sans_offre) console.log(`  aucune offre reconnue, e-mail conservé : ${f}`);
+    console.log(v.keep ? t('cli.ingest.conserves') : t('cli.ingest.supprimes', { n: r.fichiers_supprimes }));
+    for (const e of r.detail.ecartees) console.log(t('cli.ingest.ecartee', { id: e.id, titre: tronquer(e.titre, 70), motif: e.motif }));
+    for (const e of r.erreurs) console.log(t('cli.ingest.erreur', { fichier: e.fichier ?? e.url, message: e.message }));
+    for (const f of r.sans_offre) console.log(t('cli.ingest.sansOffre', { fichier: f }));
     for (const c of r.confirmations) {
       const connues = c.offres_connues.map((x) => `#${x.id} (${x.statut})`).join(', ');
-      console.log(`  accusé de candidature (pas une alerte) : ${c.sujet}${connues ? ` → ${connues}` : ' → offre absente de la base'}`);
+      console.log(t('cli.ingest.accuse', { sujet: c.sujet, suite: connues ? ` → ${connues}` : t('cli.ingest.offreAbsente') }));
     }
-    if (r.nouvelles) console.log('Suite : postuler-juste a-lire');
+    if (r.nouvelles) console.log(t('cli.ingest.suite'));
   },
 
   'import-historique'(args) {
@@ -309,45 +271,54 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = contexte(v);
     const r = importerHistorique(db, (v.source as string | undefined) ?? config.dossierDonnees);
     if (v.json) return json(r);
+    console.log(t('cli.import.lots', { fichiers: r.lots.fichiers, entrees: r.lots.entrees, offres: r.lots.offres_creees, notes: r.lots.notes_ajoutees }));
     console.log(
-      `Lots : ${r.lots.fichiers} fichier(s), ${r.lots.entrees} entrée(s), ${r.lots.offres_creees} offre(s) créée(s), ${r.lots.notes_ajoutees} note(s).`,
+      t('cli.import.registre', {
+        lignes: r.registre.lignes,
+        offres: r.registre.offres,
+        creees: r.registre.offres_creees,
+        sansLien: r.registre.offres_sans_lien,
+        statuts: r.registre.statuts_ajoutes,
+        notes: r.registre.notes_ajoutees,
+        corrigees: r.registre.entreprises_corrigees,
+      }),
     );
-    console.log(
-      `Registre : ${r.registre.lignes} ligne(s), ${r.registre.offres} offre(s) dont ${r.registre.offres_creees} créée(s) ` +
-        `(${r.registre.offres_sans_lien} sans lien), ${r.registre.statuts_ajoutes} statut(s), ${r.registre.notes_ajoutees} note(s), ` +
-        `${r.registre.entreprises_corrigees} entreprise(s) corrigée(s).`,
-    );
-    if (r.suivi.ignore) console.log(`Suivi : non relu (${r.suivi.ignore}).`);
+    if (r.suivi.ignore) console.log(t('cli.import.suiviIgnore', { raison: r.suivi.ignore }));
     else
       console.log(
-        `Suivi : ${r.suivi.lignes} ligne(s), ${r.suivi.offres_creees} offre(s) créée(s), ${r.suivi.candidatures} candidature(s), ` +
-          `${r.suivi.statuts_ajoutes} statut(s).`,
+        t('cli.import.suivi', { lignes: r.suivi.lignes, offres: r.suivi.offres_creees, candidatures: r.suivi.candidatures, statuts: r.suivi.statuts_ajoutes }),
       );
     const J = r.journal;
     console.log(
-      `Journaux : ${J.dossiers} dossier(s), ${J.lignes} ligne(s) datée(s), ${J.evenements_crees} événement(s) créé(s), ` +
-        `${J.evenements_existants} déjà en base, ${J.evenements_retires} retiré(s), ${J.echeances} échéance(s) ; ` +
-        `types : ${Object.entries(J.par_type).map(([t, n]) => `${t} ${n}`).join(', ') || '—'}.`,
+      t('cli.import.journaux', {
+        dossiers: J.dossiers,
+        lignes: J.lignes,
+        crees: J.evenements_crees,
+        existants: J.evenements_existants,
+        retires: J.evenements_retires,
+        echeances: J.echeances,
+        types: Object.entries(J.par_type).map(([x, n]) => `${x} ${n}`).join(', ') || '—',
+      }),
     );
-    for (const d of J.dossiers_rattaches) console.log(`  dossier rattaché à l'offre #${d.offre_id} : ${d.dossier}`);
-    for (const d of J.dossiers_sans_offre) console.log(`  dossier sans offre en base : ${d}`);
-    for (const d of J.dossiers_sans_suivi) console.log(`  dossier sans suivi daté : ${d}`);
+    for (const d of J.dossiers_rattaches) console.log(t('cli.import.rattache', { offre: d.offre_id, dossier: d.dossier }));
+    for (const d of J.dossiers_sans_offre) console.log(t('cli.import.sansOffre', { dossier: d }));
+    for (const d of J.dossiers_sans_suivi) console.log(t('cli.import.sansSuivi', { dossier: d }));
     if (J.non_typees.length) {
-      console.log(`Lignes de journal non typées, reprises en note (${J.non_typees.length}) :`);
+      console.log(t('cli.import.nonTypees', { n: J.non_typees.length }));
       for (const n of J.non_typees) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
     }
     if (J.sans_date.length) {
-      console.log(`Lignes de journal sans date, non reprises (${J.sans_date.length}) :`);
+      console.log(t('cli.import.sansDate', { n: J.sans_date.length }));
       for (const n of J.sans_date) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
     }
-    for (const f of r.suivi.fusions) console.log(`  doublon fusionné : #${f.doublon} → #${f.offre} (${f.entreprise})`);
+    for (const f of r.suivi.fusions) console.log(t('cli.import.fusion', { doublon: f.doublon, offre: f.offre, entreprise: f.entreprise }));
     const non = [...r.lots.erreurs, ...r.registre.non_reconnues, ...r.suivi.non_reconnues];
     if (non.length) {
-      console.log(`Lignes non reconnues (${non.length}) :`);
+      console.log(t('cli.import.nonReconnues', { n: non.length }));
       for (const n of non) console.log(`  ${n.fichier}:${n.ligne} ${n.raison} — ${n.extrait}`);
     }
     if (r.registre.liens_non_reconnus.length) {
-      console.log(`Liens non reconnus (${r.registre.liens_non_reconnus.length}) :`);
+      console.log(t('cli.import.liensNonReconnus', { n: r.registre.liens_non_reconnus.length }));
       for (const n of r.registre.liens_non_reconnus) console.log(`  _ecartees.md:${n.ligne} ${n.url}`);
     }
   },
@@ -374,7 +345,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     });
     const { db } = contexte(v);
     const statuts = liste(v.statut);
-    for (const s of statuts ?? []) if (!estStatut(s)) erreur(`Statut inconnu : ${s}`);
+    for (const s of statuts ?? []) if (!estStatut(s)) erreur(t('cli.statutInconnu', { statut: s }));
     const o: OptionsListe = {
       statuts,
       sources: liste(v.source),
@@ -398,7 +369,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     if (v.json) return json(r);
     console.log(
       tableau(
-        ['id', 'note', 'statut', 'source', 'reçue', 'entreprise', 'titre'],
+        t('cli.list.entetes').split('|'),
         r.offres.map((x) => [
           String(x.id),
           x.note === null ? '—' : String(x.note),
@@ -410,14 +381,14 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
         ]),
       ),
     );
-    console.log(`Page ${r.page}/${r.pages} · ${r.total} offre(s)`);
+    console.log(t('cli.list.pied', { page: r.page, pages: r.pages, total: r.total }));
   },
 
   show(args) {
     const { v, pos } = analyser(args, {});
     const { db } = contexte(v);
     const d = detailOffre(db, entier(pos[0], 'id'));
-    if (!d) erreur(`Offre ${pos[0]} introuvable`);
+    if (!d) erreur(t('cli.offreIntrouvable', { id: pos[0] }));
     if (v.json) return json(d);
     console.log(afficherDetail(d));
   },
@@ -428,13 +399,13 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const r = offresALire(db, { limite: v.limite ? entier(v.limite, 'limite') : 500, complet: Boolean(v.complet) });
     const offres = r.offres;
     if (v.json) return json(r);
-    if (!offres.length) return console.log('Aucune offre à lire.');
+    if (!offres.length) return console.log(t('cli.aLire.aucune'));
     for (const o of offres) {
-      const mode = { description: 'description extraite', navigateur: 'à lire dans le navigateur', humain: 'page protégée : demander le texte' }[o.lecture];
+      const mode = { description: t('cli.aLire.description'), navigateur: t('cli.aLire.navigateur'), humain: t('cli.aLire.humain') }[o.lecture];
       console.log(`#${o.id} [${o.source}] ${tronquer(o.titre, 80)}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
-      console.log(`    ${o.url ?? '(sans URL)'} · ${mode}`);
+      console.log(`    ${o.url ?? t('cli.aLire.sansUrl')} · ${mode}`);
     }
-    console.log(`${r.total} offre(s) à traiter. Détail JSON (descriptions comprises) : postuler-juste a-lire --json`);
+    console.log(t('cli.aLire.total', { n: r.total }));
   },
 
   noter(args) {
@@ -444,11 +415,11 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     if (v.fichier) {
       entrees = entreesDuLot(JSON.parse(readFileSync(v.fichier as string, 'utf8').replace(/^﻿/, '')));
     } else {
-      if (typeof v.json !== 'string') erreur('noter : --json \'{...}\' ou --fichier lot.json attendu');
+      if (typeof v.json !== 'string') erreur(t('cli.noter.attendu'));
       const e = JSON.parse(v.json) as EntreeLot | EntreeLot[];
       entrees = Array.isArray(e) ? e : [e];
       if (pos[0]) {
-        if (entrees.length !== 1) erreur('noter <id> : une seule note attendue');
+        if (entrees.length !== 1) erreur(t('cli.noter.uneSeule'));
         entrees[0] = { ...entrees[0], id: entier(pos[0], 'id') };
       }
     }
@@ -472,9 +443,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = contexte(v);
     const dossier = config.dossierDonnees;
     if (v.init) {
-      const r = sansErreur(() => initialiserGrille(db, dossier));
+      const r = sansErreur(() => initialiserGrille(db, dossier, config.langue));
       if (v.json) return json({ ok: true, cree: r.cree, chemin: r.chemin, version: r.version.version });
-      return console.log(r.cree ? `Grille d'exemple copiée dans ${r.chemin} (version 1) : à adapter.` : `Une grille existe déjà : ${r.chemin}`);
+      return console.log(r.cree ? t('cli.grille.copiee', { chemin: r.chemin }) : t('cli.grille.existe', { chemin: r.chemin }));
     }
     if (v.historique) {
       sansErreur(() => grilleCourante(db, dossier));
@@ -486,20 +457,20 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     if (v.restaurer !== undefined) {
       const r = sansErreur(() => restaurerGrille(db, dossier, entier(v.restaurer, 'version'), { auteur: 'cli', resume: v.resume as string | undefined }));
       if (v.json) return json({ ok: true, version: r.version.version, impact: r.impact });
-      console.log(`Version ${r.version.version} : ${r.version.resume}`);
+      console.log(t('cli.grille.version', { version: r.version.version, resume: r.version.resume }));
       return afficherImpact(r.impact);
     }
     if (v.modifier !== undefined) {
-      if (!v.essai && !v.resume) erreur('grille --modifier : --resume "…" attendu (ou --essai pour un aperçu)');
+      if (!v.essai && !v.resume) erreur(t('cli.grille.resumeAttendu'));
       let changement: unknown;
       try {
         changement = JSON.parse(v.modifier as string);
       } catch (e) {
-        erreur(`grille --modifier : JSON invalide (${(e as Error).message})`);
+        erreur(t('cli.grille.jsonInvalide', { message: (e as Error).message }));
       }
       const r = sansErreur(() => modifierGrille(db, dossier, changement, { auteur: 'cli', resume: (v.resume as string) ?? '', essai: Boolean(v.essai) }));
       if (v.json) return json({ ok: true, ...r });
-      console.log(r.enregistree ? `Version ${r.version} enregistrée.` : 'Essai : rien n’est enregistré.');
+      console.log(r.enregistree ? t('cli.grille.enregistree', { version: r.version }) : t('cli.grille.essai'));
       return afficherImpact(r.impact);
     }
     const g = v.version !== undefined ? sansErreur(() => versionGrille(db, entier(v.version, 'version'))) : sansErreur(() => grilleObligatoire(db, dossier));
@@ -513,32 +484,46 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       });
     }
     const G = g.grille;
-    console.log(`${G.nom} — version ${g.version} du ${g.le.slice(0, 10)} (${g.auteur}) : ${g.resume}`);
-    console.log(`Fichier : ${cheminGrille(dossier)} · seuil « à regarder » : ${virgule(G.seuil)}`);
+    const langue = langueCourante();
+    console.log(t('cli.grille.titre', { nom: G.nom, version: g.version, le: g.le.slice(0, 10), auteur: g.auteur, resume: g.resume }));
+    console.log(t('cli.grille.fichier', { chemin: cheminGrille(dossier), seuil: virgule(G.seuil) }));
     const somme = G.criteres.reduce((s, c) => s + c.poids, 0);
-    console.log('\nCritères (poids normalisés) :');
+    console.log(`\n${t('cli.grille.criteres')}`);
     for (const c of G.criteres) {
-      console.log(`  ${c.id.padEnd(14)} ${String(Math.round((c.poids / somme) * 100)).padStart(3)} %  ${c.source === 'ia' ? 'IA    ' : 'calcul'}  ${c.libelle}`);
+      const source = (c.source === 'ia' ? t('cli.grille.ia') : t('cli.grille.calcul')).padEnd(8);
+      console.log(`  ${c.id.padEnd(14)} ${String(Math.round((c.poids / somme) * 100)).padStart(3)} %  ${source}  ${c.libelle}`);
     }
-    const t = G.baremes.teletravail;
+    const tt = G.baremes.teletravail;
     const r = G.baremes.remuneration;
-    console.log(`\nTélétravail (0 à 5 j sur site) : ${t.jours_sur_site.join(' / ')} ; inconnu ${t.inconnu}`);
+    console.log(`\n${t('cli.grille.teletravail', { jours: tt.jours_sur_site.join(' / '), inconnu: tt.inconnu })}`);
     console.log(
-      `Rémunération (${r.reference}) : salaire plancher ${r.salaire.plancher}, cible ${r.salaire.cible_basse}-${r.salaire.cible_haute} K€ ; ` +
-        `TJM plancher ${r.tjm.plancher}${r.tjm.plancher_full_remote ? ` (${r.tjm.plancher_full_remote} en full remote)` : ''}, cible ${r.tjm.cible_basse}-${r.tjm.cible_haute} € ; inconnue ${r.inconnue}`,
+      t('cli.grille.remuneration', {
+        reference: r.reference,
+        plancher: r.salaire.plancher,
+        basse: r.salaire.cible_basse,
+        haute: r.salaire.cible_haute,
+        tjm: r.tjm.plancher,
+        fullRemote: r.tjm.plancher_full_remote ? t('cli.grille.fullRemote', { valeur: r.tjm.plancher_full_remote }) : '',
+        tjmBasse: r.tjm.cible_basse,
+        tjmHaute: r.tjm.cible_haute,
+        inconnue: r.inconnue,
+      }),
     );
-    console.log('\nRègles bloquantes :');
-    for (const x of G.regles) console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${(x.effet === 'zero' ? '0' : x.effet === 'plafond' ? `plafond ${x.valeur}` : `${x.critere} < ${x.seuil}`).padEnd(10)} ${x.libelle}`);
-    console.log('\nInventaire :');
+    console.log(`\n${t('cli.grille.regles')}`);
+    for (const x of G.regles) {
+      const effet = x.effet === 'zero' ? '0' : x.effet === 'plafond' ? t('cli.decomp.plafond', { valeur: x.valeur }) : `${x.critere} < ${x.seuil}`;
+      console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${effet.padEnd(10)} ${x.libelle}`);
+    }
+    console.log(`\n${t('cli.grille.inventaire')}`);
     for (const n of ['fort', 'moyen', 'leger', 'zero'] as const) {
       const items = G.inventaire.filter((x) => x.niveau === n).map((x) => x.techno);
-      if (items.length) console.log(`  ${LIBELLES_NIVEAUX[n].padEnd(6)} ${items.join(', ')}`);
+      if (items.length) console.log(`  ${libelleNiveau(n, langue).padEnd(6)} ${items.join(', ')}`);
     }
     if (G.exemples.length) {
-      console.log('\nExemples de référence :');
+      console.log(`\n${t('cli.grille.exemples')}`);
       for (const e of G.exemples) console.log(`  ${virgule(noteExemple(G, e).note, 1).padStart(4)}  ${e.entreprise ? `${e.entreprise} — ` : ''}${e.titre}`);
     }
-    if (v.consignes) console.log(`\nConsignes pour l'IA :\n${[...G.consignes, ...consignesIa(G)].map((x) => `- ${x}`).join('\n')}`);
+    if (v.consignes) console.log(`\n${t('cli.grille.consignes')}\n${[...G.consignes, ...consignesIa(G)].map((x) => `- ${x}`).join('\n')}`);
   },
 
   renoter(args) {
@@ -546,7 +531,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = contexte(v);
     const r = sansErreur(() => renoter(db, config.dossierDonnees));
     if (v.json) return json({ ok: true, ...r });
-    console.log(`Grille v${r.version}.`);
+    console.log(t('cli.renoter', { version: r.version }));
     afficherImpact(r.impact);
   },
 
@@ -555,12 +540,12 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = contexte(v);
     const id = entier(pos[0], 'id');
     const statut = pos[1];
-    if (!statut || !estStatut(statut)) erreur(`Statut attendu parmi : ${STATUTS.join(', ')}`);
-    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
+    if (!statut || !estStatut(statut)) erreur(t('cli.statutAttendu', { statuts: STATUTS.join(', ') }));
+    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
     ajouterStatut(db, id, statut, { commentaire: (v.commentaire as string | undefined) ?? null, origine: 'cli' });
     const o = offreParId(db, id)!;
     if (v.json) return json({ ok: true, id, statut: o.statut });
-    console.log(`#${id} → ${LIBELLES_STATUTS[o.statut]}`);
+    console.log(`#${id} → ${libelleStatut(o.statut, langueCourante())}`);
   },
 
   tag(args) {
@@ -575,22 +560,22 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     const { db } = contexte(opts);
     const id = entier(reste[0], 'id');
-    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
-    const ajouts = reste.slice(1).filter((t) => t.startsWith('+')).map((t) => t.slice(1));
-    const retraits = reste.slice(1).filter((t) => t.startsWith('-')).map((t) => t.slice(1));
-    const autres = reste.slice(1).filter((t) => !/^[+-]/.test(t));
-    if (autres.length) erreur(`tag : préfixer chaque tag par + ou - (${autres.join(' ')})`);
+    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
+    const ajouts = reste.slice(1).filter((x) => x.startsWith('+')).map((x) => x.slice(1));
+    const retraits = reste.slice(1).filter((x) => x.startsWith('-')).map((x) => x.slice(1));
+    const autres = reste.slice(1).filter((x) => !/^[+-]/.test(x));
+    if (autres.length) erreur(t('cli.tag.prefixe', { tags: autres.join(' ') }));
     const tags = modifierTags(db, id, ajouts, retraits);
     if (opts.json) return json({ ok: true, id, tags });
-    console.log(`#${id} : ${tags.join(', ') || '(aucun tag)'}`);
+    console.log(`#${id} : ${tags.join(', ') || t('cli.tag.aucun')}`);
   },
 
   lien(args) {
     const { v, pos } = analyser(args, {});
     const { db } = contexte(v);
     const id = entier(pos[0], 'id');
-    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
-    if (pos[1] === undefined) erreur('lien : URL attendue (ou - pour effacer)');
+    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
+    if (pos[1] === undefined) erreur(t('cli.lien.attendu'));
     try {
       modifierLien(db, id, pos[1] === '-' ? null : pos[1]);
     } catch (e) {
@@ -598,7 +583,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     const o = offreParId(db, id)!;
     if (v.json) return json({ ok: true, id, url: o.url_canonique });
-    console.log(`#${id} : ${o.url_canonique ?? '(aucun lien)'}`);
+    console.log(`#${id} : ${o.url_canonique ?? t('cli.lien.aucun')}`);
   },
 
   candidater(args) {
@@ -608,7 +593,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const r = sansErreur(() => preparerCandidature(db, config.dossierDonnees, id, 'cli'));
     if (v.json) return json(r);
     console.log(afficherDetail(r.offre));
-    console.log(`\nDossier suggéré : ${r.dossier_suggere}`);
+    console.log(`\n${t('cli.candidater.dossier', { dossier: r.dossier_suggere })}`);
     console.log(r.etapes.map((e, i) => `${i + 1}. ${e}`).join('\n'));
   },
 
@@ -631,22 +616,22 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       message: v.message as string | undefined,
       prochaine_action: v['prochaine-action'] as string | undefined,
     };
-    if (Object.values(champs).every((x) => x === undefined)) erreur('candidature : au moins une option attendue (--dossier, --canal…)');
+    if (Object.values(champs).every((x) => x === undefined)) erreur(t('cli.candidature.option'));
     const r = sansErreur(() => suivreCandidature(db, id, champs, 'cli'));
     if (v.json) return json({ ok: true, id, statut: r.offre.statut, statut_ajoute: r.statut_ajoute, candidature: r.offre.candidature });
-    console.log(afficherDetail(r.offre).split('\n\nDescription :')[0]);
+    console.log(afficherDetail(r.offre).split(`\n\n${t('cli.detail.description')}`)[0]);
   },
 
   'prochaine-action'(args) {
     const { v, pos } = analyser(args, {});
     const { db } = contexte(v);
     const id = entier(pos[0], 'id');
-    if (pos[1] === undefined) erreur('prochaine-action : texte attendu ("" ou - pour effacer)');
+    if (pos[1] === undefined) erreur(t('cli.prochaineAction.attendu'));
     const texte = pos.slice(1).join(' ');
     const r = sansErreur(() => suivreCandidature(db, id, { prochaine_action: texte === '-' ? null : texte }, 'cli'));
     const action = r.offre.candidature?.prochaine_action ?? null;
     if (v.json) return json({ ok: true, id, prochaine_action: action });
-    console.log(`#${id} : ${action ?? '(aucune prochaine action)'}`);
+    console.log(`#${id} : ${action ?? t('cli.prochaineAction.aucune')}`);
   },
 
   evenement(args) {
@@ -666,8 +651,8 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     });
     const { db } = contexte(v);
     const id = entier(pos[0], 'id');
-    if (!v.type) erreur(`evenement : --type attendu (${TYPES_EVENEMENT.join(', ')})`);
-    if (!v.resume) erreur('evenement : --resume "…" attendu');
+    if (!v.type) erreur(t('cli.evenement.typeAttendu', { types: TYPES_EVENEMENT.join(', ') }));
+    if (!v.resume) erreur(t('cli.evenement.resumeAttendu'));
     const saisie: SaisieEvenement = {
       type: v.type as string,
       le: v.le as string | undefined,
@@ -684,7 +669,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     };
     const e = sansErreur(() => ajouterEvenement(db, id, saisie, 'cli'));
     if (v.json) return json({ ok: true, evenement: e });
-    console.log(`Événement #${e.id} ajouté à l'offre #${id} : ${dateEvenementFr(e.le)} ${e.type}${e.fait ? '' : ' (échéance)'} — ${e.resume}`);
+    console.log(
+      t('cli.evenement.ajoute', { id: e.id, offre: id, le: dateEvenement(e.le), type: e.type, echeance: e.fait ? '' : t('cli.evenement.echeance'), resume: e.resume }),
+    );
   },
 
   journal(args) {
@@ -692,11 +679,11 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = contexte(v);
     const id = entier(pos[0], 'id');
     const o = offreParId(db, id);
-    if (!o) erreur(`Offre ${id} introuvable`);
+    if (!o) erreur(t('cli.offreIntrouvable', { id }));
     const j = journal(db, id);
     if (v.json) return json({ ok: true, id, evenements: j });
     console.log(`#${id} ${o.titre}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
-    if (!j.length) return console.log('  (journal vide)');
+    if (!j.length) return console.log(t('cli.journal.vide'));
     for (const e of j) console.log(ligneJournal(e));
   },
 
@@ -705,11 +692,12 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = contexte(v);
     const r = sansErreur(() => echeances(db, { jours: v.jours !== undefined ? Number(v.jours) : 7 }));
     if (v.json) return json({ ok: true, ...r });
+    const langue = langueCourante();
     const ligne = (e: (typeof r.a_venir)[number]) =>
-      `  #${String(e.id).padEnd(5)} ${dateEvenementFr(e.le).padEnd(19)} offre #${e.offre_id} ${tronquer(e.entreprise ?? e.titre, 28).padEnd(28)} ${LIBELLES_TYPES[e.type]} : ${tronquer(e.resume, 80)}`;
-    console.log(`En retard (${r.en_retard.length}) :`);
+      `  #${String(e.id).padEnd(5)} ${dateEvenement(e.le).padEnd(19)} ${t('cli.echeances.offre', { id: e.offre_id })} ${tronquer(e.entreprise ?? e.titre, 28).padEnd(28)} ${libelleType(e.type, langue)} : ${tronquer(e.resume, 80)}`;
+    console.log(t('cli.echeances.enRetard', { n: r.en_retard.length }));
     for (const e of r.en_retard) console.log(ligne(e));
-    console.log(`À venir jusqu'au ${dateEvenementFr(r.jusqua)} (${r.a_venir.length}) :`);
+    console.log(t('cli.echeances.aVenir', { date: dateEvenement(r.jusqua), n: r.a_venir.length }));
     for (const e of r.a_venir) console.log(ligne(e));
   },
 
@@ -720,21 +708,21 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     sansErreur(() => evenementOuErreur(db, id));
     const e = marquerFait(db, id, v.fait !== false);
     if (v.json) return json({ ok: true, evenement: e });
-    console.log(`Événement #${id} ${e.fait ? 'fait' : 'rouvert (à faire)'} : ${e.resume}`);
+    console.log(t(e.fait ? 'cli.fait.fait' : 'cli.fait.rouvert', { id, resume: e.resume }));
   },
 
   fichiers(args) {
     const { v, pos } = analyser(args, {});
     const { config, db } = contexte(v);
     const id = entier(pos[0], 'id');
-    if (!offreParId(db, id)) erreur(`Offre ${id} introuvable`);
+    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
     const r = fichiersDossier(db, config.dossierDonnees, id);
     if (v.json) return json({ ok: true, ...r });
-    if (!r.dossier) return console.log(`#${id} : pas de dossier de candidature (postuler-juste candidature ${id} --dossier candidatures/…)`);
-    if (!r.existe) return console.log(`#${id} : dossier ${r.dossier} absent du dossier de données`);
-    console.log(`${r.dossier} (${r.fichiers.length} fichier(s)) :`);
+    if (!r.dossier) return console.log(t('cli.fichiers.sansDossier', { id }));
+    if (!r.existe) return console.log(t('cli.fichiers.absent', { id, dossier: r.dossier }));
+    console.log(t('cli.fichiers.titre', { dossier: r.dossier, n: r.fichiers.length }));
     for (const f of r.fichiers) {
-      console.log(`  ${f.chemin.padEnd(70)} ${String(Math.ceil(f.taille / 1024)).padStart(5)} Ko  ${f.modifie_le.slice(0, 10)}`);
+      console.log(`  ${f.chemin.padEnd(70)} ${String(Math.ceil(f.taille / 1024)).padStart(5)} ${t('cli.fichiers.ko')}  ${f.modifie_le.slice(0, 10)}`);
     }
   },
 
@@ -743,20 +731,20 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = contexte(v);
     const s = statistiques(db);
     if (v.json) return json({ ok: true, ...s });
-    console.log(`Envoyées : ${s.envoyees} · réponse : ${s.reponses} · entretien : ${s.entretiens} · proposition : ${s.propositions}`);
+    console.log(t('cli.stats.etapes', { envoyees: s.envoyees, reponses: s.reponses, entretiens: s.entretiens, propositions: s.propositions }));
     console.log(
       s.delai_moyen_reponse_jours === null
-        ? 'Délai avant première réponse : pas assez de données datées.'
-        : `Délai moyen avant la première réponse : ${String(s.delai_moyen_reponse_jours).replace('.', ',')} j (sur ${s.delai_base} candidature(s)).`,
+        ? t('cli.stats.pasAssez')
+        : t('cli.stats.delai', { jours: virgule(s.delai_moyen_reponse_jours, 1), n: s.delai_base }),
     );
   },
 
   'generer-suivi'(args) {
     const { v } = analyser(args, { sortie: { type: 'string', short: 'o' }, remplacer: { type: 'boolean' } });
     const { config, db } = contexte(v);
-    const r = ecrireSuivi(db, config.dossierDonnees, { sortie: v.sortie as string | undefined, remplacer: Boolean(v.remplacer) });
+    const r = ecrireSuivi(db, config.dossierDonnees, { sortie: v.sortie as string | undefined, remplacer: Boolean(v.remplacer), langue: config.langue });
     if (v.json) return json({ ok: true, ...r });
-    console.log(`${r.fichier} : ${r.en_cours} en cours, ${r.sans_suite} envoyée(s) sans suite, ${r.closes} close(s).`);
+    console.log(t('cli.suivi.resume', { fichier: r.fichier, enCours: r.en_cours, sansSuite: r.sans_suite, closes: r.closes }));
   },
 
   async mcp(args) {
@@ -774,57 +762,63 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   init(args) {
-    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' }, gabarit: { type: 'string' } });
-    if (pos.length !== 1) erreur('Usage : postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste]');
+    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' }, gabarit: { type: 'string' }, langue: { type: 'string' } });
+    if (pos.length !== 1) erreur(t('cli.init.usage'));
+    if (v.langue !== undefined && !estLangue(v.langue)) {
+      erreur(t('cli.invalide', { nom: '--langue', valeur: `${String(v.langue)} (${LANGUES.join(', ')})` }));
+    }
     const r = initialiserEspace({
       dossier: pos[0],
       port: v.port ? entier(v.port, 'port') : undefined,
       nomMcp: v['nom-mcp'] as string | undefined,
       gabarit: v.gabarit as string | undefined,
+      langue: v.langue as 'fr' | 'en' | undefined,
     });
     if (v.json) return json(r);
-    console.log(`Espace de travail créé : ${r.dossier}`);
-    console.log(`  configuration : ${r.config} (port ${r.port})`);
-    console.log(`  serveur MCP « ${r.nom_mcp} » : ${r.mcp}`);
-    console.log(`  navigateur pour les PDF : ${r.navigateur ?? 'aucun'}`);
+    console.log(t('cli.init.cree', { dossier: r.dossier }));
+    console.log(t('cli.init.config', { config: r.config, port: r.port, langue: r.langue }));
+    console.log(t('cli.init.mcp', { nom: r.nom_mcp, mcp: r.mcp }));
+    console.log(t('cli.init.navigateur', { navigateur: r.navigateur ?? t('cli.aucun') }));
     for (const a of r.avertissements) console.log(`  ⚠ ${a}`);
-    console.log(`\nCommande de l'application, depuis l'espace : ${r.commande}`);
-    console.log('\nÉtapes suivantes :');
-    console.log(`  1. Dépose ton CV et l'export PDF de ton profil LinkedIn dans ${r.dossier}/a-deposer/`);
-    console.log(`  2. Ouvre ton IA dans ${r.dossier} (Claude Code : cd dans le dossier puis « claude », et accepte le serveur MCP)`);
-    console.log('  3. Colle-lui ce prompt :\n');
+    console.log(`\n${t('cli.init.commande', { commande: r.commande })}`);
+    console.log(`\n${t('cli.init.etapes')}`);
+    console.log(t('cli.init.etape1', { dossier: r.dossier }));
+    console.log(t('cli.init.etape2', { dossier: r.dossier }));
+    console.log(`${t('cli.init.etape3')}\n`);
     console.log(r.invite);
   },
 
   compter(args) {
     const { v, pos } = analyser(args, {});
-    if (pos.length !== 1) erreur('Usage : postuler-juste compter <fichier>');
+    if (pos.length !== 1) erreur(t('cli.compter.usage'));
     const resultat = compterTexte(sansErreur(() => readFileSync(pos[0], 'utf8')));
     if (v.json) return json({ ok: true, fichier: pos[0], blocs: resultat });
-    for (const b of resultat) console.log(`${String(b.caracteres).padStart(6)} caractères  ${String(b.mots).padStart(4)} mots  « ${b.debut}… »`);
+    for (const b of resultat) {
+      console.log(t('cli.compter.ligne', { caracteres: String(b.caracteres).padStart(6), mots: String(b.mots).padStart(4), debut: b.debut }));
+    }
   },
 
   gabarits(args) {
     const { v } = analyser(args, {});
-    const liste = listerGabarits();
-    if (v.json) return json({ ok: true, gabarits: liste });
-    for (const g of liste) console.log(`${g.nom.padEnd(10)} ${g.description}`);
-    console.log('\nChoisir : postuler-juste gabarit <nom> (depuis l\'espace de travail ; l\'ancien gabarit est gardé à côté).');
+    const gabarits = listerGabarits();
+    if (v.json) return json({ ok: true, gabarits });
+    for (const g of gabarits) console.log(`${g.nom.padEnd(10)} ${g.description}`);
+    console.log(`\n${t('cli.gabarits.choisir')}`);
   },
 
   gabarit(args) {
     const { v, pos } = analyser(args, {});
-    if (pos.length !== 1) erreur('Usage : postuler-juste gabarit <nom> (liste : postuler-juste gabarits)');
+    if (pos.length !== 1) erreur(t('cli.gabarit.usage'));
     const espace = chargerConfig({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined }).dossierDonnees;
     const r = sansErreur(() => choisirGabarit(espace, pos[0]));
     if (v.json) return json({ ok: true, ...r });
-    console.log(`Gabarit « ${pos[0]} » installé dans ${r.dossier}${r.ancien ? ` (ancien gabarit gardé dans ${r.ancien})` : ''}.`);
-    console.log('Régénérer les CV pour voir le résultat : postuler-juste cv "cv/<nom>.md" --capture');
+    console.log(t('cli.gabarit.installe', { nom: pos[0], dossier: r.dossier, ancien: r.ancien ? t('cli.gabarit.ancien', { dossier: r.ancien }) : '' }));
+    console.log(t('cli.gabarit.regenerer'));
   },
 
   cv(args) {
     const { v, pos } = analyser(args, { gabarit: { type: 'string' }, capture: { type: 'boolean' } });
-    if (!pos.length) erreur('Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>] [--capture]');
+    if (!pos.length) erreur(t('cli.cv.usage'));
     let choisi = v.gabarit as string | undefined;
     if (!choisi) {
       let espace: string | null = null;
@@ -838,33 +832,54 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     const gabarit = choisi;
     const navigateur = trouverNavigateur();
-    if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)');
+    if (!navigateur) erreur(t('cli.cv.sansNavigateur'));
     const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur, { capture: Boolean(v.capture) })));
     if (v.json) return json({ ok: true, gabarit, cv: resultats });
     for (const r of resultats) {
-      console.log(`${String(r.pages).padStart(2)} page(s)  ${r.pdf}${r.pages > 2 ? '  <-- DÉPASSE 2 PAGES' : ''}`);
+      console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.depasse') : ''}`);
+      // Lignes lues par les outils et l'IA (HTML, PDF, IMAGE, PAGES) : mêmes libellés dans les deux langues.
       if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}`);
     }
   },
 
   aide() {
-    process.stdout.write(AIDE);
+    process.stdout.write(aide());
   },
 };
 
+/** Valeur d'une option (--nom valeur ou --nom=valeur) lue avant l'analyse complète. */
+function optionBrute(argv: string[], nom: string): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === `--${nom}`) return argv[i + 1];
+    if (argv[i].startsWith(`--${nom}=`)) return argv[i].slice(nom.length + 3);
+  }
+  return undefined;
+}
+
+/**
+ * Langue des messages : --langue d'init (l'espace qu'on crée), sinon la configuration (--data, --config,
+ * POSTULER_JUSTE_LANGUE, fichier), sinon le français.
+ */
+function langueDesMessages(cmd: string | undefined, args: string[]) {
+  const demandee = cmd === 'init' ? optionBrute(args, 'langue') : undefined;
+  if (estLangue(demandee)) return demandee;
+  return langueConfiguree({ dossierDonnees: optionBrute(args, 'data'), fichierConfig: optionBrute(args, 'config') });
+}
+
 export async function main(argv: string[]): Promise<number> {
   const [cmd, ...args] = argv;
+  definirLangue(langueDesMessages(cmd, args));
   if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') {
-    process.stdout.write(AIDE);
+    process.stdout.write(aide());
     return 0;
   }
   const fn = commandes[cmd];
   if (!fn) {
-    process.stderr.write(`Commande inconnue : ${cmd}\n\n${AIDE}`);
+    process.stderr.write(`${t('cli.commandeInconnue', { commande: cmd })}\n\n${aide()}`);
     return 2;
   }
   if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(AIDE);
+    process.stdout.write(aide());
     return 0;
   }
   try {
@@ -874,7 +889,7 @@ export async function main(argv: string[]): Promise<number> {
     const err = e as Error & { utilisateur?: boolean; code?: string };
     const message = err.code?.startsWith('ERR_PARSE_ARGS') || err.utilisateur ? err.message : (err.stack ?? err.message);
     if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, erreur: err.message })}\n`);
-    else process.stderr.write(`Erreur : ${message}\n`);
+    else process.stderr.write(`${t('cli.erreur', { message })}\n`);
     return 1;
   }
 }

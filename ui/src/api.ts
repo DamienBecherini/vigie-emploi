@@ -1,6 +1,7 @@
 // Client de l'API locale (mêmes types que le serveur, recopiés ici pour garder l'interface autonome).
 import type { Sens, Statut, TypeEvenement } from '../../src/core/statuts.ts';
 import type { Decomposition, Entrees, Grille, Saisie } from '../../src/core/grille.ts';
+import { t } from './i18n/index.ts';
 
 export type { Decomposition, Grille, Saisie };
 
@@ -244,7 +245,7 @@ async function appel<T>(url: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
   const corps = (await r.json().catch(() => ({}))) as T & { erreur?: string };
-  if (!r.ok) throw new Error(corps.erreur ?? `Erreur ${r.status}`);
+  if (!r.ok) throw new Error(corps.erreur ?? t('api.erreur', { status: r.status }));
   return corps;
 }
 

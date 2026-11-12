@@ -5,7 +5,9 @@ import { Check, Monitor, Moon, Sun, X } from 'lucide-react';
 import {
   ACCENTS,
   LIBELLES_ACCENTS,
+  LIBELLES_ACCENTS_EN,
   LIBELLES_NEUTRES,
+  LIBELLES_NEUTRES_EN,
   NEUTRES,
   PERSO,
   teinte,
@@ -14,6 +16,10 @@ import {
   type Palette,
   type PaletteNommee,
 } from '../theme.ts';
+import { langue, t } from '../i18n/index.ts';
+
+const neutres = () => (langue() === 'en' ? LIBELLES_NEUTRES_EN : LIBELLES_NEUTRES);
+const accents = () => (langue() === 'en' ? LIBELLES_ACCENTS_EN : LIBELLES_ACCENTS);
 
 export type Mode = 'systeme' | 'clair' | 'sombre';
 
@@ -61,27 +67,27 @@ function ChoixPalette(props: {
     <fieldset className="space-y-2">
       <legend className="etiquette">{props.titre}</legend>
       <div className="grid gap-2 sm:grid-cols-2">
-        {props.palettes.map((p) => carte(p.id, p, p.nom, p.description))}
-        {carte(PERSO, props.perso, 'Personnalisée', `${LIBELLES_NEUTRES[props.perso.neutre]} · ${LIBELLES_ACCENTS[props.perso.accent]}`)}
+        {props.palettes.map((p) => (langue() === 'en' && p.en ? carte(p.id, p, p.en.nom, p.en.description) : carte(p.id, p, p.nom, p.description)))}
+        {carte(PERSO, props.perso, t('theme.perso'), `${neutres()[props.perso.neutre]} · ${accents()[props.perso.accent]}`)}
       </div>
       {props.choisie === PERSO && (
         <div className="grid grid-cols-2 gap-2">
           <label className="text-sm">
-            <span className="etiquette">Gris</span>
+            <span className="etiquette">{t('theme.gris')}</span>
             <select className="champ" value={props.perso.neutre} onChange={(e) => props.setPerso({ ...props.perso, neutre: e.target.value as Neutre })}>
               {NEUTRES.map((n) => (
                 <option key={n} value={n}>
-                  {LIBELLES_NEUTRES[n]}
+                  {neutres()[n]}
                 </option>
               ))}
             </select>
           </label>
           <label className="text-sm">
-            <span className="etiquette">Accent</span>
+            <span className="etiquette">{t('theme.accent')}</span>
             <select className="champ" value={props.perso.accent} onChange={(e) => props.setPerso({ ...props.perso, accent: e.target.value as Accent })}>
               {ACCENTS.map((a) => (
                 <option key={a} value={a}>
-                  {LIBELLES_ACCENTS[a]}
+                  {accents()[a]}
                 </option>
               ))}
             </select>
@@ -114,9 +120,9 @@ export function ChoixTheme(props: {
     return () => window.removeEventListener('keydown', clavier, true);
   }, [fermer]);
   const modes: [Mode, string, typeof Sun][] = [
-    ['systeme', 'Système', Monitor],
-    ['clair', 'Clair', Sun],
-    ['sombre', 'Sombre', Moon],
+    ['systeme', t('theme.systeme'), Monitor],
+    ['clair', t('theme.clair'), Sun],
+    ['sombre', t('theme.sombre'), Moon],
   ];
   // Portail : l'en-tête (sticky, flou) piégerait une position fixe.
   return createPortal(
@@ -129,15 +135,15 @@ export function ChoixTheme(props: {
       >
         <div className="flex items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
           <h2 id={titre} ref={entete} tabIndex={-1} className="flex-1 text-lg font-bold">
-            Thème
+            {t('theme.titre')}
           </h2>
-          <button type="button" className="bouton" onClick={fermer} aria-label="Fermer (Échap)">
-            <X className="size-4" aria-hidden="true" /> Fermer
+          <button type="button" className="bouton" onClick={fermer} aria-label={t('theme.fermerEchap')}>
+            <X className="size-4" aria-hidden="true" /> {t('theme.fermer')}
           </button>
         </div>
         <div className="space-y-5 p-4">
           <fieldset>
-            <legend className="etiquette">Mode</legend>
+            <legend className="etiquette">{t('theme.mode')}</legend>
             <div role="radiogroup" className="flex flex-wrap gap-2">
               {modes.map(([m, libelle, Icone]) => (
                 <button
@@ -153,10 +159,10 @@ export function ChoixTheme(props: {
               ))}
             </div>
           </fieldset>
-          <ChoixPalette titre="Palette du thème clair" sombre={false} {...props.clair} />
-          <ChoixPalette titre="Palette du thème sombre" sombre {...props.sombre} />
+          <ChoixPalette titre={t('theme.paletteClaire')} sombre={false} {...props.clair} />
+          <ChoixPalette titre={t('theme.paletteSombre')} sombre {...props.sombre} />
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Chaque mode garde sa dernière palette ; le bouton soleil / lune de l'en-tête bascule le mode sans la changer.
+            {t('theme.aide')}
           </p>
         </div>
       </div>

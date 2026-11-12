@@ -11,6 +11,7 @@ import {
 import { STATUTS_A_TRAITER } from '../../src/core/statuts.ts';
 import { api, type LigneOffre } from './api.ts';
 import { basculerNiveau, ecrireNiveaux, lireNiveaux } from './tri.ts';
+import { choisirLangue, langue, LANGUES, locale, nombre, t, type Langue } from './i18n/index.ts';
 import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FILTRES } from './etat.ts';
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
@@ -51,32 +52,33 @@ import {
 
 const TAILLES = [25, 50, 100, 200, 500];
 
-const COLONNES: ColumnDef<LigneOffre>[] = [
-  { id: 'note', accessorKey: 'note', header: 'Note', cell: (c) => <BadgeNote note={c.row.original.note} /> },
-  { id: 'statut', accessorKey: 'statut', header: 'Statut', cell: (c) => <BadgeStatut statut={c.row.original.statut} /> },
+/** Colonnes du tableau (libellés dans la langue courante : l'application est remontée à chaque changement de langue). */
+const colonnes = (): ColumnDef<LigneOffre>[] => [
+  { id: 'note', accessorKey: 'note', header: t('col.note'), cell: (c) => <BadgeNote note={c.row.original.note} /> },
+  { id: 'statut', accessorKey: 'statut', header: t('col.statut'), cell: (c) => <BadgeStatut statut={c.row.original.statut} /> },
   {
     id: 'titre',
     accessorKey: 'titre',
-    header: 'Intitulé',
-    cell: (c) => <span className="line-clamp-2 font-medium">{c.row.original.titre || '(sans titre)'}</span>,
+    header: t('col.titre'),
+    cell: (c) => <span className="line-clamp-2 font-medium">{c.row.original.titre || t('liste.sansTitre')}</span>,
   },
-  { id: 'entreprise', accessorKey: 'entreprise', header: 'Entreprise', cell: (c) => <span className="line-clamp-2">{c.row.original.entreprise ?? '—'}</span> },
-  { id: 'lieu', accessorKey: 'lieu', header: 'Lieu', cell: (c) => <span className="line-clamp-2">{c.row.original.lieu ?? '—'}</span> },
-  { id: 'contrat', accessorKey: 'contrat', header: 'Contrat', cell: (c) => c.row.original.contrat ?? '—' },
+  { id: 'entreprise', accessorKey: 'entreprise', header: t('col.entreprise'), cell: (c) => <span className="line-clamp-2">{c.row.original.entreprise ?? '—'}</span> },
+  { id: 'lieu', accessorKey: 'lieu', header: t('col.lieu'), cell: (c) => <span className="line-clamp-2">{c.row.original.lieu ?? '—'}</span> },
+  { id: 'contrat', accessorKey: 'contrat', header: t('col.contrat'), cell: (c) => c.row.original.contrat ?? '—' },
   {
     id: 'remuneration_min',
     accessorKey: 'remuneration',
-    header: 'Rémunération',
+    header: t('col.remuneration'),
     cell: (c) => <span className="line-clamp-2">{c.row.original.remuneration ?? '—'}</span>,
   },
-  { id: 'teletravail', accessorKey: 'teletravail', header: 'Télétravail', cell: (c) => <span className="line-clamp-2">{c.row.original.teletravail ?? '—'}</span> },
-  { id: 'source', accessorKey: 'source', header: 'Source' },
-  { id: 'recue_le', accessorKey: 'recue_le', header: 'Reçue', cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.recue_le)}</span> },
-  { id: 'publiee_le', accessorKey: 'publiee_le', header: 'Publiée', cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.publiee_le)}</span> },
+  { id: 'teletravail', accessorKey: 'teletravail', header: t('col.teletravail'), cell: (c) => <span className="line-clamp-2">{c.row.original.teletravail ?? '—'}</span> },
+  { id: 'source', accessorKey: 'source', header: t('col.source') },
+  { id: 'recue_le', accessorKey: 'recue_le', header: t('col.recue'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.recue_le)}</span> },
+  { id: 'publiee_le', accessorKey: 'publiee_le', header: t('col.publiee'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.publiee_le)}</span> },
   {
     id: 'tags',
     accessorKey: 'tags',
-    header: 'Tags',
+    header: t('col.tags'),
     enableSorting: false,
     cell: (c) => (
       <span className="flex flex-wrap gap-1">
@@ -88,7 +90,7 @@ const COLONNES: ColumnDef<LigneOffre>[] = [
       </span>
     ),
   },
-  { id: 'id', accessorKey: 'id', header: 'N°', cell: (c) => <span className="text-slate-500 tabular-nums dark:text-slate-400">{c.row.original.id}</span> },
+  { id: 'id', accessorKey: 'id', header: t('col.id'), cell: (c) => <span className="text-slate-500 tabular-nums dark:text-slate-400">{c.row.original.id}</span> },
 ];
 
 const VISIBILITE_DEFAUT: VisibilityState = { lieu: true, contrat: false, teletravail: true, publiee_le: false, id: false, tags: true };
@@ -102,8 +104,8 @@ function BoutonRafraichir() {
       type="button"
       className="bouton"
       onClick={() => client.invalidateQueries()}
-      aria-label="Rafraîchir les données"
-      title="Rafraîchir les données"
+      aria-label={t('entete.rafraichir')}
+      title={t('entete.rafraichir')}
       aria-busy={enCours}
     >
       <RefreshCw className={`size-4 ${enCours ? 'animate-spin' : ''}`} aria-hidden="true" />
@@ -128,6 +130,28 @@ function enregistrer(cle: string, valeur: unknown) {
   } catch {
     /* stockage indisponible : la préférence vaut pour la session */
   }
+}
+
+/** Langue de l'interface : le choix est mémorisé (localStorage) et l'emporte sur la configuration. */
+function ChoixLangue() {
+  const noms: Record<Langue, string> = { fr: 'Français', en: 'English' };
+  // Codes courts dans l'en-tête (FR / EN), nom complet de la langue dans l'infobulle de chaque option.
+  return (
+    <select
+      className="champ py-1 text-sm"
+      style={{ width: 'auto' }}
+      value={langue()}
+      onChange={(e) => choisirLangue(e.target.value as Langue)}
+      aria-label={t('entete.langue')}
+      title={t('entete.langue')}
+    >
+      {LANGUES.map((l) => (
+        <option key={l} value={l} lang={l} title={noms[l]}>
+          {l.toUpperCase()}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 function Preferences() {
@@ -155,33 +179,34 @@ function Preferences() {
   const fermer = useCallback(() => setFenetre(false), []);
   return (
     <div className="flex items-center gap-1">
+      <ChoixLangue />
       <button
         type="button"
         className="bouton"
         onClick={() => setMode(sombre ? 'clair' : 'sombre')}
-        aria-label={sombre ? 'Passer au thème clair' : 'Passer au thème sombre'}
-        title={sombre ? 'Passer au thème clair' : 'Passer au thème sombre'}
+        aria-label={sombre ? t('theme.versClair') : t('theme.versSombre')}
+        title={sombre ? t('theme.versClair') : t('theme.versSombre')}
       >
         {sombre ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
       </button>
-      <button type="button" className="bouton" onClick={() => setFenetre(true)} aria-haspopup="dialog" title="Thème et palettes">
-        <PaletteIcone className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">Thème</span>
+      <button type="button" className="bouton" onClick={() => setFenetre(true)} aria-haspopup="dialog" title={t('theme.palettes')}>
+        <PaletteIcone className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">{t('theme.bouton')}</span>
       </button>
-      <div role="group" aria-label="Taille du texte" className="flex items-center">
-        <button type="button" className="bouton rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label="Réduire le texte" title="Réduire le texte">
+      <div role="group" aria-label={t('zoom.groupe')} className="flex items-center">
+        <button type="button" className="bouton rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label={t('zoom.reduire')} title={t('zoom.reduire')}>
           <ZoomOut className="size-4" aria-hidden="true" />
         </button>
         <button
           type="button"
-          className="border-y border-slate-300 bg-white px-2 py-1 text-sm tabular-nums hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700"
+          className="border-y border-slate-300 bg-white px-2 py-1 text-sm whitespace-nowrap tabular-nums hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700"
           onClick={() => setZoom(100)}
           aria-live="polite"
-          aria-label={`Taille du texte ${zoom} % (revenir à 100 %)`}
-          title="Revenir à 100 %"
+          aria-label={t('zoom.taille', { zoom })}
+          title={t('zoom.revenir')}
         >
           {zoom} %
         </button>
-        <button type="button" className="bouton rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label="Agrandir le texte" title="Agrandir le texte">
+        <button type="button" className="bouton rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label={t('zoom.agrandir')} title={t('zoom.agrandir')}>
           <ZoomIn className="size-4" aria-hidden="true" />
         </button>
       </div>
@@ -202,7 +227,7 @@ function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<Ligne
   return (
     <details className="relative" data-menu>
       <summary className="bouton cursor-pointer list-none">
-        <Columns3 className="size-4" aria-hidden="true" /> Colonnes
+        <Columns3 className="size-4" aria-hidden="true" /> {t('liste.colonnes')}
       </summary>
       <div className="absolute right-0 z-20 mt-1 w-52 rounded-md border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
         {table.getAllLeafColumns().map((col) => (
@@ -254,13 +279,14 @@ export function App() {
   if (!requete.has('taille')) requete.set('taille', String(taille));
   const cle = requete.toString();
 
+  const columns = useMemo(colonnes, []);
   const liste = useQuery({ queryKey: ['offres', cle], queryFn: () => api.offres(requete), placeholderData: keepPreviousData });
   const meta = useQuery({ queryKey: ['meta'], queryFn: api.meta });
 
   const tri2: SortingState = useMemo(() => niveaux.map((n) => ({ id: n.colonne, desc: n.ordre === 'desc' })), [niveaux]);
   const table = useReactTable({
     data: liste.data?.offres ?? [],
-    columns: COLONNES,
+    columns,
     manualSorting: true,
     manualPagination: true,
     pageCount: liste.data?.pages ?? 1,
@@ -323,7 +349,7 @@ export function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#tableau" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
-        Aller au tableau
+        {t('entete.allerTableau')}
       </a>
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="flex flex-wrap items-center gap-3">
@@ -332,24 +358,24 @@ export function App() {
           </h1>
           <div className="min-w-48 flex-1">
             <label htmlFor="recherche" className="sr-only">
-              Rechercher dans les offres
+              {t('entete.rechercheLibelle')}
             </label>
             <input
               id="recherche"
               type="search"
               className="champ"
-              placeholder="Rechercher (intitulé, entreprise, description, stack)…"
+              placeholder={t('entete.recherche')}
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
             />
           </div>
-          <nav aria-label="Vues rapides" className="flex flex-wrap gap-1">
+          <nav aria-label={t('entete.vues')} className="flex flex-wrap gap-1">
             {(
               [
-                ['toutes', 'Toutes'],
-                ['a-traiter', 'À traiter'],
-                ['bonnes', `Notées ≥ ${seuil.replace('.', ',')}`],
-                ['candidatures', 'Mes candidatures'],
+                ['toutes', t('entete.toutes')],
+                ['a-traiter', t('entete.aTraiter')],
+                ['bonnes', t('entete.bonnes', { seuil: nombre(Number(seuil)) })],
+                ['candidatures', t('entete.candidatures')],
               ] as const
             ).map(([nom, libelle]) => (
               <button
@@ -364,7 +390,7 @@ export function App() {
             ))}
           </nav>
           <button type="button" className="bouton" onClick={() => setReglages(true)} aria-haspopup="dialog">
-            <SlidersHorizontal className="size-4" aria-hidden="true" /> Réglages de la note
+            <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('entete.reglages')}
           </button>
           <BoutonRafraichir />
           <Preferences />
@@ -373,7 +399,7 @@ export function App() {
 
       <div className="flex flex-1 gap-4 p-4">
         {filtresOuverts && (
-          <aside aria-label="Filtres" className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <aside aria-label={t('liste.filtres')} className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <ActionsAgent className="mb-3 border-b border-slate-200 pb-3 dark:border-slate-800" />
             <Filtres params={params} modifier={modifier} meta={meta.data} />
           </aside>
@@ -383,16 +409,16 @@ export function App() {
           <AVenir choisir={(id) => modifier({ offre: String(id) })} />
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>
-              <Funnel className="size-4" aria-hidden="true" /> {filtresOuverts ? 'Masquer les filtres' : 'Afficher les filtres'}
+              <Funnel className="size-4" aria-hidden="true" /> {filtresOuverts ? t('liste.masquerFiltres') : t('liste.afficherFiltres')}
             </button>
             <p className="text-sm text-slate-700 dark:text-slate-300" aria-live="polite">
-              {liste.isLoading ? 'Chargement…' : `${total.toLocaleString('fr-FR')} offre${total > 1 ? 's' : ''}`}
-              {liste.isFetching && !liste.isLoading ? ' · mise à jour…' : ''}
+              {liste.isLoading ? t('liste.chargement') : t('liste.nbOffres', { n: total.toLocaleString(locale()) })}
+              {liste.isFetching && !liste.isLoading ? t('liste.miseAJour') : ''}
             </p>
             <div className="ml-auto flex items-center gap-2">
               <ChoixColonnes table={table} />
               <label className="flex items-center gap-1 text-sm">
-                Par page
+                {t('liste.parPage')}
                 <select
                   className="champ w-20"
                   value={taille}
@@ -417,8 +443,11 @@ export function App() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">
-                Offres, triées par {niveaux.map((n) => `${n.colonne} (${n.ordre === 'asc' ? 'croissant' : 'décroissant'})`).join(', puis ')}. Un clic sur un en-tête
-                en fait le tri principal ; le tri précédent devient secondaire.
+                {t('liste.legende', {
+                  niveaux: niveaux
+                    .map((n) => `${String(columns.find((c) => c.id === n.colonne)?.header ?? n.colonne)} (${n.ordre === 'asc' ? t('liste.croissant') : t('liste.decroissant')})`)
+                    .join(t('liste.puis')),
+                })}
               </caption>
               <thead className="bg-slate-100 text-left dark:bg-slate-800">
                 {table.getHeaderGroups().map((hg) => (
@@ -438,7 +467,7 @@ export function App() {
                             <button
                               type="button"
                               className="inline-flex items-center gap-1 rounded hover:underline"
-                              title="Clic : tri principal sur cette colonne (le tri précédent devient secondaire). Second clic : inverser."
+                              title={t('liste.titreTri')}
                               onClick={() => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id)), ordre: null, page: null })}
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
@@ -450,7 +479,7 @@ export function App() {
                                 <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
                               )}
                               {niveaux.length > 1 && rang >= 0 && (
-                                <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={`niveau de tri ${rang + 1}`}>
+                                <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('liste.niveauTri', { n: rang + 1 })}>
                                   {rang + 1}
                                 </span>
                               )}
@@ -494,7 +523,7 @@ export function App() {
                 {!liste.isLoading && total === 0 && (
                   <tr>
                     <td colSpan={table.getVisibleLeafColumns().length} className="p-6 text-center text-slate-600 dark:text-slate-400">
-                      Aucune offre ne correspond aux filtres.
+                      {t('liste.aucune')}
                     </td>
                   </tr>
                 )}
@@ -502,21 +531,21 @@ export function App() {
             </table>
           </div>
 
-          <nav aria-label="Pagination" className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <nav aria-label={t('liste.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: null })}>
-              <ChevronsLeft className="size-4" aria-hidden="true" /> Première
+              <ChevronsLeft className="size-4" aria-hidden="true" /> {t('liste.premiere')}
             </button>
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: page - 1 > 1 ? String(page - 1) : null })}>
-              <ChevronLeft className="size-4" aria-hidden="true" /> Précédente
+              <ChevronLeft className="size-4" aria-hidden="true" /> {t('liste.precedente')}
             </button>
             <span className="tabular-nums">
-              Page {page} / {pages}
+              {t('liste.page', { page, pages })}
             </span>
             <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(page + 1) })}>
-              Suivante <ChevronRight className="size-4" aria-hidden="true" />
+              {t('liste.suivante')} <ChevronRight className="size-4" aria-hidden="true" />
             </button>
             <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(pages) })}>
-              Dernière <ChevronsRight className="size-4" aria-hidden="true" />
+              {t('liste.derniere')} <ChevronsRight className="size-4" aria-hidden="true" />
             </button>
           </nav>
         </main>

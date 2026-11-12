@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react';
-import { LIBELLES_STATUTS, STATUTS, type Statut } from '../../../src/core/statuts.ts';
+import { STATUTS, type Statut } from '../../../src/core/statuts.ts';
+import { statutAffiche, t } from '../i18n/index.ts';
 import type { Meta } from '../api.ts';
 import { CLES_FILTRES, useDebounce, type CleUrl } from '../etat.ts';
 
@@ -79,19 +80,19 @@ export function Filtres({ params, modifier, meta }: { params: URLSearchParams; m
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold">Filtres{actifs ? ` (${actifs})` : ''}</h2>
+        <h2 className="text-sm font-bold">{t('filtres.titre')}{actifs ? ` (${actifs})` : ''}</h2>
         <button
           type="button"
           className="bouton"
           disabled={!actifs}
           onClick={() => modifier(Object.fromEntries([...CLES_FILTRES, 'page'].map((k) => [k, null])))}
         >
-          Réinitialiser
+          {t('filtres.reinitialiser')}
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <ChampTexte cle="noteMin" libelle="Note min." type="number" step="0.5" valeur={g('noteMin')} modifier={modifier} />
-        <ChampTexte cle="noteMax" libelle="Note max." type="number" step="0.5" valeur={g('noteMax')} modifier={modifier} />
+        <ChampTexte cle="noteMin" libelle={t('filtres.noteMin')} type="number" step="0.5" valeur={g('noteMin')} modifier={modifier} />
+        <ChampTexte cle="noteMax" libelle={t('filtres.noteMax')} type="number" step="0.5" valeur={g('noteMax')} modifier={modifier} />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -100,36 +101,36 @@ export function Filtres({ params, modifier, meta }: { params: URLSearchParams; m
           checked={g('sansNote') === '1'}
           onChange={(e) => modifier({ sansNote: e.target.checked ? '1' : null, page: null })}
         />
-        Sans note seulement
+        {t('filtres.sansNote')}
       </label>
       <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="etiquette">Reçue</legend>
-        <ChampTexte cle="recueDepuis" libelle="depuis" type="date" valeur={g('recueDepuis')} modifier={modifier} />
-        <ChampTexte cle="recueJusqua" libelle="jusqu'au" type="date" valeur={g('recueJusqua')} modifier={modifier} />
+        <legend className="etiquette">{t('filtres.recue')}</legend>
+        <ChampTexte cle="recueDepuis" libelle={t('filtres.depuis')} type="date" valeur={g('recueDepuis')} modifier={modifier} />
+        <ChampTexte cle="recueJusqua" libelle={t('filtres.jusqua')} type="date" valeur={g('recueJusqua')} modifier={modifier} />
       </fieldset>
       <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="etiquette">Publiée</legend>
-        <ChampTexte cle="publieeDepuis" libelle="depuis" type="date" valeur={g('publieeDepuis')} modifier={modifier} />
-        <ChampTexte cle="publieeJusqua" libelle="jusqu'au" type="date" valeur={g('publieeJusqua')} modifier={modifier} />
+        <legend className="etiquette">{t('filtres.publiee')}</legend>
+        <ChampTexte cle="publieeDepuis" libelle={t('filtres.depuis')} type="date" valeur={g('publieeDepuis')} modifier={modifier} />
+        <ChampTexte cle="publieeJusqua" libelle={t('filtres.jusqua')} type="date" valeur={g('publieeJusqua')} modifier={modifier} />
       </fieldset>
       <Cases
-        legende="Statut"
+        legende={t('filtres.statut')}
         cle="statut"
         choisis={choisis('statut')}
         modifier={modifier}
-        options={STATUTS.map((s: Statut) => ({ valeur: s, libelle: LIBELLES_STATUTS[s], n: nParStatut.get(s) ?? 0 }))}
+        options={STATUTS.map((s: Statut) => ({ valeur: s, libelle: statutAffiche(s), n: nParStatut.get(s) ?? 0 }))}
       />
       <Cases
-        legende="Source"
+        legende={t('filtres.source')}
         cle="source"
         choisis={choisis('source')}
         modifier={modifier}
         options={(meta?.sources ?? []).map((s) => ({ valeur: s.valeur, libelle: s.valeur, n: s.n }))}
       />
-      <ChampTexte cle="contrat" libelle="Contrat contient" placeholder="CDI, Freelance…" valeur={g('contrat')} modifier={modifier} />
-      <ChampTexte cle="teletravail" libelle="Télétravail contient" placeholder="remote, hybride…" valeur={g('teletravail')} modifier={modifier} />
+      <ChampTexte cle="contrat" libelle={t('filtres.contrat')} placeholder={t('filtres.contratExemple')} valeur={g('contrat')} modifier={modifier} />
+      <ChampTexte cle="teletravail" libelle={t('filtres.teletravail')} placeholder={t('filtres.teletravailExemple')} valeur={g('teletravail')} modifier={modifier} />
       <Cases
-        legende="Tags (tous requis)"
+        legende={t('filtres.tags')}
         cle="tag"
         choisis={choisis('tag')}
         modifier={modifier}

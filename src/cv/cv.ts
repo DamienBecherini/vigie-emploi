@@ -10,8 +10,25 @@ import { RACINE_APP, variable } from '../core/config.ts';
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
 
-/** Sections rendues sur deux colonnes (listes courtes). */
-const SECTIONS_DEUX_COLONNES = /compétences|competences|formations|certifications|langues|skills|education|languages/i;
+/**
+ * Sections rendues sur deux colonnes (listes courtes), reconnues à leur titre en français comme en anglais,
+ * quelle que soit la langue configurée : Compétences (techniques), Formations, Certifications, Langues ;
+ * Skills, Technical Skills, Key Competencies, Education (& Certifications), Certifications, Languages.
+ * Les autres sections (Résumé / Summary, Expérience / Experience…) restent sur une colonne.
+ */
+export const SECTIONS_DEUX_COLONNES = /compétences|competences|competencies|formations|certifications|langues|skills|education|languages/i;
+
+/** Titres de section usuels d'un CV en anglais : un CV qui en a au moins deux est déclaré en anglais (attribut lang). */
+const SECTIONS_ANGLAISES = /^(summary|profile|professional summary|about me|(work |professional )?experience|employment history|(technical |key |core )?skills|(key |core )?competencies|education|education (&|and) certifications|certifications|languages|projects|interests)$/i;
+
+/** Marqueurs de saut de page manuel : <!-- saut-de-page -->, son alias anglais <!-- page-break -->, ou un div break-after. */
+const SAUT_DE_PAGE = /saut-de-page|page-break|break-after/i;
+
+/** Langue d'un CV Markdown d'après ses titres de section : « en » s'il a au moins deux titres anglais usuels, sinon « fr ». */
+export function langueDuCv(markdown: string): 'fr' | 'en' {
+  const titres = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
+  return titres.filter((x) => SECTIONS_ANGLAISES.test(x)).length >= 2 ? 'en' : 'fr';
+}
 
 const ICONES: Record<string, string> = {
   mail: '<path d="M2 5.5A2.5 2.5 0 0 1 4.5 3h15A2.5 2.5 0 0 1 22 5.5v13A2.5 2.5 0 0 1 19.5 21h-15A2.5 2.5 0 0 1 2 18.5v-13Zm2.2-.5 7.8 6.1L19.8 5H4.2ZM20 7.4l-7.4 5.8a1 1 0 0 1-1.2 0L4 7.4V19h16V7.4Z"/>',
@@ -179,9 +196,9 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
 
   for (; i < jetons.length; i += 1) {
     const t = jetons[i];
-    // Saut de page manuel (<!-- saut-de-page --> ou un div break-after) : il ferme le poste et la section
+    // Saut de page manuel (<!-- saut-de-page -->, <!-- page-break --> ou un div break-after) : il ferme le poste et la section
     // en cours, sinon il resterait enfermé dans le dernier poste, sans effet.
-    if (t.type === 'html' && /saut-de-page|break-after/i.test(t.raw)) {
+    if (t.type === 'html' && SAUT_DE_PAGE.test(t.raw)) {
       fermerPoste();
       fermerSection();
       sortie.push('<div class="saut-de-page" style="break-after: page"></div>');
@@ -211,7 +228,7 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
   fermerSection();
 
   return `<!DOCTYPE html>
-<html lang="${o.langue ?? 'fr'}">
+<html lang="${o.langue ?? langueDuCv(markdown)}">
 <head>
 <meta charset="utf-8">
 <title>CV</title>

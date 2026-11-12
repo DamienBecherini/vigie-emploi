@@ -19,11 +19,22 @@ export const LIBELLES_ACCENTS: Record<Accent, string> = {
   purple: 'Pourpre', violet: 'Violet', indigo: 'Indigo',
 };
 
+export const LIBELLES_NEUTRES_EN: Record<Neutre, string> = {
+  slate: 'Slate (bluish)', gray: 'Grey', zinc: 'Zinc', neutral: 'Neutral', stone: 'Stone (warm)',
+};
+export const LIBELLES_ACCENTS_EN: Record<Accent, string> = {
+  blue: 'Blue', sky: 'Sky', cyan: 'Cyan', teal: 'Teal', emerald: 'Emerald', green: 'Green', lime: 'Lime',
+  yellow: 'Yellow', amber: 'Amber', orange: 'Orange', red: 'Red', rose: 'Rose', pink: 'Pink', fuchsia: 'Fuchsia',
+  purple: 'Purple', violet: 'Violet', indigo: 'Indigo',
+};
+
 export interface Palette {
   neutre: Neutre;
   accent: Accent;
 }
 export interface PaletteNommee extends Palette {
+  /** Nom et description en anglais (interface en anglais). */
+  en?: { nom: string; description?: string };
   id: string;
   nom: string;
   description?: string;
@@ -33,18 +44,18 @@ export interface PaletteNommee extends Palette {
 export const PERSO = 'perso';
 
 export const PALETTES_CLAIRES: PaletteNommee[] = [
-  { id: 'bleu', nom: 'Ardoise bleue', neutre: 'slate', accent: 'blue', description: "La palette d'origine" },
-  { id: 'sable', nom: 'Sable', neutre: 'stone', accent: 'orange' },
-  { id: 'sauge', nom: 'Sauge', neutre: 'neutral', accent: 'teal' },
-  { id: 'lavande', nom: 'Lavande', neutre: 'zinc', accent: 'violet' },
-  { id: 'framboise', nom: 'Framboise', neutre: 'gray', accent: 'rose' },
+  { id: 'bleu', nom: 'Ardoise bleue', neutre: 'slate', accent: 'blue', description: "La palette d'origine", en: { nom: 'Blue slate', description: 'The original palette' } },
+  { id: 'sable', nom: 'Sable', neutre: 'stone', accent: 'orange', en: { nom: 'Sand' } },
+  { id: 'sauge', nom: 'Sauge', neutre: 'neutral', accent: 'teal', en: { nom: 'Sage' } },
+  { id: 'lavande', nom: 'Lavande', neutre: 'zinc', accent: 'violet', en: { nom: 'Lavender' } },
+  { id: 'framboise', nom: 'Framboise', neutre: 'gray', accent: 'rose', en: { nom: 'Raspberry' } },
 ];
 
 export const PALETTES_SOMBRES: PaletteNommee[] = [
-  { id: 'chaud', nom: 'Chaud', neutre: 'stone', accent: 'orange', description: 'Sans lumière bleue' },
-  { id: 'olive', nom: 'Olive', neutre: 'stone', accent: 'lime', description: 'Sans lumière bleue' },
-  { id: 'braise', nom: 'Braise', neutre: 'neutral', accent: 'red', description: 'Sans lumière bleue' },
-  { id: 'bleu-nuit', nom: 'Bleu nuit', neutre: 'slate', accent: 'blue', description: "La palette d'origine" },
+  { id: 'chaud', nom: 'Chaud', neutre: 'stone', accent: 'orange', description: 'Sans lumière bleue', en: { nom: 'Warm', description: 'No blue light' } },
+  { id: 'olive', nom: 'Olive', neutre: 'stone', accent: 'lime', description: 'Sans lumière bleue', en: { nom: 'Olive', description: 'No blue light' } },
+  { id: 'braise', nom: 'Braise', neutre: 'neutral', accent: 'red', description: 'Sans lumière bleue', en: { nom: 'Embers', description: 'No blue light' } },
+  { id: 'bleu-nuit', nom: 'Bleu nuit', neutre: 'slate', accent: 'blue', description: "La palette d'origine", en: { nom: 'Midnight blue', description: 'The original palette' } },
 ];
 
 export const PALETTE_CLAIRE_DEFAUT = 'bleu';

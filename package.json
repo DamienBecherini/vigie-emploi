@@ -34,6 +34,7 @@
     "dist",
     "migrations",
     "modele",
+    "modele-en",
     "gabarits",
     "exemples",
     "AGENTS.md",

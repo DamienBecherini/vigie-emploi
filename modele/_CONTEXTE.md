@@ -63,7 +63,8 @@
 ## 9. Canaux
 
 <!-- Plateformes utilisées (LinkedIn, Malt, Free-Work, Indeed, Welcome to the Jungle…),
-     état de chaque profil public, alertes e-mail en place. -->
+     état de chaque profil public, alertes e-mail en place.
+     Navigateur connecté (Claude in Chrome ou autre) : oui / non, et sur quels sites l'utilisateur est connecté. -->
 
 ## 10. CV de référence
 

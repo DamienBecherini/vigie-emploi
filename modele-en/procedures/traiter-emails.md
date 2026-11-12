@@ -7,7 +7,7 @@ Tools: the application's MCP server (`ingerer_emails`, `offres_a_lire`, `grille`
 
 ## 0. Browser
 
-A connected browser (Claude in Chrome or similar) lets you read the LinkedIn, Indeed and Glassdoor job ads. If none is available: tell the user straight away, deal first with the ads whose description is already in the database, then ask them for the text of the others (or to run the procedure again with the browser).
+A connected browser (Claude in Chrome or similar) lets you read the LinkedIn, Indeed and Glassdoor job ads. If you do not see one, first check `_CONTEXTE.md` (section 9): if the user said they have one, ask them to enable it in this conversation (Claude Desktop: tools menu); if it has never come up, suggest it once. If none is available: tell the user straight away, deal first with the ads whose description is already in the database, then ask them for the text of the others (or to run the procedure again with the browser).
 
 ## 1. Ingest
 

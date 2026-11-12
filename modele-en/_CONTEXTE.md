@@ -63,7 +63,8 @@
 ## 9. Channels
 
 <!-- Platforms used (LinkedIn, Indeed, Glassdoor, Otta, Reed, Upwork, Malt…),
-     state of each public profile, e-mail alerts in place. -->
+     state of each public profile, e-mail alerts in place.
+     Connected browser (Claude in Chrome or other): yes / no, and which sites the user is signed in to. -->
 
 ## 10. Reference CV
 

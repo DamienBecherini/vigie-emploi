@@ -7,7 +7,7 @@ Outils : le serveur MCP de l'application (`ingerer_emails`, `offres_a_lire`, `gr
 
 ## 0. Navigateur
 
-Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les offres LinkedIn, Indeed et Glassdoor. S'il n'est pas disponible : le dire tout de suite à l'utilisateur, traiter d'abord les offres dont la description est déjà en base, puis lui demander le texte des autres (ou de relancer avec le navigateur).
+Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les offres LinkedIn, Indeed et Glassdoor. Si tu n'en vois pas, regarde d'abord `_CONTEXTE.md` (section 9) : si l'utilisateur a dit en avoir un, demande-lui de l'activer dans cette conversation (Claude Desktop : menu des outils) ; s'il n'a jamais été question, propose-le une fois. S'il n'est pas disponible : le dire tout de suite à l'utilisateur, traiter d'abord les offres dont la description est déjà en base, puis lui demander le texte des autres (ou de relancer avec le navigateur).
 
 ## 1. Ingérer
 

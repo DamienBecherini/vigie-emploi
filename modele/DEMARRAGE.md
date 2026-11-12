@@ -34,6 +34,7 @@ Fais le point, puis annonce-le en deux lignes à l'utilisateur :
 - **Fichiers** : accès direct au dossier, ou seulement les outils MCP (`lire_fichier`, `ecrire_fichier`, `generer_cv`, `compter` : voir `AGENTS.md`). Dans ce cas, l'utilisateur dépose ses documents dans `a-deposer/` avec son explorateur de fichiers, ou les glisse dans la conversation.
 - **Lecture de pages publiques** (site personnel, portfolio) : un outil de lecture d'URL ?
 - **Navigateur connecté** (par exemple Claude in Chrome, ou un autre outil qui pilote le navigateur de l'utilisateur, avec ses comptes) : il permet de lire son profil Malt ou LinkedIn tel qu'il le voit, et plus tard les offres LinkedIn, Indeed et Glassdoor.
+  Si tu ne vois pas d'outil de navigateur, ne conclus pas qu'il n'y en a pas : certains clients ne l'activent qu'à la demande (dans Claude Desktop, l'extension Claude in Chrome se branche par le menu des outils de la conversation). **Pose la question une fois** : « Avez-vous Chrome avec l'extension Claude, connecté à LinkedIn et à Malt ? Si oui, activez-la ici : je lirai vos profils moi-même, puis les offres que les alertes ne détaillent pas. » Note la réponse dans `_CONTEXTE.md` (section 9, Canaux) pour ne pas la reposer aux sessions suivantes.
 - Sans navigateur : tout reste possible, l'utilisateur dépose des fichiers ou colle du texte.
 
 ## 2. Lire ce qui est déposé

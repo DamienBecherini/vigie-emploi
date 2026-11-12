@@ -36,6 +36,7 @@ Take stock, then tell the user in two lines:
 - **Files**: direct access to the folder, or only the MCP tools (`lire_fichier`, `ecrire_fichier`, `generer_cv`, `compter`: see `AGENTS.md`). In that case, the user drops their documents into `a-deposer/` with their file explorer, or drags them into the conversation.
 - **Reading public pages** (personal website, portfolio): do you have a tool that reads URLs?
 - **Connected browser** (for example Claude in Chrome, or another tool that drives the user's own browser, with their accounts): it lets you read their LinkedIn or freelance profile as they see it, and later the LinkedIn, Indeed and Glassdoor job ads.
+  If you do not see any browser tool, do not conclude there is none: some clients only enable it on request (in Claude Desktop, the Claude in Chrome extension is switched on from the conversation's tools menu). **Ask once**: "Do you have Chrome with the Claude extension, signed in to LinkedIn and your freelance platforms? If so, enable it here: I will read your profiles myself, then the job ads that the alerts do not detail." Record the answer in `_CONTEXTE.md` (section 9, Channels) so you do not ask again in later sessions.
 - Without a browser: everything is still possible, the user drops files or pastes text.
 
 ## 2. Read what has been dropped

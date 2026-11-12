@@ -41,7 +41,7 @@ L'application **n'appelle aucun modèle d'IA** : c'est ton agent qui lit et réd
 ## Démarrer
 
 ```sh
-git clone https://github.com/<compte>/postuler-juste.git
+git clone https://github.com/DamienBecherini/postuler-juste.git
 cd postuler-juste
 npm install
 npm run build

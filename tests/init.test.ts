@@ -84,6 +84,12 @@ describe('cv : Markdown -> HTML', () => {
     expect(html).not.toContain('class="portrait"');
   });
 
+  it('sort le saut de page manuel du poste qui le précède', () => {
+    const avec = md.replace('## Formations & Certifications', '<!-- saut-de-page -->\n\n## Formations & Certifications');
+    const h = cvEnHtml(avec, { css: 'gabarit.css', portrait: null });
+    expect(h).toMatch(/<\/section>\n<div class="saut-de-page" style="break-after: page"><\/div>\n<section class="two-col"><h2>Formations/);
+  });
+
   it('met les compétences et les langues sur deux colonnes, et l’intitulé du poste en tête', () => {
     expect(html).toContain('<section class="two-col"><h2>Compétences Techniques</h2>');
     expect(html).toContain('<section class="two-col"><h2>Langues</h2>');

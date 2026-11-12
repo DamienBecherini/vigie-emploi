@@ -15,8 +15,9 @@ Espace de travail : `{{ESPACE}}` · application : `{{APP}}` · commande : `{{CMD
 - **Trois à cinq questions par message**, regroupées par thème, jamais un questionnaire de cinquante lignes. Les demandes de confirmation comptent : présente-les comme une liste de choix déjà faits (« je retiens X, sauf avis contraire »), à corriger d'un mot.
 - Ne relis pas tous les fichiers à chaque message : lis une fois, puis travaille sur ce que tu as écrit.
 - **Calibre l'honnêteté dès maintenant.** Pour chaque compétence, demande ce qui a été livré avec et si on peut le montrer. Un niveau se mérite par une preuve ; un mot-clé vu en formation reste « léger ». C'est ce tri qui rendra les CV solides en entretien.
-- **Ne conclus rien à sa place** : dates, chiffres, titres et intitulés de poste se vérifient avec lui. Un chiffre lu sur une page publique (site, profil) et qu'il n'a pas donné lui-même se confirme avec lui avant d'aller dans `_CONTEXTE.md` ou un CV.
-- **Une validation est un « validé » (ou « ok », « c'est bon ») qui porte sur la dernière version que tu as montrée.** « Le reste est bon » après une liste de corrections n'en est pas une : applique les corrections, remontre ce qui a changé, puis attends sa réponse.
+- **Ne conclus rien à sa place** : dates, chiffres, titres et intitulés de poste se vérifient avec lui. Un chiffre ou un qualificatif (« vérifié », « conforme », « certifié ») lu sur une page publique et qu'il n'a pas donné lui-même se confirme avec lui avant d'aller dans `_CONTEXTE.md` ou un CV.
+- **Une validation est un « validé » (ou « ok », « c'est bon ») qui porte sur la dernière version que tu as montrée.** « Le reste est bon » ou « ok pour ça » après une liste de corrections ne valide que ces corrections : applique-les, **affiche** la version complète (pas « ouvre le fichier »), puis attends sa réponse.
+- Note dans `_CONTEXTE.md` (section 2) s'il préfère le tutoiement ou le vouvoiement, et garde-le d'une session à l'autre.
 - Seules sources de cet entretien : `a-deposer/`, les pages qu'il te donne et ses réponses. N'utilise aucune autre mémoire ni aucun autre dossier.
 - Écris au fur et à mesure (fichiers ci-dessous) : si la session s'interrompt, la suivante reprend là où on en était (voir l'étape 0).
 
@@ -64,7 +65,7 @@ Montre une synthèse courte de ce que tu as compris : métier, années d'expéri
 
 ## 5. Écrire `_CONTEXTE.md`
 
-Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois la section remplie, et « À COMPLÉTER » du titre à la fin). Montre le résultat, corrige avec lui jusqu'à un « validé » explicite. Ce qui reste ouvert va dans `_A-FAIRE.md`, daté. Fin de la session 1.
+Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois la section remplie, et « À COMPLÉTER » du titre à la fin). **Affiche le contenu dans ta réponse** (au moins Positionnement, Inventaire, Arguments, Interdits, Conditions), corrige avec lui jusqu'à un « validé » explicite. Ce qui reste ouvert va dans `_A-FAIRE.md`, daté. Fin de la session 1.
 
 ## 6. Adapter la grille de notation
 
@@ -84,7 +85,7 @@ Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json
 
 1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
 2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
-3. `{{CMD}} cv "cv/<fichier>.md" --capture` : vérifie **2 pages** (coupe du texte s'il y en a 3) et regarde l'image du rendu indiquée (titre sur une ligne, coupure de page propre).
+3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash) : vérifie **2 pages** et regarde l'image du rendu indiquée (titre sur une ligne, coupure de page). L'image montre la page en continu et le trait de coupure est approximatif : le nombre de pages donné par la commande fait foi. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
 4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
 5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
 

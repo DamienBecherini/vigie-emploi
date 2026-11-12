@@ -22,7 +22,10 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 ## Outils de l'application
 
 - Préférer les **outils MCP** de l'application quand ils sont branchés. Sinon la CLI : `{{CMD}} <commande> --json`, lancée depuis l'espace de travail.
-- Lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
+- Lancer la commande avec l'outil Bash (pas PowerShell) et lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
+- Compter les caractères d'un message : `{{CMD}} compter <fichier>` (chaque bloc à copier-coller du fichier, ou le fichier entier).
+- Ce qui doit durer (une règle, une décision, une tâche) va dans `_CONTEXTE.md`, `_JOURNAL-DECISIONS.md` ou `_A-FAIRE.md`, pas dans une mémoire propre à ton outil : une autre IA doit pouvoir le retrouver.
+- Aucun agenda n'est branché par défaut : ne propose pas d'ajouter un rendez-vous à un agenda si tu n'as pas l'outil ; l'échéance en base suffit.
 - **Grille de notation** : la modifier par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`), qui ne change que ce qu'on lui passe. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
 
 ## Règles non négociables
@@ -42,7 +45,11 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 4. Messages : respecter la limite du canal, les enregistrer dans le dossier, **version envoyée comprise**.
 5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages** (`{{CMD}} cv <fichier.md>` affiche le nombre de pages).
 6. Sans « go » : `changer_statut` vers `ecartee`, avec la raison en commentaire, sans redemander.
-7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base (`ajouter_evenement`, statut, prochaine échéance), puis `generer_suivi`.
+7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base, puis `generer_suivi`.
+   - **Envoi** : `enregistrer_candidature` avec `envoyee_le` (date réelle de l'envoi) et le CV envoyé (le PDF), puis une relance en échéance (délai : section « Conditions » de `_CONTEXTE.md`, sinon 7 jours).
+   - **Réponse, entretien, refus** : `ajouter_evenement` (daté), le statut (`entretien`, `refus`…), la prochaine échéance.
+   - **Échéance devenue sans objet** (relance inutile après une réponse) : ne pas la marquer « faite », la modifier (`modifier_evenement`) en note « sans objet : … ».
+   - Dates relatives (« hier », « jeudi prochain ») : calculer la date réelle et la dire en clair.
 
 ## Alertes e-mail
 

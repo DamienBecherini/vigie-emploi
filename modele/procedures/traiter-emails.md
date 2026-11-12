@@ -13,6 +13,8 @@ Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les off
 
 `ingerer_emails` (les `.eml` traités sont supprimés). Donner en une phrase : nouvelles offres, doublons, écartées sur l'intitulé, à lire, erreurs.
 
+**Accusés de réception de candidature** (`confirmations` du résultat : « Confirmation de votre candidature », « votre candidature a été envoyée »…) : ce ne sont pas des offres. Pour chacun, vérifier que la candidature est enregistrée comme envoyée (`offres_connues`) ; sinon le signaler à l'utilisateur et l'enregistrer avec lui (`enregistrer_candidature` avec `envoyee_le`). Ne jamais les présenter comme de nouvelles offres. **E-mails non supprimés** (erreur « e-mail lu mais non supprimé ») : le signaler, ils reviendraient au lot suivant.
+
 ## 2. Inventaire du lot
 
 `offres_a_lire` : pour chaque offre, `lecture` vaut `description` (texte déjà en base), `navigateur` (ouvrir l'URL) ou `humain` (demander le texte). Si la sortie est trop longue, la lire par morceaux (`limite`).
@@ -26,6 +28,7 @@ Sans lecture, ce qui est clairement hors cible au regard de `_CONTEXTE.md` (mét
 1. `grille` d'abord : critères, barèmes, règles, inventaire, exemples.
 2. Pour chaque offre lue : sous-notes des critères `ia` avec justification courte, `entrees` (jours sur site, salaire ou TJM et son unité), `bloquants` (règles de la grille), `colle`, `ecarts`, `lu: true`. **Ne jamais donner la note finale** : l'application la calcule.
 3. Un seul `noter_lot` par paquet d'offres.
+4. Une offre mise à 0 par une règle bloquante passe ensuite en `ecartee`, avec la règle en commentaire.
 
 ## 5. Lire dans le navigateur
 

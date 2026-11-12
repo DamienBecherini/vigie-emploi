@@ -21,7 +21,7 @@ Le PDF est écrit à côté du `.md` et la commande affiche le nombre de pages. 
 4. `## Résumé`, puis les sections dans l'ordre voulu.
 5. `## Expérience Professionnelle` : un poste = `### dates · lieu`, puis une première ligne en **gras** (l'intitulé du poste), puis le texte ou une liste.
 6. Les sections dont le titre contient *compétences*, *formations*, *certifications* ou *langues* (ou *skills*, *education*, *languages*) passent en deux colonnes : y mettre des listes courtes.
-7. Saut de page manuel, si la coupure tombe mal : `<div style="break-after: page"></div>` avant le titre de la section à renvoyer en page 2. Vérifier ensuite qu'on reste à 2 pages.
+7. Saut de page manuel, si la coupure tombe mal : une ligne `<!-- saut-de-page -->` juste avant le titre `##` de la section à renvoyer en page 2. Vérifier ensuite qu'on reste à 2 pages.
 
 ## Gabarit
 

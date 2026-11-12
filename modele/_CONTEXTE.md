@@ -13,7 +13,8 @@
 
 ## 2. Faits d'identité
 
-<!-- Les faits qui doivent être identiques partout (CV, profils, messages) :
+<!-- Registre de l'échange avec l'IA : tutoiement ou vouvoiement.
+     Les faits qui doivent être identiques partout (CV, profils, messages) :
      nom, ville, mobilité, disponibilité, années d'expérience (avec la façon exacte de les dire),
      langues et niveau réel, coordonnées publiques, URL des profils (site, LinkedIn, Malt, GitHub…). -->
 
@@ -57,7 +58,7 @@
 ## 8. Conditions
 
 <!-- Rémunération (plancher et cible, en brut annuel ou TJM), télétravail souhaité,
-     trajet maximal et depuis où, contrats acceptés, date de disponibilité. -->
+     trajet maximal et depuis où, contrats acceptés, date de disponibilité, délai de relance après un envoi. -->
 
 ## 9. Canaux
 

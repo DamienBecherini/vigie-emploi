@@ -179,6 +179,14 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
 
   for (; i < jetons.length; i += 1) {
     const t = jetons[i];
+    // Saut de page manuel (<!-- saut-de-page --> ou un div break-after) : il ferme le poste et la section
+    // en cours, sinon il resterait enfermé dans le dernier poste, sans effet.
+    if (t.type === 'html' && /saut-de-page|break-after/i.test(t.raw)) {
+      fermerPoste();
+      fermerSection();
+      sortie.push('<div class="saut-de-page" style="break-after: page"></div>');
+      continue;
+    }
     if (t.type === 'heading' && (t as Tokens.Heading).depth === 2) {
       fermerPoste();
       fermerSection();

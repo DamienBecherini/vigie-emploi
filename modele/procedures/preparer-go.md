@@ -10,7 +10,7 @@ Déclencheurs : « prépare mes candidatures », « prépare les go », bouton �
 
 - Lire **`_CONTEXTE.md` en entier** : faits, inventaire revendicable, interdits, confidentialité.
 - Lire [`cv-cible.md`](cv-cible.md).
-- Pour chaque offre : `lire_offre` (description, note, décomposition) ; ouvrir l'annonce **et le formulaire de candidature** si un navigateur est disponible, sinon demander à l'utilisateur ce que le formulaire demande : CV seul, message et sa limite de caractères, questions, lettre exigée. Une « candidature facile » Glassdoor passe souvent par un formulaire Indeed qui accepte un message jusqu'à 4 000 caractères : en prévoir un.
+- Pour chaque offre : `lire_offre` (description, note, décomposition) ; ouvrir l'annonce **et le formulaire de candidature** si un navigateur est disponible ; **sinon, demander à l'utilisateur, avant de rédiger**, ce que le formulaire demande : CV seul, message et sa limite de caractères, questions, lettre exigée. Une « candidature facile » Glassdoor passe souvent par un formulaire Indeed qui accepte un message jusqu'à 4 000 caractères : en prévoir un.
 
 ## 3. Pour chaque offre
 
@@ -18,7 +18,8 @@ Déclencheurs : « prépare mes candidatures », « prépare les go », bouton �
 2. Créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après `candidatures/_MODELE-dossier-candidature.md` : l'offre, ce qui colle (preuves), les écarts à assumer, les conditions, les questions, le formulaire, les messages (limite du canal respectée, longueur indiquée), le suivi.
 3. CV ciblé si l'offre le justifie ([`cv-cible.md`](cv-cible.md)) ; sinon le CV de référence, **copié sous un nom qui ne cite aucune autre entreprise**.
 4. Lettre de motivation seulement si le formulaire l'exige : une page, même matière que le message.
-5. `enregistrer_candidature` : `dossier`, `cv`, `canal`, `prochaine_action` (« Envoyer sur … »).
+5. Longueur de chaque message : `{{CMD}} compter <dossier-candidature.md>` (la vraie valeur, pas une estimation).
+6. `enregistrer_candidature` : `dossier`, `cv` (le PDF), `canal`, `prochaine_action` (« Envoyer sur … »).
 
 ## 4. Fin
 

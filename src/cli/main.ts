@@ -58,6 +58,8 @@ Commandes
   init <dossier> [--port 4410] [--nom-mcp postuler-juste]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA
+  compter <fichier>     Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
+                        « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
   cv <cv.md>… [--gabarit <dossier>] [--capture]
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
                         Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
@@ -787,6 +789,19 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     console.log(`  2. Ouvre ton IA dans ${r.dossier} (Claude Code : cd dans le dossier puis « claude », et accepte le serveur MCP)`);
     console.log('  3. Colle-lui ce prompt :\n');
     console.log(r.invite);
+  },
+
+  compter(args) {
+    const { v, pos } = analyser(args, {});
+    if (pos.length !== 1) erreur('Usage : postuler-juste compter <fichier>');
+    const texte = sansErreur(() => readFileSync(pos[0], 'utf8')).replace(/\r\n/g, '\n');
+    const mesurer = (s: string) => ({ debut: s.slice(0, 60), caracteres: [...s].length, mots: s.split(/\s+/).filter(Boolean).length });
+    const blocs: ReturnType<typeof mesurer>[] = [];
+    const re = /^─+[^\n]*début[^\n]*\n([\s\S]*?)\n─+[^\n]*fin[^\n]*$/gm;
+    for (const m of texte.matchAll(re)) blocs.push(mesurer(m[1].trim()));
+    const resultat = blocs.length ? blocs : [mesurer(texte.trim())];
+    if (v.json) return json({ ok: true, fichier: pos[0], blocs: resultat });
+    for (const b of resultat) console.log(`${String(b.caracteres).padStart(6)} caractères  ${String(b.mots).padStart(4)} mots  « ${b.debut}… »`);
   },
 
   cv(args) {

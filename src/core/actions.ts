@@ -205,7 +205,7 @@ const STATUTS_ROUVRABLES: Statut[] = ['abandonnee', 'refus', 'close'];
 export function preparerCandidature(db: Base, dossierDonnees: string, id: number, origine: string): PreparationCandidature {
   const avant = offreOuErreur(db, id);
   if (STATUTS_AVANT_GO.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: 'candidater', origine });
-  else if (STATUTS_ROUVRABLES.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: `candidater (reprise après « ${avant.statut} »)`, origine });
+  else if (STATUTS_ROUVRABLES.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: t('core.reprise', { statut: avant.statut }), origine });
   const d = detailOffre(db, id)!;
   const dossier = d.candidature?.dossier ?? `candidatures/${slug(`${d.entreprise ?? d.source} ${d.titre}`)}`;
   return {
@@ -243,7 +243,7 @@ export function suivreCandidature(
     const c = enregistrerCandidature(db, id, champsNorm, { origine });
     let statutAjoute: Statut | null = null;
     if (envoi && [...STATUTS_AVANT_GO, 'go'].includes(o.statut)) {
-      const commentaire = [c.canal, `envoyée le ${envoi}`].filter(Boolean).join(', ');
+      const commentaire = [c.canal, t('core.envoyeeLe', { date: envoi })].filter(Boolean).join(', ');
       ajouterStatut(db, id, 'envoyee', { commentaire, origine });
       statutAjoute = 'envoyee';
     }

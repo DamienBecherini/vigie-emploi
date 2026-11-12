@@ -23,8 +23,11 @@ export const CRITERES_MAX = 7;
 
 const identifiant = z
   .string()
-  .regex(/^[a-z][a-z0-9_-]{0,39}$/, 'identifiant attendu : minuscules, chiffres, « - » ou « _ », 40 caractères au plus');
-const note10 = z.number().min(0, 'note de 0 à 10').max(10, 'note de 0 à 10');
+  .regex(/^[a-z][a-z0-9_-]{0,39}$/, { error: () => t('core.grille.identifiant') });
+const note10 = z
+  .number()
+  .min(0, { error: () => t('core.grille.note10') })
+  .max(10, { error: () => t('core.grille.note10') });
 
 export const schemaCritere = z
   .strictObject({
@@ -69,7 +72,7 @@ export type Palier = z.infer<typeof schemaPalier>;
 export const schemaBaremes = z.strictObject({
   teletravail: z.strictObject({
     /** Sous-note selon le nombre de jours sur site par semaine : index 0 (full remote) à 5 (sur site). */
-    jours_sur_site: z.array(note10).length(6, 'six valeurs attendues : 0 à 5 jours sur site'),
+    jours_sur_site: z.array(note10).length(6, { error: () => t('core.grille.sixValeurs') }),
     /** Sous-note quand le rythme est inconnu (valeur neutre, avec un drapeau). */
     inconnu: note10.default(5),
   }),
@@ -688,7 +691,7 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
     if (i >= 0) g.exemples[i] = e;
     else g.exemples.push(e);
   }
-  return validerGrille(g, 'après changement');
+  return validerGrille(g, t('core.grille.apresChangement'));
 }
 
 export interface ExempleCalcule {

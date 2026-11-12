@@ -142,7 +142,7 @@ export function noterEntree(
       avertissements.push(t('core.noteIgnoree', { note: String(e.note), version: grille.version, calculee: decimal(decomposition.note) }));
     }
     if (e.note_brute !== undefined && e.note_brute !== null) avertissements.push(t('core.noteBruteIgnoree'));
-    if (e.penalites) avertissements.push('Champ « penalites » ignoré : les règles bloquantes passent par « bloquants »');
+    if (e.penalites) avertissements.push(t('core.penalitesIgnorees'));
     for (const d of decomposition.drapeaux) if (d.code.startsWith('critere_manquant')) avertissements.push(d.message);
     noteAjoutee = ajouterNote(
       db,

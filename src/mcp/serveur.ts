@@ -27,7 +27,7 @@ import {
   TYPES_EVENEMENT,
 } from '../core/evenements.ts';
 import { fichiersDossier } from '../core/fichiers.ts';
-import { consignesIa, noteExemple, schemaChangement, UNITES } from '../core/grille.ts';
+import { consignesIa, exemplesCalcules, schemaChangement, UNITES } from '../core/grille.ts';
 import {
   cheminGrille,
   grilleCourante,
@@ -41,6 +41,19 @@ import {
 import { messageNonInitialise, ouvrirEtat, type EtatMcp } from './etat.ts';
 import { enregistrerOutilsEspace } from './espace.ts';
 import { sur } from './resultats.ts';
+import {
+  A_LIRE_DEFAUT,
+  A_LIRE_MAX,
+  A_LIRE_MAX_DESCRIPTIONS,
+  detailPlafonne,
+  impactPlafonne,
+  ligneCompacte,
+  LISTE_DEFAUT,
+  LISTE_MAX,
+  LONGUEUR_DESCRIPTION_PAGE,
+  presenterIngestion,
+  sansVides,
+} from './presentation.ts';
 
 const ORIGINE = 'mcp';
 
@@ -148,8 +161,8 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
     {
       title: 'Lister les offres',
       description:
-        "Liste paginée des offres en base (sans la description : lire_offre pour le détail). Mêmes filtres que la commande « postuler-juste list ». " +
-        'Sert aussi à vérifier si une offre ou une entreprise a déjà été vue (texte). Renvoie total, page, pages et offres.',
+        "Liste paginée des offres en base (sans la description : lire_offre pour le détail ; champs vides omis). " +
+        'Sert aussi à vérifier si une offre ou une entreprise a déjà été vue (texte). Renvoie total, page, pages, restantes et offres.',
       inputSchema: {
         statuts: z.array(z.enum(STATUTS)).optional().describe(`Statuts retenus, parmi : ${STATUTS.join(', ')}`),
         sources: z.array(z.string()).optional().describe('Sources : linkedin, indeed, glassdoor, hellowork, free-work, collective, registre, suivi, manuel'),
@@ -165,14 +178,14 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         publiee_depuis: z.string().optional().describe('Publiée à partir du AAAA-MM-JJ'),
         mes_candidatures: z.boolean().optional().describe('true : seulement les candidatures envoyées et suivantes'),
         page: z.number().int().min(1).optional().describe('Page (1 par défaut)'),
-        taille: z.number().int().min(1).max(TAILLE_MAX).optional().describe('Offres par page (50 par défaut)'),
+        taille: z.number().int().min(1).max(LISTE_MAX).optional().describe(`Offres par page (${LISTE_DEFAUT} par défaut, ${LISTE_MAX} au plus)`),
         tri: z.string().optional().describe(`Tri sur un ou plusieurs niveaux, séparés par des virgules, chacun avec son sens facultatif : « note », « recue_le:desc,note:desc ». Colonnes : ${COLONNES_TRI.join(', ')} (recue_le par défaut)`),
         ordre: z.enum(['asc', 'desc']).optional().describe('Sens des niveaux de tri qui n’en précisent pas (desc par défaut)'),
       },
       annotations: lecture,
     },
-    sur((a) =>
-      listerOffres(base(), {
+    sur((a) => {
+      const r = listerOffres(base(), {
         statuts: a.statuts,
         sources: a.sources,
         tags: a.tags,
@@ -187,11 +200,13 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         publieeDepuis: a.publiee_depuis,
         mesCandidatures: a.mes_candidatures,
         page: a.page,
-        taille: a.taille,
+        taille: a.taille ?? LISTE_DEFAUT,
         tri: a.tri,
         ordre: a.ordre,
-      }),
-    ),
+      });
+      const restantes = Math.max(0, r.total - (r.page - 1) * r.taille - r.offres.length);
+      return { total: r.total, page: r.page, pages: r.pages, restantes, offres: r.offres.map(ligneCompacte) };
+    }),
   );
 
   serveur.registerTool(
@@ -199,13 +214,14 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
     {
       title: 'Lire une offre',
       description:
-        "Détail complet d'une offre : champs, description, toutes les notes (la première est la plus récente), historique des statuts, tags, candidature.",
-      inputSchema: { id },
+        "Détail d'une offre : champs, description (coupée au-delà de 15 000 caractères, sauf complet: true), les 3 notes les plus récentes " +
+        '(la première fait foi), historique des statuts, tags, candidature, journal. À appeler offre par offre pour lire et noter.',
+      inputSchema: { id, complet: z.boolean().optional().describe('true : description entière, même très longue') },
       annotations: lecture,
     },
-    sur(({ id }) => {
+    sur(({ id, complet }) => {
       offreOuErreur(base(), id);
-      return detailOffre(base(), id);
+      return detailPlafonne(detailOffre(base(), id)!, { complet });
     }),
   );
 
@@ -214,16 +230,31 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
     {
       title: 'Offres à lire',
       description:
-        'Offres à traiter (statut nouvelle ou a-lire) sans note, des plus anciennes aux plus récentes. Champ « lecture » : ' +
-        '« description » = le texte est dans « description » ; « navigateur » = ouvrir « url » dans le navigateur de l’utilisateur ; ' +
-        '« humain » = page protégée (Glassdoor), demander le texte à l’utilisateur.',
+        'Offres à traiter (statut nouvelle ou a-lire) sans note, des plus anciennes aux plus récentes, en résumé paginé : id, titre, ' +
+        `entreprise, lieu, source, url, lecture, longueur_description (0 = pas de description en base). ${A_LIRE_DEFAUT} par page ; ` +
+        'restantes = offres après cette page (page suivante : page + 1). Ensuite, lire chaque offre avec lire_offre(id). Champ « lecture » : ' +
+        '« description » = texte en base (lire_offre) ; « navigateur » = ouvrir « url » dans le navigateur de l’utilisateur s’il y en a un, ' +
+        'sinon lui demander le texte ; « humain » = page protégée (Glassdoor), demander le texte à l’utilisateur. descriptions: true joint ' +
+        `les descriptions tronquées (${LONGUEUR_DESCRIPTION_PAGE} caractères, ${A_LIRE_MAX_DESCRIPTIONS} offres par page au plus).`,
       inputSchema: {
-        limite: z.number().int().min(1).max(TAILLE_MAX).optional().describe('Nombre maximal d’offres (500 par défaut)'),
-        complet: z.boolean().optional().describe('true : descriptions entières (sinon tronquées à 2 500 caractères)'),
+        limite: z.number().int().min(1).max(A_LIRE_MAX).optional().describe(`Offres par page (${A_LIRE_DEFAUT} par défaut)`),
+        page: z.number().int().min(1).optional().describe('Page (1 par défaut)'),
+        descriptions: z
+          .boolean()
+          .optional()
+          .describe(`true : joindre les descriptions tronquées (page limitée à ${A_LIRE_MAX_DESCRIPTIONS} offres)`),
       },
       annotations: lecture,
     },
-    sur((a) => offresALire(base(), { limite: a.limite, complet: a.complet })),
+    sur((a) => {
+      const limite = Math.min(a.limite ?? A_LIRE_DEFAUT, a.descriptions ? A_LIRE_MAX_DESCRIPTIONS : A_LIRE_MAX);
+      const r = offresALire(base(), { limite, page: a.page, descriptions: Boolean(a.descriptions), longueur: LONGUEUR_DESCRIPTION_PAGE });
+      return {
+        ...r,
+        offres: r.offres.map((o) => sansVides(o)),
+        suite: r.restantes ? `offres_a_lire avec page: ${r.page + 1} pour les ${r.restantes} suivantes` : null,
+      };
+    }),
   );
 
   serveur.registerTool(
@@ -284,12 +315,7 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         consignes_ia: [...v.grille.consignes, ...consignesIa(v.grille)],
         poids_normalises: Object.fromEntries(v.grille.criteres.map((c) => [c.id, Math.round((c.poids / somme) * 1000) / 1000])),
         grille: v.grille,
-        exemples_calcules: v.grille.exemples.map((e) => ({
-          titre: e.titre,
-          entreprise: e.entreprise ?? null,
-          note: noteExemple(v.grille, e, v.version).note,
-          moyenne: noteExemple(v.grille, e, v.version).moyenne,
-        })),
+        exemples_calcules: exemplesCalcules(v.grille, v.version),
         format_note: {
           id: 42,
           criteres: { technique: { note: 8, justification: '…' }, role: { note: 7, justification: '…' } },
@@ -311,9 +337,12 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         "Changement partiel de la grille, à la demande de l'utilisateur seulement : poids ({ technique: 40 }), seuil, barèmes " +
         '(teletravail.jours_sur_site, remuneration.salaire / tjm : plancher, cible_basse, cible_haute, plancher_full_remote), règles ' +
         '(ajout ou modification par id : libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif ; retirer_regles), critères (libellé, description), ' +
-        "inventaire (ajouter [{ techno, niveau }], retirer [techno]). essai: true renvoie l'aperçu sans enregistrer : le montrer d'abord. " +
-        "Sinon crée une nouvelle version (avec le résumé), recalcule toutes les notes à critères et renvoie l'impact (notes qui changent, " +
-        'offres qui franchissent le seuil). restaurer_version revient à une version précédente.',
+        'inventaire (ajouter [{ techno, niveau }], retirer [techno]), exemples de référence (ajouter [exemple complet, au format de ' +
+        'grille.exemples : remplace celui de même titre et entreprise], retirer [titre]) : inutile de réécrire profil/grille.json. ' +
+        "essai: true renvoie l'aperçu sans enregistrer : impact sur les offres notées et exemples_calcules (note de chaque exemple " +
+        "de référence avant / après), utile même sur une base vide ; le montrer d'abord. Sinon crée une nouvelle version (avec le " +
+        "résumé), recalcule toutes les notes à critères et renvoie l'impact (notes qui changent, offres qui franchissent le seuil). " +
+        'restaurer_version revient à une version précédente.',
       inputSchema: {
         changement: schemaChangement.optional().describe('Changement partiel (champs absents inchangés)'),
         resume: z.string().optional().describe('Résumé du changement, gardé dans l’historique (obligatoire sauf en essai)'),
@@ -324,12 +353,21 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
     sur(({ changement, resume, essai, restaurer_version }) => {
       if (restaurer_version !== undefined) {
         const r = restaurerGrille(base(), donnees(), restaurer_version, { auteur: ORIGINE, resume });
-        return { ok: true, enregistree: true, version: r.version.version, impact: r.impact };
+        return { ok: true, enregistree: true, version: r.version.version, impact: impactPlafonne(r.impact) };
       }
       if (!changement) throw new Error('changement ou restaurer_version attendu');
       if (!essai && !resume?.trim()) throw new Error('resume attendu (ou essai: true pour un aperçu)');
       const r = modifierGrille(base(), donnees(), changement, { auteur: ORIGINE, resume: resume ?? '', essai });
-      return { ok: true, enregistree: r.enregistree, version: r.version, impact: r.impact };
+      return {
+        ok: true,
+        enregistree: r.enregistree,
+        version: r.version,
+        impact: impactPlafonne(r.impact),
+        exemples_calcules: r.exemples_calcules,
+        ...(r.impact.offres_recalculees === 0
+          ? { remarque: 'Aucune offre notée à critères en base : l’effet se lit sur exemples_calcules (avant → note).' }
+          : {}),
+      };
     }),
   );
 
@@ -577,14 +615,17 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
       description:
         `Lit les e-mails d'alertes (.eml) de la boîte de réception (emails/), ajoute les nouvelles offres (doublons ignorés, ` +
         "intitulés exclus mis en « ecartee »), lit les descriptions publiques Hellowork / Free-Work, puis SUPPRIME les e-mails traités, sauf avec garder: true. " +
-        'Renvoie nouvelles, doublons, ecartees, a_lire, erreurs et le détail. Suite : offres_a_lire.',
+        'Renvoie les compteurs, a_dire (à transmettre à l’utilisateur : e-mails supprimés, erreurs d’ingestion), erreurs et un détail ' +
+        'abrégé. Suite : offres_a_lire.',
       inputSchema: {
-        garder: z.boolean().optional().describe('true : conserver les .eml après traitement (option --keep)'),
+        garder: z.boolean().optional().describe('true : conserver les .eml après traitement'),
         telecharger: z.boolean().optional().describe('false : ne pas lire les pages Hellowork / Free-Work'),
       },
       annotations: { destructiveHint: true, openWorldHint: true },
     },
-    sur((a) => ingererSelonConfig(base(), etat.config, { garder: a.garder, telecharger: a.telecharger })),
+    sur(async (a) =>
+      presenterIngestion(await ingererSelonConfig(base(), etat.config, { garder: a.garder, telecharger: a.telecharger }), { garder: a.garder }),
+    ),
   );
 
   serveur.registerTool(

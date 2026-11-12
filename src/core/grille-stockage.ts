@@ -8,11 +8,13 @@ import { RACINE_APP } from './config.ts';
 import {
   appliquerChangement,
   calculerNote,
+  exemplesCalcules,
   META_FICHIER,
   resumeRegles,
   schemaSaisie,
   validerGrille,
   type Decomposition,
+  type ExempleCalcule,
   type Grille,
 } from './grille.ts';
 import { recalculer } from './offres.ts';
@@ -300,12 +302,28 @@ export function modifierGrille(
   dossierDonnees: string,
   changement: unknown,
   o: { auteur: AuteurGrille; resume: string; essai?: boolean },
-): { enregistree: boolean; version: number; grille: Grille; impact: Impact } {
+): { enregistree: boolean; version: number; grille: Grille; impact: Impact; exemples_calcules: ExempleCalcule[] } {
   const courante = grilleObligatoire(db, dossierDonnees);
   const grille = appliquerChangement(courante.grille, changement);
-  if (o.essai) return { enregistree: false, version: courante.version, grille, impact: apercuGrille(db, grille, courante.grille.seuil) };
+  const avant = { grille: courante.grille, version: courante.version };
+  if (o.essai) {
+    return {
+      enregistree: false,
+      version: courante.version,
+      grille,
+      impact: apercuGrille(db, grille, courante.grille.seuil),
+      // Exemples de référence recalculés avec la grille d'essai : utiles même sur une base encore vide.
+      exemples_calcules: exemplesCalcules(grille, null, avant),
+    };
+  }
   const r = enregistrerGrille(db, dossierDonnees, grille, o);
-  return { enregistree: true, version: r.version.version, grille: r.version.grille, impact: r.impact };
+  return {
+    enregistree: true,
+    version: r.version.version,
+    grille: r.version.grille,
+    impact: r.impact,
+    exemples_calcules: exemplesCalcules(r.version.grille, r.version.version, avant),
+  };
 }
 
 /** Retour à une version précédente : son contenu devient une nouvelle version. */

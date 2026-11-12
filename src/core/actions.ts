@@ -46,16 +46,42 @@ export interface OffreALire {
   recue_le: string | null;
   /** description : texte déjà en base ; navigateur : ouvrir l'URL ; humain : page protégée, demander le texte. */
   lecture: 'description' | 'navigateur' | 'humain';
-  description: string | null;
+  /** Longueur de la description en base (0 si aucune). */
+  longueur_description: number;
+  /** Absente en mode résumé (descriptions: false). */
+  description?: string | null;
 }
 
-/** Offres à traiter (nouvelle, à lire) sans note, des plus anciennes aux plus récentes. */
-export function offresALire(db: Base, o: { limite?: number; complet?: boolean } = {}): { total: number; offres: OffreALire[] } {
-  const r = listerOffres(db, { statuts: STATUTS_A_TRAITER, sansNote: true, taille: o.limite ?? 500, tri: 'id', ordre: 'asc' });
+export interface OptionsALire {
+  /** Offres par page (500 par défaut). */
+  limite?: number;
+  /** Page (1 par défaut). */
+  page?: number;
+  /** false : résumé sans description (lire ensuite chaque offre avec son id). true par défaut. */
+  descriptions?: boolean;
+  /** Descriptions entières (sinon tronquées à `longueur`). */
+  complet?: boolean;
+  /** Longueur maximale d'une description tronquée (2 500 par défaut). */
+  longueur?: number;
+}
+
+export interface ResultatALire {
+  total: number;
+  page: number;
+  pages: number;
+  /** Offres à lire après cette page. */
+  restantes: number;
+  offres: OffreALire[];
+}
+
+/** Offres à traiter (nouvelle, à lire) sans note, des plus anciennes aux plus récentes, par pages. */
+export function offresALire(db: Base, o: OptionsALire = {}): ResultatALire {
+  const r = listerOffres(db, { statuts: STATUTS_A_TRAITER, sansNote: true, taille: o.limite ?? 500, page: o.page, tri: 'id', ordre: 'asc' });
+  const avecDescriptions = o.descriptions !== false;
   const offres = r.offres.map((l): OffreALire => {
     const d = offreParId(db, l.id)!;
     const lecture = d.description ? 'description' : l.source === 'glassdoor' ? 'humain' : 'navigateur';
-    return {
+    const base: OffreALire = {
       id: l.id,
       source: l.source,
       url: l.url_canonique,
@@ -67,10 +93,13 @@ export function offresALire(db: Base, o: { limite?: number; complet?: boolean } 
       teletravail: l.teletravail,
       recue_le: l.recue_le,
       lecture,
-      description: d.description ? (o.complet ? d.description : tronquer(d.description.replace(/\s+/g, ' '), 2500)) : null,
+      longueur_description: d.description?.length ?? 0,
     };
+    if (!avecDescriptions) return base;
+    const texte = d.description ? (o.complet ? d.description : tronquer(d.description.replace(/\s+/g, ' '), o.longueur ?? 2500)) : null;
+    return { ...base, description: texte };
   });
-  return { total: r.total, offres };
+  return { total: r.total, page: r.page, pages: r.pages, restantes: Math.max(0, r.total - (r.page - 1) * r.taille - offres.length), offres };
 }
 
 export interface OptionsNoter {

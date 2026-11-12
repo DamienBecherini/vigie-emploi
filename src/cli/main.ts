@@ -50,6 +50,7 @@ import {
 import { initialiserEspace } from '../init/init.ts';
 import { compterTexte } from '../core/compter.ts';
 import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
+import { analyserPages } from '../cv/pages.ts';
 
 const AIDE = `postuler-juste — offres, notes et candidatures (base SQLite locale)
 
@@ -500,6 +501,13 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       const r = sansErreur(() => modifierGrille(db, dossier, changement, { auteur: 'cli', resume: (v.resume as string) ?? '', essai: Boolean(v.essai) }));
       if (v.json) return json({ ok: true, ...r });
       console.log(r.enregistree ? `Version ${r.version} enregistrée.` : 'Essai : rien n’est enregistré.');
+      if (r.exemples_calcules.length) {
+        console.log('Exemples de référence (avant → après) :');
+        for (const e of r.exemples_calcules) {
+          const avant = e.avant === null || e.avant === undefined ? 'nouveau' : virgule(e.avant);
+          console.log(`  ${avant.padStart(7)} → ${virgule(e.note).padEnd(4)} ${e.titre}${e.entreprise ? ` — ${e.entreprise}` : ''}`);
+        }
+      }
       return afficherImpact(r.impact);
     }
     const g = v.version !== undefined ? sansErreur(() => versionGrille(db, entier(v.version, 'version'))) : sansErreur(() => grilleObligatoire(db, dossier));
@@ -822,7 +830,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     console.log('Régénérer les CV pour voir le résultat : postuler-juste cv "cv/<nom>.md" --capture');
   },
 
-  cv(args) {
+  async cv(args) {
     const { v, pos } = analyser(args, { gabarit: { type: 'string' }, capture: { type: 'boolean' } });
     if (!pos.length) erreur('Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>] [--capture]');
     let choisi = v.gabarit as string | undefined;
@@ -839,11 +847,19 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const gabarit = choisi;
     const navigateur = trouverNavigateur();
     if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)');
-    const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur, { capture: Boolean(v.capture) })));
+    const generes = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur, { capture: Boolean(v.capture) })));
+    const resultats = [];
+    for (const r of generes) {
+      const mise = await analyserPages(readFileSync(r.pdf)).catch(() => null);
+      resultats.push({ ...r, remplissage: mise?.pages.map((p) => p.remplissage) ?? null, avertissements: mise?.avertissements ?? [] });
+    }
     if (v.json) return json({ ok: true, gabarit, cv: resultats });
     for (const r of resultats) {
+      const taux = r.remplissage ? ` (remplissage : ${r.remplissage.map((x) => `${x} %`).join(', ')})` : '';
       console.log(`${String(r.pages).padStart(2)} page(s)  ${r.pdf}${r.pages > 2 ? '  <-- DÉPASSE 2 PAGES' : ''}`);
-      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}`);
+      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${taux}`);
+      else if (taux) console.log(`    ${taux.trim()}`);
+      for (const a of r.avertissements) console.log(`    ! ${a}`);
     }
   },
 

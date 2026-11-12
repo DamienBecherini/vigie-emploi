@@ -6,6 +6,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, w
 import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
+import { capturerPages } from './pages.ts';
 
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
@@ -293,12 +294,9 @@ export interface ResultatCv {
   html: string;
   pdf: string;
   pages: number;
-  /** Image PNG du rendu (option capture), pour un contrôle visuel sans visionneuse PDF. */
+  /** Image PNG des pages réelles du PDF (option capture), pour un contrôle visuel sans visionneuse PDF. */
   capture?: string;
 }
-
-/** A4 à 96 ppp : largeur et hauteur d'une page en pixels. */
-const A4_PX = { largeur: 794, hauteur: 1123 };
 
 /** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
 export function genererCv(markdown: string, dossierGabarit: string, navigateur: string, o: { capture?: boolean } = {}): ResultatCv {
@@ -333,20 +331,12 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
   const pages = compterPages(pdf);
   const resultat: ResultatCv = { markdown: md, html, pdf, pages };
   if (o.capture) {
+    // Vraies pages du PDF (rendues par pdf.js), et non le rendu HTML écran : les sauts de page sont ceux du PDF.
     const png = join(apercu, `${nom}.png`);
-    execFileSync(
-      navigateur,
-      [
-        '--headless=new',
-        '--disable-gpu',
-        '--hide-scrollbars',
-        `--window-size=${A4_PX.largeur},${A4_PX.hauteur * Math.max(1, pages)}`,
-        '--virtual-time-budget=4000',
-        `--screenshot=${png}`,
-        urlFichier(html),
-      ],
-      { stdio: 'pipe', env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env },
-    );
+    capturerPages(pdf, png, navigateur, {
+      pages,
+      env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
+    });
     resultat.capture = png;
   }
   return resultat;

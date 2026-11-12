@@ -6,7 +6,7 @@ CVs are written in Markdown, one file per CV, then converted into an A4 PDF:
 {{CMD}} cv "cv/<name>.md"
 ```
 
-Without a terminal (MCP-only client), the `generer_cv` tool does the same thing. The PDF is written next to the `.md`; the command shows the page count and how full each page is, measured on the PDF (`PAGES : 2 (remplissage : 96 %, 58 %)` in French, or its English equivalent), with a warning if a page followed by another is less than 80 % full (badly placed page break) or if the last one is less than 50 % full. **Target: 2 well-filled pages.** If there are 3, cut text rather than shrinking the font.
+Without a terminal (MCP-only client), the `generer_cv` tool does the same thing. The PDF is written next to the `.md`; the command shows the page count and how full each page is, measured on the PDF (`PAGES : 2 (fill: 96%, 58%)`), with a warning if a page followed by another is less than 80% full (badly placed page break) or if the last one is less than 50% full. **Target: 2 well-filled pages.** If there are 3, cut text rather than shrinking the font.
 
 - `cv/<FirstName>_<LASTNAME>_CV-<JobTitle>.md`: the generic CV approved during onboarding.
 - `cv/<FirstName>_<LASTNAME>_CV-for-<Company>-<Role>.md`: a CV targeted at one job ad, when the ad warrants it.

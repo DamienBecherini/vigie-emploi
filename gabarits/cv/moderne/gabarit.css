@@ -101,3 +101,17 @@ blockquote p:last-child { color: var(--muted); }
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 277mm, rgba(220, 53, 69, 0.55) 277mm, rgba(220, 53, 69, 0.55) 278mm);
   }
 }
+
+/* Aération : interligne et espacements un peu plus généreux. */
+body { line-height: 1.4; }
+.cv-header { margin-bottom: 3.5mm; padding: 4mm 4.5mm 4mm 5mm; }
+h2 { margin: 5mm 0 2.6mm; padding-bottom: 1.1mm; }
+p { margin: 0 0 2mm; }
+ul { margin: 0 0 2mm; }
+li { margin: 0 0 1.5mm; }
+section.two-col > ul > li { margin-bottom: 2mm; }
+.job { margin: 0 0 3.4mm; }
+.job-role { margin: 0 0 1mm; }
+
+/* Puce ronde centrée sur la première ligne. */
+li::before { top: 0.52em; }

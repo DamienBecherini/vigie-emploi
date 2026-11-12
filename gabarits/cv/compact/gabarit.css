@@ -87,3 +87,17 @@ blockquote p:last-child { color: var(--muted); }
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 279mm, rgba(220, 53, 69, 0.55) 279mm, rgba(220, 53, 69, 0.55) 280mm);
   }
 }
+
+/* Aération : reste dense, mais respire davantage. */
+body { line-height: 1.34; }
+.cv-header { margin-bottom: 2mm; }
+h2 { margin: 3.8mm 0 1.8mm; padding-bottom: 0.8mm; }
+p { margin: 0 0 1.3mm; }
+ul { margin: 0 0 1.3mm; }
+li { margin: 0 0 0.9mm; }
+section.two-col > ul > li { margin-bottom: 1.3mm; }
+.job { margin: 0 0 2.6mm; }
+.job-role { margin: 0.4mm 0 0.7mm; }
+
+/* Gabarit dense : les sauts de page manuels du Markdown sont ignorés (le texte s'écoule sans trou). */
+.saut-de-page { break-after: auto !important; }

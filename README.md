@@ -51,9 +51,11 @@ L'application **n'appelle aucun modèle d'IA** : c'est votre agent qui lit et r�
 Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois gabarits fournis : « sobre » (à empattements), « moderne » (bandeau de couleur) et « compact » (une colonne, dense). L'IA peut aussi adapter la feuille de style à un modèle que vous lui montrez.
 
 <div align="center">
-<img src="docs/captures/cv-sobre.png" alt="CV fictif, gabarit « sobre »" width="32%">
-<img src="docs/captures/cv-moderne.png" alt="CV fictif, gabarit « moderne »" width="32%">
-<img src="docs/captures/cv-compact.png" alt="CV fictif, gabarit « compact »" width="32%">
+<a href="docs/exemples/CV-exemple-sobre.pdf"><img src="docs/captures/cv-sobre.png" alt="CV fictif, gabarit « sobre » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-exemple-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="CV fictif, gabarit « moderne » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-exemple-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV fictif, gabarit « compact » (page 1 du PDF)" width="32%"></a>
+
+<em>Première page de chaque PDF (cliquez pour ouvrir le CV complet) : « sobre », « moderne », « compact ».</em>
 </div>
 
 ## Ce qu'il faut

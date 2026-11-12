@@ -3,7 +3,7 @@
 Déclencheurs : « traite les e-mails », « regarde les nouvelles offres », bouton « Traiter les e-mails » du tableau de bord.
 Référence de l'application : `{{APP}}/AGENTS.md`. Cette fiche fige l'ordre et les pièges connus.
 
-Outils : le serveur MCP de l'application (`ingerer_emails`, `offres_a_lire`, `grille`, `noter_lot`, `changer_statut`, `lister_offres`, `lire_offre`), sinon la CLI `{{CMD}} <commande> --json`. Lire la sortie JSON directement, sans la faire passer par un autre programme.
+Outils : le serveur MCP de l'application (`ingerer_emails`, `offres_a_lire`, `grille`, `noter_lot`, `changer_statut`, `lister_offres`, `lire_offre`), sinon la CLI `{{CMD}} <commande> --json`. Sans accès aux fichiers : `lire_fichier` pour `_CONTEXTE.md` (voir `AGENTS.md`). Lire la sortie JSON directement, sans la faire passer par un autre programme.
 
 ## 0. Navigateur
 

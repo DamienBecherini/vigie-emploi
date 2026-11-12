@@ -31,6 +31,7 @@ Espace de travail : `{{ESPACE}}` · application : `{{APP}}` · commande : `{{CMD
 Fais le point, puis annonce-le en deux lignes à l'utilisateur :
 
 - **Application** : `{{CMD}} grille --json` doit répondre (ou l'outil MCP `grille`, si le serveur MCP est branché). Sinon : le signaler et s'arrêter (installation à reprendre).
+- **Fichiers** : accès direct au dossier, ou seulement les outils MCP (`lire_fichier`, `ecrire_fichier`, `generer_cv`, `compter` : voir `AGENTS.md`). Dans ce cas, l'utilisateur dépose ses documents dans `a-deposer/` avec son explorateur de fichiers, ou les glisse dans la conversation.
 - **Lecture de pages publiques** (site personnel, portfolio) : un outil de lecture d'URL ?
 - **Navigateur connecté** (par exemple Claude in Chrome, ou un autre outil qui pilote le navigateur de l'utilisateur, avec ses comptes) : il permet de lire son profil Malt ou LinkedIn tel qu'il le voit, et plus tard les offres LinkedIn, Indeed et Glassdoor.
 - Sans navigateur : tout reste possible, l'utilisateur dépose des fichiers ou colle du texte.
@@ -85,7 +86,7 @@ Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json
 
 1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
 2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
-3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash) : vérifie **2 pages** et regarde l'image du rendu indiquée (titre sur une ligne, coupure de page). L'image montre la page en continu et le trait de coupure est approximatif : le nombre de pages donné par la commande fait foi. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
+3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generer_cv` avec `capture: true`) : vérifie **2 pages** et regarde l'image du rendu indiquée (titre sur une ligne, coupure de page). L'image montre la page en continu et le trait de coupure est approximatif : le nombre de pages donné par la commande fait foi. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
 4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
 5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
 

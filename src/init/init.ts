@@ -21,6 +21,12 @@ export function modeleDeLangue(langue: Langue, racine: string = RACINE_APP): str
 export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
 /** Consignes de l'application pour l'agent (AGENTS.md à la racine de l'application). */
 export const CONSIGNES_APP = join(RACINE_APP, 'AGENTS.md');
+
+/** Nom des consignes de l'application dans une langue : AGENTS.<langue>.md s'il existe, sinon AGENTS.md (français). */
+export function nomConsignesApp(langue: Langue, racine: string = RACINE_APP): string {
+  if (langue === 'fr') return 'AGENTS.md';
+  return existsSync(join(racine, `AGENTS.${langue}.md`)) ? `AGENTS.${langue}.md` : 'AGENTS.md';
+}
 const DEPOT_PUBLIC = 'https://github.com/DamienBecherini/postuler-juste/blob/main/';
 /** Où l'init copie les consignes de l'application quand celle-ci tourne depuis le cache de npx. */
 export const COPIE_CONSIGNES = 'procedures/application.md';
@@ -146,9 +152,11 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   // npm ne livre pas les .gitignore d'un paquet : le modèle le garde sous le nom « gitignore ».
   if (existsSync(join(dossier, 'gitignore'))) renameSync(join(dossier, 'gitignore'), join(dossier, '.gitignore'));
   // Consignes de l'application : lues sur place, sauf depuis le cache de npx (purgeable) où on en copie une version.
-  let docApp = `${oblique(RACINE_APP)}/AGENTS.md`;
+  // Version de la langue de l'espace (AGENTS.en.md…) s'il y en a une.
+  const consignes = nomConsignesApp(langue);
+  let docApp = `${oblique(RACINE_APP)}/${consignes}`;
   if (lance.mode === 'npx') {
-    const texte = readFileSync(CONSIGNES_APP, 'utf8').replace(/\]\((?!https?:|#)([^)]+)\)/g, `](${DEPOT_PUBLIC}$1)`);
+    const texte = readFileSync(join(RACINE_APP, consignes), 'utf8').replace(/\]\((?!https?:|#)([^)]+)\)/g, `](${DEPOT_PUBLIC}$1)`);
     writeFileSync(join(dossier, COPIE_CONSIGNES), texte, 'utf8');
     docApp = `${espace}/${COPIE_CONSIGNES}`;
   }

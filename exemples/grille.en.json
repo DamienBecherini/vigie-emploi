@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "resume": "postuler-juste sample grid (to adapt)",
+  "nom": "Sample grid",
+  "seuil": 4.5,
+  "consignes": [
+    "Generic example: replace the targets, the inventory, the scales and the examples with your own (scoring settings in the dashboard, or this file).",
+    "Targets: back-end web development (PHP, APIs, integration), any contract type.",
+    "Flag in \"ecarts\" any pay below the floor, a long commute, or a spoken foreign language required at interview."
+  ],
+  "criteres": [
+    {
+      "id": "technique",
+      "libelle": "Technical fit",
+      "description": "Skills asked for compared with the inventory: high if the core of the job is at a strong level, low if the main stack is at level none. List the gaps in the justification.",
+      "source": "ia",
+      "poids": 35
+    },
+    {
+      "id": "teletravail",
+      "libelle": "Remote work and commute",
+      "description": "Calculated from the number of days on site per week.",
+      "source": "calcul",
+      "calcul": "teletravail",
+      "poids": 20
+    },
+    {
+      "id": "remuneration",
+      "libelle": "Pay",
+      "description": "Calculated: gross annual salary in thousands, or day rate, compared with the floor and the high target.",
+      "source": "calcul",
+      "calcul": "remuneration",
+      "poids": 20
+    },
+    {
+      "id": "role",
+      "libelle": "Role and seniority",
+      "description": "Level of the role consistent with the experience; lower it for a junior role or for compulsory people management.",
+      "source": "ia",
+      "poids": 10
+    },
+    {
+      "id": "interet",
+      "libelle": "Interest",
+      "description": "Sector, product, target customer, new technologies to learn.",
+      "source": "ia",
+      "poids": 10
+    },
+    {
+      "id": "risque",
+      "libelle": "Process risk",
+      "description": "10 = no risk. Lower it for a live coding test on an unfamiliar stack, or a spoken foreign language required.",
+      "source": "ia",
+      "poids": 5
+    }
+  ],
+  "baremes": {
+    "teletravail": {
+      "jours_sur_site": [10, 8, 6, 3, 1, 1],
+      "inconnu": 5
+    },
+    "remuneration": {
+      "reference": "milieu",
+      "inconnue": 5,
+      "salaire": { "plancher": 45, "cible_basse": 55, "cible_haute": 70 },
+      "tjm": { "plancher": 400, "cible_basse": 475, "cible_haute": 550 }
+    }
+  },
+  "regles": [
+    {
+      "id": "stage",
+      "libelle": "Internship or apprenticeship",
+      "description": "Internship, graduate placement, apprenticeship.",
+      "effet": "zero",
+      "actif": true
+    },
+    {
+      "id": "sur-site-loin",
+      "libelle": "On site outside the region, no remote work",
+      "description": "Presence on site required far from home, with no remote work possible.",
+      "effet": "plafond",
+      "valeur": 3,
+      "actif": true
+    }
+  ],
+  "inventaire": [
+    { "techno": "PHP", "niveau": "fort", "precision": "PHP 8, object-oriented" },
+    { "techno": "JavaScript", "niveau": "fort" },
+    { "techno": "REST APIs", "niveau": "fort" },
+    { "techno": "MySQL / MariaDB", "niveau": "fort" },
+    { "techno": "Linux", "niveau": "moyen" },
+    { "techno": "Docker", "niveau": "moyen" },
+    { "techno": "React", "niveau": "moyen" },
+    { "techno": "Python", "niveau": "leger" },
+    { "techno": "Kubernetes", "niveau": "zero" },
+    { "techno": "Java", "niveau": "zero" }
+  ],
+  "exemples": [
+    {
+      "titre": "Senior PHP Developer (example)",
+      "entreprise": "Company A (fictitious)",
+      "conditions": "Permanent, 1 day on site, 58-65K a year",
+      "criteres": {
+        "technique": { "note": 8, "justification": "PHP, REST APIs, MySQL: strong level; Docker required (medium)" },
+        "role": { "note": 7, "justification": "Senior developer, no people management" },
+        "interet": { "note": 6, "justification": "B2B business software" },
+        "risque": { "note": 7, "justification": "Technical test on an existing project" }
+      },
+      "entrees": { "jours_sur_site": 1, "salaire_min": 58000, "salaire_max": 65000, "unite": "an" },
+      "bloquants": [],
+      "commentaire": "Good job ad: strong technical fit, almost fully remote, salary within the target."
+    },
+    {
+      "titre": "Java Developer (example)",
+      "entreprise": "Company B (fictitious)",
+      "conditions": "Permanent, remote (days not stated), salary not stated",
+      "criteres": {
+        "technique": { "note": 1, "justification": "Java, Spring, Kubernetes: main stack at level none" },
+        "role": { "note": 5, "justification": "Mid-level developer" },
+        "interet": { "note": 3, "justification": "Sector of no particular interest" },
+        "risque": { "note": 4, "justification": "Live Java test likely" }
+      },
+      "entrees": {},
+      "bloquants": [],
+      "commentaire": "Off target: technical fit at the bottom, below the threshold despite the neutral values."
+    },
+    {
+      "titre": "Web Developer Internship (example)",
+      "entreprise": "Company C (fictitious)",
+      "conditions": "Internship, fully remote",
+      "criteres": {
+        "technique": { "note": 9, "justification": "PHP / JavaScript: ideal stack" },
+        "role": { "note": 1, "justification": "Internship" },
+        "interet": { "note": 5, "justification": "Web agency" },
+        "risque": { "note": 8, "justification": "No particular risk" }
+      },
+      "entrees": { "jours_sur_site": 0 },
+      "bloquants": ["stage"],
+      "commentaire": "The blocking rule \"stage\" (internship) sets the score to 0."
+    }
+  ]
+}

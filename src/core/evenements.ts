@@ -5,6 +5,7 @@
 import type { Base } from '../db/base.ts';
 import { maintenant } from './texte.ts';
 import { TYPES_EVENEMENT, type OrigineEvenement, type Sens, type TypeEvenement } from './statuts.ts';
+import { t as tr } from '../i18n/index.ts';
 
 export { LIBELLES_TYPES, ORIGINES_EVENEMENT, SENS_MESSAGE, TYPES_EVENEMENT } from './statuts.ts';
 export type { OrigineEvenement, Sens, TypeEvenement } from './statuts.ts';
@@ -90,9 +91,9 @@ function dateValide(a: number, m: number, j: number): boolean {
  */
 export function lireDateEvenement(texte: string, maintenantLe: Date = new Date()): string {
   const t = texte.trim().toLowerCase();
-  if (/^aujourd'?hui$|^aujourd’hui$/.test(t)) return jourLocal(maintenantLe);
-  if (t === 'demain') return jourLocal(maintenantLe, 1);
-  const rel = t.match(/^\+\s*(\d{1,3})\s*j?$/);
+  if (/^aujourd'?hui$|^aujourd’hui$|^today$/.test(t)) return jourLocal(maintenantLe);
+  if (t === 'demain' || t === 'tomorrow') return jourLocal(maintenantLe, 1);
+  const rel = t.match(/^\+\s*(\d{1,3})\s*[jd]?$/);
   if (rel) return jourLocal(maintenantLe, Number(rel[1]));
   let a: number, m: number, j: number;
   let reste: string;
@@ -105,14 +106,14 @@ export function lireDateEvenement(texte: string, maintenantLe: Date = new Date()
     [a, m, j] = [Number(iso[1]), Number(iso[2]), Number(iso[3])];
     reste = iso[4];
   } else {
-    throw new Error(`Date invalide : « ${texte} » (JJ/MM/AAAA, JJ/MM/AAAA HH:MM ou AAAA-MM-JJ attendu)`);
+    throw new Error(tr('core.dateFormat', { texte }));
   }
-  if (!dateValide(a, m, j)) throw new Error(`Date invalide : « ${texte} »`);
+  if (!dateValide(a, m, j)) throw new Error(tr('core.dateInvalide', { texte }));
   const jour = `${a}-${deux(m)}-${deux(j)}`;
   const r = reste.trim().replace(/^(t|à|a)\s*/, '');
   if (!r) return jour;
   const h = r.match(/^(\d{1,2})\s*(?:h|:)\s*(\d{2})?(?::\d{2}(?:\.\d+)?)?\s*(?:z|[+-]\d{2}:?\d{2})?$/);
-  if (!h || Number(h[1]) > 23 || Number(h[2] ?? 0) > 59) throw new Error(`Heure invalide : « ${texte} »`);
+  if (!h || Number(h[1]) > 23 || Number(h[2] ?? 0) > 59) throw new Error(tr('core.heureInvalide', { texte }));
   return `${jour}T${deux(Number(h[1]))}:${h[2] ?? '00'}`;
 }
 
@@ -134,7 +135,7 @@ export function dateEvenementFr(le: string): string {
 
 function texteOuNull(v: unknown, nom: string): string | null {
   if (v === null || v === undefined) return null;
-  if (typeof v !== 'string') throw new Error(`${nom} : texte attendu`);
+  if (typeof v !== 'string') throw new Error(tr('core.texteAttendu', { nom }));
   const t = v.trim();
   return t === '' ? null : t;
 }
@@ -142,7 +143,7 @@ function texteOuNull(v: unknown, nom: string): string | null {
 function nombreOuNull(v: unknown, nom: string): number | null {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(String(v).replace(/[\s  ]/g, '').replace(',', '.'));
-  if (!Number.isFinite(n)) throw new Error(`${nom} : nombre attendu (${String(v)})`);
+  if (!Number.isFinite(n)) throw new Error(tr('core.nombreAttendu', { nom, valeur: String(v) }));
   return n;
 }
 
@@ -152,24 +153,24 @@ function nombreOuNull(v: unknown, nom: string): number | null {
  */
 export function cheminRelatif(v: string): string {
   const t = v.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
-  if (!t) throw new Error('Chemin de fichier vide');
-  if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new Error(`Chemin absolu refusé : ${v} (chemin relatif au dossier de données attendu)`);
+  if (!t) throw new Error(tr('core.cheminVide'));
+  if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new Error(tr('core.cheminAbsolu', { chemin: v }));
   // eslint-disable-next-line no-control-regex
-  if (/[\u0000-\u001f]/.test(t)) throw new Error(`Chemin invalide : ${v}`);
+  if (/[\u0000-\u001f]/.test(t)) throw new Error(tr('core.cheminInvalide', { chemin: v }));
   const segments = t.split('/').filter((s) => s !== '' && s !== '.');
-  if (segments.some((s) => s === '..' || s.startsWith('.'))) throw new Error(`Chemin refusé : ${v}`);
+  if (segments.some((s) => s === '..' || s.startsWith('.'))) throw new Error(tr('core.cheminRefuse', { chemin: v }));
   return segments.join('/');
 }
 
 function fichiersValides(v: unknown): string[] {
   if (v === null || v === undefined) return [];
-  if (!Array.isArray(v)) throw new Error('fichiers : liste de chemins attendue');
+  if (!Array.isArray(v)) throw new Error(tr('core.fichiersListe'));
   return [...new Set(v.map((f) => cheminRelatif(String(f))))];
 }
 
 function typeValide(v: unknown): TypeEvenement {
   if (typeof v !== 'string' || !(TYPES_EVENEMENT as readonly string[]).includes(v)) {
-    throw new Error(`Type d'événement inconnu : ${String(v)} (${TYPES_EVENEMENT.join(', ')})`);
+    throw new Error(tr('core.typeEvenementInconnu', { type: String(v), types: TYPES_EVENEMENT.join(', ') }));
   }
   return v as TypeEvenement;
 }
@@ -180,7 +181,7 @@ function sensValide(v: unknown): Sens | null {
   const n = t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   if (n === 'envoye' || n === 'envoyee') return 'envoye';
   if (n === 'recu' || n === 'recue') return 'recu';
-  throw new Error(`Sens inconnu : ${t} (envoye ou recu)`);
+  throw new Error(tr('core.sensInconnu', { sens: t }));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -211,7 +212,7 @@ export function evenementParId(db: Base, id: number): Evenement | undefined {
 
 export function evenementOuErreur(db: Base, id: number): Evenement {
   const e = Number.isInteger(id) ? evenementParId(db, id) : undefined;
-  if (!e) throw new Error(`Événement ${id} introuvable`);
+  if (!e) throw new Error(tr('core.evenementIntrouvable', { id }));
   return e;
 }
 
@@ -243,7 +244,7 @@ export interface Echeances {
 /** Échéances : en retard (date passée, pas faites) et à venir sur `jours` jours (aujourd'hui compris). */
 export function echeances(db: Base, o: { jours?: number; maintenant?: Date } = {}): Echeances {
   const jours = o.jours ?? 7;
-  if (!Number.isInteger(jours) || jours < 0 || jours > 3660) throw new Error(`Nombre de jours invalide : ${jours}`);
+  if (!Number.isInteger(jours) || jours < 0 || jours > 3660) throw new Error(tr('core.joursInvalide', { jours }));
   const now = o.maintenant ?? new Date();
   const aujourdhui = jourLocal(now);
   const jusqua = jourLocal(now, jours);
@@ -289,10 +290,10 @@ export function ajouterEvenement(
   origine: OrigineEvenement,
   opts: { cleImport?: string; maintenant?: Date } = {},
 ): Evenement {
-  if (!db.prepare('SELECT 1 FROM offres WHERE id = ?').get(offreId)) throw new Error(`Offre ${offreId} introuvable`);
+  if (!db.prepare('SELECT 1 FROM offres WHERE id = ?').get(offreId)) throw new Error(tr('core.offreIntrouvable', { id: offreId }));
   const type = typeValide(s.type);
   const resume = texteOuNull(s.resume, 'resume');
-  if (!resume) throw new Error("Résumé de l'événement attendu");
+  if (!resume) throw new Error(tr('core.resumeEvenement'));
   const now = opts.maintenant ?? new Date();
   const le = s.le === undefined || s.le === null || String(s.le).trim() === '' ? instantLocal(now) : lireDateEvenement(String(s.le), now);
   const fait = s.fait === undefined || s.fait === null ? !estFutur(le, now) : Boolean(s.fait);
@@ -339,7 +340,7 @@ export function modifierEvenement(db: Base, id: number, s: SaisieEvenement, opts
   if (s.fait !== undefined) poser('fait', s.fait ? 1 : 0);
   if (s.resume !== undefined) {
     const r = texteOuNull(s.resume, 'resume');
-    if (!r) throw new Error("Résumé de l'événement attendu");
+    if (!r) throw new Error(tr('core.resumeEvenement'));
     poser('resume', r);
   }
   for (const k of ['details', 'canal', 'interlocuteurs', 'unite'] as const) if (s[k] !== undefined) poser(k, texteOuNull(s[k], k));

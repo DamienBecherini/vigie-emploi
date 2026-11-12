@@ -4,6 +4,7 @@
 // (la base), et qui restent dans l'espace une fois les liens symboliques résolus. Aucune suppression.
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { t } from '../i18n/index.ts';
 
 /** Premier segment interdit : la base SQLite et ses fichiers. */
 const DOSSIERS_INTERDITS = new Set(['data']);
@@ -29,12 +30,12 @@ function estDans(racine: string, chemin: string): boolean {
 
 function verifierSegments(segments: string[], brut: string): void {
   for (const s of segments) {
-    if (s === '..' || s.startsWith('.')) refuser(`Chemin refusé : ${brut} (ni « .. » ni fichier ou dossier caché)`);
+    if (s === '..' || s.startsWith('.')) refuser(t('core.acces.cheminCache', { chemin: brut }));
     // Windows ignore les points et espaces finaux (« data. » = « data ») ; « : » ouvrirait un flux alternatif.
-    if (/[.\s]$/.test(s) || /[:*?"<>|]/.test(s)) refuser(`Chemin invalide : ${brut}`);
+    if (/[.\s]$/.test(s) || /[:*?"<>|]/.test(s)) refuser(t('core.cheminInvalide', { chemin: brut }));
   }
   if (segments.length && DOSSIERS_INTERDITS.has(segments[0].toLowerCase())) {
-    refuser(`Accès refusé : ${brut} (data/ contient la base ; passer par les outils de l'application)`);
+    refuser(t('core.acces.data', { chemin: brut }));
   }
 }
 
@@ -54,7 +55,7 @@ export interface CheminSur {
 export function cheminDansEspace(racineEspace: string, chemin: string): CheminSur {
   const brut = String(chemin ?? '').trim();
   // eslint-disable-next-line no-control-regex
-  if (/[\u0000-\u001f]/.test(brut)) refuser(`Chemin invalide : ${brut}`);
+  if (/[\u0000-\u001f]/.test(brut)) refuser(t('core.cheminInvalide', { chemin: brut }));
   const racine = realpathSync(resolve(racineEspace));
   let rel = brut.replace(/\\/g, '/');
   if (isAbsolute(rel) || /^[a-z]:/i.test(rel) || rel.startsWith('/')) {
@@ -63,7 +64,7 @@ export function cheminDansEspace(racineEspace: string, chemin: string): CheminSu
     const racineBrute = resolve(racineEspace);
     if (estDans(racine, ancre)) rel = oblique(relative(racine, ancre));
     else if (estDans(racineBrute, abs)) rel = oblique(relative(racineBrute, abs));
-    else refuser(`Chemin hors de l'espace refusé : ${brut} (chemin relatif à l'espace attendu)`);
+    else refuser(t('core.acces.horsEspace', { chemin: brut }));
   }
   const segments = rel.split('/').filter((s) => s !== '' && s !== '.');
   verifierSegments(segments, brut);
@@ -73,9 +74,9 @@ export function cheminDansEspace(racineEspace: string, chemin: string): CheminSu
   let ancre = cible;
   while (!existsSync(ancre)) ancre = dirname(ancre);
   const reel = realpathSync(ancre);
-  if (!estDans(racine, reel)) refuser(`Accès refusé : ${brut} (sort de l'espace)`);
+  if (!estDans(racine, reel)) refuser(t('core.acces.sort', { chemin: brut }));
   const relReel = oblique(relative(racine, reel));
-  if (relReel && DOSSIERS_INTERDITS.has(relReel.split('/')[0].toLowerCase())) refuser(`Accès refusé : ${brut}`);
+  if (relReel && DOSSIERS_INTERDITS.has(relReel.split('/')[0].toLowerCase())) refuser(t('core.accesRefuse', { chemin: brut }));
   const existe = ancre === cible;
   return { absolu: existe ? reel : cible, relatif: segments.join('/'), existe };
 }
@@ -91,8 +92,8 @@ export interface Entree {
 export function listerEspace(racineEspace: string, dossier = '.', profondeur = 1): { dossier: string; entrees: Entree[]; tronque: boolean } {
   const p = Math.min(Math.max(Math.trunc(profondeur) || 1, 1), 4);
   const c = cheminDansEspace(racineEspace, dossier || '.');
-  if (!c.existe) refuser(`Dossier introuvable : ${c.relatif || '.'}`);
-  if (!statSync(c.absolu).isDirectory()) refuser(`Pas un dossier : ${c.relatif}`);
+  if (!c.existe) refuser(t('core.acces.dossierIntrouvable', { chemin: c.relatif || '.' }));
+  if (!statSync(c.absolu).isDirectory()) refuser(t('core.acces.pasUnDossier', { chemin: c.relatif }));
   const racine = realpathSync(resolve(racineEspace));
   const entrees: Entree[] = [];
   let tronque = false;
@@ -134,15 +135,15 @@ export type Lecture =
 /** Lit un fichier de l'espace : texte (UTF-8) ou octets bruts pour le reste (PDF, images, Word…). */
 export function lireEspace(racineEspace: string, chemin: string): Lecture {
   const c = cheminDansEspace(racineEspace, chemin);
-  if (!c.existe) refuser(`Fichier introuvable : ${c.relatif}`);
+  if (!c.existe) refuser(t('core.fichierIntrouvable', { chemin: c.relatif }));
   const st = statSync(c.absolu);
-  if (st.isDirectory()) refuser(`${c.relatif} est un dossier : utiliser lister_fichiers`);
+  if (st.isDirectory()) refuser(t('core.acces.estUnDossier', { chemin: c.relatif }));
   const ext = extname(c.absolu).toLowerCase();
   if (EXTENSIONS_TEXTE.has(ext) || ext === '') {
-    if (st.size > TAILLE_MAX_TEXTE) refuser(`Fichier trop gros pour être lu d'un coup : ${c.relatif} (${st.size} octets)`);
+    if (st.size > TAILLE_MAX_TEXTE) refuser(t('core.acces.tropGrosTexte', { chemin: c.relatif, taille: st.size }));
     return { genre: 'texte', chemin: c.relatif, texte: readFileSync(c.absolu, 'utf8').replace(/^﻿/, ''), taille: st.size };
   }
-  if (st.size > TAILLE_MAX_BINAIRE) refuser(`Fichier trop gros : ${c.relatif} (${st.size} octets)`);
+  if (st.size > TAILLE_MAX_BINAIRE) refuser(t('core.acces.tropGros', { chemin: c.relatif, taille: st.size }));
   return { genre: 'binaire', chemin: c.relatif, extension: ext, donnees: readFileSync(c.absolu), taille: st.size };
 }
 
@@ -159,14 +160,14 @@ export function ecrireEspace(racineEspace: string, chemin: string, contenu: stri
   const c = cheminDansEspace(racineEspace, chemin);
   const ext = extname(c.absolu).toLowerCase();
   if (!EXTENSIONS_ECRITURE.includes(ext)) {
-    refuser(`Extension non autorisée en écriture : ${ext || '(aucune)'} (autorisées : ${EXTENSIONS_ECRITURE.join(', ')})`);
+    refuser(t('core.acces.extension', { ext: ext || t('core.acces.sansExtension'), liste: EXTENSIONS_ECRITURE.join(', ') }));
   }
-  if (Buffer.byteLength(contenu, 'utf8') > TAILLE_MAX_TEXTE) refuser('Contenu trop long');
+  if (Buffer.byteLength(contenu, 'utf8') > TAILLE_MAX_TEXTE) refuser(t('core.acces.tropLong'));
   let ancienne: number | null = null;
   if (c.existe) {
     const st = statSync(c.absolu);
-    if (!st.isFile()) refuser(`${c.relatif} n'est pas un fichier`);
-    if (o.creerSeulement) refuser(`${c.relatif} existe déjà (creer_seulement) : choisir un autre nom (suffixe « V2 ») ou remplacer en connaissance de cause`);
+    if (!st.isFile()) refuser(t('core.pasUnFichier', { chemin: c.relatif }));
+    if (o.creerSeulement) refuser(t('core.acces.existe', { chemin: c.relatif }));
     ancienne = st.size;
   } else {
     mkdirSync(dirname(c.absolu), { recursive: true });
@@ -178,10 +179,10 @@ export function ecrireEspace(racineEspace: string, chemin: string, contenu: stri
 /** Déplace ou renomme un fichier dans l'espace ; refuse d'écraser une destination existante. */
 export function deplacerEspace(racineEspace: string, source: string, destination: string): { source: string; destination: string } {
   const s = cheminDansEspace(racineEspace, source);
-  if (!s.existe) refuser(`Fichier introuvable : ${s.relatif}`);
-  if (!statSync(s.absolu).isFile()) refuser(`Seuls les fichiers se déplacent : ${s.relatif}`);
+  if (!s.existe) refuser(t('core.fichierIntrouvable', { chemin: s.relatif }));
+  if (!statSync(s.absolu).isFile()) refuser(t('core.acces.deplacerFichier', { chemin: s.relatif }));
   const d = cheminDansEspace(racineEspace, destination);
-  if (d.existe) refuser(`La destination existe déjà : ${d.relatif} (rien n'est écrasé)`);
+  if (d.existe) refuser(t('core.acces.destination', { chemin: d.relatif }));
   mkdirSync(dirname(d.absolu), { recursive: true });
   renameSync(s.absolu, d.absolu);
   return { source: s.relatif, destination: d.relatif };

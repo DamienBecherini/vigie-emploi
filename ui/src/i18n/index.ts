@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from 'react';
 import { creerTraducteur, estLangue, LANGUE_DEFAUT, LOCALES, type Langue } from '../../../src/i18n/outil.ts';
 import { libelleNiveau, libelleStatut, libelleType, messageDrapeau } from '../../../src/i18n/libelles.ts';
+import { definirLangue as definirLangueNoyau } from '../../../src/i18n/index.ts';
 import type { Statut, TypeEvenement } from '../../../src/core/statuts.ts';
 import type { Niveau } from '../../../src/core/grille.ts';
 import { en } from './en.ts';
@@ -31,6 +32,8 @@ export const t = creerTraducteur<CleUi>(DICTIONNAIRES_UI, langue);
 
 function appliquer(l: Langue) {
   courante = l;
+  // Messages du noyau calculés dans le navigateur (validation de la grille, justifications des exemples).
+  definirLangueNoyau(l);
   // globalThis : ce module est aussi chargé par les tests (Node, sans DOM).
   const doc = (globalThis as { document?: { documentElement: { lang: string } } }).document;
   if (doc) doc.documentElement.lang = l;

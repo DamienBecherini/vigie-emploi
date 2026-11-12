@@ -74,7 +74,7 @@ npx postuler-juste init ~/ma-recherche
 
 Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y postuler-juste@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g postuler-juste`, puis `postuler-juste init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
-`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV, `--langue en` pour un tableau de bord et une CLI en anglais) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
+`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV, `--langue en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes, de statuts et de fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
 1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
 2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
@@ -132,7 +132,7 @@ npm install -g postuler-juste             # ou commande installée à demeure
 
 Commande inscrite par `init` dans `.mcp.json` et dans les consignes de l'espace :
 
-- lancé par `npx` : `npx -y postuler-juste@<version>` (sous Windows, `cmd /c npx …` pour le serveur MCP). Le cache de npx peut être vidé : son chemin n'est jamais écrit. La version est figée pour que la base et l'application restent accordées ; au besoin, npx la retélécharge (connexion nécessaire). Les consignes de l'application (`AGENTS.md`) sont copiées dans `procedures/application.md`. Pour changer de version, remplacez le numéro dans `.mcp.json` et dans les consignes, ou passez à une installation globale ;
+- lancé par `npx` : `npx -y postuler-juste@<version>` (sous Windows, `cmd /c npx …` pour le serveur MCP). Le cache de npx peut être vidé : son chemin n'est jamais écrit. La version est figée pour que la base et l'application restent accordées ; au besoin, npx la retélécharge (connexion nécessaire). Les consignes de l'application (`AGENTS.md`, ou `AGENTS.en.md` pour un espace anglais) sont copiées dans `procedures/application.md`. Pour changer de version, remplacez le numéro dans `.mcp.json` et dans les consignes, ou passez à une installation globale ;
 - installé (`npm install -g`, ou depuis le dépôt) : `node <chemin>/bin/postuler-juste.js`, avec le chemin absolu de l'installation.
 
 Depuis le dépôt (contributeurs) :
@@ -199,7 +199,7 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 | `titresExclus` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `employeursRefuses` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{dossier}` et `{invite}` y sont remplacés | Windows : `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]` ; ailleurs : aucune |
-| `langue` | Langue du tableau de bord, des messages de la CLI et du suivi généré : `fr` ou `en` (écrite par `init --langue`) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur | `fr` |
+| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur | `fr` |
 
 Variables d'environnement reconnues aussi : `POSTULER_JUSTE_CONFIG` (fichier de config), `POSTULER_JUSTE_BASE` (base), `POSTULER_JUSTE_PORT`, `POSTULER_JUSTE_LANGUE`.
 

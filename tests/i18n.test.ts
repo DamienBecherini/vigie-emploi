@@ -94,12 +94,12 @@ describe('init --langue en', () => {
     expect(chargerConfig({ cwd: espace, env: {} }).langue).toBe('en');
   });
 
-  it('prompt de démarrage et avertissements en anglais ; modèle français tant que modele-en/ n’existe pas', () => {
+  it('prompt de démarrage et avertissements en anglais ; modèle anglais (modele-en/)', () => {
     expect(r.invite).toMatch(/^You are going to help me with my job search/);
     expect(r.invite).toContain(`${r.dossier}/DEMARRAGE.md`);
     expect(r.avertissements.join('\n')).toMatch(/No Chrome, Edge or Chromium found/);
-    expect(r.avertissements.join('\n')).toMatch(/AI instructions .* are in French for now/);
-    expect(existsSync(join(espace, 'DEMARRAGE.md'))).toBe(true);
+    expect(r.avertissements.join('\n')).not.toMatch(/in French for now/);
+    expect(readFileSync(join(espace, 'DEMARRAGE.md'), 'utf8')).toMatch(/^# Onboarding/);
   });
 
   it('sans --langue : « fr » écrit dans la configuration', () => {
@@ -116,7 +116,7 @@ describe('init --langue en', () => {
     mkdirSync(join(app, 'modele-en'));
     expect(modeleDeLangue('en', app)).toBe(join(app, 'modele-en'));
     expect(modeleDeLangue('fr', app)).toBe(join(app, 'modele'));
-    expect(modeleDeLangue('en')).toBe(MODELE);
+    expect(modeleDeLangue('en')).toBe(join(MODELE, '..', 'modele-en'));
   });
 });
 

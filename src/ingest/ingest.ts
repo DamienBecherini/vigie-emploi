@@ -11,6 +11,7 @@ import { STATUTS_SUIVIS } from '../core/statuts.ts';
 import { ajouterEvenement, dateEvenementFr, jourLocal } from '../core/evenements.ts';
 import { lireEmail, type OffreEmail } from './eml.ts';
 import { extraireJsonLd, telechargerPage, type DetailJsonLd, type Telechargeur } from './jsonld.ts';
+import { t } from '../i18n/index.ts';
 
 export interface OptionsIngest {
   dossierEmails: string;
@@ -93,7 +94,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
       .filter((f) => f.toLowerCase().endsWith('.eml'))
       .sort();
   } catch {
-    throw new Error(`Boîte de réception introuvable : ${o.dossierEmails}`);
+    throw new Error(t('core.ingest.boite', { dossier: o.dossierEmails }));
   }
   resume.fichiers = fichiers.length;
 
@@ -148,7 +149,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
           ajouterEvenement(
             db,
             existante.id,
-            { type: 'note', le: jour, fait: true, resume: `Revue le ${dateEvenementFr(jour)} dans une alerte ${off.source} : statut inchangé`, details: off.sujet || null },
+            { type: 'note', le: jour, fait: true, resume: t('core.ingest.revue', { date: dateEvenementFr(jour), source: off.source }), details: off.sujet || null },
             'import',
             { cleImport: cle },
           );
@@ -156,19 +157,20 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
       }
       continue;
     }
-    let motif = motifExclusion(off.titre, refuses) ?? motifExclusion(off.titre, titresExclus);
+    const exclu = motifExclusion(off.titre, refuses) ?? motifExclusion(off.titre, titresExclus);
+    let motif = exclu ? t('core.ingest.intituleExclu', { motif: exclu }) : null;
     let detail: DetailJsonLd | null = null;
     if (!motif && o.telecharger !== false && SOURCES_JSONLD.includes(off.source)) {
       try {
         detail = extraireJsonLd(await telechargeur(off.url));
-        if (!detail) resume.erreurs.push({ url: off.url, message: 'JSON-LD JobPosting absent de la page' });
+        if (!detail) resume.erreurs.push({ url: off.url, message: t('core.ingest.sansJsonLd') });
       } catch (e) {
-        resume.erreurs.push({ url: off.url, message: `lecture impossible : ${(e as Error).message}` });
+        resume.erreurs.push({ url: off.url, message: t('core.ingest.lectureImpossible', { message: (e as Error).message }) });
       }
       if (o.pause) await attendre(o.pause);
       if (detail) {
         const m = motifExclusion(`${detail.entreprise ?? ''} ${(detail.description ?? '').slice(0, 600)}`, refuses);
-        if (m) motif = `employeur refusé : ${m}`;
+        if (m) motif = t('core.ingest.employeurRefuse', { motif: m });
       }
     }
     const le = maintenant();
@@ -202,12 +204,12 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
         a_description: Boolean(offre.description),
       };
       if (motif) {
-        const commentaire = motif.startsWith('employeur') ? motif : `intitulé exclu : ${motif}`;
+        const commentaire = motif;
         ajouterStatut(db, offre.id, 'ecartee', { commentaire, origine: 'ingest', le });
         resume.ecartees++;
         resume.detail.ecartees.push({ ...ligne, statut: 'ecartee', motif: commentaire });
       } else {
-        ajouterStatut(db, offre.id, 'nouvelle', { commentaire: off.sujet ? `e-mail : ${off.sujet}` : null, origine: 'ingest', le });
+        ajouterStatut(db, offre.id, 'nouvelle', { commentaire: off.sujet ? t('core.ingest.email', { sujet: off.sujet }) : null, origine: 'ingest', le });
         if (offre.entreprise && offresDeLEntreprise(db, offre.entreprise, offre.id) > 0) {
           modifierTags(db, offre.id, ['entreprise-connue'], []);
         }
@@ -230,10 +232,10 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
     for (const chemin of lus) {
       try {
         unlinkSync(chemin);
-        if (existsSync(chemin)) throw new Error('fichier toujours présent après suppression');
+        if (existsSync(chemin)) throw new Error(t('core.ingest.toujoursPresent'));
         resume.fichiers_supprimes++;
       } catch (e) {
-        resume.erreurs.push({ fichier: basename(chemin), message: `e-mail lu mais non supprimé : ${(e as Error).message}` });
+        resume.erreurs.push({ fichier: basename(chemin), message: t('core.ingest.nonSupprime', { message: (e as Error).message }) });
       }
     }
   }

@@ -5,6 +5,7 @@
 // qui s'appliquent ; l'application calcule les critères à barème (télétravail, rémunération), la moyenne
 // pondérée, applique les règles (zéro, plafond) et arrondit au demi-point. L'IA ne donne jamais la note finale.
 import { z } from 'zod';
+import { decimal, langueCourante, t, t as tr } from '../i18n/index.ts';
 
 export const NIVEAUX = ['fort', 'moyen', 'leger', 'zero'] as const;
 export type Niveau = (typeof NIVEAUX)[number];
@@ -22,8 +23,11 @@ export const CRITERES_MAX = 7;
 
 const identifiant = z
   .string()
-  .regex(/^[a-z][a-z0-9_-]{0,39}$/, 'identifiant attendu : minuscules, chiffres, « - » ou « _ », 40 caractères au plus');
-const note10 = z.number().min(0, 'note de 0 à 10').max(10, 'note de 0 à 10');
+  .regex(/^[a-z][a-z0-9_-]{0,39}$/, { error: () => t('core.grille.identifiant') });
+const note10 = z
+  .number()
+  .min(0, { error: () => t('core.grille.note10') })
+  .max(10, { error: () => t('core.grille.note10') });
 
 export const schemaCritere = z
   .strictObject({
@@ -39,10 +43,10 @@ export const schemaCritere = z
   })
   .superRefine((c, ctx) => {
     if (c.source === 'calcul' && !c.calcul) {
-      ctx.addIssue({ code: 'custom', path: ['calcul'], message: `critère ${c.id} : « calcul » attendu (${CALCULS.join(' ou ')})` });
+      ctx.addIssue({ code: 'custom', path: ['calcul'], message: t('core.grille.calculAttendu', { id: c.id, calculs: CALCULS.join(t('core.ou')) }) });
     }
     if (c.source === 'ia' && c.calcul) {
-      ctx.addIssue({ code: 'custom', path: ['calcul'], message: `critère ${c.id} : « calcul » réservé aux critères calculés` });
+      ctx.addIssue({ code: 'custom', path: ['calcul'], message: t('core.grille.calculReserve', { id: c.id }) });
     }
   });
 
@@ -57,18 +61,18 @@ const champsPalier = {
 export const schemaPalier = z
   .strictObject(champsPalier)
   .superRefine((p, ctx) => {
-    if (p.cible_haute <= p.plancher) ctx.addIssue({ code: 'custom', path: ['cible_haute'], message: 'la cible haute doit dépasser le plancher' });
+    if (p.cible_haute <= p.plancher) ctx.addIssue({ code: 'custom', path: ['cible_haute'], message: t('core.grille.cibleHaute') });
     if (p.plancher_full_remote !== undefined && p.cible_haute <= p.plancher_full_remote) {
-      ctx.addIssue({ code: 'custom', path: ['plancher_full_remote'], message: 'la cible haute doit dépasser le plancher full remote' });
+      ctx.addIssue({ code: 'custom', path: ['plancher_full_remote'], message: t('core.grille.cibleHauteFullRemote') });
     }
-    if (p.cible_basse > p.cible_haute) ctx.addIssue({ code: 'custom', path: ['cible_basse'], message: 'la cible basse dépasse la cible haute' });
+    if (p.cible_basse > p.cible_haute) ctx.addIssue({ code: 'custom', path: ['cible_basse'], message: t('core.grille.cibleBasse') });
   });
 export type Palier = z.infer<typeof schemaPalier>;
 
 export const schemaBaremes = z.strictObject({
   teletravail: z.strictObject({
     /** Sous-note selon le nombre de jours sur site par semaine : index 0 (full remote) à 5 (sur site). */
-    jours_sur_site: z.array(note10).length(6, 'six valeurs attendues : 0 à 5 jours sur site'),
+    jours_sur_site: z.array(note10).length(6, { error: () => t('core.grille.sixValeurs') }),
     /** Sous-note quand le rythme est inconnu (valeur neutre, avec un drapeau). */
     inconnu: note10.default(5),
   }),
@@ -106,10 +110,10 @@ export const schemaRegle = z
   })
   .superRefine((r, ctx) => {
     if (r.effet === 'plafond' && r.valeur === undefined) {
-      ctx.addIssue({ code: 'custom', path: ['valeur'], message: `règle ${r.id} : « valeur » attendue pour un plafond` });
+      ctx.addIssue({ code: 'custom', path: ['valeur'], message: t('core.grille.valeurPlafond', { id: r.id }) });
     }
     if (r.effet === 'plafond_critere' && (r.critere === undefined || r.seuil === undefined)) {
-      ctx.addIssue({ code: 'custom', path: ['critere'], message: `règle ${r.id} : « critere » et « seuil » attendus` });
+      ctx.addIssue({ code: 'custom', path: ['critere'], message: t('core.grille.critereSeuil', { id: r.id }) });
     }
   });
 export type Regle = z.infer<typeof schemaRegle>;
@@ -134,7 +138,7 @@ const sousNote = z.strictObject({
   note: z.union([note10, z.string()]).transform((v, ctx) => {
     const n = typeof v === 'number' ? v : Number(v.replace(',', '.'));
     if (!Number.isFinite(n) || n < 0 || n > 10) {
-      ctx.addIssue({ code: 'custom', message: `sous-note de 0 à 10 attendue : ${String(v)}` });
+      ctx.addIssue({ code: 'custom', message: t('core.grille.sousNote', { valeur: String(v) }) });
       return z.NEVER;
     }
     return n;
@@ -172,7 +176,7 @@ export const schemaGrille = z
     seuil: note10.default(4.5),
     /** Consignes générales pour l'IA (cibles, bonus, ce qui compte), en plus des descriptions des critères. */
     consignes: z.array(z.string()).default([]),
-    criteres: z.array(schemaCritere).min(1).max(CRITERES_MAX, `${CRITERES_MAX} critères au plus`),
+    criteres: z.array(schemaCritere).min(1).max(CRITERES_MAX, { error: () => t('core.grille.criteresMax', { n: CRITERES_MAX }) }),
     baremes: schemaBaremes,
     regles: z.array(schemaRegle).default([]),
     inventaire: z.array(schemaTechno).default([]),
@@ -180,20 +184,20 @@ export const schemaGrille = z
   })
   .superRefine((g, ctx) => {
     const doublons = (ids: string[]) => ids.filter((x, i) => ids.indexOf(x) !== i);
-    for (const d of doublons(g.criteres.map((c) => c.id))) ctx.addIssue({ code: 'custom', path: ['criteres'], message: `critère en double : ${d}` });
-    for (const d of doublons(g.regles.map((r) => r.id))) ctx.addIssue({ code: 'custom', path: ['regles'], message: `règle en double : ${d}` });
+    for (const d of doublons(g.criteres.map((c) => c.id))) ctx.addIssue({ code: 'custom', path: ['criteres'], message: t('core.grille.critereDouble', { id: d }) });
+    for (const d of doublons(g.regles.map((r) => r.id))) ctx.addIssue({ code: 'custom', path: ['regles'], message: t('core.grille.regleDouble', { id: d }) });
     for (const d of doublons(g.criteres.flatMap((c) => (c.calcul ? [c.calcul] : [])))) {
-      ctx.addIssue({ code: 'custom', path: ['criteres'], message: `barème ${d} utilisé par deux critères` });
+      ctx.addIssue({ code: 'custom', path: ['criteres'], message: t('core.grille.baremeDouble', { calcul: d }) });
     }
-    if (!g.criteres.some((c) => c.poids > 0)) ctx.addIssue({ code: 'custom', path: ['criteres'], message: 'au moins un critère doit avoir un poids' });
+    if (!g.criteres.some((c) => c.poids > 0)) ctx.addIssue({ code: 'custom', path: ['criteres'], message: t('core.grille.unPoids') });
     const ia = new Set(g.criteres.filter((c) => c.source === 'ia').map((c) => c.id));
     const regles = new Set(g.regles.map((r) => r.id));
     g.exemples.forEach((e, i) => {
       for (const k of Object.keys(e.criteres)) {
-        if (!ia.has(k)) ctx.addIssue({ code: 'custom', path: ['exemples', i, 'criteres', k], message: `exemple « ${e.titre} » : critère IA inconnu ${k}` });
+        if (!ia.has(k)) ctx.addIssue({ code: 'custom', path: ['exemples', i, 'criteres', k], message: t('core.grille.exempleCritere', { titre: e.titre, critere: k }) });
       }
       for (const b of e.bloquants) {
-        if (!regles.has(b)) ctx.addIssue({ code: 'custom', path: ['exemples', i, 'bloquants'], message: `exemple « ${e.titre} » : règle inconnue ${b}` });
+        if (!regles.has(b)) ctx.addIssue({ code: 'custom', path: ['exemples', i, 'bloquants'], message: t('core.grille.exempleRegle', { titre: e.titre, regle: b }) });
       }
     });
   });
@@ -216,7 +220,7 @@ export function messageZod(e: z.ZodError, prefixe = ''): string {
 /** Valide une grille (objet JSON) ; lève une Error au message lisible. */
 export function validerGrille(brut: unknown, origine = 'grille'): Grille {
   const r = schemaGrille.safeParse(brut);
-  if (!r.success) throw new Error(`Grille invalide (${origine}) : ${messageZod(r.error)}`);
+  if (!r.success) throw new Error(t('core.grille.invalide', { origine, message: messageZod(r.error) }));
   return r.data;
 }
 
@@ -342,7 +346,7 @@ function versBareme(v: number, unite: Unite): { valeur: number; type: 'salaire' 
 }
 
 function formatNombre(n: number): string {
-  return String(arrondi(n, 1)).replace('.', ',');
+  return decimal(arrondi(n, 1), langueCourante(), 1);
 }
 
 export interface ResultatCalcul {
@@ -355,12 +359,12 @@ export function noteTeletravail(b: Baremes['teletravail'], jours: number | null)
   if (jours === null) {
     return {
       note: b.inconnu,
-      justification: 'Rythme sur site inconnu : valeur neutre',
+      justification: t('core.calc.rythmeInconnu'),
       drapeau: { code: 'teletravail_inconnu', message: 'Télétravail inconnu (valeur neutre) : à vérifier' },
     };
   }
   const n = b.jours_sur_site[Math.min(5, Math.max(0, Math.round(jours)))];
-  return { note: n, justification: jours === 0 ? 'Full remote' : `${jours} j sur site par semaine` };
+  return { note: n, justification: jours === 0 ? t('core.calc.fullRemote') : t('core.calc.joursSurSite', { n: jours }) };
 }
 
 export function noteRemuneration(
@@ -372,7 +376,7 @@ export function noteRemuneration(
   if (!valeurs.length || !r.unite) {
     return {
       note: b.inconnue,
-      justification: 'Rémunération non publiée : valeur neutre',
+      justification: t('core.calc.remunerationInconnue'),
       drapeau: { code: 'remuneration_inconnue', message: 'Rémunération inconnue (valeur neutre) : à demander' },
     };
   }
@@ -384,17 +388,17 @@ export function noteRemuneration(
   const fullRemote = jours === 0 && p.plancher_full_remote !== undefined;
   const plancher = fullRemote ? p.plancher_full_remote! : p.plancher;
   const note = interpoler(valeur, plancher, p.cible_haute);
-  const u = type === 'salaire' ? ' K€/an' : ' €/j';
-  const ref = valeurs.length > 1 && min !== max ? ` (${b.reference === 'milieu' ? 'milieu de la fourchette' : b.reference})` : '';
+  const u = type === 'salaire' ? t('core.calc.uniteSalaire') : t('core.calc.uniteTjm');
+  const ref = valeurs.length > 1 && min !== max ? ` (${b.reference === 'milieu' ? t('core.calc.milieu') : b.reference})` : '';
   const position =
     valeur < plancher
-      ? `sous le plancher de ${formatNombre(plancher)}${u}`
+      ? t('core.calc.sousPlancher', { plancher: `${formatNombre(plancher)}${u}` })
       : valeur >= p.cible_haute
-        ? `au niveau de la cible haute (${formatNombre(p.cible_haute)}${u}) ou au-delà`
-        : `entre le plancher ${formatNombre(plancher)} et la cible haute ${formatNombre(p.cible_haute)}${u}`;
+        ? t('core.calc.cibleHaute', { cible: `${formatNombre(p.cible_haute)}${u}` })
+        : t('core.calc.entre', { plancher: formatNombre(plancher), cible: `${formatNombre(p.cible_haute)}${u}` });
   return {
     note,
-    justification: `${formatNombre(valeur)}${u}${ref}, ${position}${fullRemote ? ' (plancher full remote)' : ''}`,
+    justification: `${formatNombre(valeur)}${u}${ref}, ${position}${fullRemote ? t('core.calc.plancherFullRemote') : ''}`,
     drapeau: valeur < plancher ? { code: 'sous_plancher', message: `Rémunération sous le plancher (${formatNombre(valeur)}${u}) : à signaler` } : undefined,
   };
 }
@@ -513,23 +517,24 @@ export function calculerNote(grille: Grille, saisie: Saisie, offre: DonneesOffre
  */
 export function verifierSaisie(grille: Grille, brut: unknown): Saisie {
   const r = schemaSaisie.safeParse(brut);
-  if (!r.success) throw new Error(`Note à critères invalide : ${messageZod(r.error)}`);
+  if (!r.success) throw new Error(t('core.saisie.invalide', { message: messageZod(r.error) }));
   const s = r.data;
   const ia = grille.criteres.filter((c) => c.source === 'ia').map((c) => c.id);
   for (const k of Object.keys(s.criteres)) {
     const c = grille.criteres.find((x) => x.id === k);
-    if (!c) throw new Error(`Critère inconnu : ${k} (critères notés par l'IA : ${ia.join(', ')})`);
+    if (!c) throw new Error(t('core.saisie.critereInconnu', { id: k, liste: ia.join(', ') }));
     if (c.source === 'calcul') {
       throw new Error(
-        `Le critère ${k} est calculé par l'application : ne pas le noter, fournir plutôt ${
-          c.calcul === 'teletravail' ? 'entrees.jours_sur_site' : 'entrees.salaire_min / salaire_max / unite'
-        } si l'offre les donne`,
+        t('core.saisie.critereCalcule', {
+          id: k,
+          champs: c.calcul === 'teletravail' ? 'entrees.jours_sur_site' : 'entrees.salaire_min / salaire_max / unite',
+        }),
       );
     }
   }
   const regles = grille.regles.map((x) => x.id);
   for (const b of s.bloquants) {
-    if (!regles.includes(b)) throw new Error(`Règle bloquante inconnue : ${b} (règles : ${regles.join(', ') || 'aucune'})`);
+    if (!regles.includes(b)) throw new Error(t('core.saisie.regleInconnue', { id: b, liste: regles.join(', ') || t('core.aucune') }));
   }
   return s;
 }
@@ -609,7 +614,7 @@ export type Changement = z.infer<typeof schemaChangement>;
 /** Applique un changement partiel à une grille et renvoie la nouvelle grille validée. */
 export function appliquerChangement(grille: Grille, brut: unknown): Grille {
   const r = schemaChangement.safeParse(brut);
-  if (!r.success) throw new Error(`Changement invalide : ${messageZod(r.error)}`);
+  if (!r.success) throw new Error(t('core.changement.invalide', { message: messageZod(r.error) }));
   const ch = r.data;
   const g = structuredClone(grille) as Grille;
   if (ch.nom !== undefined) g.nom = ch.nom;
@@ -617,12 +622,12 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
   if (ch.consignes !== undefined) g.consignes = ch.consignes;
   for (const [id, p] of Object.entries(ch.poids ?? {})) {
     const c = g.criteres.find((x) => x.id === id);
-    if (!c) throw new Error(`Critère inconnu : ${id} (critères : ${g.criteres.map((x) => x.id).join(', ')})`);
+    if (!c) throw new Error(t('core.changement.critereInconnuListe', { id, liste: g.criteres.map((x) => x.id).join(', ') }));
     c.poids = p;
   }
   for (const m of ch.criteres ?? []) {
     const c = g.criteres.find((x) => x.id === m.id);
-    if (!c) throw new Error(`Critère inconnu : ${m.id}`);
+    if (!c) throw new Error(t('core.changement.critereInconnu', { id: m.id }));
     if (m.libelle !== undefined) c.libelle = m.libelle;
     if (m.description !== undefined) c.description = m.description;
     if (m.poids !== undefined) c.poids = m.poids;
@@ -649,12 +654,12 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
       if (m.seuil !== undefined) r0.seuil = m.seuil;
       if (m.actif !== undefined) r0.actif = m.actif;
     } else {
-      if (!m.libelle || !m.effet) throw new Error(`Nouvelle règle ${m.id} : « libelle » et « effet » attendus`);
+      if (!m.libelle || !m.effet) throw new Error(t('core.changement.nouvelleRegle', { id: m.id }));
       g.regles.push({ id: m.id, libelle: m.libelle, description: m.description ?? '', effet: m.effet, valeur: m.valeur ?? undefined, critere: m.critere, seuil: m.seuil, actif: m.actif ?? true });
     }
   }
   for (const id of ch.retirer_regles ?? []) {
-    if (!g.regles.some((x) => x.id === id)) throw new Error(`Règle inconnue : ${id}`);
+    if (!g.regles.some((x) => x.id === id)) throw new Error(t('core.changement.regleInconnue', { id }));
     g.regles = g.regles.filter((x) => x.id !== id);
     for (const e of g.exemples) e.bloquants = e.bloquants.filter((b) => b !== id);
   }
@@ -664,7 +669,7 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
   for (const t of ch.inventaire?.retirer ?? []) {
     const avant = g.inventaire.length;
     g.inventaire = g.inventaire.filter((x) => cle(x.techno) !== cle(t));
-    if (g.inventaire.length === avant) throw new Error(`Technologie absente de l'inventaire : ${t}`);
+    if (g.inventaire.length === avant) throw new Error(tr('core.changement.technoAbsente', { techno: t }));
   }
   for (const t of ch.inventaire?.ajouter ?? []) {
     const i = g.inventaire.findIndex((x) => cle(x.techno) === cle(t.techno));
@@ -677,8 +682,8 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
   for (const x of ch.exemples?.retirer ?? []) {
     const { titre, entreprise } = typeof x === 'string' ? { titre: x, entreprise: undefined } : x;
     const trouves = g.exemples.filter((e) => memeExemple(e, titre, entreprise));
-    if (!trouves.length) throw new Error(`Exemple absent de la grille : ${titre} (exemples : ${g.exemples.map((e) => e.titre).join(' ; ') || 'aucun'})`);
-    if (trouves.length > 1) throw new Error(`Plusieurs exemples s'intitulent « ${titre} » : préciser { titre, entreprise }`);
+    if (!trouves.length) throw new Error(t('core.changement.exempleAbsent', { titre, liste: g.exemples.map((e) => e.titre).join(' ; ') || t('core.aucun') }));
+    if (trouves.length > 1) throw new Error(t('core.changement.exemplesHomonymes', { titre }));
     g.exemples = g.exemples.filter((e) => e !== trouves[0]);
   }
   for (const e of ch.exemples?.ajouter ?? []) {
@@ -686,7 +691,7 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
     if (i >= 0) g.exemples[i] = e;
     else g.exemples.push(e);
   }
-  return validerGrille(g, 'après changement');
+  return validerGrille(g, t('core.grille.apresChangement'));
 }
 
 export interface ExempleCalcule {
@@ -724,23 +729,20 @@ export function consignesIa(g: Grille): string[] {
   const ia = g.criteres.filter((c) => c.source === 'ia');
   const calc = g.criteres.filter((c) => c.source === 'calcul');
   const somme = g.criteres.reduce((s, c) => s + c.poids, 0) || 1;
-  const pct = (p: number) => `${Math.round((p / somme) * 100)} %`;
+  const pct = (p: number) => t('core.pages.pourcent', { pc: Math.round((p / somme) * 100) });
   return [
-    "Ne donne pas la note finale : l'application la calcule (moyenne pondérée, règles bloquantes, arrondi au demi-point). Un champ « note » fourni avec « criteres » est ignoré.",
-    `Note de 0 à 10, avec une justification courte, chacun de ces critères (champ « criteres ») : ${ia
-      .map((c) => `${c.id} (${c.libelle}, ${pct(c.poids)})`)
-      .join(' ; ')}.`,
-    `Ne note pas ${calc.map((c) => c.id).join(' ni ')} : ${calc.length > 1 ? 'ils sont calculés' : 'il est calculé'} depuis le barème. ` +
-      'Remplis « entrees » quand l’offre les donne : jours_sur_site (0 = full remote, 5 = sur site), salaire_min / salaire_max en euros et unite (an, mois, jour, heure). ' +
-      'Sinon l’application les déduit des champs télétravail et rémunération de l’offre ; inconnus, ils valent la valeur neutre avec un drapeau.',
-    `Signale dans « bloquants » les identifiants des règles qui s'appliquent à l'offre (actives : ${
-      g.regles
-        .filter((r) => r.actif && r.effet !== 'plafond_critere')
-        .map((r) => `${r.id} = ${r.libelle} → ${r.effet === 'zero' ? '0' : `plafond ${r.valeur}`}`)
-        .join(' ; ') || 'aucune'
-    }).`,
-    'Critère technique : compare les compétences demandées à l’inventaire (niveaux fort / moyen / léger / zéro) et liste les écarts dans la justification et dans « ecarts ».',
-    'Cale tes sous-notes sur les exemples de référence de la grille. Remplis aussi « colle », « ecarts » et « lu ».',
-    `Seuil « à regarder » : ${String(g.seuil).replace('.', ',')}. Liste à l’utilisateur les offres notées au-dessus, avec la décomposition.`,
+    t('core.consignes.noteFinale'),
+    t('core.consignes.criteres', { liste: ia.map((c) => `${c.id} (${c.libelle}, ${pct(c.poids)})`).join(' ; ') }),
+    t('core.consignes.calcules', { n: calc.length, liste: calc.map((c) => c.id).join(t('core.ni')) }) + t('core.consignes.entrees'),
+    t('core.consignes.bloquants', {
+      liste:
+        g.regles
+          .filter((r) => r.actif && r.effet !== 'plafond_critere')
+          .map((r) => `${r.id} = ${r.libelle} → ${r.effet === 'zero' ? '0' : t('core.plafond', { valeur: decimal(r.valeur ?? 0) })}`)
+          .join(' ; ') || t('core.aucune'),
+    }),
+    t('core.consignes.technique'),
+    t('core.consignes.exemples'),
+    t('core.consignes.seuil', { seuil: decimal(g.seuil) }),
   ];
 }

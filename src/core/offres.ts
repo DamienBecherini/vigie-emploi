@@ -4,6 +4,7 @@ import { estStatut, type Statut } from './statuts.ts';
 import { lireRemuneration, maintenant, nettoyer } from './texte.ts';
 import { journal, type EvenementJournal } from './evenements.ts';
 import type { Decomposition, Saisie } from './grille.ts';
+import { t } from '../i18n/index.ts';
 
 export type Origine = 'email' | 'import-lot' | 'import-registre' | 'import-suivi' | 'manuel';
 
@@ -148,7 +149,7 @@ export function offreParUrl(db: Base, url: string): Offre | undefined {
 export function modifierLien(db: Base, id: number, url: string | null): void {
   const propre = url?.trim() || null;
   if (propre !== null && !/^https?:\/\/\S+$/i.test(propre)) {
-    throw new Error(`Lien invalide (http:// ou https:// attendu) : ${propre}`);
+    throw new Error(t('core.lienInvalide', { lien: propre }));
   }
   db.prepare('UPDATE offres SET url_canonique = ?, maj_le = ? WHERE id = ?').run(propre, maintenant(), id);
 }
@@ -263,7 +264,7 @@ export interface OptionsStatut {
 }
 
 export function ajouterStatut(db: Base, offreId: number, statut: string, opts: OptionsStatut = {}): boolean {
-  if (!estStatut(statut)) throw new Error(`Statut inconnu : ${statut}`);
+  if (!estStatut(statut)) throw new Error(t('core.statutInconnu', { statut }));
   const commentaire = nettoyer(opts.commentaire) ?? null;
   const origine = opts.origine ?? 'cli';
   if (opts.siAbsent) {
@@ -314,8 +315,8 @@ export interface EntreeNote {
 function nombreOuNull(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
-  if (!Number.isFinite(n)) throw new Error(`Note invalide : ${String(v)}`);
-  if (n < 0 || n > 10) throw new Error(`Note hors de l'échelle 0-10 : ${n}`);
+  if (!Number.isFinite(n)) throw new Error(t('core.noteInvalide', { note: String(v) }));
+  if (n < 0 || n > 10) throw new Error(t('core.noteEchelle', { note: n }));
   return n;
 }
 
@@ -475,7 +476,7 @@ export function offresDeLEntreprise(db: Base, entreprise: string, saufId?: numbe
 export function fusionnerOffres(db: Base, cible: number, doublon: number): void {
   if (cible === doublon) return;
   const d = offreParId(db, doublon);
-  if (!d || !offreParId(db, cible)) throw new Error(`Fusion impossible : offre ${cible} ou ${doublon} introuvable`);
+  if (!d || !offreParId(db, cible)) throw new Error(t('core.fusionImpossible', { cible, doublon }));
   db.prepare('UPDATE notes SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
   db.prepare('UPDATE statuts SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);
   db.prepare('UPDATE OR IGNORE evenements SET offre_id = ? WHERE offre_id = ?').run(cible, doublon);

@@ -7,6 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
 import { capturerPages } from './pages.ts';
+import { langueCourante, t } from '../i18n/index.ts';
 
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
@@ -318,10 +319,10 @@ export interface ResultatCv {
 /** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
 export function genererCv(markdown: string, dossierGabarit: string, navigateur: string, o: { capture?: boolean } = {}): ResultatCv {
   const md = resolve(markdown);
-  if (!existsSync(md)) throw Object.assign(new Error(`CV introuvable : ${md}`), { utilisateur: true });
+  if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.introuvable', { chemin: md })), { utilisateur: true });
   const gabarit = resolve(dossierGabarit);
   if (!existsSync(join(gabarit, 'gabarit.css'))) {
-    throw Object.assign(new Error(`Gabarit incomplet : ${join(gabarit, 'gabarit.css')} manquant`), { utilisateur: true });
+    throw Object.assign(new Error(t('core.cv.gabaritIncomplet', { chemin: join(gabarit, 'gabarit.css') })), { utilisateur: true });
   }
   const nom = basename(md).replace(/\.md$/i, '');
   const apercu = join(gabarit, 'apercu');
@@ -365,6 +366,14 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
 export const DOSSIER_GABARITS = join(RACINE_APP, 'gabarits', 'cv');
 
 /** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
+/** Descriptions anglaises des gabarits livrés (l'en-tête des feuilles est en français). */
+const DESCRIPTIONS_EN: Record<string, string> = {
+  compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
+  moderne: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
+  sobre:
+    '"sobre" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
+};
+
 export function listerGabarits(): { nom: string; description: string }[] {
   return readdirSync(DOSSIER_GABARITS)
     .filter((n) => existsSync(join(DOSSIER_GABARITS, n, 'gabarit.css')))
@@ -372,7 +381,9 @@ export function listerGabarits(): { nom: string; description: string }[] {
       const css = readFileSync(join(DOSSIER_GABARITS, nom, 'gabarit.css'), 'utf8');
       const entete = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
       const phrase = entete.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
-      return { nom, description: phrase };
+      // La description vient de l'en-tête (français) de la feuille ; traduite pour les gabarits livrés connus.
+      const traduite = langueCourante() === 'en' ? DESCRIPTIONS_EN[nom] : undefined;
+      return { nom, description: traduite ?? phrase };
     });
 }
 
@@ -384,7 +395,7 @@ export function choisirGabarit(espace: string, nom: string): { dossier: string; 
   const source = join(DOSSIER_GABARITS, nom);
   if (!/^[\w-]+$/.test(nom) || !existsSync(join(source, 'gabarit.css'))) {
     const noms = listerGabarits().map((g) => g.nom).join(', ');
-    throw Object.assign(new Error(`Gabarit inconnu : ${nom} (disponibles : ${noms})`), { utilisateur: true });
+    throw Object.assign(new Error(t('core.cv.gabaritInconnu', { nom, liste: noms })), { utilisateur: true });
   }
   const cible = join(espace, 'cv', 'gabarit');
   let ancien: string | null = null;

@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { estLangue, LANGUE_DEFAUT, LANGUES, type Langue } from '../i18n/outil.ts';
+import { tl } from '../i18n/index.ts';
 
 export interface Config {
   /** Dossier de données de l'utilisateur (contient data/, emails/, candidatures/…). */
@@ -66,11 +67,37 @@ function compiler(motifs: string[] | undefined): RegExp[] {
   return (motifs ?? []).map((m) => new RegExp(m, 'i'));
 }
 
+/**
+ * Erreur de configuration reconnaissable par son code (et non par le texte du message, qui dépend de la langue).
+ * - `non-configure` : aucun dossier de données (le serveur MCP se rabat alors sur le dossier par défaut) ;
+ * - `fichier-introuvable` : fichier de configuration imposé absent ;
+ * - `langue-inconnue` : valeur de langue refusée.
+ */
+export class ErreurConfig extends Error {
+  readonly code: 'non-configure' | 'fichier-introuvable' | 'langue-inconnue';
+  constructor(code: ErreurConfig['code'], message: string) {
+    super(message);
+    this.name = 'ErreurConfig';
+    this.code = code;
+  }
+}
+
+/** Langue des messages d'erreur de configuration : variable, sinon fichier, si elles sont valides ; sinon le français. */
+function langueDesMessages(env: NodeJS.ProcessEnv, brut: ConfigFichier = {}): Langue {
+  const v = variable(env, 'LANGUE');
+  if (estLangue(v)) return v;
+  return estLangue(brut.langue) ? brut.langue : LANGUE_DEFAUT;
+}
+
 /** Langue de la variable POSTULER_JUSTE_LANGUE, sinon du fichier, sinon le français ; une valeur inconnue est refusée. */
 function langueDe(env: NodeJS.ProcessEnv, brut: ConfigFichier, fichier: string | null): Langue {
   const v = variable(env, 'LANGUE') ?? brut.langue ?? LANGUE_DEFAUT;
   if (!estLangue(v)) {
-    throw new Error(`Langue inconnue : ${v} (${LANGUES.join(' ou ')} ; POSTULER_JUSTE_LANGUE ou "langue" de ${fichier ?? NOM_FICHIER_CONFIG})`);
+    const langue = langueDesMessages(env, brut);
+    throw new ErreurConfig(
+      'langue-inconnue',
+      tl(langue, 'core.config.langue', { langue: v, langues: LANGUES.join(tl(langue, 'core.ou')), fichier: fichier ?? NOM_FICHIER_CONFIG }),
+    );
   }
   return v;
 }
@@ -106,7 +133,7 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
   let fichier: string | null = null;
   let brut: ConfigFichier = {};
   if (opts.fichierConfig && !existsSync(candidats[0])) {
-    throw new Error(`Fichier de configuration introuvable : ${candidats[0]}`);
+    throw new ErreurConfig('fichier-introuvable', tl(langueDesMessages(env), 'core.config.introuvable', { chemin: candidats[0] }));
   }
   for (const c of candidats) {
     if (existsSync(c)) {
@@ -122,10 +149,7 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
       ? resolve(baseRelative, brut.dossierDonnees)
       : null;
   if (!dossier) {
-    throw new Error(
-      'Dossier de données non configuré : définir POSTULER_JUSTE_DATA, passer --data <dossier> ' +
-        `ou créer ${NOM_FICHIER_CONFIG} avec "dossierDonnees" (voir postuler-juste.config.example.json).`,
-    );
+    throw new ErreurConfig('non-configure', tl(langueDesMessages(env, brut), 'core.config.nonConfigure', { fichier: NOM_FICHIER_CONFIG }));
   }
   const relatif = (p: string | undefined, defaut: string) => (p ? (isAbsolute(p) ? p : join(dossier, p)) : defaut);
   // Base par défaut : data/postuler-juste.sqlite, ou l'ancienne data/cap-emploi.sqlite si elle seule existe.

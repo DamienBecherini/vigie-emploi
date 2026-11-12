@@ -4,8 +4,10 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { chargerConfig, RACINE_APP, type Config, type OptionsConfig } from '../core/config.ts';
+import { chargerConfig, ErreurConfig, RACINE_APP, type Config, type OptionsConfig } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
+import { definirLangue } from '../i18n/index.ts';
+import { bi } from './textes.ts';
 
 /** Dossier de données quand rien n'est configuré (ni --data, ni POSTULER_JUSTE_DATA, ni fichier de config). */
 export function dossierParDefaut(): string {
@@ -39,7 +41,7 @@ export function ouvrirEtat(options: OptionsConfig = {}): EtatMcp {
   try {
     config = chargerConfig(options);
   } catch (e) {
-    if (!/non configuré/.test((e as Error).message)) throw e;
+    if (!(e instanceof ErreurConfig && e.code === 'non-configure')) throw e;
     config = chargerConfig({ ...options, dossierDonnees: dossierParDefaut() });
     parDefaut = true;
   }
@@ -50,12 +52,19 @@ export function ouvrirEtat(options: OptionsConfig = {}): EtatMcp {
 export function messageNonInitialise(etat: EtatMcp): string {
   const d = oblique(etat.config.dossierDonnees);
   if (estApplication(etat.config.dossierDonnees)) {
-    return `Le dossier ${d} est celui de l'application, pas un espace de travail : appelez initialiser_espace avec un autre dossier.`;
+    return bi({
+      fr: `Le dossier ${d} est celui de l'application, pas un espace de travail : appelez initialiser_espace avec un autre dossier.`,
+      en: `The folder ${d} is the application's own folder, not a workspace: call initialiser_espace with another folder.`,
+    });
   }
-  return (
-    `Espace non initialisé : ${d} n'existe pas ou est vide. Appelez initialiser_espace (dossier ${d} par défaut, ` +
-    "ou celui que l'utilisateur choisit), puis reprenez."
-  );
+  return bi({
+    fr:
+      `Espace non initialisé : ${d} n'existe pas ou est vide. Appelez initialiser_espace (dossier ${d} par défaut, ` +
+      "ou celui que l'utilisateur choisit), puis reprenez.",
+    en:
+      `Workspace not initialised: ${d} does not exist or is empty. Call initialiser_espace (folder ${d} by default, ` +
+      'or the one the user chooses), then carry on.',
+  });
 }
 
 /** Bascule le serveur sur un espace (après initialiser_espace) : relit sa configuration et ouvre sa base. */
@@ -65,4 +74,6 @@ export function basculer(etat: EtatMcp, dossier: string): void {
   etat.db?.close();
   etat.config = config;
   etat.db = db;
+  // Messages et résultats dans la langue de l'espace ouvert (les descriptions des outils, déjà publiées, ne changent pas).
+  definirLangue(config.langue);
 }

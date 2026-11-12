@@ -473,9 +473,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       if (v.json) return json({ ok: true, ...r });
       console.log(r.enregistree ? t('cli.grille.enregistree', { version: r.version }) : t('cli.grille.essai'));
       if (r.exemples_calcules.length) {
-        console.log('Exemples de référence (avant → après) :');
+        console.log(t('cli.grille.exemplesAvantApres'));
         for (const e of r.exemples_calcules) {
-          const avant = e.avant === null || e.avant === undefined ? 'nouveau' : virgule(e.avant);
+          const avant = e.avant === null || e.avant === undefined ? t('cli.grille.nouveau') : virgule(e.avant);
           console.log(`  ${avant.padStart(7)} → ${virgule(e.note).padEnd(4)} ${e.titre}${e.entreprise ? ` — ${e.entreprise}` : ''}`);
         }
       }
@@ -849,7 +849,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     if (v.json) return json({ ok: true, gabarit, cv: resultats });
     for (const r of resultats) {
-      const taux = r.remplissage ? ` (remplissage : ${r.remplissage.map((x) => `${x} %`).join(', ')})` : '';
+      const taux = r.remplissage
+        ? ` (${t('cli.cv.remplissage', { taux: r.remplissage.map((x) => t('core.pages.pourcent', { pc: x })).join(', ') })})`
+        : '';
       console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.depasse') : ''}`);
       // Lignes lues par les outils et l'IA (HTML, PDF, IMAGE, PAGES) : mêmes libellés dans les deux langues.
       if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${taux}`);

@@ -99,8 +99,8 @@ Explain how to feed the job-ad sorting:
 
 1. Set up alerts on job sites (LinkedIn, Indeed, Glassdoor, Reed, Otta…) with their keywords.
 2. Save the e-mails they receive as `.eml` files in `emails/`: by hand (drag and drop from their mail client), or with a filter in their mail client (Thunderbird with the FiltaQuilla add-on, for example).
-3. Then tell them to ask you to "process the e-mails": you will follow the flow described in `{{DOC_APP}}`.
+3. Check straight away whether `emails/` contains `.eml` files (`lister_fichiers` or reading the folder). If it does: offer to process them now, that is the point of everything above. If not: suggest that the user drops a few alerts they have already received into it right now, so that you can do a first sort together before wrapping up.
 
 ## 9. Wrap-up
 
-Sum up what is in place and what remains in `_A-FAIRE.md`. If they keep the workspace under version control with git, suggest a first commit.
+Sum up what is in place and what remains in `_A-FAIRE.md`, then explain the everyday loop in four lines: alerts arrive in `emails/` → you sort and score them → they give their "go" → you prepare the application file, tailored CV and message, **they send it** → they tell you what happens next (sent, reply, interview) and you keep the follow-up and reminders. End with the next concrete action (usually: process the e-mails), not with "ask me later". If they keep the workspace under version control with git, suggest a first commit.

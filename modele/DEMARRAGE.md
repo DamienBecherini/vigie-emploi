@@ -97,8 +97,8 @@ Explique comment alimenter le tri des offres :
 
 1. Créer des alertes sur les sites d'emploi (LinkedIn, Indeed, Hellowork, Free-Work, Glassdoor…) avec ses mots-clés.
 2. Enregistrer les e-mails reçus au format `.eml` dans `emails/` : à la main (glisser-déposer depuis la messagerie), ou par un filtre de sa messagerie (Thunderbird avec l'extension FiltaQuilla, par exemple).
-3. Ensuite, lui dire de te demander de « traiter les e-mails » : tu suivras le flux décrit dans `{{DOC_APP}}`.
+3. Regarde tout de suite si `emails/` contient des `.eml` (`lister_fichiers` ou lecture du dossier). S'il y en a : propose de les traiter maintenant, c'est le but de tout ce qui précède. Sinon : propose à l'utilisateur d'y glisser dès maintenant quelques alertes déjà reçues, pour faire un premier tri ensemble avant de clore.
 
 ## 9. Fin
 
-Résume ce qui est en place et ce qui reste dans `_A-FAIRE.md`. S'il versionne l'espace avec git, propose un premier commit.
+Résume ce qui est en place et ce qui reste dans `_A-FAIRE.md`, puis explique en quatre lignes la boucle de tous les jours : les alertes arrivent dans `emails/` → tu les tries et les notes → il donne ses « go » → tu prépares dossier, CV ciblé et message, **il envoie** → il te raconte la suite (envoi, réponse, entretien) et tu tiens le suivi et les relances. Termine par l'action suivante concrète (en général : traiter les e-mails), pas par « demande-moi plus tard ». S'il versionne l'espace avec git, propose un premier commit.

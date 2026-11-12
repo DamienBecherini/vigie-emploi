@@ -18,6 +18,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 | Trier les e-mails d'alertes, noter les offres | [`procedures/traiter-emails.md`](procedures/traiter-emails.md) |
 | Préparer les candidatures en « go » | [`procedures/preparer-go.md`](procedures/preparer-go.md) |
 | Écrire un CV ciblé | [`procedures/cv-cible.md`](procedures/cv-cible.md) |
+| Rédiger un message (candidature, mission, recruteur, relance, remerciement) | [`messages/MODELES.md`](messages/MODELES.md) |
 
 ## Outils de l'application
 

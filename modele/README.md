@@ -21,6 +21,8 @@ Espace de travail créé par **postuler-juste** : une IA (Claude Code, Cursor, C
 | `candidatures/` | Un dossier par offre (annonce, fit, messages, suivi) et `_SUIVI.md`, généré. |
 | `emails/` | Les e-mails d'alertes d'offres (`.eml`) à trier. |
 | `profils-publics/` | L'état de tes profils publics (LinkedIn, Malt…). |
+| `messages/` | Trames de messages : candidature, mission freelance, recruteur, relance, remerciement. |
+| `procedures/` | Les procédures que suit l'IA (tri des e-mails, préparation des candidatures, CV ciblé). |
 | `data/` | La base des offres et candidatures. |
 
 ## Commandes utiles

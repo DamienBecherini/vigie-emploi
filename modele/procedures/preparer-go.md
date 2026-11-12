@@ -17,7 +17,7 @@ Déclencheurs : « prépare mes candidatures », « prépare les go », bouton �
 1. `candidater` (renvoie `dossier_suggere`).
 2. Créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après `candidatures/_MODELE-dossier-candidature.md` : l'offre, ce qui colle (preuves), les écarts à assumer, les conditions, les questions, le formulaire, les messages (limite du canal respectée, longueur indiquée), le suivi.
 3. CV ciblé si l'offre le justifie ([`cv-cible.md`](cv-cible.md)) ; sinon le CV de référence, **copié sous un nom qui ne cite aucune autre entreprise**.
-4. Lettre de motivation seulement si le formulaire l'exige : une page, même matière que le message.
+4. Messages : partir de la trame adaptée de [`../messages/MODELES.md`](../messages/MODELES.md). Lettre de motivation seulement si le formulaire l'exige (trame 6).
 5. Longueur de chaque message : `{{CMD}} compter <dossier-candidature.md>` (la vraie valeur, pas une estimation).
 6. `enregistrer_candidature` : `dossier`, `cv` (le PDF), `canal`, `prochaine_action` (« Envoyer sur … »).
 

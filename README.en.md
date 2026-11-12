@@ -71,12 +71,10 @@ Résumés are written in Markdown and rendered as two-page A4 PDFs, with three t
 ## Getting started
 
 ```sh
-git clone https://github.com/DamienBecherini/postuler-juste.git
-cd postuler-juste
-npm install
-npm run build
-node bin/postuler-juste.js init ~/my-search
+npx postuler-juste init ~/my-search
 ```
+
+Nothing to clone or build: npx downloads the application and runs `init`. The workspace remembers the version used (`npx -y postuler-juste@<version>`, in `.mcp.json` and in the AI instructions). For a permanently installed command: `npm install -g postuler-juste`, then `postuler-juste init ~/my-search`. To contribute, install from the repository (see [Installation](#installation)).
 
 `init` creates your workspace (`--gabarit moderne` or `compact` to change the résumé template) and prints the starting prompt to give your AI. Then:
 
@@ -127,15 +125,29 @@ The rest of this document describes the application in detail: commands, configu
 
 Requirement: Node.js 24 or later (SQLite is built into Node through `node:sqlite`, nothing to compile).
 
+From npm (the package contains the code compiled to JavaScript and the built interface):
+
 ```sh
-git clone <repository> postuler-juste
+npx postuler-juste init ~/my-search    # without installing
+npm install -g postuler-juste          # or a permanently installed command
+```
+
+Command written by `init` into `.mcp.json` and into the workspace instructions:
+
+- run through `npx`: `npx -y postuler-juste@<version>` (on Windows, `cmd /c npx …` for the MCP server). The npx cache can be cleared, so its path is never written. The version is pinned so that the database and the application stay in step; if needed, npx downloads it again (connection required). The application instructions (`AGENTS.md`) are copied into `procedures/application.md`. To change versions, replace the number in `.mcp.json` and in the instructions, or switch to a global installation;
+- installed (`npm install -g`, or from the repository): `node <path>/bin/postuler-juste.js`, with the absolute path of the installation.
+
+From the repository (contributors):
+
+```sh
+git clone https://github.com/DamienBecherini/postuler-juste.git
 cd postuler-juste
 npm install
-npm run build      # type-checks and builds the interface into dist/ui
+npm run build      # type-checks, compiles src/ into dist/ and the interface into dist/ui
 npm link           # makes the `postuler-juste` command available everywhere (optional)
 ```
 
-Without `npm link`, replace `postuler-juste` with `node <path>/bin/postuler-juste.js`.
+Without `npm link`, replace `postuler-juste` with `node <path>/bin/postuler-juste.js`. In the repository, `bin/postuler-juste.js` runs the TypeScript in `src/` directly; without `src/` (npm package), it loads the compiled JavaScript from `dist/`, because Node refuses to run TypeScript located under `node_modules`. `npm pack` and `npm publish` rebuild everything (`prepack`).
 
 Former names: the application used to be called **cap-emploi**. The `cap-emploi` command, the `CAP_EMPLOI_*` variables, the `cap-emploi.config.json` file and the `data/cap-emploi.sqlite` database are still recognised; the new names take precedence.
 
@@ -306,7 +318,7 @@ npm run build       # typecheck + interface build
 Layout:
 
 ```
-bin/postuler-juste.js   command entry point (Node runs TypeScript directly)
+bin/postuler-juste.js   command entry point (TypeScript from src/ in the repository, JavaScript from dist/ in the npm package)
 migrations/         versioned SQL schema (PRAGMA user_version)
 src/core/           configuration, links, normalisation, offer operations, queries,
                     scoring grid (grille.ts: pure schema and computation; grille-stockage.ts: file, versions, re-scoring)

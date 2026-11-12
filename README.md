@@ -316,7 +316,7 @@ npm run build       # typecheck + compilation de l'interface
 Arborescence :
 
 ```
-bin/postuler-juste.js   point d'entrée de la commande (Node exécute le TypeScript directement)
+bin/postuler-juste.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
 migrations/         schéma SQL versionné (PRAGMA user_version)
 src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes,
                     grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)

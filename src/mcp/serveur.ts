@@ -64,11 +64,13 @@ Début de session : si l'espace n'existe pas (etat_espace), proposer de le crée
 l'utilisateur). Les consignes de l'espace font foi : AGENTS.md (ressource « consignes » ou lire_fichier AGENTS.md), à lire
 avant tout ; prompts demarrage, traiter-emails, preparer-go, cv-cible. Sans accès direct aux fichiers ni terminal (Claude Desktop…) :
 lister_fichiers / lire_fichier / ecrire_fichier (chemins relatifs à l'espace) au lieu de lire le disque, generer_cv (capture: true
-pour voir le rendu) au lieu de « postuler-juste cv », compter au lieu de « postuler-juste compter ».
+pour voir les pages ; traiter ses avertissements de remplissage) au lieu de « postuler-juste cv », compter au lieu de « postuler-juste compter ».
+Dans ce cas, ne propose jamais à l'utilisateur une commande de terminal à taper : cite l'outil. Seule option facultative, s'il a un
+terminal et le souhaite : lancer lui-même le tableau de bord (« postuler-juste serve ») pour parcourir ses offres ou régler sa grille.
 Honnêteté d'abord : n'écrire dans un CV ou un message que ce que _CONTEXTE.md permet de revendiquer. C'est l'utilisateur qui envoie
 ses candidatures.
-Flux habituel : ingerer_emails → offres_a_lire → grille (lire la grille de notation : critères, barèmes, règles,
-inventaire, exemples) → (lire chaque offre, noter ses critères) → noter_lot avec criteres / entrees / bloquants
+Flux habituel : ingerer_emails (transmettre son a_dire : e-mails supprimés, erreurs) → offres_a_lire (résumé paginé) → grille
+(lire la grille de notation : critères, barèmes, règles, inventaire, exemples) → (lire chaque offre avec lire_offre, noter ses critères) → noter_lot avec criteres / entrees / bloquants
 (l'application calcule la note finale, ne la donne pas) → résumer à l'utilisateur → sur son « go » : candidater, préparer le dossier, enregistrer_candidature
 → generer_suivi. Sans « go » : changer_statut vers « ecartee » avec la raison.
 Quand l'utilisateur raconte un appel, un entretien, un message, un devis : ajouter_evenement (avec le fichier
@@ -77,7 +79,8 @@ le futur, fait: false). echeances liste ce qui est en retard ou à venir ; marqu
 Ne télécharge pas LinkedIn, Indeed ni Glassdoor par script : lis ces pages dans le navigateur de l'utilisateur
 ou demande-lui le texte. Les consignes de candidature sont dans le dossier de données de l'utilisateur (renvoyé par
 candidater) : les lire avant de rédiger. Ne modifie la grille (modifier_grille) qu'à la demande de l'utilisateur,
-après un essai (essai: true) dont tu lui montres l'impact.`;
+après un essai (essai: true) dont tu lui montres l'impact (offres et exemples_calcules). Ce que l'utilisateur a fait retirer
+(tâche, idée) ne se recrée pas : noter le refus dans _JOURNAL-DECISIONS.md.`;
 
 const id = z.number().int().positive().describe("Identifiant de l'offre dans postuler-juste (champ id)");
 const texteFacultatif = (d: string) => z.string().nullable().optional().describe(d);

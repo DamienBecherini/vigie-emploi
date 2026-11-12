@@ -10,7 +10,7 @@ export const REPONSE_MAX = 25_000;
 
 /** offres_a_lire : offres par page en résumé, et avec descriptions. */
 export const A_LIRE_DEFAUT = 25;
-export const A_LIRE_MAX = 100;
+export const A_LIRE_MAX = 60;
 export const A_LIRE_MAX_DESCRIPTIONS = 10;
 export const LONGUEUR_DESCRIPTION_PAGE = 1_500;
 

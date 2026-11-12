@@ -6,7 +6,7 @@ Les CV s'écrivent en Markdown, un fichier par CV, puis se convertissent en PDF 
 {{CMD}} cv "cv/<nom>.md"
 ```
 
-Le PDF est écrit à côté du `.md` et la commande affiche le nombre de pages. **Cible : 2 pages.** S'il y en a 3, couper du texte plutôt que réduire la police.
+Sans terminal (client MCP seul), l'outil `generer_cv` fait la même chose. Le PDF est écrit à côté du `.md` et la commande affiche le nombre de pages. **Cible : 2 pages.** S'il y en a 3, couper du texte plutôt que réduire la police.
 
 - `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : le CV générique validé au démarrage.
 - `cv/<Prénom>_<NOM>_CV-cible-<Entreprise>-<Poste>.md` : un CV ciblé par offre, quand l'offre le justifie.

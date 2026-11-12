@@ -48,6 +48,7 @@ import {
   type Impact,
 } from '../core/grille-stockage.ts';
 import { initialiserEspace } from '../init/init.ts';
+import { compterTexte } from '../core/compter.ts';
 import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
 
 const AIDE = `postuler-juste — offres, notes et candidatures (base SQLite locale)
@@ -118,7 +119,8 @@ Commandes
                         candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
   serve [--port 4410] [--inactivite <minutes>]
                         Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
-  mcp                   Serveur MCP (transport stdio) pour piloter postuler-juste depuis une IA
+  mcp                   Serveur MCP (transport stdio) pour piloter postuler-juste depuis une IA ; sans dossier
+                        configuré : ~/ma-recherche, créé au besoin par l'outil initialiser_espace
 
 Options générales
   --data <dossier>      Dossier de données (sinon POSTULER_JUSTE_DATA ou postuler-juste.config.json)
@@ -759,9 +761,9 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
 
   async mcp(args) {
     const { v } = analyser(args, {});
-    const { config, db } = contexte(v);
+    // Le serveur démarre même sans espace (dossier par défaut, outil initialiser_espace) : pas de contexte() ici.
     const { demarrerMcp } = await import('../mcp/serveur.ts');
-    await demarrerMcp(db, config);
+    await demarrerMcp({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined });
   },
 
   async serve(args) {
@@ -797,12 +799,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   compter(args) {
     const { v, pos } = analyser(args, {});
     if (pos.length !== 1) erreur('Usage : postuler-juste compter <fichier>');
-    const texte = sansErreur(() => readFileSync(pos[0], 'utf8')).replace(/\r\n/g, '\n');
-    const mesurer = (s: string) => ({ debut: s.slice(0, 60), caracteres: [...s].length, mots: s.split(/\s+/).filter(Boolean).length });
-    const blocs: ReturnType<typeof mesurer>[] = [];
-    const re = /^─+[^\n]*début[^\n]*\n([\s\S]*?)\n─+[^\n]*fin[^\n]*$/gm;
-    for (const m of texte.matchAll(re)) blocs.push(mesurer(m[1].trim()));
-    const resultat = blocs.length ? blocs : [mesurer(texte.trim())];
+    const resultat = compterTexte(sansErreur(() => readFileSync(pos[0], 'utf8')));
     if (v.json) return json({ ok: true, fichier: pos[0], blocs: resultat });
     for (const b of resultat) console.log(`${String(b.caracteres).padStart(6)} caractères  ${String(b.mots).padStart(4)} mots  « ${b.debut}… »`);
   },

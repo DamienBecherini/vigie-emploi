@@ -159,6 +159,10 @@ Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/
 
 Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp postuler-juste-test`).
 
+### Avec Claude Desktop ou un autre client MCP
+
+Le serveur MCP (`postuler-juste mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA. Déclarez le serveur dans `claude_desktop_config.json` avec le dossier de votre espace dans `POSTULER_JUSTE_DATA` (par défaut `~/ma-recherche`), redémarrez Claude Desktop, puis choisissez le prompt `demarrage`. Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+
 ### CV en PDF
 
 ```sh

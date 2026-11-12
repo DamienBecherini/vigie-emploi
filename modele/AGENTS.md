@@ -23,6 +23,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 ## Outils de l'application
 
 - Préférer les **outils MCP** de l'application quand ils sont branchés. Sinon la CLI : `{{CMD}} <commande> --json`, lancée depuis l'espace de travail.
+- **Sans accès aux fichiers ni terminal** (Claude Desktop ou autre client MCP seul) : partout où ces consignes disent de lire, écrire ou lancer une commande, utiliser les outils du serveur : `lister_fichiers`, `lire_fichier` (lit aussi les PDF, Word et images déposés), `ecrire_fichier` (fichier entier, chemins relatifs à l'espace), `generer_cv` (au lieu de `{{CMD}} cv`, `capture: true` pour voir le rendu), `compter` (au lieu de `{{CMD}} compter`). Les procédures existent aussi en prompts MCP : `demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`.
 - Lancer la commande avec l'outil Bash (pas PowerShell) et lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
 - Compter les caractères d'un message : `{{CMD}} compter <fichier>` (chaque bloc à copier-coller du fichier, ou le fichier entier).
 - Ce qui doit durer (une règle, une décision, une tâche) va dans `_CONTEXTE.md`, `_JOURNAL-DECISIONS.md` ou `_A-FAIRE.md`, pas dans une mémoire propre à ton outil : une autre IA doit pouvoir le retrouver.

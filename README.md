@@ -1,42 +1,67 @@
+<div align="center">
+
 # postuler-juste
 
-**Ta recherche d'emploi ou de missions, pilotée par ton IA, sans jamais te faire mentir.**
+**Votre recherche d'emploi ou de missions, pilotée par votre IA, sans jamais vous faire mentir.**
 
-postuler-juste est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **ta** grille, prépare les candidatures que tu valides (dossier, CV ciblé, message) et tient le suivi. Tout reste sur ton ordinateur.
+[![Licence : MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Node.js ≥ 24](https://img.shields.io/badge/Node.js-%E2%89%A5%2024-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://nodejs.org/api/sqlite.html)
+[![MCP](https://img.shields.io/badge/serveur-MCP-6E56CF)](https://modelcontextprotocol.io)
+[![Agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Cursor%20%C2%B7%20Codex-D97757)](#ce-quil-faut)
+[![Langue](https://img.shields.io/badge/langue-FR-0A7EA4)](#in-english)
+[![Données](https://img.shields.io/badge/donn%C3%A9es-100%20%25%20locales-2EA043)](#confidentialité)
+
+</div>
+
+---
+
+postuler-juste est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **votre** grille, prépare les candidatures que vous validez (dossier, CV ciblé, message) et tient le suivi. Tout reste sur votre ordinateur.
 
 Postuler *juste*, dans les deux sens :
 
-- **juste comme ciblé** : une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne te présente que les offres qui valent le coup ;
-- **juste comme honnête** : l'IA s'appuie sur un inventaire de ce que tu peux revendiquer ou non, construit avec toi au démarrage. Elle n'écrit dans un CV que ce que tu peux défendre en entretien.
+- **juste comme ciblé** : une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup ;
+- **juste comme honnête** : l'IA s'appuie sur un inventaire de ce que vous pouvez revendiquer ou non, construit avec vous au démarrage. Elle n'écrit dans un CV que ce que vous pouvez défendre en entretien.
 
 ## Comment ça marche
 
 ```
-alertes e-mail (.eml)  →  tri et notation par l'IA (grille)  →  tes « go »
-        →  dossier + CV ciblé (PDF 2 pages) + message  →  envoi par toi  →  suivi (journal, échéances, relances)
+alertes e-mail (.eml)  →  tri et notation par l'IA (votre grille)  →  vos « go »
+        →  dossier + CV ciblé (PDF, 2 pages) + message  →  envoi par vous  →  suivi (journal, échéances, relances)
 ```
 
-1. **Démarrage guidé** : tu déposes ton CV (et l'export PDF de ton profil LinkedIn) dans `a-deposer/`. L'IA les lit, lit tes pages publiques si elle le peut, puis t'interroge par petits groupes de questions : cibles, parcours, preuves, ce qui vend, risques, interdits, conditions. Elle en tire ton **contexte** (`_CONTEXTE.md`), ta **grille** et un premier **CV**, que tu valides.
-2. **Tri des alertes** : un filtre de ta messagerie enregistre les alertes (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) dans `emails/`. L'IA les ingère, écarte le hors-cible, note le reste critère par critère (l'application calcule la note), et te présente les meilleures offres.
-3. **Candidatures** : sur ton « go », l'IA prépare le dossier, un CV ciblé qui tient en deux pages et le message adapté au formulaire et à sa limite de caractères. **C'est toi qui envoies.**
-4. **Suivi** : tu racontes (« envoyé hier », « entretien jeudi 14 h ») ; l'IA tient le journal, les échéances et le tableau de suivi.
+1. **Démarrage guidé** : vous déposez votre CV (et l'export PDF de votre profil LinkedIn) dans `a-deposer/`. L'IA les lit, consulte vos pages publiques si elle le peut, puis vous interroge par petits groupes de questions : cibles, parcours, preuves, ce qui vous distingue, risques, interdits, conditions. Elle en tire votre **contexte** (`_CONTEXTE.md`), votre **grille** et un premier **CV**, que vous validez.
+2. **Tri des alertes** : un filtre de votre messagerie enregistre les alertes (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) dans `emails/` (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)). L'IA les ingère, écarte le hors-cible, note le reste critère par critère (l'application calcule la note) et vous présente les meilleures offres.
+3. **Candidatures** : sur votre « go », l'IA prépare le dossier, un CV ciblé qui tient en deux pages et le message adapté au formulaire et à sa limite de caractères. **C'est vous qui envoyez.**
+4. **Suivi** : vous racontez (« envoyé hier », « entretien jeudi à 14 h ») ; l'IA tient le journal, les échéances et le tableau de suivi.
 
-![Tableau de bord : offres notées, échéances à venir](docs/captures/tableau-de-bord.png)
+L'application **n'appelle aucun modèle d'IA** : c'est votre agent qui lit et rédige, l'application garde l'état (base SQLite, tableau de bord web, CLI, serveur MCP).
 
-*Le tableau de bord (données fictives) : notes calculées par la grille, statuts, échéances à venir.*
+![Tableau de bord : offres triées par date puis par note, échéances à venir, statistiques](docs/captures/tableau-de-bord.png)
 
-Trois gabarits de CV sont fournis (« sobre », « moderne », « compact ») ; l'IA peut aussi adapter la feuille de style à un modèle que tu lui montres.
+*Le tableau de bord (données fictives) : offres triées par date de réception puis par note, échéances des sept prochains jours, candidatures par étape.*
 
-<img src="docs/captures/cv-moderne.png" alt="CV fictif rendu avec le gabarit « moderne »" width="420">
+![Détail d'une offre : décomposition de la note critère par critère](docs/captures/detail-offre.png)
 
-L'application **n'appelle aucun modèle d'IA** : c'est ton agent qui lit et rédige, l'application garde l'état (base SQLite, tableau de bord web, CLI, serveur MCP).
+*Le détail d'une offre : chaque critère, sa sous-note, son poids et son apport à la note finale, avec la justification de l'IA.*
+
+### Les CV
+
+Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois gabarits fournis : « sobre » (à empattements), « moderne » (bandeau de couleur) et « compact » (une colonne, dense). L'IA peut aussi adapter la feuille de style à un modèle que vous lui montrez.
+
+<div align="center">
+<img src="docs/captures/cv-sobre.png" alt="CV fictif, gabarit « sobre »" width="32%">
+<img src="docs/captures/cv-moderne.png" alt="CV fictif, gabarit « moderne »" width="32%">
+<img src="docs/captures/cv-compact.png" alt="CV fictif, gabarit « compact »" width="32%">
+</div>
 
 ## Ce qu'il faut
 
 - **Node.js 24** ou plus.
 - **Chrome, Edge ou Chromium** (pour les CV en PDF).
 - **Un agent IA** qui travaille dans un dossier : Claude Code de préférence (serveur MCP et skills fournis) ; Cursor, Codex ou un autre agent lisent les mêmes consignes (`AGENTS.md`) et utilisent la CLI.
-- Facultatif : un **navigateur piloté par l'IA** avec tes sessions (par exemple Claude in Chrome), pour lire les offres LinkedIn, Indeed ou Glassdoor. Sans lui, tu colles le texte des offres quand l'IA le demande.
+- Facultatif : un **navigateur piloté par l'IA** avec vos sessions (par exemple Claude in Chrome), pour lire les offres LinkedIn, Indeed ou Glassdoor. Sans lui, vous collez le texte des offres quand l'IA le demande.
 
 ## Démarrer
 
@@ -48,17 +73,46 @@ npm run build
 node bin/postuler-juste.js init ~/ma-recherche
 ```
 
-`init` crée ton espace de travail et affiche le prompt de démarrage à donner à ton IA. Ensuite :
+`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
-1. glisse ton CV dans `~/ma-recherche/a-deposer/` ;
-2. ouvre ton IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et accepte le serveur MCP) ;
-3. colle le prompt affiché par `init`.
+1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
+2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
+3. collez le prompt affiché par `init`.
 
 Le démarrage se fait en deux sessions d'environ une demi-heure chacune.
 
+## Automatiser la réception des alertes
+
+L'IA traite les alertes qui se trouvent dans le dossier `emails/` de l'espace de travail, au format `.eml`. Vous pouvez y glisser les e-mails à la main depuis votre messagerie, mais le plus simple est un filtre qui le fait à chaque relève.
+
+1. Créez des **alertes** sur les sites d'emploi que vous utilisez (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…), avec vos mots-clés.
+2. Configurez votre messagerie pour **enregistrer chaque alerte reçue en fichier `.eml` dans `emails/`**, puis la ranger dans un dossier à part.
+3. Demandez ensuite à votre IA de « traiter les e-mails » (ou cliquez sur « Traiter les e-mails » dans le tableau de bord, avec Claude Code). Les fichiers traités sont supprimés de `emails/`.
+
+### Exemple avec Thunderbird et FiltaQuilla
+
+Thunderbird ne sait pas enregistrer un message en fichier depuis un filtre ; l'extension [FiltaQuilla](https://addons.thunderbird.net/thunderbird/addon/filtaquilla/) ajoute cette action.
+
+**1. Installer et configurer FiltaQuilla**
+
+- Menu **Outils → Modules complémentaires et thèmes**, recherchez « FiltaQuilla » et installez l'extension.
+- Ouvrez ses **options** (Modules complémentaires → FiltaQuilla → Options). Dans la liste des actions, **activez « Save Message as File »** (enregistrer le message comme fichier) : elle est désactivée par défaut et n'apparaît pas dans les filtres tant qu'elle ne l'est pas.
+
+**2. Créer le filtre**
+
+- Menu **Outils → Filtres de messages**, choisissez le compte qui reçoit les alertes, puis **Nouveau**.
+- Nommez-le, par exemple « Alertes offres ».
+- Choisissez **« Remplir une des conditions suivantes »** et ajoutez une condition **Expéditeur → contient → l'adresse d'envoi des alertes** de chaque site (ouvrez une alerte reçue pour la relever).
+- Dans **« Exécuter ces actions »** :
+  1. **Save Message as File** : choisissez le dossier `emails/` de votre espace de travail (par exemple `~/ma-recherche/emails`) ;
+  2. *(facultatif)* **Déplacer le message vers** un sous-dossier, par exemple « Alertes traitées » : vous voyez ainsi dans Thunderbird ce qui a déjà été transmis.
+- Laissez le filtre s'appliquer à la **relève du courrier**. Pour les alertes déjà reçues : sélectionnez le filtre, puis **Exécuter maintenant** sur le dossier de réception.
+
+Avec une autre messagerie, l'idée est la même : toute règle ou tout script capable d'enregistrer un message au format `.eml` dans `emails/` convient.
+
 ## Confidentialité
 
-Ton espace de travail (CV, contexte, base, candidatures) reste sur ton disque. Rien n'est envoyé ailleurs que vers l'IA que tu utilises. L'application ne télécharge que les pages publiques des offres Hellowork et Free-Work ; elle ne lit jamais LinkedIn, Indeed ni Glassdoor par script.
+Votre espace de travail (CV, contexte, base, candidatures) reste sur votre disque. Rien n'est envoyé ailleurs que vers l'IA que vous utilisez. L'application ne télécharge que les pages publiques des offres Hellowork et Free-Work ; elle ne lit jamais LinkedIn, Indeed ni Glassdoor par script.
 
 ## Référence
 

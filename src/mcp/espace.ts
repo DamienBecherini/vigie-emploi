@@ -1,5 +1,6 @@
 // Outils, prompts et ressource du serveur MCP pour un client sans accès aux fichiers ni au terminal (Claude Desktop…) :
 // création de l'espace, consignes de l'espace en prompts, fichiers confinés au dossier de données, CV en PDF, comptage.
+import { pathToFileURL } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -510,6 +511,9 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
   // ---------------------------------------------------------------------------------------------
   // CV et texte
 
+  /** Lien cliquable vers un fichier local (file:///D:/… sous Windows, file:///home/… ailleurs), espaces et accents encodés. */
+  const lienFichier = (absolu: string) => pathToFileURL(absolu).href;
+
   serveur.registerTool(
     'generer_cv',
     {
@@ -577,6 +581,11 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
         pdf_existait: pdfExistait,
         gabarit: gabarit === local ? 'cv/gabarit' : bi({ fr: 'gabarit livré (sobre)', en: 'bundled template (sobre)' }),
         capture: r.capture ? rel(r.capture) : null,
+        liens: { pdf: lienFichier(r.pdf), markdown: lienFichier(c.absolu) },
+        a_dire: bi({
+          fr: `Donner à l'utilisateur les deux liens cliquables : [PDF](${lienFichier(r.pdf)}) · [Markdown](${lienFichier(c.absolu)})`,
+          en: `Give the user both clickable links: [PDF](${lienFichier(r.pdf)}) · [Markdown](${lienFichier(c.absolu)})`,
+        }),
       };
       const content: CallToolResult['content'] = [{ type: 'text', text: JSON.stringify(infos, null, 2) }];
       if (r.capture) content.push({ type: 'image', data: readFileSync(r.capture).toString('base64'), mimeType: 'image/png' });

@@ -12,7 +12,8 @@ The file and folder names of the workspace stay in French because the applicatio
 1. **First run** (`_CONTEXTE.md` still full of gaps): follow [`DEMARRAGE.md`](DEMARRAGE.md) and nothing else.
 2. Otherwise, read **[`_CONTEXTE.md`](_CONTEXTE.md)** before analysing any job ad or writing anything: positioning, facts, what can and cannot be claimed, things never to write.
 3. **Onboarding done, new session without a specific request**: give a one-line status and suggest the useful action, without waiting to be asked: `.eml` files in `emails/` → process them; ads in `go` without an application folder → prepare the applications; overdue or upcoming deadlines (`echeances`) → remind the user.
-4. The state of the job ads and applications lives in the database, which is the source of truth. `candidatures/_SUIVI.md` is generated from it: never edit it by hand.
+4. When you create or change a document the user must read, approve or send (CV, application file, message), give them its **clickable link** as an absolute path (`file:///…`); for a CV, both the PDF and the Markdown (`generer_cv` returns them in `liens`).
+5. The state of the job ads and applications lives in the database, which is the source of truth. `candidatures/_SUIVI.md` is generated from it: never edit it by hand.
 
 ## Procedures
 

@@ -30,4 +30,4 @@ Le gabarit est dans [`gabarit/`](gabarit/) : `gabarit.css`, les polices, et une 
 - demander à l'IA : « adapte `cv/gabarit/gabarit.css` à ce modèle » en lui donnant une capture ou un PDF du rendu voulu ; elle modifie la feuille, régénère le CV et vérifie les 2 pages ;
 - ou modifier `gabarit.css` soi-même (couleur d'accent, police, marges).
 
-Contrôle visuel : ouvrir dans le navigateur le fichier HTML indiqué par la commande (il est dans `cv/gabarit/`).
+Contrôle visuel : ouvrir dans le navigateur le fichier HTML indiqué par la commande (il est dans `cv/gabarit/apercu/`).

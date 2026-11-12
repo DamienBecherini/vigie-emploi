@@ -1,7 +1,7 @@
 # E-mails d'alertes (supprimés une fois ingérés)
 emails/*.eml
 # Rendus intermédiaires des CV
-cv/gabarit/*.html
+cv/gabarit/apercu/
 # Fichiers temporaires de SQLite
 data/*.sqlite-journal
 data/*.sqlite-wal

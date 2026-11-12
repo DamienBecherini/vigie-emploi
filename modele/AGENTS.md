@@ -9,7 +9,21 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 1. **Premier lancement** (`_CONTEXTE.md` encore à trous) : suivre [`DEMARRAGE.md`](DEMARRAGE.md), rien d'autre.
 2. Sinon, lire **[`_CONTEXTE.md`](_CONTEXTE.md)** avant toute analyse d'offre ou rédaction : positionnement, faits, ce qui est revendicable ou non, interdits.
-3. L'état des offres et des candidatures est dans la base (outils MCP `postuler-juste`, ou la CLI avec `--json`) : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
+3. L'état des offres et des candidatures est dans la base : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
+
+## Procédures
+
+| Tâche | Procédure |
+|---|---|
+| Trier les e-mails d'alertes, noter les offres | [`procedures/traiter-emails.md`](procedures/traiter-emails.md) |
+| Préparer les candidatures en « go » | [`procedures/preparer-go.md`](procedures/preparer-go.md) |
+| Écrire un CV ciblé | [`procedures/cv-cible.md`](procedures/cv-cible.md) |
+
+## Outils de l'application
+
+- Préférer les **outils MCP** de l'application quand ils sont branchés. Sinon la CLI : `{{CMD}} <commande> --json`, lancée depuis l'espace de travail.
+- Lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
+- **Grille de notation** : la modifier par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`), qui ne change que ce qu'on lui passe. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
 
 ## Règles non négociables
 
@@ -26,13 +40,13 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 2. S'il dit « go » : `candidater`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `enregistrer_candidature` et `generer_suivi` (`remplacer: true`).
 3. **Lire le formulaire de candidature avant d'écrire** : CV seul, message (et sa limite de caractères), questions, lettre exigée ou non. Une lettre de motivation ne s'écrit que si le formulaire l'exige : une page, même matière que le message.
 4. Messages : respecter la limite du canal, les enregistrer dans le dossier, **version envoyée comprise**.
-5. CV ciblé si l'offre le justifie : voir [`cv/LISEZMOI.md`](cv/LISEZMOI.md). Contrôler **2 pages** (`{{CMD}} cv <fichier.md>` affiche le nombre de pages).
+5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages** (`{{CMD}} cv <fichier.md>` affiche le nombre de pages).
 6. Sans « go » : `changer_statut` vers `ecartee`, avec la raison en commentaire, sans redemander.
 7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base (`ajouter_evenement`, statut, prochaine échéance), puis `generer_suivi`.
 
 ## Alertes e-mail
 
-Les e-mails d'alertes (`.eml`) arrivent dans `emails/`. Le flux (ingestion, lecture, notation avec la grille `profil/grille.json`, compte rendu, « go ») est décrit dans `{{APP}}/AGENTS.md`. Ne jamais donner la note finale d'une offre : noter les critères, l'application calcule. Ne modifier la grille qu'à la demande de l'utilisateur, après un essai dont tu lui montres l'impact.
+Les e-mails d'alertes (`.eml`) arrivent dans `emails/`. Le flux (ingestion, lecture, notation avec la grille `profil/grille.json`, compte rendu, « go ») : [`procedures/traiter-emails.md`](procedures/traiter-emails.md). Ne jamais donner la note finale d'une offre : noter les critères, l'application calcule. Ne modifier la grille qu'à la demande de l'utilisateur, après un essai dont tu lui montres l'impact.
 
 ## Garder le contexte léger
 

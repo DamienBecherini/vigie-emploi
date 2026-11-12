@@ -32,27 +32,39 @@
 |---|---|---|---|
 | | | | |
 
-## 4. Interdits
+## 4. Arguments qui vendent
+
+<!-- Le récit en une phrase (l'accroche), les deux ou trois preuves à mettre en avant selon la cible,
+     les angles qui distinguent (secteur, double compétence, regard client…), et pour chaque projet phare
+     les nuances à ne pas déformer (ce qui a été fait soi-même, par l'équipe, ce qui n'a pas été fait). -->
+
+## 5. Risques en recrutement et parades
+
+<!-- Ce qui peut coincer et comment y répondre honnêtement : test technique en direct,
+     technologie à monter, anglais oral, trou dans le parcours, poste visé au-dessus du titre actuel,
+     prétentions salariales. -->
+
+## 6. Interdits
 
 <!-- Ce qui ne doit jamais être écrit : titres jamais tenus, technologies jamais pratiquées,
      formations non terminées, formulations fausses déjà repérées, sujets personnels. -->
 
-## 5. Confidentialité
+## 7. Confidentialité
 
 <!-- Clients ou employeurs à ne pas nommer, informations à ne jamais mentionner,
      code ou documents qui ne sont pas publics. -->
 
-## 6. Conditions
+## 8. Conditions
 
 <!-- Rémunération (plancher et cible, en brut annuel ou TJM), télétravail souhaité,
      trajet maximal et depuis où, contrats acceptés, date de disponibilité. -->
 
-## 7. Canaux
+## 9. Canaux
 
 <!-- Plateformes utilisées (LinkedIn, Malt, Free-Work, Indeed, Welcome to the Jungle…),
      état de chaque profil public, alertes e-mail en place. -->
 
-## 8. CV de référence
+## 10. CV de référence
 
 <!-- Le CV générique validé (cv/<nom>.md) et les règles propres à cette personne
      (photo ou non, sections à mettre en avant, langue). -->

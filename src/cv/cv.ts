@@ -1,9 +1,8 @@
 // CV en Markdown -> HTML -> PDF A4 (Chrome ou Edge sans interface).
 // Le gabarit est un dossier : gabarit.css, ses polices, et une photo facultative (portrait.webp|jpg|jpeg|png).
-// L'HTML intermédiaire est écrit dans le dossier du gabarit (les chemins relatifs du CSS y fonctionnent),
-// le PDF à côté du .md. Le nombre de pages est l'indicateur à surveiller (cible : 2).
+// L'HTML intermédiaire est écrit dans <gabarit>/apercu/ (il pointe vers ../gabarit.css), le PDF à côté du .md. Le nombre de pages est l'indicateur à surveiller (cible : 2).
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
@@ -276,6 +275,11 @@ export function cheminPortrait(dossierGabarit: string): string | null {
   return null;
 }
 
+function portraitRelatif(gabarit: string): string | null {
+  const p = cheminPortrait(gabarit);
+  return p ? `../${p}` : null;
+}
+
 export interface ResultatCv {
   markdown: string;
   html: string;
@@ -292,9 +296,11 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
     throw Object.assign(new Error(`Gabarit incomplet : ${join(gabarit, 'gabarit.css')} manquant`), { utilisateur: true });
   }
   const nom = basename(md).replace(/\.md$/i, '');
-  const html = join(gabarit, `${nom}.html`);
+  const apercu = join(gabarit, 'apercu');
+  mkdirSync(apercu, { recursive: true });
+  const html = join(apercu, `${nom}.html`);
   const pdf = join(dirname(md), `${nom}.pdf`);
-  writeFileSync(html, cvEnHtml(readFileSync(md, 'utf8'), { css: 'gabarit.css', portrait: cheminPortrait(gabarit) }), 'utf8');
+  writeFileSync(html, cvEnHtml(readFileSync(md, 'utf8'), { css: '../gabarit.css', portrait: portraitRelatif(gabarit) }), 'utf8');
   execFileSync(
     navigateur,
     [

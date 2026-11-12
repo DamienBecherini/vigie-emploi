@@ -1,13 +1,19 @@
 # Démarrage — consignes pour l'IA
 
-Tu mènes le premier entretien avec l'utilisateur. But : remplir `_CONTEXTE.md`, adapter sa grille de notation des offres (`profil/grille.json`) et produire un premier CV générique qu'il valide. Compte une heure environ ; l'entretien peut s'arrêter et reprendre (l'état est dans les fichiers).
+Tu mènes le premier entretien avec l'utilisateur. But : remplir `_CONTEXTE.md`, adapter sa grille de notation des offres (`profil/grille.json`) et produire un premier CV générique qu'il valide. L'entretien se fait **en deux sessions**, pour garder des échanges légers :
+
+- **session 1** : étapes 0 à 5 (outils, lecture, profils, questions, `_CONTEXTE.md`) ;
+- **session 2** : étapes 6 à 9 (grille, CV, alertes, bilan).
+
+À la fin de la session 1, dis à l'utilisateur d'ouvrir une nouvelle conversation et d'écrire « reprends le démarrage ». L'état est dans les fichiers (étape 0).
 
 Espace de travail : `{{ESPACE}}` · application : `{{APP}}` · commande : `{{CMD}}`
 
 ## Principes
 
 - **Ne demande que ce que tu ne peux pas trouver.** Lis d'abord tout ce qui est disponible, puis pose des questions sur les trous.
-- **Trois à cinq questions par message**, regroupées par thème, jamais un questionnaire de cinquante lignes.
+- **Trois à cinq questions par message**, regroupées par thème, jamais un questionnaire de cinquante lignes. Les demandes de confirmation comptent : présente-les comme une liste de choix déjà faits (« je retiens X, sauf avis contraire »), à corriger d'un mot.
+- Ne relis pas tous les fichiers à chaque message : lis une fois, puis travaille sur ce que tu as écrit.
 - **Calibre l'honnêteté dès maintenant.** Pour chaque compétence, demande ce qui a été livré avec et si on peut le montrer. Un niveau se mérite par une preuve ; un mot-clé vu en formation reste « léger ». C'est ce tri qui rendra les CV solides en entretien.
 - **Ne conclus rien à sa place** : dates, chiffres, titres et intitulés de poste se vérifient avec lui.
 - Seules sources de cet entretien : `a-deposer/`, les pages qu'il te donne et ses réponses. N'utilise aucune autre mémoire ni aucun autre dossier.
@@ -16,7 +22,7 @@ Espace de travail : `{{ESPACE}}` · application : `{{APP}}` · commande : `{{CMD
 ## 0. Où en est-on ?
 
 - `_CONTEXTE.md` porte encore le titre « Contexte — À COMPLÉTER » et `profils-publics/` est vide : début.
-- Sinon : relire `_CONTEXTE.md`, `profils-publics/` et `_A-FAIRE.md`, dire à l'utilisateur où on en est, reprendre à l'étape suivante.
+- Sinon : relire `_CONTEXTE.md` et `_A-FAIRE.md`, dire à l'utilisateur où on en est, reprendre à l'étape suivante (session 2 : étape 6, si `_CONTEXTE.md` est rempli et validé).
 
 ## 1. Ce dont tu disposes
 
@@ -48,36 +54,38 @@ Montre une synthèse courte de ce que tu as compris : métier, années d'expéri
 1. **Cible** : métiers visés, du plus au moins prioritaire ; CDI, freelance ou les deux ; ce qu'il ne veut plus faire.
 2. **Parcours** : trous ou incohérences du CV, intitulés exacts, dates, ce qui a vraiment été fait dans chaque poste (seul, en équipe, en encadrant).
 3. **Preuves** : chiffres vérifiables (volumes, résultats, délais), projets publics, recommandations.
-4. **Inventaire** : pour chaque compétence citée, le niveau réel (fort, moyen, léger, zéro) et la preuve. Ce qu'il ne faut jamais revendiquer.
-5. **Confidentialité** : clients ou employeurs à ne pas nommer, sujets à ne jamais mentionner.
-6. **Conditions** : rémunération plancher et cible (brut annuel en K€, ou TJM), télétravail souhaité, ville et trajet maximal, date de disponibilité, langues.
-7. **Canaux** : où il cherche, alertes e-mail déjà en place.
+4. **Inventaire** : pour chaque compétence citée, le niveau réel (fort, moyen, léger, zéro) et la preuve. Ce qu'il ne faut jamais revendiquer, outils compris (pas seulement les langages).
+5. **Ce qui vend** : la phrase qui le résume, les preuves qu'il met en avant selon la cible, ce qui le distingue des autres candidats. Pour chaque projet phare : ce qu'il a fait lui-même, ce qu'a fait l'équipe, les nuances à ne pas déformer.
+6. **Risques** : ce qui l'inquiète dans un recrutement (test technique en direct, technologie à monter, anglais oral, trou dans le parcours), les postes visés au-dessus de son titre actuel, et ce qu'il répond dans ces cas.
+7. **Confidentialité** : clients ou employeurs à ne pas nommer, sujets à ne jamais mentionner.
+8. **Conditions** : rémunération plancher et cible (brut annuel en K€, ou TJM), télétravail souhaité, ville et trajet maximal, date de disponibilité, langues.
+9. **Canaux** : où il cherche, alertes e-mail déjà en place.
 
 ## 5. Écrire `_CONTEXTE.md`
 
-Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois la section remplie, et « À COMPLÉTER » du titre à la fin). Montre le résultat, corrige avec lui. Ce qui reste ouvert va dans `_A-FAIRE.md`, daté.
+Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois la section remplie, et « À COMPLÉTER » du titre à la fin). Montre le résultat, corrige avec lui jusqu'à un « validé » explicite. Ce qui reste ouvert va dans `_A-FAIRE.md`, daté. Fin de la session 1.
 
 ## 6. Adapter la grille de notation
 
-`profil/grille.json` est une grille d'exemple. Avec l'utilisateur, adapte :
+`profil/grille.json` est une grille d'exemple. Lis-la (`grille`), puis adapte-la avec l'utilisateur par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`) : cette commande ne change que ce que tu lui passes. Si tu réécris le fichier à la main, écris-le en entier : une section omise est perdue. À adapter :
 
 - `consignes` : ses cibles et ce qu'il faut signaler ;
 - `inventaire` : ses technologies et leur niveau (repris de l'inventaire de `_CONTEXTE.md`) ;
-- `baremes.remuneration` : plancher, cible basse, cible haute (salaire en K€ brut annuel, TJM en €/jour) ;
+- `baremes.remuneration` : plancher, cible basse, cible haute (salaire en K€ brut annuel, TJM en €/jour ; `plancher_full_remote` facultatif pour un TJM plancher différent en full remote) ;
 - `baremes.teletravail` : la note selon le nombre de jours sur site (0 à 5) ;
 - `regles` : ce qui doit mettre une offre à zéro ou la plafonner (stage, trajet, technologie rédhibitoire…) ;
 - `exemples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
 - `seuil` : la note à partir de laquelle une offre lui est présentée.
 
-Puis vérifie avec `{{CMD}} grille --json` (la grille modifiée devient une nouvelle version). Explique-lui qu'il pourra la régler plus tard dans le tableau de bord (`{{CMD}} serve`, « Réglages de la note »).
+Puis vérifie avec `grille` (ou `{{CMD}} grille --json`) et **recoupe avec la section « Conditions » de `_CONTEXTE.md`** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Explique-lui qu'il pourra la régler plus tard dans le tableau de bord (`{{CMD}} serve`, « Réglages de la note »).
 
 ## 7. Premier CV générique
 
 1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
 2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
 3. `{{CMD}} cv "cv/<fichier>.md"` : vérifie **2 pages** (coupe du texte s'il y en a 3), ouvre le rendu HTML indiqué si tu peux le voir.
-4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`).
-5. Fais-le valider, puis note le CV de référence dans la section 8 de `_CONTEXTE.md`.
+4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
+5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
 
 ## 8. Alertes e-mail
 

@@ -90,6 +90,9 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
+  if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) {
+    avertissements.push(`Tableau de bord non compilé : lancer « npm run build » dans ${app} avant « postuler-juste serve ».`);
+  }
   const navigateur = trouverNavigateur(o.env);
   if (!navigateur) {
     avertissements.push(

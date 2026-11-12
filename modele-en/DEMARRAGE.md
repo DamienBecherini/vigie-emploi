@@ -83,7 +83,7 @@ Fill in every section of the template (remove the `<!-- -->` comments once a sec
 - `exemples`: replace the fictitious ads with two or three real ones they consider good, average or poor, if possible;
 - `seuil`: the score from which a job ad is shown to them.
 
-After each change, reread the grid (`grille`, or `{{CMD}} grille --json`): **the inventory must contain every line of the "Inventory" section of `_CONTEXTE.md`** (count them), and **cross-check it with the "Conditions" section**: remote work, commute, pay and rules must say the same thing; correct one or the other with them. Tell them they can change it later by asking you; if they have a terminal and want to, they can also tune it themselves in the dashboard (`{{CMD}} serve`, scoring settings): that is optional.
+After each change, reread the grid (`grille`, or `{{CMD}} grille --json`): **the inventory must contain every line of the "Inventory" section of `_CONTEXTE.md`** (count them), and **cross-check it with the "Conditions" section**: remote work, commute, pay and rules must say the same thing; correct one or the other with them. Tell them they can change it later by asking you; if they want to, they can also tune it themselves in the dashboard (scoring settings; `ouvrir_tableau_de_bord` tool, or `{{CMD}} serve` with a terminal): that is optional.
 
 ## 7. First generic CV
 

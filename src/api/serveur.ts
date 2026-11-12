@@ -419,35 +419,44 @@ export function demarrerServeur(o: {
   hote?: string;
   /** Minutes sans activité avant l'arrêt (0 ou absent : jamais). */
   inactiviteMin?: number;
-}): Promise<void> {
+  /**
+   * Serveur hébergé dans un autre processus (tableau de bord lancé par le serveur MCP faute de node séparé) :
+   * messages sur stderr (stdout appartient au protocole MCP), port occupé rendu en erreur, et à l'arrêt automatique
+   * seuls le serveur web et sa base se ferment, le processus continue.
+   */
+  heberge?: boolean;
+}): Promise<{ port: number }> {
   const veille = new Veille((o.inactiviteMin ?? 0) * 60);
   const diffusion = new Diffusion();
   const arreterSurveillance = surveiller({ db: o.db, diffusion, base: o.config.base, emails: o.config.emails });
   const app = creerApp(o.db, o.config, veille, { diffusion });
   const langue = o.config.langue ?? LANGUE_DEFAUT;
   const hote = o.hote ?? '127.0.0.1';
+  const dire = o.heberge ? (l: string) => process.stderr.write(`${l}\n`) : (l: string) => console.log(l);
   return new Promise((resolve, reject) => {
     const serveur = serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
-      console.log(tl(langue, 'serveur.demarre', { port: info.port, dossier: o.config.dossierDonnees }));
-      console.log(tl(langue, 'serveur.arreter'));
-      resolve();
+      dire(tl(langue, 'serveur.demarre', { port: info.port, dossier: o.config.dossierDonnees }));
+      if (!o.heberge) dire(tl(langue, 'serveur.arreter'));
+      resolve({ port: info.port });
     });
     serveur.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
+      if (err.code === 'EADDRINUSE' && !o.heberge) {
         console.error(tl(langue, 'serveur.portUtilise', { port: o.port }));
         console.error(tl(langue, 'serveur.autrePort', { suivant: o.port + 1 }));
         process.exit(1);
       }
+      clearInterval(surveillance);
+      arreterSurveillance();
       reject(err);
     });
     const surveillance = setInterval(() => {
       if (!veille.expiree()) return;
       clearInterval(surveillance);
-      console.log(tl(langue, 'serveur.inactivite', { minutes: Math.round(veille.delaiS / 60) }));
+      dire(tl(langue, 'serveur.inactivite', { minutes: Math.round(veille.delaiS / 60) }));
       arreterSurveillance();
       serveur.close(() => {
         o.db.close();
-        process.exit(0);
+        if (!o.heberge) process.exit(0);
       });
       if ('closeAllConnections' in serveur) serveur.closeAllConnections();  // sinon les connexions keep-alive retardent l'arrêt
     }, 1000);

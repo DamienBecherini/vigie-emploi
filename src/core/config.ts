@@ -48,9 +48,26 @@ export const NOM_FICHIER_CONFIG = 'postuler-juste.config.json';
 export const ANCIEN_FICHIER_CONFIG = 'cap-emploi.config.json';
 const ANCIENNE_BASE = 'cap-emploi.sqlite';
 
-/** Variable d'environnement POSTULER_JUSTE_<nom>, ou son ancien nom CAP_EMPLOI_<nom>. */
+/**
+ * Variable d'environnement POSTULER_JUSTE_<nom>, ou son ancien nom CAP_EMPLOI_<nom>.
+ * Une valeur vide, ou restée sous la forme `${…}` (réglage d'une extension Claude Desktop laissé vide, non substitué),
+ * compte comme absente.
+ */
 export function variable(env: NodeJS.ProcessEnv, nom: string): string | undefined {
-  return env[`POSTULER_JUSTE_${nom}`] || env[`CAP_EMPLOI_${nom}`] || undefined;
+  const utile = (v: string | undefined) => {
+    const t = v?.trim();
+    return t && !/^\$\{[^}]*\}$/.test(t) ? t : undefined;
+  };
+  return utile(env[`POSTULER_JUSTE_${nom}`]) ?? utile(env[`CAP_EMPLOI_${nom}`]);
+}
+
+/** Noms de langue saisis à la main (réglage de l'extension Claude Desktop) ramenés au code : « English » → en. */
+const ALIAS_LANGUE: Record<string, string> = { francais: 'fr', français: 'fr', french: 'fr', anglais: 'en', english: 'en' };
+
+/** Code de langue d'une valeur saisie (casse et alias tolérés) ; la valeur en minuscules si elle n'est pas reconnue. */
+export function normaliserLangue(v: string): string {
+  const b = v.trim().toLowerCase();
+  return ALIAS_LANGUE[b] ?? b;
 }
 
 /** Le fichier de config de ce dossier, sous son nom actuel ou l'ancien. */
@@ -85,13 +102,15 @@ export class ErreurConfig extends Error {
 /** Langue des messages d'erreur de configuration : variable, sinon fichier, si elles sont valides ; sinon le français. */
 function langueDesMessages(env: NodeJS.ProcessEnv, brut: ConfigFichier = {}): Langue {
   const v = variable(env, 'LANGUE');
-  if (estLangue(v)) return v;
+  const n = v === undefined ? undefined : normaliserLangue(v);
+  if (estLangue(n)) return n;
   return estLangue(brut.langue) ? brut.langue : LANGUE_DEFAUT;
 }
 
 /** Langue de la variable POSTULER_JUSTE_LANGUE, sinon du fichier, sinon le français ; une valeur inconnue est refusée. */
 function langueDe(env: NodeJS.ProcessEnv, brut: ConfigFichier, fichier: string | null): Langue {
-  const v = variable(env, 'LANGUE') ?? brut.langue ?? LANGUE_DEFAUT;
+  const saisie = variable(env, 'LANGUE');
+  const v = (saisie === undefined ? undefined : normaliserLangue(saisie)) ?? brut.langue ?? LANGUE_DEFAUT;
   if (!estLangue(v)) {
     const langue = langueDesMessages(env, brut);
     throw new ErreurConfig(
@@ -179,6 +198,7 @@ export function langueConfiguree(opts: OptionsConfig = {}): Langue {
     return chargerConfig(opts).langue;
   } catch {
     const v = variable(opts.env ?? process.env, 'LANGUE');
-    return estLangue(v) ? v : LANGUE_DEFAUT;
+    const n = v === undefined ? undefined : normaliserLangue(v);
+    return estLangue(n) ? n : LANGUE_DEFAUT;
   }
 }

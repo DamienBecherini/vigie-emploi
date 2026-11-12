@@ -1,7 +1,7 @@
 # Procédure : traiter les e-mails d'alertes
 
 Déclencheurs : « traite les e-mails », « regarde les nouvelles offres », bouton « Traiter les e-mails » du tableau de bord.
-Référence de l'application : `{{APP}}/AGENTS.md`. Cette fiche fige l'ordre et les pièges connus.
+Référence de l'application : `{{DOC_APP}}`. Cette fiche fige l'ordre et les pièges connus.
 
 Outils : le serveur MCP de l'application (`ingerer_emails`, `offres_a_lire`, `grille`, `noter_lot`, `changer_statut`, `lister_offres`, `lire_offre`), sinon la CLI `{{CMD}} <commande> --json`. Lire la sortie JSON directement, sans la faire passer par un autre programme.
 

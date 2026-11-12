@@ -1,22 +1,56 @@
 {
   "name": "postuler-juste",
-  "version": "0.4.0",
-  "private": true,
+  "version": "0.5.0",
   "description": "Recherche d'emploi et de missions pilotée par une IA : tri des offres avec une grille transparente, candidatures et CV honnêtes, suivi. Base SQLite, tableau de bord web, CLI et serveur MCP.",
+  "keywords": [
+    "recherche-emploi",
+    "emploi",
+    "candidature",
+    "cv",
+    "freelance",
+    "mcp",
+    "claude-code",
+    "agent-ia",
+    "sqlite",
+    "french"
+  ],
+  "author": "Damien BECHERINI",
+  "license": "MIT",
+  "homepage": "https://github.com/DamienBecherini/postuler-juste#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DamienBecherini/postuler-juste.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DamienBecherini/postuler-juste/issues"
+  },
   "type": "module",
   "bin": {
     "postuler-juste": "bin/postuler-juste.js",
     "cap-emploi": "bin/cap-emploi.js"
   },
+  "files": [
+    "bin",
+    "dist",
+    "migrations",
+    "modele",
+    "gabarits",
+    "exemples",
+    "AGENTS.md",
+    "docs/utiliser-avec-une-ia.md",
+    "postuler-juste.config.example.json"
+  ],
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json && tsc -p tsconfig.build.json && vite build",
     "typecheck": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json",
     "test": "vitest run",
     "dev:ui": "vite",
-    "postuler-juste": "node bin/postuler-juste.js"
+    "postuler-juste": "node bin/postuler-juste.js",
+    "build:js": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
@@ -42,6 +76,5 @@
     "typescript": "^5.9.3",
     "vite": "^8.3.5",
     "vitest": "^5.0.4"
-  },
-  "license": "MIT"
+  }
 }

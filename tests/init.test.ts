@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { chargerConfig } from '../src/core/config.ts';
 import { ouvrirBase } from '../src/db/base.ts';
 import { grilleObligatoire } from '../src/core/grille-stockage.ts';
-import { initialiserEspace, MODELE } from '../src/init/init.ts';
+import { COPIE_CONSIGNES, initialiserEspace, lancement, MODELE } from '../src/init/init.ts';
 import { cvEnHtml } from '../src/cv/cv.ts';
 
 const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-init-'));
@@ -25,7 +25,9 @@ describe('init : création d’un espace de travail', () => {
 
   it('copie le modèle, le gabarit de CV et la grille d’exemple', () => {
     const copies = fichiers(espace);
-    for (const f of fichiers(MODELE)) expect(copies).toContain(f);
+    for (const f of fichiers(MODELE)) expect(copies).toContain(f === 'gitignore' ? '.gitignore' : f);
+    expect(copies).not.toContain('gitignore');
+    expect(copies).toContain('.claude/skills/cv-cible/SKILL.md');
     expect(copies).toContain('cv/gabarit/gabarit.css');
     expect(copies).toContain('cv/gabarit/fonts/OFL.txt');
     expect(copies).toContain('profil/grille.json');
@@ -55,6 +57,29 @@ describe('init : création d’un espace de travail', () => {
     const s = mcp.mcpServers['postuler-juste-test'];
     expect(s.args[1]).toBe('mcp');
     expect(s.env.POSTULER_JUSTE_DATA).toBe(espace);
+  });
+
+  it('lit les consignes de l’application sur place hors npx', () => {
+    expect(readFileSync(join(espace, 'AGENTS.md'), 'utf8')).toMatch(/ses consignes : `[^`]+\/AGENTS\.md`/);
+    expect(existsSync(join(espace, COPIE_CONSIGNES))).toBe(false);
+  });
+
+  it('commande de lancement depuis le dépôt ou une installation durable : node + chemin absolu du binaire', () => {
+    const l = lancement('/opt/npm/lib/node_modules/postuler-juste', '1.2.3', 'linux', '/usr/bin/node');
+    expect(l.mode).toBe('chemin');
+    expect(l.commande).toBe('node "/opt/npm/lib/node_modules/postuler-juste/bin/postuler-juste.js"');
+    expect(l.mcp.command).toBe('/usr/bin/node');
+    expect(l.mcp.args[1]).toBe('mcp');
+  });
+
+  it('commande de lancement depuis le cache de npx : npx avec la version figée (cmd /c sous Windows)', () => {
+    const cache = 'C:\\Users\\x\\AppData\\Local\\npm-cache\\_npx\\abc123\\node_modules\\postuler-juste';
+    const w = lancement(cache, '1.2.3', 'win32', 'node.exe');
+    expect(w.mode).toBe('npx');
+    expect(w.commande).toBe('npx -y postuler-juste@1.2.3');
+    expect(w.mcp).toEqual({ command: 'cmd', args: ['/c', 'npx', '-y', 'postuler-juste@1.2.3', 'mcp'] });
+    const l = lancement('/home/x/.npm/_npx/abc123/node_modules/postuler-juste', '1.2.3', 'linux');
+    expect(l.mcp).toEqual({ command: 'npx', args: ['-y', 'postuler-juste@1.2.3', 'mcp'] });
   });
 
   it('signale l’absence de navigateur et donne le prompt de démarrage', () => {

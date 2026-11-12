@@ -1,6 +1,6 @@
 // Création d'un espace de travail : copie du modèle (modele/), du gabarit de CV et de la grille d'exemple,
 // configuration de l'application et du serveur MCP, puis prompt de démarrage à donner à l'IA.
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { NOM_FICHIER_CONFIG, RACINE_APP } from '../core/config.ts';
 import { EXEMPLE_GRILLE } from '../core/grille-stockage.ts';
@@ -8,6 +8,52 @@ import { DOSSIER_GABARITS, GABARIT_DEFAUT, listerGabarits, trouverNavigateur } f
 
 export const MODELE = join(RACINE_APP, 'modele');
 export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
+/** Consignes de l'application pour l'agent (AGENTS.md à la racine de l'application). */
+export const CONSIGNES_APP = join(RACINE_APP, 'AGENTS.md');
+const DEPOT_PUBLIC = 'https://github.com/DamienBecherini/postuler-juste/blob/main/';
+/** Où l'init copie les consignes de l'application quand celle-ci tourne depuis le cache de npx. */
+export const COPIE_CONSIGNES = 'procedures/application.md';
+
+/**
+ * Comment l'espace de travail relance l'application (consignes de l'IA et serveur MCP).
+ * - Depuis le dépôt ou une installation durable (npm i -g, node_modules d'un projet) : `node <chemin>/bin/postuler-juste.js`.
+ * - Depuis le cache de npx (`npx postuler-juste init …`) : ce cache peut être purgé, le chemin ne vaut rien.
+ *   On écrit `npx -y postuler-juste@<version>` (version figée : la base et ses migrations restent cohérentes) ;
+ *   sous Windows, le client MCP lance npx via `cmd /c` (npx y est un script .cmd).
+ */
+export interface Lancement {
+  mode: 'chemin' | 'npx';
+  /** Commande à taper dans un terminal ({{CMD}} des consignes). */
+  commande: string;
+  /** Application telle qu'affichée dans les consignes ({{APP}}). */
+  app: string;
+  /** Serveur MCP de .mcp.json (sans l'environnement). */
+  mcp: { command: string; args: string[] };
+}
+
+export function lancement(
+  racine: string = RACINE_APP,
+  version: string = versionApp(racine),
+  plateforme: NodeJS.Platform = process.platform,
+  node: string = process.execPath,
+): Lancement {
+  if (/[\\/]_npx[\\/]/.test(racine)) {
+    const paquet = `postuler-juste@${version}`;
+    const args = ['-y', paquet, 'mcp'];
+    return {
+      mode: 'npx',
+      commande: `npx -y ${paquet}`,
+      app: `${paquet} (npm)`,
+      mcp: plateforme === 'win32' ? { command: 'cmd', args: ['/c', 'npx', ...args] } : { command: 'npx', args },
+    };
+  }
+  const binaire = join(racine, 'bin', 'postuler-juste.js');
+  return { mode: 'chemin', commande: `node "${oblique(binaire)}"`, app: oblique(racine), mcp: { command: node, args: [binaire, 'mcp'] } };
+}
+
+function versionApp(racine: string): string {
+  return (JSON.parse(readFileSync(join(racine, 'package.json'), 'utf8')) as { version: string }).version;
+}
 
 export interface OptionsInit {
   dossier: string;
@@ -78,24 +124,40 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
     erreurUtilisateur(`Gabarit inconnu : ${o.gabarit} (disponibles : ${listerGabarits().map((g) => g.nom).join(', ')})`);
   }
   const espace = oblique(dossier);
-  const app = oblique(RACINE_APP);
-  const commande = `node "${oblique(BINAIRE)}"`;
+  const lance = lancement();
+  const { commande, app } = lance;
 
   cpSync(MODELE, dossier, { recursive: true });
+  // npm ne livre pas les .gitignore d'un paquet : le modèle le garde sous le nom « gitignore ».
+  if (existsSync(join(dossier, 'gitignore'))) renameSync(join(dossier, 'gitignore'), join(dossier, '.gitignore'));
+  // Consignes de l'application : lues sur place, sauf depuis le cache de npx (purgeable) où on en copie une version.
+  let docApp = `${oblique(RACINE_APP)}/AGENTS.md`;
+  if (lance.mode === 'npx') {
+    const texte = readFileSync(CONSIGNES_APP, 'utf8').replace(/\]\((?!https?:|#)([^)]+)\)/g, `](${DEPOT_PUBLIC}$1)`);
+    writeFileSync(join(dossier, COPIE_CONSIGNES), texte, 'utf8');
+    docApp = `${espace}/${COPIE_CONSIGNES}`;
+  }
   cpSync(gabarit, join(dossier, 'cv', 'gabarit'), { recursive: true });
   mkdirSync(join(dossier, 'profil'), { recursive: true });
   cpSync(EXEMPLE_GRILLE, join(dossier, 'profil', 'grille.json'));
   mkdirSync(join(dossier, 'data'), { recursive: true });
-  personnaliser(dossier, { ESPACE: espace, APP: app, CMD: commande });
+  personnaliser(dossier, { ESPACE: espace, APP: app, CMD: commande, DOC_APP: docApp });
 
   const config = join(dossier, NOM_FICHIER_CONFIG);
   writeFileSync(config, `${JSON.stringify({ dossierDonnees: '.', port }, null, 2)}\n`, 'utf8');
 
   const mcp = join(dossier, '.mcp.json');
-  const serveur = { command: process.execPath, args: [BINAIRE, 'mcp'], env: { POSTULER_JUSTE_DATA: dossier } };
+  const serveur = { ...lance.mcp, env: { POSTULER_JUSTE_DATA: dossier } };
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
+  if (lance.mode === 'npx') {
+    avertissements.push(
+      `Lancé par npx : le serveur MCP et les consignes utilisent « ${commande} » (version figée). ` +
+        'Au premier lancement, npx la télécharge (connexion nécessaire), puis la garde en cache. ' +
+        'Pour un chemin fixe, installer plutôt avec « npm install -g postuler-juste » puis relancer init.',
+    );
+  }
   if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) {
     avertissements.push(`Tableau de bord non compilé : lancer « npm run build » dans ${app} avant « postuler-juste serve ».`);
   }

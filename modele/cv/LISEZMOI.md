@@ -6,7 +6,7 @@ Les CV s'écrivent en Markdown, un fichier par CV, puis se convertissent en PDF 
 {{CMD}} cv "cv/<nom>.md"
 ```
 
-Sans terminal (client MCP seul), l'outil `generer_cv` fait la même chose. Le PDF est écrit à côté du `.md` et la commande affiche le nombre de pages. **Cible : 2 pages.** S'il y en a 3, couper du texte plutôt que réduire la police.
+Sans terminal (client MCP seul), l'outil `generer_cv` fait la même chose. Le PDF est écrit à côté du `.md` ; la commande affiche le nombre de pages et le remplissage de chacune, mesuré sur le PDF (`PAGES : 2 (remplissage : 96 %, 58 %)`), avec un avertissement si une page suivie d'une autre est remplie à moins de 80 % (saut de page mal placé) ou si la dernière l'est à moins de 50 %. **Cible : 2 pages bien remplies.** S'il y en a 3, couper du texte plutôt que réduire la police.
 
 - `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : le CV générique validé au démarrage.
 - `cv/<Prénom>_<NOM>_CV-cible-<Entreprise>-<Poste>.md` : un CV ciblé par offre, quand l'offre le justifie.
@@ -27,9 +27,9 @@ Sans terminal (client MCP seul), l'outil `generer_cv` fait la même chose. Le PD
 
 Le gabarit est dans [`gabarit/`](gabarit/) : `gabarit.css`, les polices, et une photo facultative (`portrait.jpg`, `.png` ou `.webp`). Pour changer l'apparence :
 
-- choisir un autre gabarit livré : `{{CMD}} gabarits` les liste (« sobre » à empattements, « moderne » avec bandeau de couleur, « compact » sur une colonne), `{{CMD}} gabarit <nom>` l'installe ; l'ancien est gardé dans `cv/gabarit-<date>/` et la photo est reprise ;
+- choisir un autre gabarit livré : `{{CMD}} gabarits` (outil `lister_gabarits`) les liste (« sobre » à empattements, « moderne » avec bandeau de couleur, « compact » sur une colonne), `{{CMD}} gabarit <nom>` (outil `choisir_gabarit`) l'installe ; l'ancien est gardé dans `cv/gabarit-<date>/` et la photo est reprise ;
 
 - demander à l'IA : « adapte `cv/gabarit/gabarit.css` à ce modèle » en lui donnant une capture ou un PDF du rendu voulu ; elle modifie la feuille, régénère le CV et vérifie les 2 pages ;
 - ou modifier `gabarit.css` soi-même (couleur d'accent, police, marges).
 
-Contrôle visuel : `--capture` produit une image PNG des pages (dans `cv/gabarit/apercu/`) ; on peut aussi ouvrir dans le navigateur le fichier HTML indiqué par la commande.
+Contrôle visuel : `--capture` (outil : `capture: true`) produit une image PNG des vraies pages du PDF, l'une sous l'autre (dans `cv/gabarit/apercu/`).

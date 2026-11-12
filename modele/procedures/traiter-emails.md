@@ -11,13 +11,13 @@ Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les off
 
 ## 1. Ingérer
 
-`ingerer_emails` (les `.eml` traités sont supprimés). Donner en une phrase : nouvelles offres, doublons, écartées sur l'intitulé, à lire, erreurs.
+`ingerer_emails`. Donner en une phrase : nouvelles offres, doublons, écartées sur l'intitulé, à lire. Puis transmettre à l'utilisateur ce que dit `a_dire` : **les `.eml` traités ont été supprimés de `emails/`** (il doit le savoir), et chaque erreur d'ingestion (`erreurs` : description non lue, page sans données « JSON-LD », lien illisible…), avec l'offre concernée ; une description non lue n'empêche pas de lire l'offre dans le navigateur.
 
 **Accusés de réception de candidature** (`confirmations` du résultat : « Confirmation de votre candidature », « votre candidature a été envoyée »…) : ce ne sont pas des offres. Pour chacun, vérifier que la candidature est enregistrée comme envoyée (`offres_connues`) ; sinon le signaler à l'utilisateur et l'enregistrer avec lui (`enregistrer_candidature` avec `envoyee_le`). Ne jamais les présenter comme de nouvelles offres. **E-mails non supprimés** (erreur « e-mail lu mais non supprimé ») : le signaler, ils reviendraient au lot suivant.
 
 ## 2. Inventaire du lot
 
-`offres_a_lire` : pour chaque offre, `lecture` vaut `description` (texte déjà en base), `navigateur` (ouvrir l'URL) ou `humain` (demander le texte). Si la sortie est trop longue, la lire par morceaux (`limite`).
+`offres_a_lire` renvoie un résumé par pages de 25 (id, intitulé, entreprise, lieu, `lecture`, `longueur_description`) ; `restantes` > 0 : demander la page suivante (`page`). `lecture` vaut `description` (texte déjà en base), `navigateur` (ouvrir l'URL) ou `humain` (demander le texte). Ensuite, lire **offre par offre** avec `lire_offre` (id) et noter par paquets. En CLI : `{{CMD}} a-lire --json`.
 
 ## 3. Écarter sur l'intitulé
 

@@ -70,7 +70,7 @@ Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois l
 
 ## 6. Adapter la grille de notation
 
-`profil/grille.json` est une grille d'exemple. Lis-la (`grille`), puis adapte-la avec l'utilisateur par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`) : cette commande ne change que ce que tu lui passes. Si tu réécris le fichier à la main, écris-le en entier : une section omise est perdue. À adapter :
+`profil/grille.json` est une grille d'exemple. Lis-la (`grille`), puis adapte-la avec l'utilisateur par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`) : elle ne change que ce que tu lui passes, exemples compris (`exemples.ajouter` remplace un exemple de même titre et entreprise, `exemples.retirer` par titre) ; ne réécris pas le fichier. Fais d'abord un essai et montre-lui l'effet sur les exemples de référence (`exemples_calcules` : note avant → après) : la base est encore vide, ce sont eux qui montrent si la grille classe bien. À adapter :
 
 - `consignes` : ses cibles et ce qu'il faut signaler ;
 - `inventaire` : ses technologies et leur niveau (repris de l'inventaire de `_CONTEXTE.md`) ;
@@ -80,13 +80,13 @@ Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois l
 - `exemples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
 - `seuil` : la note à partir de laquelle une offre lui est présentée.
 
-Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Explique-lui qu'il pourra la régler plus tard dans le tableau de bord (`{{CMD}} serve`, « Réglages de la note »).
+Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il a un terminal et le souhaite, il peut aussi la régler lui-même dans le tableau de bord (`{{CMD}} serve`, « Réglages de la note ») : c'est facultatif.
 
 ## 7. Premier CV générique
 
 1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
 2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
-3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generer_cv` avec `capture: true`) : vérifie **2 pages** et regarde l'image du rendu indiquée (titre sur une ligne, coupure de page). L'image montre la page en continu et le trait de coupure est approximatif : le nombre de pages donné par la commande fait foi. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
+3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generer_cv` avec `capture: true`) : vérifie **2 pages**, le remplissage de chaque page (une page 1 à moins de ~80 % signale un saut de page mal placé ; une dernière page à moitié vide, de la place perdue) et regarde l'image des pages (titre sur une ligne, coupure). Traite les avertissements avant de lui montrer le CV. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
 4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
 5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
 

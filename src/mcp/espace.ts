@@ -11,6 +11,7 @@ import { cheminDansEspace, deplacerEspace, ecrireEspace, lireEspace, listerEspac
 import { textePdf, texteDocx, TYPES_IMAGE } from '../core/extraction.ts';
 import { compterTexte } from '../core/compter.ts';
 import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
+import { analyserPages } from '../cv/pages.ts';
 import { initialiserEspace } from '../init/init.ts';
 import { basculer, dossierParDefaut, espaceExiste, messageNonInitialise, type EtatMcp } from './etat.ts';
 import { sur, surContenu } from './resultats.ts';
@@ -19,6 +20,9 @@ const oblique = (p: string) => p.replace(/\\/g, '/');
 
 /** Image transmise à l'IA : au-delà, la plupart des clients la refusent. */
 const IMAGE_MAX = 5 * 1024 * 1024;
+
+/** Fichier texte lu par morceaux au-delà de cette taille (réponse lisible en entier par l'IA). */
+const MORCEAU_TEXTE = 24_000;
 
 /** Consignes de l'espace exposées en prompts : nom → fichiers lus sur le disque à chaque appel. */
 const PROMPTS = {
@@ -241,17 +245,33 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
         "Lit un fichier de l'espace de travail (chemin relatif). Texte (.md, .txt, .json, .csv…) : le contenu tel quel. PDF : le texte extrait, " +
         'page par page. Word (.docx) : le texte. Image (.png, .jpg, .webp, .gif) : l’image elle-même. Autre format : demander à ' +
         "l'utilisateur un export PDF ou texte. data/ (la base) et les fichiers cachés sont inaccessibles.",
-      inputSchema: { chemin: z.string().min(1).describe('Chemin relatif à l’espace : « _CONTEXTE.md », « a-deposer/CV.pdf »') },
+      inputSchema: {
+        chemin: z.string().min(1).describe('Chemin relatif à l’espace : « _CONTEXTE.md », « a-deposer/CV.pdf »'),
+        debut: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe(`Fichier texte long : position (en caractères) d'où reprendre la lecture ; un morceau fait ${MORCEAU_TEXTE} caractères au plus`),
+      },
       annotations: lecture,
     },
-    surContenu(async ({ chemin }): Promise<CallToolResult> => {
+    surContenu(async ({ chemin, debut }): Promise<CallToolResult> => {
       const l = lireEspace(donnees(), chemin);
-      if (l.genre === 'texte') return { content: [{ type: 'text', text: l.texte }] };
+      /** Texte entier, ou le morceau demandé s'il est long. */
+      const morceau = (texte: string): CallToolResult => {
+        const d = debut ?? 0;
+        if (d === 0 && texte.length <= MORCEAU_TEXTE) return { content: [{ type: 'text', text: texte }] };
+        const fin = Math.min(texte.length, d + MORCEAU_TEXTE);
+        const suite = fin < texte.length ? `suite : lire_fichier avec debut: ${fin}` : 'fin du fichier';
+        return { content: [{ type: 'text', text: `[${l.chemin} : caractères ${d} à ${fin} sur ${texte.length} ; ${suite}]\n\n${texte.slice(d, fin)}` }] };
+      };
+      if (l.genre === 'texte') return morceau(l.texte);
       if (l.extension === '.pdf') {
         const { pages, texte } = await textePdf(l.donnees);
         if (texte.join('').trim().length > 20) {
           const corps = texte.map((t, i) => `----- page ${i + 1} / ${pages} -----\n${t}`).join('\n\n');
-          return { content: [{ type: 'text', text: `${l.chemin} (PDF, ${pages} page(s), texte extrait) :\n\n${corps}` }] };
+          return morceau(`${l.chemin} (PDF, ${pages} page(s), texte extrait) :\n\n${corps}`);
         }
         return {
           content: [
@@ -277,7 +297,7 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
       }
       if (l.extension === '.docx') {
         const texte = texteDocx(l.donnees);
-        if (texte) return { content: [{ type: 'text', text: `${l.chemin} (Word, texte extrait) :\n\n${texte}` }] };
+        if (texte) return morceau(`${l.chemin} (Word, texte extrait) :\n\n${texte}`);
       }
       refuser(`Format non lu : ${l.chemin} (${l.extension || 'sans extension'}). Demander à l'utilisateur un export PDF ou texte.`);
     }),
@@ -326,14 +346,16 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
       title: 'Générer le PDF d’un CV',
       description:
         'Convertit un CV Markdown de l’espace (« cv/<nom>.md ») en PDF A4 écrit à côté, avec le gabarit de l’espace (cv/gabarit). Renvoie ' +
-        'le nombre de pages (cible : 2 ; au-delà, couper du texte, pas la police) et pdf_existait (un PDF déjà envoyé ne s’écrase pas : ' +
-        "nouveau nom avec « V2 »). capture: true joint l'image du rendu (pages à la suite, coupure approximative : le nombre de pages fait foi).",
+        'le nombre de pages (cible : 2 ; au-delà, couper du texte, pas la police), le remplissage de chaque page mesuré sur le PDF ' +
+        '(remplissage, en % de la hauteur utile) avec ses avertissements (saut de page mal placé, dernière page trop vide) à corriger ' +
+        'avant de présenter le CV, et pdf_existait (un PDF déjà envoyé ne s’écrase pas : nouveau nom avec « V2 »). capture: true joint ' +
+        "l'image des vraies pages du PDF, l'une sous l'autre : la regarder.",
       inputSchema: {
         chemin: z.string().min(1).describe('CV Markdown, relatif à l’espace'),
-        capture: z.boolean().optional().describe('true : joindre l’image PNG du rendu'),
+        capture: z.boolean().optional().describe('true : joindre l’image PNG des pages du PDF'),
       },
     },
-    surContenu(({ chemin, capture }): CallToolResult => {
+    surContenu(async ({ chemin, capture }): Promise<CallToolResult> => {
       const espace = donnees();
       const c = cheminDansEspace(espace, chemin);
       if (extname(c.absolu).toLowerCase() !== '.md') refuser(`CV Markdown attendu (.md) : ${c.relatif}`);
@@ -346,11 +368,17 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
       const pdfExistait = existsSync(pdfAvant);
       const r = genererCv(c.absolu, gabarit, navigateur, { capture: Boolean(capture) });
       const rel = (p: string) => oblique(relative(espace, p));
+      const mise = await analyserPages(readFileSync(r.pdf)).catch((e: Error) => ({
+        pages: [],
+        avertissements: [`Remplissage des pages non mesuré (${e.message}) : vérifier sur la capture.`],
+      }));
       const infos = {
         ok: true,
         pdf: rel(r.pdf),
         pages: r.pages,
         depasse_2_pages: r.pages > 2,
+        remplissage: mise.pages.map((p) => `page ${p.page} : ${p.remplissage} %`),
+        avertissements: [...(r.pages > 2 ? [`${r.pages} pages : couper du texte pour tenir en 2 (pas réduire la police).`] : []), ...mise.avertissements],
         pdf_existait: pdfExistait,
         gabarit: gabarit === local ? 'cv/gabarit' : 'gabarit livré (sobre)',
         capture: r.capture ? rel(r.capture) : null,

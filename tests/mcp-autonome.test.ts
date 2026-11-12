@@ -218,6 +218,10 @@ describe('serveur MCP autonome (stdio, bout à bout)', () => {
     const infos = JSON.parse(r.content[0].text!) as Record<string, unknown>;
     expect(infos).toMatchObject({ ok: true, pdf: 'cv/_exemple-structure.pdf', pages: 2, depasse_2_pages: false, pdf_existait: false, gabarit: 'cv/gabarit' });
     expect(existsSync(join(espace, 'cv', '_exemple-structure.pdf'))).toBe(true);
+    // Remplissage mesuré sur le PDF réel : une valeur en % par page.
+    expect(infos.remplissage).toHaveLength(2);
+    for (const p of infos.remplissage as string[]) expect(p).toMatch(/^page \d : \d{1,3} %$/);
+    expect(Array.isArray(infos.avertissements)).toBe(true);
     expect(r.content[1]).toMatchObject({ type: 'image', mimeType: 'image/png' });
     expect(Buffer.from(r.content[1].data!, 'base64').subarray(1, 4).toString()).toBe('PNG');
   }, 90_000);

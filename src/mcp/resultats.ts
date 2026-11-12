@@ -1,8 +1,12 @@
 // Mise en forme des résultats d'outils MCP : JSON lisible, erreurs rendues à l'IA sans arrêter le serveur.
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
+/** Au-delà, le JSON est rendu sans indentation (l'indentation coûte jusqu'à un tiers de la taille). */
+const INDENTATION_MAX = 8_000;
+
 export function resultat(x: unknown): CallToolResult {
-  return { content: [{ type: 'text', text: JSON.stringify(x, null, 2) }] };
+  const lisible = JSON.stringify(x, null, 2);
+  return { content: [{ type: 'text', text: lisible.length > INDENTATION_MAX ? JSON.stringify(x) : lisible }] };
 }
 
 export function echec(e: unknown): CallToolResult {

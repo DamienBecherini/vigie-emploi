@@ -593,6 +593,16 @@ export const schemaChangement = z.strictObject({
       retirer: z.array(z.string()).optional(),
     })
     .optional(),
+  /** Exemples de référence : ajout ou remplacement (même titre et même entreprise, sans casse), retrait par titre. */
+  exemples: z
+    .strictObject({
+      ajouter: z.array(schemaExemple).optional(),
+      retirer: z
+        .array(z.union([z.string(), z.strictObject({ titre: z.string(), entreprise: z.string().optional() })]))
+        .optional()
+        .describe('Titres des exemples à retirer, ou { titre, entreprise } si deux exemples ont le même titre'),
+    })
+    .optional(),
 });
 export type Changement = z.infer<typeof schemaChangement>;
 
@@ -661,7 +671,49 @@ export function appliquerChangement(grille: Grille, brut: unknown): Grille {
     if (i >= 0) g.inventaire[i] = t;
     else g.inventaire.push(t);
   }
+  // Exemples : même logique (retraits, puis ajouts ou remplacements).
+  const memeExemple = (e: Exemple, titre: string, entreprise: string | undefined) =>
+    cle(e.titre) === cle(titre) && (entreprise === undefined || cle(e.entreprise ?? '') === cle(entreprise));
+  for (const x of ch.exemples?.retirer ?? []) {
+    const { titre, entreprise } = typeof x === 'string' ? { titre: x, entreprise: undefined } : x;
+    const trouves = g.exemples.filter((e) => memeExemple(e, titre, entreprise));
+    if (!trouves.length) throw new Error(`Exemple absent de la grille : ${titre} (exemples : ${g.exemples.map((e) => e.titre).join(' ; ') || 'aucun'})`);
+    if (trouves.length > 1) throw new Error(`Plusieurs exemples s'intitulent « ${titre} » : préciser { titre, entreprise }`);
+    g.exemples = g.exemples.filter((e) => e !== trouves[0]);
+  }
+  for (const e of ch.exemples?.ajouter ?? []) {
+    const i = g.exemples.findIndex((x) => cle(x.titre) === cle(e.titre) && cle(x.entreprise ?? '') === cle(e.entreprise ?? ''));
+    if (i >= 0) g.exemples[i] = e;
+    else g.exemples.push(e);
+  }
   return validerGrille(g, 'après changement');
+}
+
+export interface ExempleCalcule {
+  titre: string;
+  entreprise: string | null;
+  note: number;
+  moyenne: number;
+  /** Note avec la grille d'avant le changement (null : exemple ajouté par le changement). */
+  avant?: number | null;
+  /** Moyenne pondérée avant le changement (la note, arrondie au demi-point, peut ne pas bouger). */
+  moyenne_avant?: number | null;
+}
+
+/** Notes des exemples de référence avec une grille ; avec `avant`, la note de chaque exemple avec l'ancienne grille. */
+export function exemplesCalcules(g: Grille, version: number | null, avant?: { grille: Grille; version: number | null }): ExempleCalcule[] {
+  const cleEx = (e: Exemple) => `${e.titre.trim().toLowerCase()}|${(e.entreprise ?? '').trim().toLowerCase()}`;
+  return g.exemples.map((e) => {
+    const d = noteExemple(g, e, version);
+    const r: ExempleCalcule = { titre: e.titre, entreprise: e.entreprise ?? null, note: d.note, moyenne: d.moyenne };
+    if (avant) {
+      const ancien = avant.grille.exemples.find((x) => cleEx(x) === cleEx(e));
+      const da = ancien ? noteExemple(avant.grille, ancien, avant.version) : null;
+      r.avant = da?.note ?? null;
+      r.moyenne_avant = da?.moyenne ?? null;
+    }
+    return r;
+  });
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -52,11 +52,11 @@ L'application **n'appelle aucun modèle d'IA** : c'est votre agent qui lit et r�
 Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois gabarits fournis : « sobre » (à empattements), « moderne » (bandeau de couleur) et « compact » (une colonne, dense). L'IA peut aussi adapter la feuille de style à un modèle que vous lui montrez.
 
 <div align="center">
-<a href="docs/exemples/CV-exemple-sobre.pdf"><img src="docs/captures/cv-sobre.png" alt="CV fictif, gabarit « sobre » (page 1 du PDF)" width="32%"></a>
-<a href="docs/exemples/CV-exemple-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="CV fictif, gabarit « moderne » (page 1 du PDF)" width="32%"></a>
-<a href="docs/exemples/CV-exemple-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV fictif, gabarit « compact » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-sobre.pdf"><img src="docs/captures/cv-sobre.png" alt="CV de l'auteur, gabarit « sobre » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="CV de l'auteur, gabarit « moderne » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV de l'auteur, gabarit « compact » (page 1 du PDF)" width="32%"></a>
 
-<em>Première page de chaque PDF (cliquez pour ouvrir le CV complet) : « sobre », « moderne », « compact ».</em>
+<em>Mon propre CV, écrit avec postuler-juste et rendu avec chacun des trois gabarits (première page ; cliquez pour ouvrir le PDF complet). Source Markdown : <a href="docs/exemples/CV-damien-becherini.md">docs/exemples/CV-damien-becherini.md</a>.</em>
 </div>
 
 ## Ce qu'il faut

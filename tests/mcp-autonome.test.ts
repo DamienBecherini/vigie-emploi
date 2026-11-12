@@ -146,10 +146,10 @@ describe('serveur MCP autonome (en mémoire)', () => {
   });
 
   it('lit le texte d’un PDF déposé et renvoie une image comme image', async () => {
-    copyFileSync(join(RACINE, 'docs', 'exemples', 'CV-exemple-sobre.pdf'), join(espace, 'a-deposer', 'CV.pdf'));
+    copyFileSync(join(RACINE, 'docs', 'exemples', 'CV-damien-becherini-sobre.pdf'), join(espace, 'a-deposer', 'CV.pdf'));
     const pdf = texte(await appeler('lire_fichier', { chemin: 'a-deposer/CV.pdf' }));
     expect(pdf).toMatch(/PDF, 2 page\(s\), texte extrait/);
-    expect(pdf).toContain('Thomas RENAUD');
+    expect(pdf).toContain('Damien BECHERINI');
     expect(pdf).toContain('----- page 2 / 2 -----');
 
     copyFileSync(join(RACINE, 'docs', 'captures', readdirPng()), join(espace, 'a-deposer', 'capture.png'));

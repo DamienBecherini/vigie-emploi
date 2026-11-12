@@ -101,10 +101,10 @@ describe('cv : Markdown -> HTML', () => {
   const html = cvEnHtml(md, { css: 'gabarit.css', portrait: null });
 
   it('construit l’en-tête : nom, titre, contacts en trois rangées', () => {
-    expect(html).toContain('<h1>Thomas RENAUD</h1>');
-    expect(html).toContain('<div class="headline">DÉVELOPPEUR PHP &amp; PYTHON');
-    expect(html).toMatch(/<ul class="contacts">[\s\S]*thomas.renaud@example\.com/);
-    expect(html).toMatch(/<ul class="contacts contacts-address">[\s\S]*Valmont \(00\)/);
+    expect(html).toContain('<h1>Julie MARCHAND</h1>');
+    expect(html).toContain('<div class="headline">RESPONSABLE LOGISTIQUE &amp; AMÉLIORATION CONTINUE');
+    expect(html).toMatch(/<ul class="contacts">[\s\S]*julie.marchand@example\.com/);
+    expect(html).toMatch(/<ul class="contacts contacts-address">[\s\S]*Ville-Exemple \(00\)/);
     expect(html).toMatch(/<ul class="contacts contacts-profiles">[\s\S]*LinkedIn[\s\S]*GitHub/);
     expect(html).not.toContain('class="portrait"');
   });
@@ -119,7 +119,7 @@ describe('cv : Markdown -> HTML', () => {
     expect(html).toContain('<section class="two-col"><h2>Compétences Techniques</h2>');
     expect(html).toContain('<section class="two-col"><h2>Langues</h2>');
     expect(html).toContain('<section class=""><h2>Résumé</h2>');
-    expect(html).toContain('<p class="job-role"><strong>Développeur WordPress &amp; concepteur de la plateforme');
+    expect(html).toMatch(/<p class="job-role"><strong>Responsable d(&#39;|')entrepôt/);
   });
 });
 

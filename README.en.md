@@ -54,11 +54,11 @@ The application **calls no AI model**: your agent reads and writes, the applicat
 Résumés are written in Markdown and rendered as two-page A4 PDFs, with three templates: "sobre" (serif), "moderne" (colour banner) and "compact" (single column, dense). The AI can also adapt the stylesheet to a model you show it.
 
 <div align="center">
-<a href="docs/exemples/CV-exemple-sobre.pdf"><img src="docs/captures/cv-sobre.png" alt="Fictitious résumé, “sobre” template (page 1 of the PDF)" width="32%"></a>
-<a href="docs/exemples/CV-exemple-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="Fictitious résumé, “moderne” template (page 1 of the PDF)" width="32%"></a>
-<a href="docs/exemples/CV-exemple-compact.pdf"><img src="docs/captures/cv-compact.png" alt="Fictitious résumé, “compact” template (page 1 of the PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-sobre.en.pdf"><img src="docs/captures/cv-sobre-en.png" alt="The author's résumé, “sobre” template (page 1 of the PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-moderne.en.pdf"><img src="docs/captures/cv-moderne-en.png" alt="The author's résumé, “moderne” template (page 1 of the PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-compact.en.pdf"><img src="docs/captures/cv-compact-en.png" alt="The author's résumé, “compact” template (page 1 of the PDF)" width="32%"></a>
 
-<em>First page of each PDF (click to open the full résumé): "sobre", "moderne", "compact".</em>
+<em>My own résumé, written with postuler-juste and rendered with each of the three templates (first page; click to open the full PDF). Markdown source: <a href="docs/exemples/CV-damien-becherini.en.md">docs/exemples/CV-damien-becherini.en.md</a>.</em>
 </div>
 
 ## Requirements

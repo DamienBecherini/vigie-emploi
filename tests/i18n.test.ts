@@ -98,8 +98,8 @@ describe('init --langue en', () => {
     expect(r.invite).toMatch(/^You are going to help me with my job search/);
     expect(r.invite).toContain(`${r.dossier}/DEMARRAGE.md`);
     expect(r.avertissements.join('\n')).toMatch(/No Chrome, Edge or Chromium found/);
-    expect(r.avertissements.join('\n')).toMatch(/AI instructions .* are in French for now/);
-    expect(existsSync(join(espace, 'DEMARRAGE.md'))).toBe(true);
+    expect(r.avertissements.join('\n')).not.toMatch(/in French for now/);
+    expect(readFileSync(join(espace, 'DEMARRAGE.md'), 'utf8')).toMatch(/^# Onboarding/);
   });
 
   it('sans --langue : « fr » écrit dans la configuration', () => {

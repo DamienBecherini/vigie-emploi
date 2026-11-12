@@ -48,7 +48,8 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base, puis `generer_suivi`.
    - **Envoi** : `enregistrer_candidature` avec `envoyee_le` (date réelle de l'envoi) et le CV envoyé (le PDF), puis une relance en échéance (délai : section « Conditions » de `_CONTEXTE.md`, sinon 7 jours).
    - **Réponse, entretien, refus** : `ajouter_evenement` (daté), le statut (`entretien`, `refus`…), la prochaine échéance.
-   - **Échéance devenue sans objet** (relance inutile après une réponse) : ne pas la marquer « faite », la modifier (`modifier_evenement`) en note « sans objet : … ».
+   - **Échéance devenue sans objet** (relance inutile après une réponse) : la modifier (`modifier_evenement`) en note « Sans objet : … » **et** la marquer faite (`marquer_fait`). Une note faite n'est qu'une trace au journal ; non faite, elle resterait une échéance et prendrait la place de la vraie prochaine action dans le suivi.
+   - Ne propose pas d'ajouter un rendez-vous à un agenda : l'échéance en base suffit, sauf si un outil d'agenda est branché.
    - Dates relatives (« hier », « jeudi prochain ») : calculer la date réelle et la dire en clair.
 
 ## Alertes e-mail

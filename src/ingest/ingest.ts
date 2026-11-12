@@ -207,7 +207,7 @@ export async function ingerer(db: Base, o: OptionsIngest): Promise<ResumeIngest>
         resume.ecartees++;
         resume.detail.ecartees.push({ ...ligne, statut: 'ecartee', motif: commentaire });
       } else {
-        ajouterStatut(db, offre.id, 'nouvelle', { commentaire: off.sujet || null, origine: 'ingest', le });
+        ajouterStatut(db, offre.id, 'nouvelle', { commentaire: off.sujet ? `e-mail : ${off.sujet}` : null, origine: 'ingest', le });
         if (offre.entreprise && offresDeLEntreprise(db, offre.entreprise, offre.id) > 0) {
           modifierTags(db, offre.id, ['entreprise-connue'], []);
         }

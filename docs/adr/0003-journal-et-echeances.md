@@ -22,6 +22,6 @@ Sprint 3 : le suivi d'une candidature (messages, appels, devis, relances) vivait
 
 ## Conséquences
 
-- Les journaux Markdown des dossiers restent la source tant que Damien les tient ; une fois l'habitude prise de passer par l'interface ou l'IA, la reprise devient inutile (elle ne recrée rien de déjà repris).
+- Les journaux Markdown des dossiers restent la source tant que l'utilisateur les tient ; une fois l'habitude prise de passer par l'interface ou l'IA, la reprise devient inutile (elle ne recrée rien de déjà repris).
 - La devinette des types est approximative : les lignes non typées sont en `note` et listées ; elles se corrigent dans l'interface (une correction n'est plus retirée par une reprise).
 - Les closes du suivi n'ont pas de date d'envoi : le délai de réponse ne porte que sur les candidatures datées des deux côtés, d'où des chiffres faibles au départ.

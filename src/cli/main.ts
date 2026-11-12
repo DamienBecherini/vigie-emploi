@@ -1,5 +1,5 @@
 // Interface en ligne de commande de cap-emploi (pensée pour être pilotée par une IA : sorties JSON stables).
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { chargerConfig, type Config } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
@@ -47,12 +47,20 @@ import {
   versionGrille,
   type Impact,
 } from '../core/grille-stockage.ts';
+import { initialiserEspace } from '../init/init.ts';
+import { GABARIT_DEFAUT, genererCv, trouverNavigateur } from '../cv/cv.ts';
 
 const AIDE = `cap-emploi — offres, notes et candidatures (base SQLite locale)
 
 Usage : cap-emploi <commande> [options]
 
 Commandes
+  init <dossier> [--port 4410] [--nom-mcp cap-emploi]
+                        Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
+                        et affiche le prompt de démarrage à donner à l'IA
+  cv <cv.md>… [--gabarit <dossier>]
+                        CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
+                        Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application
   ingest [--keep] [--no-fetch] [--emails <dossier>]
                         Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
                         puis supprime les e-mails traités (sauf --keep)
@@ -752,6 +760,53 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = contexte(v);
     const port = v.port ? entier(v.port, 'port') : config.port;
     await demarrerServeur({ db, config, port, inactiviteMin: nombre(v.inactivite, 'inactivite') ?? 0 });
+  },
+
+  init(args) {
+    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' } });
+    if (pos.length !== 1) erreur('Usage : cap-emploi init <dossier> [--port 4410] [--nom-mcp cap-emploi]');
+    const r = initialiserEspace({
+      dossier: pos[0],
+      port: v.port ? entier(v.port, 'port') : undefined,
+      nomMcp: v['nom-mcp'] as string | undefined,
+    });
+    if (v.json) return json(r);
+    console.log(`Espace de travail créé : ${r.dossier}`);
+    console.log(`  configuration : ${r.config} (port ${r.port})`);
+    console.log(`  serveur MCP « ${r.nom_mcp} » : ${r.mcp}`);
+    console.log(`  navigateur pour les PDF : ${r.navigateur ?? 'aucun'}`);
+    for (const a of r.avertissements) console.log(`  ⚠ ${a}`);
+    console.log(`\nCommande de l'application, depuis l'espace : ${r.commande}`);
+    console.log('\nÉtapes suivantes :');
+    console.log(`  1. Dépose ton CV et l'export PDF de ton profil LinkedIn dans ${r.dossier}/a-deposer/`);
+    console.log(`  2. Ouvre ton IA dans ${r.dossier} (Claude Code : cd dans le dossier puis « claude », et accepte le serveur MCP)`);
+    console.log('  3. Colle-lui ce prompt :\n');
+    console.log(r.invite);
+  },
+
+  cv(args) {
+    const { v, pos } = analyser(args, { gabarit: { type: 'string' } });
+    if (!pos.length) erreur('Usage : cap-emploi cv <cv.md>… [--gabarit <dossier>]');
+    let choisi = v.gabarit as string | undefined;
+    if (!choisi) {
+      let espace: string | null = null;
+      try {
+        espace = chargerConfig({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined }).dossierDonnees;
+      } catch {
+        espace = null;
+      }
+      const local = espace ? `${espace}/cv/gabarit` : null;
+      choisi = local && existsSync(`${local}/gabarit.css`) ? local : GABARIT_DEFAUT;
+    }
+    const gabarit = choisi;
+    const navigateur = trouverNavigateur();
+    if (!navigateur) erreur('Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans CAP_EMPLOI_NAVIGATEUR)');
+    const resultats = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur)));
+    if (v.json) return json({ ok: true, gabarit, cv: resultats });
+    for (const r of resultats) {
+      console.log(`${String(r.pages).padStart(2)} page(s)  ${r.pdf}${r.pages > 2 ? '  <-- DÉPASSE 2 PAGES' : ''}`);
+      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}\nPAGES : ${r.pages}`);
+    }
   },
 
   aide() {

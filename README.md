@@ -27,6 +27,24 @@ npm link           # rend la commande `cap-emploi` disponible partout (facultati
 
 Sans `npm link`, remplacer `cap-emploi` par `node <chemin>/bin/cap-emploi.js`.
 
+## Créer son espace de travail
+
+```sh
+cap-emploi init <dossier> [--port 4410] [--nom-mcp cap-emploi]
+```
+
+Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`gabarits/cv/sobre/`) et la grille d'exemple, puis écrit `cap-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
+
+Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp cap-emploi-test`).
+
+## CV en PDF
+
+```sh
+cap-emploi cv "cv/<nom>.md" [--gabarit <dossier>]
+```
+
+Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `CAP_EMPLOI_NAVIGATEUR` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--gabarit`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `modele/cv/LISEZMOI.md`.
+
 ## Configuration du dossier de données
 
 Le dossier de données contient la base et la boîte de réception :

@@ -74,7 +74,7 @@ npx postuler-juste init ~/ma-recherche
 
 Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y postuler-juste@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g postuler-juste`, puis `postuler-juste init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
-`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
+`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV, `--langue en` pour un tableau de bord et une CLI en anglais) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
 1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
 2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
@@ -152,7 +152,7 @@ Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi`
 ### Créer son espace de travail
 
 ```sh
-postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste]
+postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--langue fr|en]
 ```
 
 Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`gabarits/cv/sobre/`) et la grille d'exemple, puis écrit `postuler-juste.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
@@ -199,8 +199,9 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 | `titresExclus` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `employeursRefuses` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{dossier}` et `{invite}` y sont remplacés | Windows : `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]` ; ailleurs : aucune |
+| `langue` | Langue du tableau de bord, des messages de la CLI et du suivi généré : `fr` ou `en` (écrite par `init --langue`) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur | `fr` |
 
-Variables d'environnement reconnues aussi : `POSTULER_JUSTE_CONFIG` (fichier de config), `POSTULER_JUSTE_BASE` (base), `POSTULER_JUSTE_PORT`.
+Variables d'environnement reconnues aussi : `POSTULER_JUSTE_CONFIG` (fichier de config), `POSTULER_JUSTE_BASE` (base), `POSTULER_JUSTE_PORT`, `POSTULER_JUSTE_LANGUE`.
 
 ### Commandes
 

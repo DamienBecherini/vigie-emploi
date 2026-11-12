@@ -20,7 +20,7 @@
 
 postuler-juste is a local kit to look for a permanent job or freelance assignments with an AI agent (Claude Code, Cursor, Codex…). The AI triages the offers you receive through e-mail alerts, scores each one with **your** grid, prepares the applications you approve (application file, tailored résumé, message) and keeps track of the follow-up. Everything stays on your computer.
 
-> The kit speaks French first: the workspace templates, the AI instructions, the dashboard and the CLI messages are in French. Your agent can of course talk to you in English and write English résumés; translations of the templates are welcome.
+> The dashboard and the CLI messages are available in English: `init --langue en` (or the language selector in the dashboard header). The AI instructions and workspace templates are still in French for now; an English version is coming. Your agent can of course talk to you in English and write English résumés.
 
 The name means "apply *right*", in both senses of the French word *juste*:
 
@@ -71,12 +71,12 @@ Résumés are written in Markdown and rendered as two-page A4 PDFs, with three t
 ## Getting started
 
 ```sh
-npx postuler-juste init ~/my-search
+npx postuler-juste init ~/my-search --langue en
 ```
 
 Nothing to clone or build: npx downloads the application and runs `init`. The workspace remembers the version used (`npx -y postuler-juste@<version>`, in `.mcp.json` and in the AI instructions). For a permanently installed command: `npm install -g postuler-juste`, then `postuler-juste init ~/my-search`. To contribute, install from the repository (see [Installation](#installation)).
 
-`init` creates your workspace (`--gabarit moderne` or `compact` to change the résumé template) and prints the starting prompt to give your AI. Then:
+`init` creates your workspace (`--gabarit moderne` or `compact` to change the résumé template; `--langue en` for an English dashboard and CLI, French being the default) and prints the starting prompt to give your AI. Then:
 
 1. drop your résumé into `~/my-search/a-deposer/`;
 2. open your AI in `~/my-search` (Claude Code: `cd ~/my-search` then `claude`, and accept the MCP server);
@@ -154,7 +154,7 @@ Former names: the application used to be called **cap-emploi**. The `cap-emploi`
 ### Creating your workspace
 
 ```sh
-postuler-juste init <folder> [--port 4410] [--nom-mcp postuler-juste]
+postuler-juste init <folder> [--port 4410] [--nom-mcp postuler-juste] [--langue fr|en]
 ```
 
 The folder must be new or empty. `init` copies the workspace template into it (`modele/`: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`gabarits/cv/sobre/`) and the sample grid, then writes `postuler-juste.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
@@ -197,8 +197,9 @@ To designate it, in order of precedence:
 | `titresExclus` | Regular expressions (case-insensitive): titles discarded without reading | `[]` |
 | `employeursRefuses` | Regular expressions: refused employers (title, company, start of description) | `[]` |
 | `terminal` | Command opening a terminal with the agent (dashboard buttons); `{dossier}` and `{invite}` are substituted | Windows: `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]`; elsewhere: none |
+| `langue` | Language of the dashboard, the CLI messages and the generated tracking file: `fr` or `en` (written by `init --langue`); the selector in the dashboard header takes precedence, for that browser | `fr` |
 
-Environment variables also recognised: `POSTULER_JUSTE_CONFIG` (config file), `POSTULER_JUSTE_BASE` (database), `POSTULER_JUSTE_PORT`.
+Environment variables also recognised: `POSTULER_JUSTE_CONFIG` (config file), `POSTULER_JUSTE_BASE` (database), `POSTULER_JUSTE_PORT`, `POSTULER_JUSTE_LANGUE`.
 
 ### Commands
 

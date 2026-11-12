@@ -7,7 +7,7 @@ import { ajouterStatut, enregistrerCandidature, enregistrerOffre } from '../src/
 import { creerApp } from '../src/api/serveur.ts';
 import { Veille } from '../src/api/veille.ts';
 import { Diffusion, regrouper, surveiller, type Notification } from '../src/api/diffusion.ts';
-import { commandeTerminal, compterEmails, etatTravail, lanceurTerminal, type ActionAgent } from '../src/api/travail.ts';
+import { commandeTerminal, compterEmails, environnementPropre, etatTravail, lanceurTerminal, type ActionAgent } from '../src/api/travail.ts';
 
 const temporaires: string[] = [];
 function dossierTemporaire(): string {
@@ -81,6 +81,11 @@ describe('lancement de l’agent', () => {
     expect(commandeTerminal(['wt.exe', '-d', '{dossier}', 'claude', '{invite}'], 'D:/donnees', 'traiter-emails')).toEqual([
       'wt.exe', '-d', 'D:/donnees', 'claude', '/traiter-emails',
     ]);
+  });
+
+  it('le terminal ne reçoit pas les marqueurs de session de Claude Code', () => {
+    const env = environnementPropre({ PATH: '/bin', CLAUDECODE: '1', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CONFIG_DIR: '/c' });
+    expect(env).toEqual({ PATH: '/bin', CLAUDE_CONFIG_DIR: '/c' });
   });
 
   it('sans terminal configuré hors Windows : erreur explicite', async () => {

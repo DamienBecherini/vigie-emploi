@@ -70,6 +70,15 @@ export function commandeTerminal(modele: string[], dossierDonnees: string, actio
   return modele.map((p) => p.replaceAll('{dossier}', dossierDonnees).replaceAll('{invite}', ACTIONS_AGENT[action]));
 }
 
+/**
+ * Environnement du terminal lancé : celui du serveur, sans les marqueurs de session de Claude Code
+ * (CLAUDECODE, CLAUDE_CODE_*). Si le serveur a été démarré, directement ou non, depuis une session Claude,
+ * ces variables feraient croire au nouvel agent qu'il en est une sous-session (conversation non enregistrée).
+ */
+export function environnementPropre(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(env).filter(([k]) => !/^CLAUDECODE$|^CLAUDE_CODE_/i.test(k)));
+}
+
 export function lanceurTerminal(modele: string[] | null | undefined, plateforme: NodeJS.Platform = process.platform): Lanceur {
   const choisi = modele ?? (plateforme === 'win32' ? TERMINAL_WINDOWS : null);
   return (action, dossierDonnees) => {
@@ -83,7 +92,13 @@ export function lanceurTerminal(modele: string[] | null | undefined, plateforme:
     }
     const [programme, ...args] = commandeTerminal(choisi, dossierDonnees, action);
     return new Promise((resolve, reject) => {
-      const p = spawn(programme, args, { cwd: dossierDonnees, detached: true, stdio: 'ignore', windowsHide: false });
+      const p = spawn(programme, args, {
+        cwd: dossierDonnees,
+        env: environnementPropre(),
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: false,
+      });
       p.once('error', (e) => reject(new Error(`Impossible d'ouvrir le terminal (${programme}) : ${e.message}`)));
       p.once('spawn', () => {
         p.unref();

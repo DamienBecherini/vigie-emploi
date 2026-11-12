@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import { serve } from '@hono/node-server';
 import type { Config } from '../core/config.ts';
 import { RACINE_APP } from '../core/config.ts';
@@ -46,6 +47,8 @@ import { fichierSur, fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
 import { pageFichier } from './fichier.ts';
 import { Veille } from './veille.ts';
+import { Diffusion, surveiller } from './diffusion.ts';
+import { estActionAgent, etatTravail, lanceurTerminal, type Lanceur } from './travail.ts';
 
 /** Champs de candidature modifiables depuis l'interface. */
 const CHAMPS_EDITABLES = CHAMPS_CANDIDATURE.filter((k) => k !== 'etat' && k !== 'libelle');
@@ -98,18 +101,89 @@ export function optionsDepuisRequete(q: Record<string, string | undefined>): Opt
   };
 }
 
-export function creerApp(db: Base, config: Pick<Config, 'dossierDonnees'>, veille: Veille = new Veille(0)): Hono {
+const HOTES_LOCAUX = ['localhost', '127.0.0.1', '[::1]'];
+
+/** Routes qui ne comptent pas comme activité (contrôle de santé, flux de notifications laissé ouvert). */
+const ROUTES_PASSIVES = ['/api/sante', '/api/flux'];
+
+export interface OptionsApp {
+  /** Notifications poussées à l'interface (une instance neuve par défaut). */
+  diffusion?: Diffusion;
+  /** Ouverture du terminal de l'agent (par défaut : selon la configuration et la plateforme). */
+  lanceur?: Lanceur;
+}
+
+/** Une requête qui vient d'une autre origine (page web tierce, formulaire) ? */
+function origineEtrangere(origine: string | undefined, site: string | undefined): boolean {
+  if (site === 'cross-site') return true;
+  if (!origine || origine === 'null') return Boolean(origine);
+  try {
+    return !HOTES_LOCAUX.includes(new URL(origine).hostname.toLowerCase());
+  } catch {
+    return true;
+  }
+}
+
+export function creerApp(
+  db: Base,
+  config: Pick<Config, 'dossierDonnees'> & Partial<Pick<Config, 'emails' | 'terminal'>>,
+  veille: Veille = new Veille(0),
+  options: OptionsApp = {},
+): Hono {
   const app = new Hono();
+  const diffusion = options.diffusion ?? new Diffusion();
+  const lanceur = options.lanceur ?? lanceurTerminal(config.terminal);
+  const emails = config.emails ?? join(config.dossierDonnees, 'emails');
 
   app.onError((err, c) => c.json({ ok: false, erreur: err.message }, 400));
 
   // Serveur local : seules les requêtes adressées à localhost / 127.0.0.1 sont servies (parade au
   // « DNS rebinding » : une page web tierce ne peut pas lire l'API ni les fichiers du dossier).
+  // Les écritures venues d'une autre origine (formulaire d'une page tierce) sont refusées.
   app.use('*', async (c, next) => {
     const hote = (c.req.header('host') ?? '').replace(/:\d+$/, '').toLowerCase();
-    if (hote && !['localhost', '127.0.0.1', '[::1]'].includes(hote)) return c.text('Hôte refusé', 403);
-    if (c.req.path !== '/api/sante') veille.signaler();
+    if (hote && !HOTES_LOCAUX.includes(hote)) return c.text('Hôte refusé', 403);
+    const ecriture = c.req.method !== 'GET' && c.req.method !== 'HEAD';
+    if (ecriture && origineEtrangere(c.req.header('origin'), c.req.header('sec-fetch-site'))) {
+      return c.json({ ok: false, erreur: 'Origine refusée' }, 403);
+    }
+    if (!ROUTES_PASSIVES.includes(c.req.path)) veille.signaler();
     await next();
+    // Les écritures de l'API ne changent pas PRAGMA data_version pour sa propre connexion : on les signale ici.
+    if (ecriture && c.req.path.startsWith('/api/') && !c.req.path.startsWith('/api/travail') && c.res.status < 400) {
+      diffusion.emettre({ type: 'base' });
+    }
+  });
+
+  // Notifications (Server-Sent Events) : « base » (données modifiées), « emails » (boîte de réception).
+  app.get('/api/flux', (c) =>
+    streamSSE(c, async (flux) => {
+      let finir = () => {};
+      const fini = new Promise<void>((r) => (finir = r));
+      const desabonner = diffusion.abonner((n) => {
+        flux.writeSSE({ event: n.type, data: JSON.stringify(n) }).catch(() => finir());
+      });
+      flux.onAbort(() => finir());
+      await flux.writeSSE({ event: 'pret', data: '{}' });
+      // Commentaire régulier : garde la connexion ouverte à travers les proxys (ne compte pas comme activité).
+      const battement = setInterval(() => flux.write(': battement\n\n').catch(() => finir()), 25_000);
+      await fini;
+      clearInterval(battement);
+      desabonner();
+    }),
+  );
+
+  // Travail en attente pour l'agent, et lancement de l'agent dans un terminal (boutons de l'interface).
+  app.get('/api/travail', (c) => c.json(etatTravail(db, { dossierDonnees: config.dossierDonnees, emails })));
+
+  app.post('/api/travail/:action', async (c) => {
+    const action = c.req.param('action');
+    if (!estActionAgent(action)) return c.json({ ok: false, erreur: 'Action inconnue' }, 404);
+    if (!(c.req.header('content-type') ?? '').includes('application/json')) {
+      return c.json({ ok: false, erreur: 'Requête JSON attendue' }, 415);
+    }
+    await lanceur(action, config.dossierDonnees);
+    return c.json({ ok: true, action });
   });
 
   // Contrat « service local » : état, occupation, temps avant l'arrêt automatique.
@@ -340,7 +414,9 @@ export function demarrerServeur(o: {
   inactiviteMin?: number;
 }): Promise<void> {
   const veille = new Veille((o.inactiviteMin ?? 0) * 60);
-  const app = creerApp(o.db, o.config, veille);
+  const diffusion = new Diffusion();
+  const arreterSurveillance = surveiller({ db: o.db, diffusion, base: o.config.base, emails: o.config.emails });
+  const app = creerApp(o.db, o.config, veille, { diffusion });
   const hote = o.hote ?? '127.0.0.1';
   return new Promise((resolve, reject) => {
     const serveur = serve({ fetch: app.fetch, port: o.port, hostname: hote }, (info) => {
@@ -360,6 +436,7 @@ export function demarrerServeur(o: {
       if (!veille.expiree()) return;
       clearInterval(surveillance);
       console.log(`Aucune activité depuis ${Math.round(veille.delaiS / 60)} min : arrêt du tableau de bord.`);
+      arreterSurveillance();
       serveur.close(() => {
         o.db.close();
         process.exit(0);

@@ -182,7 +182,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.grille.calcul': 'computed',
   'cli.grille.teletravail': 'Remote work (0 to 5 days on site): {jours}; unknown {inconnu}',
   'cli.grille.remuneration':
-    'Pay ({reference}): salary floor {plancher}, target {basse}-{haute} K€; day rate floor {tjm}{fullRemote}, target {tjmBasse}-{tjmHaute} €; unknown {inconnue}',
+    'Pay ({reference}): salary floor {plancher}K, target {basse}-{haute}K a year; day rate floor {tjm}{fullRemote}, target {tjmBasse}-{tjmHaute} a day; unknown {inconnue}',
   'cli.grille.fullRemote': ' ({valeur} fully remote)',
   'cli.grille.regles': 'Blocking rules:',
   'cli.grille.inventaire': 'Inventory:',
@@ -240,6 +240,9 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.cv.sansNavigateur': 'No Chrome, Edge or Chromium found (set its path in POSTULER_JUSTE_NAVIGATEUR)',
   'cli.cv.pages': 'page(s)',
   'cli.cv.depasse': '  <-- MORE THAN 2 PAGES',
+  'cli.cv.remplissage': 'fill: {taux}',
+  'cli.grille.exemplesAvantApres': 'Reference examples (before → after):',
+  'cli.grille.nouveau': 'new',
 
   'serveur.demarre': 'Dashboard: http://localhost:{port}/  (data: {dossier})',
   'serveur.arreter': 'Ctrl+C to stop.',

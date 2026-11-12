@@ -252,6 +252,9 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.cv.sansNavigateur': 'Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)',
   'cli.cv.pages': 'page(s)',
   'cli.cv.depasse': '  <-- DÉPASSE 2 PAGES',
+  'cli.cv.remplissage': 'remplissage : {taux}',
+  'cli.grille.exemplesAvantApres': 'Exemples de référence (avant → après) :',
+  'cli.grille.nouveau': 'nouveau',
 
   // ---------------------------------------------------------------------------------------------
   // Serveur HTTP (tableau de bord)

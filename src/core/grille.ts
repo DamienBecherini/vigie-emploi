@@ -726,7 +726,7 @@ export function consignesIa(g: Grille): string[] {
   const ia = g.criteres.filter((c) => c.source === 'ia');
   const calc = g.criteres.filter((c) => c.source === 'calcul');
   const somme = g.criteres.reduce((s, c) => s + c.poids, 0) || 1;
-  const pct = (p: number) => `${Math.round((p / somme) * 100)} %`;
+  const pct = (p: number) => t('core.pages.pourcent', { pc: Math.round((p / somme) * 100) });
   return [
     t('core.consignes.noteFinale'),
     t('core.consignes.criteres', { liste: ia.map((c) => `${c.id} (${c.libelle}, ${pct(c.poids)})`).join(' ; ') }),

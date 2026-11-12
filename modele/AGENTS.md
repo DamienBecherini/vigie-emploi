@@ -23,12 +23,13 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 ## Outils de l'application
 
 - Préférer les **outils MCP** de l'application quand ils sont branchés. Sinon la CLI : `{{CMD}} <commande> --json`, lancée depuis l'espace de travail.
-- **Sans accès aux fichiers ni terminal** (Claude Desktop ou autre client MCP seul) : partout où ces consignes disent de lire, écrire ou lancer une commande, utiliser les outils du serveur : `lister_fichiers`, `lire_fichier` (lit aussi les PDF, Word et images déposés), `ecrire_fichier` (fichier entier, chemins relatifs à l'espace), `generer_cv` (au lieu de `{{CMD}} cv`, `capture: true` pour voir le rendu), `compter` (au lieu de `{{CMD}} compter`). Les procédures existent aussi en prompts MCP : `demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`.
+- **Sans accès aux fichiers ni terminal** (Claude Desktop ou autre client MCP seul) : partout où ces consignes disent de lire, écrire ou lancer une commande, utiliser les outils du serveur : `lister_fichiers`, `lire_fichier` (lit aussi les PDF, Word et images déposés), `ecrire_fichier` (fichier entier, chemins relatifs à l'espace), `generer_cv` (au lieu de `{{CMD}} cv`, `capture: true` pour voir les pages), `compter` (au lieu de `{{CMD}} compter`). Les procédures existent aussi en prompts MCP : `demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`.
+- **Commandes `{{CMD}} …` citées dans ces consignes** : c'est toi qui les lances, si tu as un terminal. En client MCP seul, utilise et cite l'outil équivalent ; ne propose jamais à l'utilisateur une commande à taper à ta place. Seule exception, facultative : le tableau de bord (`{{CMD}} serve`, puis http://localhost:4410), qu'il peut lancer lui-même dans un terminal s'il veut parcourir ses offres ou régler sa grille à la souris ; présente-le comme une option, jamais comme une étape.
 - Lancer la commande avec l'outil Bash (pas PowerShell) et lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
 - Compter les caractères d'un message : `{{CMD}} compter <fichier>` (chaque bloc à copier-coller du fichier, ou le fichier entier).
 - Ce qui doit durer (une règle, une décision, une tâche) va dans `_CONTEXTE.md`, `_JOURNAL-DECISIONS.md` ou `_A-FAIRE.md`, pas dans une mémoire propre à ton outil : une autre IA doit pouvoir le retrouver.
 - Aucun agenda n'est branché par défaut : ne propose pas d'ajouter un rendez-vous à un agenda si tu n'as pas l'outil ; l'échéance en base suffit.
-- **Grille de notation** : la modifier par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`), qui ne change que ce qu'on lui passe. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
+- **Grille de notation** : la modifier par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`), qui ne change que ce qu'on lui passe, exemples de référence compris (`exemples.ajouter` / `exemples.retirer`). L'essai renvoie aussi la note de chaque exemple avant et après (`exemples_calcules`) : c'est ce qu'on montre à l'utilisateur quand aucune offre n'est encore notée. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
 
 ## Règles non négociables
 
@@ -45,7 +46,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 2. S'il dit « go » : `candidater`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `enregistrer_candidature` et `generer_suivi` (`remplacer: true`).
 3. **Lire le formulaire de candidature avant d'écrire** : CV seul, message (et sa limite de caractères), questions, lettre exigée ou non. Une lettre de motivation ne s'écrit que si le formulaire l'exige : une page, même matière que le message.
 4. Messages : respecter la limite du canal, les enregistrer dans le dossier, **version envoyée comprise**.
-5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages** (`{{CMD}} cv <fichier.md>` affiche le nombre de pages).
+5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages bien remplies** (`generer_cv` ou `{{CMD}} cv <fichier.md>` : nombre de pages, remplissage de chacune, avertissements).
 6. Sans « go » : `changer_statut` vers `ecartee`, avec la raison en commentaire, sans redemander.
 7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base, puis `generer_suivi`.
    - **Envoi** : `enregistrer_candidature` avec `envoyee_le` (date réelle de l'envoi) et le CV envoyé (le PDF), puis une relance en échéance (délai : section « Conditions » de `_CONTEXTE.md`, sinon 7 jours).
@@ -61,6 +62,8 @@ Les e-mails d'alertes (`.eml`) arrivent dans `emails/`. Le flux (ingestion, lect
 ## Garder le contexte léger
 
 `_CONTEXTE.md` ne contient que la règle en vigueur, sans « mise à jour du… » ni ancienne valeur. L'historique d'une décision va dans `_JOURNAL-DECISIONS.md`, une tâche dans `_A-FAIRE.md`.
+
+**Un refus vaut pour les sessions suivantes.** Une tâche, une idée ou une suggestion que l'utilisateur a fait retirer (de `_A-FAIRE.md`, d'un CV, d'un message) ne se recrée pas et ne se repropose pas : note le refus, daté et avec sa raison, dans `_JOURNAL-DECISIONS.md`, et relis ce journal avant de proposer une tâche.
 
 ## Texte à copier-coller
 

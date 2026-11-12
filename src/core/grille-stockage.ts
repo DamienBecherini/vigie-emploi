@@ -20,6 +20,7 @@ import {
 } from './grille.ts';
 import { recalculer } from './offres.ts';
 import { maintenant } from './texte.ts';
+import { t } from '../i18n/index.ts';
 
 export const AUTEURS_GRILLE = ['interface', 'cli', 'mcp', 'fichier'] as const;
 export type AuteurGrille = (typeof AUTEURS_GRILLE)[number];
@@ -60,9 +61,9 @@ export function lireFichierGrille(chemin: string): { grille: Grille; resume: str
   try {
     brut = JSON.parse(readFileSync(chemin, 'utf8').replace(/^﻿/, '')) as Record<string, unknown>;
   } catch (e) {
-    throw new Error(`Grille illisible (${chemin}) : ${(e as Error).message}`);
+    throw new Error(t('core.grilleIllisible', { chemin, message: (e as Error).message }));
   }
-  if (!brut || typeof brut !== 'object' || Array.isArray(brut)) throw new Error(`Grille illisible (${chemin}) : objet JSON attendu`);
+  if (!brut || typeof brut !== 'object' || Array.isArray(brut)) throw new Error(t('core.grilleObjet', { chemin }));
   const contenu = { ...brut };
   for (const k of META_FICHIER) delete contenu[k];
   return {
@@ -100,7 +101,7 @@ export function derniereVersion(db: Base): VersionGrille | null {
 
 export function versionGrille(db: Base, version: number): VersionGrille {
   const l = db.prepare('SELECT * FROM grilles WHERE version = ?').get(version) as LigneGrille | undefined;
-  if (!l) throw new Error(`Version ${version} de la grille introuvable`);
+  if (!l) throw new Error(t('core.versionIntrouvable', { version }));
   return versionDeLigne(l);
 }
 
@@ -111,7 +112,7 @@ export function historiqueGrille(db: Base): InfoVersion[] {
 
 function insererVersion(db: Base, grille: Grille, auteur: AuteurGrille, resume: string): VersionGrille {
   const r = resume.trim();
-  if (!r) throw new Error('Résumé du changement attendu');
+  if (!r) throw new Error(t('core.resumeChangement'));
   const precedente = (db.prepare('SELECT MAX(version) AS v FROM grilles').get() as { v: number | null }).v ?? 0;
   const v: VersionGrille = { version: precedente + 1, le: maintenant(), auteur, resume: r, grille };
   db.prepare('INSERT INTO grilles (version, contenu, le, auteur, resume) VALUES (?, ?, ?, ?, ?)').run(
@@ -143,7 +144,7 @@ export function grilleCourante(db: Base, dossierDonnees: string): VersionGrille 
     if (fichier.version !== base.version) ecrireFichierGrille(chemin, base);
     return base;
   }
-  const resume = base ? 'Modifiée dans le fichier grille.json' : (fichier.resume ?? 'Version initiale (fichier grille.json)');
+  const resume = base ? t('core.grilleModifieeFichier') : (fichier.resume ?? t('core.grilleInitiale'));
   const v = transaction(db, () => {
     const nv = insererVersion(db, fichier.grille, 'fichier', resume);
     renoterAvec(db, nv);
@@ -157,9 +158,7 @@ export function grilleCourante(db: Base, dossierDonnees: string): VersionGrille 
 export function grilleObligatoire(db: Base, dossierDonnees: string): VersionGrille {
   const g = grilleCourante(db, dossierDonnees);
   if (!g) {
-    throw new Error(
-      `Pas de grille de notation : créer ${cheminGrille(dossierDonnees)} (modèle : exemples/grille.json, ou « postuler-juste grille --init »)`,
-    );
+    throw new Error(t('core.pasDeGrille', { chemin: cheminGrille(dossierDonnees) }));
   }
   return g;
 }
@@ -295,7 +294,7 @@ export function enregistrerGrille(
 ): { version: VersionGrille; impact: Impact } {
   const grille = validerGrille(brut);
   const avant = grilleCourante(db, dossierDonnees);
-  if (avant && canonique(avant.grille) === canonique(grille)) throw new Error('Aucun changement par rapport à la version courante');
+  if (avant && canonique(avant.grille) === canonique(grille)) throw new Error(t('core.aucunChangement'));
   const r = transaction(db, () => {
     const v = insererVersion(db, grille, o.auteur, o.resume);
     return { version: v, impact: renoterAvec(db, v, avant?.grille.seuil ?? null) };
@@ -342,5 +341,5 @@ export function restaurerGrille(
   o: { auteur: AuteurGrille; resume?: string },
 ): { version: VersionGrille; impact: Impact } {
   const ancienne = versionGrille(db, version);
-  return enregistrerGrille(db, dossierDonnees, ancienne.grille, { auteur: o.auteur, resume: o.resume?.trim() || `Retour à la version ${version}` });
+  return enregistrerGrille(db, dossierDonnees, ancienne.grille, { auteur: o.auteur, resume: o.resume?.trim() || t('core.retourVersion', { version }) });
 }

@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { t } from '../i18n/index.ts';
 
 export interface PageRemplie {
   page: number;
@@ -38,7 +39,7 @@ interface Boite {
  * marge basse = la même (les gabarits ont des marges haute et basse voisines).
  */
 export async function analyserPages(donnees: Uint8Array): Promise<AnalysePages> {
-  if (!donnees.length) throw new Error('PDF vide');
+  if (!donnees.length) throw new Error(t('core.pages.pdfVide'));
   const { getDocumentProxy } = await import('unpdf');
   const pdf = await getDocumentProxy(new Uint8Array(donnees));
   const boites: { hauteur: number; texte: Boite | null }[] = [];
@@ -77,19 +78,16 @@ export function remplissage(boites: { hauteur: number; texte: Boite | null }[]):
     const derniere = i === pages.length - 1;
     if (!derniere && p.remplissage < SEUIL_PAGE_PLEINE) {
       avertissements.push(
-        `Page ${p.page} remplie à ${p.remplissage} % seulement alors qu'une page suit : saut de page mal placé ` +
-          '(bloc insécable trop haut, saut forcé) ; resserrer ou déplacer le contenu pour remplir la page.',
+        t('core.pages.sautMalPlace', { page: p.page, pc: p.remplissage }),
       );
     }
     if (derniere && pages.length > 1 && p.remplissage < SEUIL_DERNIERE_PAGE) {
       avertissements.push(
-        `Dernière page (${p.page}) remplie à ${p.remplissage} % : beaucoup de vide ; étoffer avec du contenu vrai et utile ` +
-          "à l'offre, ou condenser pour tenir en une page de moins.",
+        t('core.pages.derniereVide', { page: p.page, pc: p.remplissage }),
       );
     } else if (derniere && pages.length > 1 && p.remplissage < SEUIL_DERNIERE_CONFORTABLE) {
       avertissements.push(
-        `Remarque : dernière page (${p.page}) remplie à ${p.remplissage} %, il reste environ ${100 - p.remplissage} % de page vide ; ` +
-          "acceptable, mais de la place pour un élément utile à l'offre s'il en manque.",
+        t('core.pages.derniereRemarque', { page: p.page, pc: p.remplissage, vide: 100 - p.remplissage }),
       );
     }
   });
@@ -98,7 +96,7 @@ export function remplissage(boites: { hauteur: number; texte: Boite | null }[]):
 
 /** « 96 %, 58 % » pour l'affichage. */
 export function formaterRemplissage(a: AnalysePages): string {
-  return a.pages.map((p) => `${p.remplissage} %`).join(', ');
+  return a.pages.map((p) => t('core.pages.pourcent', { pc: p.remplissage })).join(', ');
 }
 
 // ---------------------------------------------------------------------------------------------

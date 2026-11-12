@@ -4,7 +4,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { chargerConfig, RACINE_APP, type Config, type OptionsConfig } from '../core/config.ts';
+import { chargerConfig, ErreurConfig, RACINE_APP, type Config, type OptionsConfig } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
 
 /** Dossier de données quand rien n'est configuré (ni --data, ni POSTULER_JUSTE_DATA, ni fichier de config). */
@@ -39,7 +39,7 @@ export function ouvrirEtat(options: OptionsConfig = {}): EtatMcp {
   try {
     config = chargerConfig(options);
   } catch (e) {
-    if (!/non configuré/.test((e as Error).message)) throw e;
+    if (!(e instanceof ErreurConfig && e.code === 'non-configure')) throw e;
     config = chargerConfig({ ...options, dossierDonnees: dossierParDefaut() });
     parDefaut = true;
   }

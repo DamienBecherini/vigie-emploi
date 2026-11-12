@@ -7,6 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
 import { capturerPages } from './pages.ts';
+import { t } from '../i18n/index.ts';
 
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
@@ -318,10 +319,10 @@ export interface ResultatCv {
 /** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
 export function genererCv(markdown: string, dossierGabarit: string, navigateur: string, o: { capture?: boolean } = {}): ResultatCv {
   const md = resolve(markdown);
-  if (!existsSync(md)) throw Object.assign(new Error(`CV introuvable : ${md}`), { utilisateur: true });
+  if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.introuvable', { chemin: md })), { utilisateur: true });
   const gabarit = resolve(dossierGabarit);
   if (!existsSync(join(gabarit, 'gabarit.css'))) {
-    throw Object.assign(new Error(`Gabarit incomplet : ${join(gabarit, 'gabarit.css')} manquant`), { utilisateur: true });
+    throw Object.assign(new Error(t('core.cv.gabaritIncomplet', { chemin: join(gabarit, 'gabarit.css') })), { utilisateur: true });
   }
   const nom = basename(md).replace(/\.md$/i, '');
   const apercu = join(gabarit, 'apercu');
@@ -384,7 +385,7 @@ export function choisirGabarit(espace: string, nom: string): { dossier: string; 
   const source = join(DOSSIER_GABARITS, nom);
   if (!/^[\w-]+$/.test(nom) || !existsSync(join(source, 'gabarit.css'))) {
     const noms = listerGabarits().map((g) => g.nom).join(', ');
-    throw Object.assign(new Error(`Gabarit inconnu : ${nom} (disponibles : ${noms})`), { utilisateur: true });
+    throw Object.assign(new Error(t('core.cv.gabaritInconnu', { nom, liste: noms })), { utilisateur: true });
   }
   const cible = join(espace, 'cv', 'gabarit');
   let ancien: string | null = null;

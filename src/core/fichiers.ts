@@ -5,6 +5,7 @@ import { join, relative, resolve, sep } from 'node:path';
 import type { Base } from '../db/base.ts';
 import { candidatureDe } from './offres.ts';
 import { cheminRelatif } from './evenements.ts';
+import { t } from '../i18n/index.ts';
 
 export interface FichierDossier {
   /** Chemin relatif au dossier de données (barres obliques) : celui à mettre dans un événement. */
@@ -37,13 +38,13 @@ const FICHIERS_MAX = 500;
  */
 export function fichierSur(dossierDonnees: string, chemin: string): { absolu: string; relatif: string } {
   const rel = cheminRelatif(chemin);
-  if (DOSSIERS_INTERDITS.has(rel.split('/')[0].toLowerCase())) throw new Error(`Accès refusé : ${chemin}`);
+  if (DOSSIERS_INTERDITS.has(rel.split('/')[0].toLowerCase())) throw new Error(t('core.accesRefuse', { chemin }));
   const racine = realpathSync(resolve(dossierDonnees));
   const cible = resolve(racine, ...rel.split('/'));
-  if (!existsSync(cible)) throw new Error(`Fichier introuvable : ${rel}`);
+  if (!existsSync(cible)) throw new Error(t('core.fichierIntrouvable', { chemin: rel }));
   const reel = realpathSync(cible);
-  if (reel !== racine && !reel.startsWith(racine + sep)) throw new Error(`Accès refusé : ${chemin}`);
-  if (!statSync(reel).isFile()) throw new Error(`Pas un fichier : ${rel}`);
+  if (reel !== racine && !reel.startsWith(racine + sep)) throw new Error(t('core.accesRefuse', { chemin }));
+  if (!statSync(reel).isFile()) throw new Error(t('core.pasUnFichier', { chemin: rel }));
   return { absolu: reel, relatif: rel };
 }
 
@@ -54,7 +55,7 @@ export function listerFichiers(dossierDonnees: string, dossier: string): { exist
   const base = resolve(racine, ...rel.split('/'));
   if (!existsSync(base) || !statSync(base).isDirectory()) return { existe: false, fichiers: [], tronque: false };
   const reelBase = realpathSync(base);
-  if (!reelBase.startsWith(racine + sep)) throw new Error(`Accès refusé : ${dossier}`);
+  if (!reelBase.startsWith(racine + sep)) throw new Error(t('core.accesRefuse', { chemin: dossier }));
   const fichiers: FichierDossier[] = [];
   let tronque = false;
   const parcourir = (dir: string, profondeur: number) => {

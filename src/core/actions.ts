@@ -19,13 +19,14 @@ import type { VersionGrille } from './grille-stockage.ts';
 import type { Entrees } from './grille.ts';
 import { STATUTS_A_TRAITER, type Statut } from './statuts.ts';
 import { dateFr } from './texte.ts';
+import { t } from '../i18n/index.ts';
 
 /** Statuts d'avant l'envoi : une candidature envoyée ou « candidater » les font avancer. */
 export const STATUTS_AVANT_GO: Statut[] = ['nouvelle', 'a-lire', 'notee', 'ecartee'];
 
 export function offreOuErreur(db: Base, id: number): Offre {
   const o = Number.isInteger(id) ? offreParId(db, id) : undefined;
-  if (!o) throw new Error(`Offre ${id} introuvable`);
+  if (!o) throw new Error(t('core.offreIntrouvable', { id }));
   return o;
 }
 
@@ -111,7 +112,7 @@ export interface OptionsNoter {
 
 /** Enregistre des notes au format des lots (dans une transaction : tout ou rien). */
 export function noterOffres(db: Base, entrees: EntreeLot[], origine: string, o: OptionsNoter = {}): ResultatNotation[] {
-  if (!entrees.length) throw new Error('Aucune note à enregistrer');
+  if (!entrees.length) throw new Error(t('core.aucuneNote'));
   const grille = entrees.some(estNoteACriteres) ? (o.grille?.() ?? null) : null;
   const noter = () =>
     entrees.map((e) => {
@@ -212,11 +213,11 @@ export function preparerCandidature(db: Base, dossierDonnees: string, id: number
     dossier_donnees: dossierDonnees,
     dossier_suggere: dossier,
     etapes: [
-      `Relire l'offre (${d.url_canonique ?? 'sans URL'}) et la note enregistrée`,
-      'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
-      `Créer le dossier ${dossier} avec l'annonce, le fit, les écarts et les messages`,
-      `Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou postuler-juste candidature ${id} --dossier ${dossier}`,
-      `Après l'envoi : enregistrer la date d'envoi (envoyee_le), l'offre passe en « envoyee »`,
+      t('core.etape.relire', { url: d.url_canonique ?? t('core.sansUrl') }),
+      t('core.etape.consignes'),
+      t('core.etape.dossier', { dossier }),
+      t('core.etape.enregistrer', { id, dossier }),
+      t('core.etape.envoi'),
     ],
   };
 }

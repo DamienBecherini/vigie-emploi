@@ -8,6 +8,7 @@ import { STATUTS_A_TRAITER } from './statuts.ts';
 import { dateFr, dateIso, empreinte, estVide } from './texte.ts';
 import { calculerNote, resumeRegles, verifierSaisie, type Decomposition, type Entrees } from './grille.ts';
 import type { VersionGrille } from './grille-stockage.ts';
+import { decimal, t } from '../i18n/index.ts';
 
 export interface EntreeLot {
   id?: number;
@@ -84,11 +85,11 @@ export function offreDeLEntree(
   };
   if (e.id !== undefined) {
     const o = offreParId(db, Number(e.id));
-    if (!o) throw new Error(`Offre ${e.id} introuvable`);
+    if (!o) throw new Error(t('core.offreIntrouvable', { id: e.id }));
     enregistrerOffre(db, o.source, o.id_site, champs, origine);
     return { id: o.id, creee: false };
   }
-  if (!e.url) throw new Error('Entrée sans "id" ni "url"');
+  if (!e.url) throw new Error(t('core.entreeSansId'));
   const ident = canoniser(e.url);
   const source = ident?.source ?? (e.source || 'manuel');
   const idSite = ident?.idSite ?? `url-${empreinte(e.url)}`;
@@ -127,7 +128,7 @@ export function noterEntree(
   const aCriteres = estNoteACriteres(e);
   const grille = opts.grille ?? null;
   if (aCriteres && !grille) {
-    throw new Error('Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (postuler-juste grille --init)');
+    throw new Error(t('core.sansGrille'));
   }
   const saisie = aCriteres ? verifierSaisie(grille!.grille, { criteres: e.criteres, entrees: e.entrees, bloquants: e.bloquants }) : null;
   const cible = offreDeLEntree(db, e, opts.origineOffre ?? 'manuel', { recueLe: opts.recueLe })!;
@@ -138,9 +139,9 @@ export function noterEntree(
     if (origine === 'interface') for (const c of Object.values(saisie.criteres)) c.origine ??= 'interface';
     decomposition = calculerNote(grille.grille, saisie, offreParId(db, cible.id)!, grille.version);
     if (e.note !== undefined && e.note !== null && e.note !== '') {
-      avertissements.push(`Champ « note » (${String(e.note)}) ignoré : note calculée avec la grille v${grille.version} = ${decomposition.note}`);
+      avertissements.push(t('core.noteIgnoree', { note: String(e.note), version: grille.version, calculee: decimal(decomposition.note) }));
     }
-    if (e.note_brute !== undefined && e.note_brute !== null) avertissements.push('Champ « note_brute » ignoré : remplacé par la moyenne pondérée');
+    if (e.note_brute !== undefined && e.note_brute !== null) avertissements.push(t('core.noteBruteIgnoree'));
     if (e.penalites) avertissements.push('Champ « penalites » ignoré : les règles bloquantes passent par « bloquants »');
     for (const d of decomposition.drapeaux) if (d.code.startsWith('critere_manquant')) avertissements.push(d.message);
     noteAjoutee = ajouterNote(
@@ -199,5 +200,5 @@ export function entreesDuLot(json: unknown): EntreeLot[] {
     if (Array.isArray(o.offres)) return o.offres as EntreeLot[];
     return [json as EntreeLot];
   }
-  throw new Error('Lot illisible : tableau JSON attendu');
+  throw new Error(t('core.lotIllisible'));
 }

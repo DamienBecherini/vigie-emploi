@@ -1,0 +1,89 @@
+/* Gabarit « compact » — CV dense sur une seule colonne, pour les parcours longs ou un CV en 1 page.
+   Sans empattement (Source Sans 3, licence SIL OFL, voir fonts/OFL.txt), noir et gris, dates des postes
+   au-dessus de l'intitulé (pas de colonne de dates), marges réduites. Photo facultative, petite, à droite.
+   Pour l'adapter : changer les couleurs de :root, puis régénérer le PDF (postuler-juste cv). */
+
+@font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 400; src: url("fonts/source-sans-3-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-style: italic; font-weight: 400; src: url("fonts/source-sans-3-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 600; src: url("fonts/source-sans-3-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 700; src: url("fonts/source-sans-3-700-normal.woff2") format("woff2"); }
+
+:root {
+  --accent: #222;
+  --ink: #1a1a1a;
+  --muted: #5f5f5f;
+  --rule: #bbb;
+}
+
+@page { size: A4; margin: 9mm 11mm 9mm; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  font-size: 9pt;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.cv-header { display: grid; grid-template-columns: 1fr 18mm; gap: 0 5mm; align-items: start; margin: 0 0 1mm; }
+.cv-header:not(:has(.portrait)) { grid-template-columns: 1fr; }
+.portrait { width: 18mm; height: 18mm; object-fit: cover; border-radius: 2mm; display: block; }
+
+h1 { font-size: 17pt; font-weight: 700; line-height: 1.05; margin: 0 0 0.6mm; color: var(--accent); }
+.headline { font-size: 10.6pt; font-weight: 600; margin: 0 0 0.4mm; }
+.subline { font-size: 8.8pt; color: var(--muted); margin: 0 0 1.1mm; }
+
+.contacts { display: flex; flex-wrap: wrap; gap: 0.5mm 3.6mm; list-style: none; padding: 0; margin: 0; font-size: 8.5pt; line-height: 1.2; }
+.contacts li { display: flex; align-items: center; gap: 1mm; margin: 0; }
+.contacts li::before { content: none; }
+.contacts svg { width: 2.8mm; height: 2.8mm; flex: none; fill: var(--muted); }
+.contacts a { color: var(--ink); text-decoration: none; }
+
+h2 {
+  font-size: 9.8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border-bottom: 0.6pt solid var(--rule);
+  padding-bottom: 0.5mm;
+  margin: 2.4mm 0 1.2mm;
+  break-after: avoid;
+}
+
+section { margin: 0; }
+p { margin: 0 0 0.9mm; }
+ul { margin: 0 0 0.9mm; padding-left: 3.4mm; list-style: none; }
+li { margin: 0 0 0.6mm; break-inside: avoid; position: relative; }
+li::before { content: "–"; position: absolute; left: -3mm; color: var(--muted); }
+strong { font-weight: 700; }
+em { color: var(--muted); }
+a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); }
+
+section.two-col > ul { columns: 2; column-gap: 6mm; padding-left: 0; }
+section.two-col > ul > li { margin-bottom: 0.9mm; }
+section.two-col > ul > li::before { content: none; }
+
+blockquote { margin: 0 0 1mm; padding-left: 2.4mm; border-left: 0.8mm solid var(--rule); font-size: 8.6pt; break-inside: avoid; }
+blockquote p { margin: 0 0 0.2mm; }
+blockquote p:last-child { color: var(--muted); }
+
+/* Une seule colonne : la ligne des dates et du lieu passe au-dessus de l'intitulé. */
+.job { margin: 0 0 1.6mm; }
+.job-meta { display: flex; gap: 2.5mm; font-size: 8.5pt; color: var(--muted); }
+.job-meta span:first-child { font-weight: 700; color: var(--ink); }
+.job-meta span + span::before { content: "·"; margin-right: 2.5mm; }
+.job-role { font-size: 9.8pt; font-weight: 700; margin: 0.2mm 0 0.4mm; break-after: avoid; }
+
+@media screen {
+  html { background: #e9ecef; padding: 10mm 0 20mm; }
+  body {
+    width: 188mm;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 0 0 1px #ccc;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 279mm, rgba(220, 53, 69, 0.55) 279mm, rgba(220, 53, 69, 0.55) 280mm);
+  }
+}

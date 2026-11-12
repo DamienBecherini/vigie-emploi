@@ -48,18 +48,20 @@ import {
   type Impact,
 } from '../core/grille-stockage.ts';
 import { initialiserEspace } from '../init/init.ts';
-import { GABARIT_DEFAUT, genererCv, trouverNavigateur } from '../cv/cv.ts';
+import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
 
 const AIDE = `postuler-juste — offres, notes et candidatures (base SQLite locale)
 
 Usage : postuler-juste <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--nom-mcp postuler-juste]
+  init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--gabarit sobre|moderne|compact]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA
   compter <fichier>     Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
                         « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
+  gabarits              Gabarits de CV livrés (sobre, moderne, compact…)
+  gabarit <nom>         Installe ce gabarit dans cv/gabarit de l'espace (l'ancien est gardé à côté)
   cv <cv.md>… [--gabarit <dossier>] [--capture]
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
                         Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
@@ -770,12 +772,13 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   init(args) {
-    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' } });
+    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' }, gabarit: { type: 'string' } });
     if (pos.length !== 1) erreur('Usage : postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste]');
     const r = initialiserEspace({
       dossier: pos[0],
       port: v.port ? entier(v.port, 'port') : undefined,
       nomMcp: v['nom-mcp'] as string | undefined,
+      gabarit: v.gabarit as string | undefined,
     });
     if (v.json) return json(r);
     console.log(`Espace de travail créé : ${r.dossier}`);
@@ -802,6 +805,24 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
     const resultat = blocs.length ? blocs : [mesurer(texte.trim())];
     if (v.json) return json({ ok: true, fichier: pos[0], blocs: resultat });
     for (const b of resultat) console.log(`${String(b.caracteres).padStart(6)} caractères  ${String(b.mots).padStart(4)} mots  « ${b.debut}… »`);
+  },
+
+  gabarits(args) {
+    const { v } = analyser(args, {});
+    const liste = listerGabarits();
+    if (v.json) return json({ ok: true, gabarits: liste });
+    for (const g of liste) console.log(`${g.nom.padEnd(10)} ${g.description}`);
+    console.log('\nChoisir : postuler-juste gabarit <nom> (depuis l\'espace de travail ; l\'ancien gabarit est gardé à côté).');
+  },
+
+  gabarit(args) {
+    const { v, pos } = analyser(args, {});
+    if (pos.length !== 1) erreur('Usage : postuler-juste gabarit <nom> (liste : postuler-juste gabarits)');
+    const espace = chargerConfig({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined }).dossierDonnees;
+    const r = sansErreur(() => choisirGabarit(espace, pos[0]));
+    if (v.json) return json({ ok: true, ...r });
+    console.log(`Gabarit « ${pos[0]} » installé dans ${r.dossier}${r.ancien ? ` (ancien gabarit gardé dans ${r.ancien})` : ''}.`);
+    console.log('Régénérer les CV pour voir le résultat : postuler-juste cv "cv/<nom>.md" --capture');
   },
 
   cv(args) {

@@ -2,7 +2,7 @@
 // Le gabarit est un dossier : gabarit.css, ses polices, et une photo facultative (portrait.webp|jpg|jpeg|png).
 // L'HTML intermédiaire est écrit dans <gabarit>/apercu/ (il pointe vers ../gabarit.css), le PDF à côté du .md. Le nombre de pages est l'indicateur à surveiller (cible : 2).
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
@@ -350,4 +350,45 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
     resultat.capture = png;
   }
   return resultat;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Gabarits livrés et choix du gabarit de l'espace
+
+export const DOSSIER_GABARITS = join(RACINE_APP, 'gabarits', 'cv');
+
+/** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
+export function listerGabarits(): { nom: string; description: string }[] {
+  return readdirSync(DOSSIER_GABARITS)
+    .filter((n) => existsSync(join(DOSSIER_GABARITS, n, 'gabarit.css')))
+    .map((nom) => {
+      const css = readFileSync(join(DOSSIER_GABARITS, nom, 'gabarit.css'), 'utf8');
+      const entete = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
+      const phrase = entete.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
+      return { nom, description: phrase };
+    });
+}
+
+/**
+ * Installe un gabarit livré dans <espace>/cv/gabarit. L'ancien est renommé cv/gabarit-<AAAAMMJJ-HHMMSS>
+ * (rien n'est perdu) ; la photo (portrait.*) est reprise dans le nouveau.
+ */
+export function choisirGabarit(espace: string, nom: string): { dossier: string; ancien: string | null } {
+  const source = join(DOSSIER_GABARITS, nom);
+  if (!/^[\w-]+$/.test(nom) || !existsSync(join(source, 'gabarit.css'))) {
+    const noms = listerGabarits().map((g) => g.nom).join(', ');
+    throw Object.assign(new Error(`Gabarit inconnu : ${nom} (disponibles : ${noms})`), { utilisateur: true });
+  }
+  const cible = join(espace, 'cv', 'gabarit');
+  let ancien: string | null = null;
+  if (existsSync(cible)) {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    ancien = join(espace, 'cv', `gabarit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`);
+    renameSync(cible, ancien);
+  }
+  cpSync(source, cible, { recursive: true });
+  const portrait = ancien ? cheminPortrait(ancien) : null;
+  if (ancien && portrait) cpSync(join(ancien, portrait), join(cible, portrait));
+  return { dossier: cible, ancien };
 }

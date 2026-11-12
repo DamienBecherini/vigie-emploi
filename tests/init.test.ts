@@ -119,3 +119,19 @@ describe('anciens noms (cap-emploi) encore reconnus', () => {
     expect(chargerConfig({ cwd: racine, env: { POSTULER_JUSTE_DATA: neuf } }).base).toBe(join(neuf, 'data', 'postuler-juste.sqlite'));
   });
 });
+
+describe('gabarits de CV', () => {
+  it('liste les gabarits livrés et en installe un en gardant l’ancien et la photo', async () => {
+    const { listerGabarits, choisirGabarit } = await import('../src/cv/cv.ts');
+    expect(listerGabarits().map((g) => g.nom)).toEqual(expect.arrayContaining(['sobre', 'moderne', 'compact']));
+    const espace = join(racine, 'espace-gabarit');
+    initialiserEspace({ dossier: espace, gabarit: 'compact', env: {} });
+    expect(readFileSync(join(espace, 'cv', 'gabarit', 'gabarit.css'), 'utf8')).toContain('« compact »');
+    writeFileSync(join(espace, 'cv', 'gabarit', 'portrait.jpg'), 'x');
+    const r = choisirGabarit(espace, 'moderne');
+    expect(readFileSync(join(r.dossier, 'gabarit.css'), 'utf8')).toContain('« moderne »');
+    expect(existsSync(join(r.dossier, 'portrait.jpg'))).toBe(true);
+    expect(existsSync(join(r.ancien!, 'gabarit.css'))).toBe(true);
+    expect(() => choisirGabarit(espace, 'inconnu')).toThrow(/inconnu/);
+  });
+});

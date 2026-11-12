@@ -4,7 +4,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, wri
 import { join, resolve } from 'node:path';
 import { NOM_FICHIER_CONFIG, RACINE_APP } from '../core/config.ts';
 import { EXEMPLE_GRILLE } from '../core/grille-stockage.ts';
-import { GABARIT_DEFAUT, trouverNavigateur } from '../cv/cv.ts';
+import { DOSSIER_GABARITS, GABARIT_DEFAUT, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
 
 export const MODELE = join(RACINE_APP, 'modele');
 export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
@@ -14,6 +14,8 @@ export interface OptionsInit {
   port?: number;
   /** Nom du serveur MCP dans .mcp.json. */
   nomMcp?: string;
+  /** Gabarit de CV livré à installer (défaut : sobre). */
+  gabarit?: string;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -71,12 +73,16 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   const nomMcp = o.nomMcp ?? 'postuler-juste';
   if (!/^[\w-]+$/.test(nomMcp)) erreurUtilisateur(`Nom de serveur MCP invalide : ${nomMcp} (lettres, chiffres, - et _)`);
 
+  const gabarit = o.gabarit ? join(DOSSIER_GABARITS, o.gabarit) : GABARIT_DEFAUT;
+  if (!existsSync(join(gabarit, 'gabarit.css'))) {
+    erreurUtilisateur(`Gabarit inconnu : ${o.gabarit} (disponibles : ${listerGabarits().map((g) => g.nom).join(', ')})`);
+  }
   const espace = oblique(dossier);
   const app = oblique(RACINE_APP);
   const commande = `node "${oblique(BINAIRE)}"`;
 
   cpSync(MODELE, dossier, { recursive: true });
-  cpSync(GABARIT_DEFAUT, join(dossier, 'cv', 'gabarit'), { recursive: true });
+  cpSync(gabarit, join(dossier, 'cv', 'gabarit'), { recursive: true });
   mkdirSync(join(dossier, 'profil'), { recursive: true });
   cpSync(EXEMPLE_GRILLE, join(dossier, 'profil', 'grille.json'));
   mkdirSync(join(dossier, 'data'), { recursive: true });

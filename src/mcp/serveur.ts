@@ -599,7 +599,7 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         sortie: z.string().optional().describe('Fichier de sortie imposé (chemin absolu)'),
       },
     },
-    sur((a) => ({ ok: true, ...ecrireSuivi(base(), donnees(), { remplacer: a.remplacer, sortie: a.sortie }) })),
+    sur((a) => ({ ok: true, ...ecrireSuivi(base(), donnees(), { remplacer: a.remplacer, sortie: a.sortie, langue: etat.config.langue }) })),
   );
 
   return serveur;

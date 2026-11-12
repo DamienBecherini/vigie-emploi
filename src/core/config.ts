@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { estLangue, LANGUE_DEFAUT, LANGUES, type Langue } from '../i18n/outil.ts';
 
 export interface Config {
   /** Dossier de données de l'utilisateur (contient data/, emails/, candidatures/…). */
@@ -22,6 +23,8 @@ export interface Config {
    * remplacés. null : Windows Terminal + Claude Code sous Windows, rien ailleurs.
    */
   terminal: string[] | null;
+  /** Langue de l'interface, de la CLI et du suivi généré (« fr » par défaut, ou « en »). */
+  langue: Langue;
   /** Fichier de configuration lu, s'il y en a un. */
   fichier: string | null;
 }
@@ -35,6 +38,7 @@ interface ConfigFichier {
   titresExclus?: string[];
   employeursRefuses?: string[];
   terminal?: string[];
+  langue?: string;
 }
 
 export const RACINE_APP = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -60,6 +64,15 @@ function lireJson(chemin: string): ConfigFichier {
 
 function compiler(motifs: string[] | undefined): RegExp[] {
   return (motifs ?? []).map((m) => new RegExp(m, 'i'));
+}
+
+/** Langue de la variable POSTULER_JUSTE_LANGUE, sinon du fichier, sinon le français ; une valeur inconnue est refusée. */
+function langueDe(env: NodeJS.ProcessEnv, brut: ConfigFichier, fichier: string | null): Langue {
+  const v = variable(env, 'LANGUE') ?? brut.langue ?? LANGUE_DEFAUT;
+  if (!estLangue(v)) {
+    throw new Error(`Langue inconnue : ${v} (${LANGUES.join(' ou ')} ; POSTULER_JUSTE_LANGUE ou "langue" de ${fichier ?? NOM_FICHIER_CONFIG})`);
+  }
+  return v;
 }
 
 export interface OptionsConfig {
@@ -128,6 +141,20 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
     titresExclus: compiler(brut.titresExclus),
     employeursRefuses: compiler(brut.employeursRefuses),
     terminal: Array.isArray(brut.terminal) && brut.terminal.length ? brut.terminal.map(String) : null,
+    langue: langueDe(env, brut, fichier),
     fichier,
   };
+}
+
+/**
+ * Langue configurée, sans jamais échouer (aide et erreurs de la CLI) : celle de la configuration si elle se charge,
+ * sinon celle de POSTULER_JUSTE_LANGUE si elle est valide, sinon le français.
+ */
+export function langueConfiguree(opts: OptionsConfig = {}): Langue {
+  try {
+    return chargerConfig(opts).langue;
+  } catch {
+    const v = variable(opts.env ?? process.env, 'LANGUE');
+    return estLangue(v) ? v : LANGUE_DEFAUT;
+  }
 }

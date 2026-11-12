@@ -17,6 +17,11 @@ export interface Config {
   telechargerJsonLd: boolean;
   titresExclus: RegExp[];
   employeursRefuses: RegExp[];
+  /**
+   * Commande qui ouvre un terminal avec l'agent (boutons de l'interface) ; `{dossier}` et `{invite}` y sont
+   * remplacés. null : Windows Terminal + Claude Code sous Windows, rien ailleurs.
+   */
+  terminal: string[] | null;
   /** Fichier de configuration lu, s'il y en a un. */
   fichier: string | null;
 }
@@ -29,6 +34,7 @@ interface ConfigFichier {
   telechargerJsonLd?: boolean;
   titresExclus?: string[];
   employeursRefuses?: string[];
+  terminal?: string[];
 }
 
 export const RACINE_APP = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -102,6 +108,7 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
     telechargerJsonLd: brut.telechargerJsonLd ?? true,
     titresExclus: compiler(brut.titresExclus),
     employeursRefuses: compiler(brut.employeursRefuses),
+    terminal: Array.isArray(brut.terminal) && brut.terminal.length ? brut.terminal.map(String) : null,
     fichier,
   };
 }

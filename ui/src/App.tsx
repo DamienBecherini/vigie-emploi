@@ -16,6 +16,7 @@ import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
 import { Detail } from './composants/Detail.tsx';
 import { AVenir } from './composants/AVenir.tsx';
+import { ActionsAgent, useNotifications } from './composants/ActionsAgent.tsx';
 import { Reglages } from './composants/Reglages.tsx';
 import { ChoixTheme, type Mode } from './composants/Theme.tsx';
 import {
@@ -228,6 +229,7 @@ export function App() {
   const [annonce, setAnnonce] = useState('');
   const [reglages, setReglages] = useState(false);
   const grille = useQuery({ queryKey: ['grille'], queryFn: api.grille });
+  useNotifications();
   const seuil = String(grille.data?.grille?.seuil ?? 4.5);
   const [recherche, setRecherche] = useState(params.get('q') ?? '');
   const rechercheDifferee = useDebounce(recherche, 300);
@@ -372,10 +374,12 @@ export function App() {
       <div className="flex flex-1 gap-4 p-4">
         {filtresOuverts && (
           <aside aria-label="Filtres" className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+            <ActionsAgent className="mb-3 border-b border-slate-200 pb-3 dark:border-slate-800" />
             <Filtres params={params} modifier={modifier} meta={meta.data} />
           </aside>
         )}
         <main className="min-w-0 flex-1" id="tableau" tabIndex={-1}>
+          {!filtresOuverts && <ActionsAgent className="mb-3 max-w-xs" />}
           <AVenir choisir={(id) => modifier({ offre: String(id) })} />
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>

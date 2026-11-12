@@ -224,6 +224,20 @@ export interface Meta {
   contrats: { valeur: string; n: number }[];
 }
 
+export interface OffreAPreparer {
+  id: number;
+  titre: string;
+  entreprise: string | null;
+}
+
+/** Travail en attente pour l'agent : e-mails à trier, offres en « go » sans dossier. */
+export interface EtatTravail {
+  emails: number;
+  go_a_preparer: OffreAPreparer[];
+}
+
+export type ActionAgent = 'traiter-emails' | 'preparer-go';
+
 async function appel<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, {
     ...init,
@@ -269,4 +283,6 @@ export const api = {
     appel<ReponseGrille & { impact: Impact }>('/api/grille/restaurer', { method: 'POST', body: JSON.stringify({ version }) }),
   candidater: (id: number) =>
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
+  travail: () => appel<EtatTravail>('/api/travail'),
+  lancerAgent: (action: ActionAgent) => appel<{ ok: true }>(`/api/travail/${action}`, { method: 'POST', body: '{}' }),
 };

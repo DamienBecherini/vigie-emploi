@@ -109,6 +109,8 @@ Format d'une entrée de lot :
 | Historique, retour arrière | `cap-emploi grille --historique --json`, `cap-emploi grille --restaurer 2 --json` |
 | Recalculer | `cap-emploi renoter --json` |
 
+Les boutons « Traiter N e-mails » et « Préparer N candidatures » du tableau de bord ouvrent un terminal dans le dossier de données et lancent l'agent avec `/traiter-emails` ou `/preparer-go` : ces commandes viennent du dossier de données (consignes de l'utilisateur) ; les suivre comme si l'utilisateur les avait tapées. Le tableau de bord se met à jour seul au fil des écritures.
+
 Le bouton « Candidater » du tableau de bord copie `candidater <id>` : quand l'utilisateur colle ce texte, lancer `cap-emploi candidater <id> --json` et préparer la candidature selon ses consignes.
 
 ## Développer sur ce dépôt

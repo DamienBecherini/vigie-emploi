@@ -28,7 +28,7 @@ export interface EmailLu {
 
 /** Objets des accusés de réception de candidature (LinkedIn, Free-Work, Indeed, Welcome to the Jungle, ATS…). */
 export const SUJET_CONFIRMATION =
-  /confirmation de (votre |ta )?candidature|(votre|ta) candidature (a (bien )?été|est) (envoyée|transmise|reçue|enregistrée)|candidature (bien )?(envoyée|reçue|transmise)|nous avons (bien )?reçu (votre|ta) candidature|merci pour (votre|ta) candidature|application (was )?(sent|submitted|received)|thank you for (your )?appl/i;
+  /confirmation de (votre |ta )?candidature|(votre|ta) candidature (a (bien )?été|est) (envoyée|transmise|reçue|enregistrée)|candidature (bien )?(envoyée|reçue|transmise)|nous avons (bien )?reçu (votre|ta) candidature|merci pour (votre|ta) candidature|application (was |has been )?(sent|submitted|received)|thank you for (your )?appl/i;
 
 /** Textes de liens qui ne sont pas des intitulés d'offres. */
 const LIENS_GENERIQUES =

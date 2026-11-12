@@ -1,4 +1,5 @@
-// Longueur des messages à copier-coller : chaque bloc encadré par « ──── début … ──── » / « ──── fin … ──── »,
+// Longueur des messages à copier-coller : chaque bloc encadré par « ──── début … ──── » / « ──── fin … ──── »
+// (en anglais : « ──── start … ──── » / « ──── end … ──── »),
 // ou le texte entier s'il n'y a pas de bloc. Caractères comptés comme les formulaires (points de code).
 
 export interface MesureBloc {
@@ -14,7 +15,8 @@ function mesurer(s: string): MesureBloc {
 export function compterTexte(brut: string): MesureBloc[] {
   const texte = brut.replace(/\r\n/g, '\n');
   const blocs: MesureBloc[] = [];
-  const re = /^─+[^\n]*début[^\n]*\n([\s\S]*?)\n─+[^\n]*fin[^\n]*$/gm;
+  // Séparateurs français (« début » / « fin ») ou anglais (« start » / « end »).
+  const re = /^─+[^\n]*(?:début|start)[^\n]*\n([\s\S]*?)\n─+[^\n]*(?:fin|end)[^\n]*$/gm;
   for (const m of texte.matchAll(re)) blocs.push(mesurer(m[1].trim()));
   return blocs.length ? blocs : [mesurer(texte.trim())];
 }

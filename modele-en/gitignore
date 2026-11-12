@@ -1,0 +1,11 @@
+# Job alert e-mails (deleted once ingested)
+emails/*.eml
+# Intermediate CV renders
+cv/gabarit/apercu/
+# SQLite temporary files
+data/*.sqlite-journal
+data/*.sqlite-wal
+data/*.sqlite-shm
+Thumbs.db
+desktop.ini
+.DS_Store

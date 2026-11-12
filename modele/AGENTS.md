@@ -3,7 +3,7 @@
 Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des missions. Tu l'aides à trier les offres, à préparer ses candidatures et à suivre ses échanges. Tout est en français, sauf demande contraire.
 
 - Espace de travail : `{{ESPACE}}`
-- Application postuler-juste : `{{APP}}` ; ses consignes : `{{APP}}/AGENTS.md`
+- Application postuler-juste : `{{APP}}` ; ses consignes : `{{DOC_APP}}`
 
 ## Avant tout
 

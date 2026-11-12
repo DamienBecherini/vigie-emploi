@@ -1,0 +1,16 @@
+{
+  // Compilation de src/ en JavaScript dans dist/ (paquet npm) : Node refuse d'exécuter du TypeScript sous node_modules.
+  // dist/<module>/… garde la même profondeur que src/<module>/… : les chemins calculés depuis import.meta.url
+  // (RACINE_APP dans src/core/config.ts) désignent toujours la racine du paquet.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": false,
+    "declaration": false
+  },
+  "include": ["src"]
+}

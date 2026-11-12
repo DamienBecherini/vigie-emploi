@@ -95,7 +95,7 @@ Explique comment alimenter le tri des offres :
 
 1. Créer des alertes sur les sites d'emploi (LinkedIn, Indeed, Hellowork, Free-Work, Glassdoor…) avec ses mots-clés.
 2. Enregistrer les e-mails reçus au format `.eml` dans `emails/` : à la main (glisser-déposer depuis la messagerie), ou par un filtre de sa messagerie (Thunderbird avec l'extension FiltaQuilla, par exemple).
-3. Ensuite, lui dire de te demander de « traiter les e-mails » : tu suivras le flux décrit dans `{{APP}}/AGENTS.md`.
+3. Ensuite, lui dire de te demander de « traiter les e-mails » : tu suivras le flux décrit dans `{{DOC_APP}}`.
 
 ## 9. Fin
 

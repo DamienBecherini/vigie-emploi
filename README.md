@@ -69,12 +69,10 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 ## Démarrer
 
 ```sh
-git clone https://github.com/DamienBecherini/postuler-juste.git
-cd postuler-juste
-npm install
-npm run build
-node bin/postuler-juste.js init ~/ma-recherche
+npx postuler-juste init ~/ma-recherche
 ```
+
+Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y postuler-juste@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g postuler-juste`, puis `postuler-juste init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
 `init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
@@ -125,15 +123,29 @@ Le reste de ce document décrit l'application en détail : commandes, configurat
 
 Prérequis : Node.js 24 ou plus (SQLite est intégré à Node via `node:sqlite`, rien à compiler).
 
+Depuis npm (le paquet contient le code compilé en JavaScript et l'interface compilée) :
+
 ```sh
-git clone <dépôt> postuler-juste
+npx postuler-juste init ~/ma-recherche    # sans installation
+npm install -g postuler-juste             # ou commande installée à demeure
+```
+
+Commande inscrite par `init` dans `.mcp.json` et dans les consignes de l'espace :
+
+- lancé par `npx` : `npx -y postuler-juste@<version>` (sous Windows, `cmd /c npx …` pour le serveur MCP). Le cache de npx peut être vidé : son chemin n'est jamais écrit. La version est figée pour que la base et l'application restent accordées ; au besoin, npx la retélécharge (connexion nécessaire). Les consignes de l'application (`AGENTS.md`) sont copiées dans `procedures/application.md`. Pour changer de version, remplacez le numéro dans `.mcp.json` et dans les consignes, ou passez à une installation globale ;
+- installé (`npm install -g`, ou depuis le dépôt) : `node <chemin>/bin/postuler-juste.js`, avec le chemin absolu de l'installation.
+
+Depuis le dépôt (contributeurs) :
+
+```sh
+git clone https://github.com/DamienBecherini/postuler-juste.git
 cd postuler-juste
 npm install
-npm run build      # vérifie les types et compile l'interface dans dist/ui
+npm run build      # vérifie les types, compile src/ dans dist/ et l'interface dans dist/ui
 npm link           # rend la commande `postuler-juste` disponible partout (facultatif)
 ```
 
-Sans `npm link`, remplacer `postuler-juste` par `node <chemin>/bin/postuler-juste.js`.
+Sans `npm link`, remplacez `postuler-juste` par `node <chemin>/bin/postuler-juste.js`. Dans le dépôt, `bin/postuler-juste.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
 
 Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi`, les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
 

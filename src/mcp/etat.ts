@@ -9,7 +9,7 @@ import { ouvrirBase, type Base } from '../db/base.ts';
 import { definirLangue } from '../i18n/index.ts';
 import { bi } from './textes.ts';
 
-/** Dossier de données quand rien n'est configuré (ni --data, ni POSTULER_JUSTE_DATA, ni fichier de config). */
+/** Dossier de données quand rien n'est configuré (ni --data, ni VIGIE_EMPLOI_DATA, ni fichier de config). */
 export function dossierParDefaut(): string {
   return join(homedir(), 'ma-recherche');
 }

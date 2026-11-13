@@ -4,19 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>postuler-juste</title>
+    <title>vigie-emploi</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
       // Thème, palette, zoom et langue choisie appliqués avant le rendu (pas de flash).
       try {
-        var t = localStorage.getItem('postuler-juste:theme') || 'systeme';
+        // Réglages des anciens noms de l'application (postuler-juste, cap-emploi) repris une fois, sans écraser les nouveaux.
+        ['postuler-juste:', 'cap-emploi:'].forEach(function (ancien) {
+          for (var i = localStorage.length - 1; i >= 0; i--) {
+            var cle = localStorage.key(i);
+            if (!cle || cle.indexOf(ancien) !== 0) continue;
+            var neuve = 'vigie-emploi:' + cle.slice(ancien.length);
+            if (localStorage.getItem(neuve) === null) localStorage.setItem(neuve, localStorage.getItem(cle));
+          }
+        });
+        var t = localStorage.getItem('vigie-emploi:theme') || 'systeme';
         var sombre = t === 'sombre' || (t === 'systeme' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', sombre);
-        var v = JSON.parse(localStorage.getItem(sombre ? 'postuler-juste:palette-vars-sombre' : 'postuler-juste:palette-vars-claire') || '{}');
+        var v = JSON.parse(localStorage.getItem(sombre ? 'vigie-emploi:palette-vars-sombre' : 'vigie-emploi:palette-vars-claire') || '{}');
         for (var k in v) document.documentElement.style.setProperty(k, v[k]);
-        var z = Number(localStorage.getItem('postuler-juste:zoom'));
+        var z = Number(localStorage.getItem('vigie-emploi:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
-        var l = localStorage.getItem('postuler-juste:langue');
+        var l = localStorage.getItem('vigie-emploi:langue');
         if (l === 'fr' || l === 'en') document.documentElement.lang = l;
       } catch (e) {}
     </script>

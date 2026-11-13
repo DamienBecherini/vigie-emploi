@@ -1,16 +1,16 @@
-# Utiliser postuler-juste avec une IA (serveur MCP)
+# Utiliser vigie-emploi avec une IA (serveur MCP)
 
-`postuler-juste mcp` lance un serveur [MCP](https://modelcontextprotocol.io) sur l'entrée / sortie standard (transport stdio). Une IA (Claude Code, Claude Desktop ou tout client MCP) y trouve les outils pour ingérer les alertes, lire, noter, candidater et générer le suivi, sans passer par la ligne de commande. Le serveur appelle le même noyau que la CLI et le tableau de bord ; il n'appelle lui-même aucun modèle d'IA.
+`vigie-emploi mcp` lance un serveur [MCP](https://modelcontextprotocol.io) sur l'entrée / sortie standard (transport stdio). Une IA (Claude Code, Claude Desktop ou tout client MCP) y trouve les outils pour ingérer les alertes, lire, noter, candidater et générer le suivi, sans passer par la ligne de commande. Le serveur appelle le même noyau que la CLI et le tableau de bord ; il n'appelle lui-même aucun modèle d'IA.
 
 Le serveur suffit aussi à un client **sans accès aux fichiers ni au terminal** (Claude Desktop) : il crée l'espace de travail, expose les consignes de l'espace en prompts, lit et écrit les fichiers de l'espace et génère les CV en PDF (voir « Claude Desktop » plus bas).
 
-Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `POSTULER_JUSTE_DATA`, sinon `postuler-juste.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/ma-recherche`** (`C:\Users\<nom>\ma-recherche` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialiser_espace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
+Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `VIGIE_EMPLOI_DATA`, sinon `vigie-emploi.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/ma-recherche`** (`C:\Users\<nom>\ma-recherche` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialiser_espace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
 
 ## Outils
 
 | Outil | Rôle |
 |---|---|
-| `lister_offres` | Liste paginée, mêmes filtres que `postuler-juste list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `recue_le:desc,note:desc`) |
+| `lister_offres` | Liste paginée, mêmes filtres que `vigie-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `recue_le:desc,note:desc`) |
 | `lire_offre` | Détail complet : description, notes, historique des statuts, tags, candidature |
 | `offres_a_lire` | Offres à traiter sans note, avec `lecture` = `description`, `navigateur` ou `humain` |
 | `grille` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |
@@ -38,7 +38,7 @@ Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) 
 | Outil | Rôle |
 |---|---|
 | `etat_espace` | Dossier de l'espace, initialisé ou non, démarrage fait ou non, navigateur trouvé pour les PDF, gabarit installé |
-| `initialiser_espace` | Crée l'espace (comme `postuler-juste init`) dans le dossier du serveur ou celui choisi par l'utilisateur, puis s'y installe |
+| `initialiser_espace` | Crée l'espace (comme `vigie-emploi init`) dans le dossier du serveur ou celui choisi par l'utilisateur, puis s'y installe |
 | `lister_fichiers` | Contenu d'un dossier de l'espace, sur 1 à 4 niveaux |
 | `lire_fichier` | Texte tel quel ; PDF : texte extrait page par page ; Word (`.docx`) : texte ; image : contenu `image` |
 | `ecrire_fichier` | Crée ou remplace un fichier texte (`.md`, `.txt`, `.json`, `.csv`, `.yml`, `.css`), dossiers parents compris ; renvoie `existait` ; `creer_seulement: true` refuse d'écraser |
@@ -61,7 +61,7 @@ Les consignes de l'espace sont relues sur le disque à chaque appel (l'utilisate
 | `preparer-go` | `AGENTS.md` puis `procedures/preparer-go.md` |
 | `cv-cible` | `AGENTS.md` puis `procedures/cv-cible.md` (argument facultatif `offre`) |
 
-La ressource `postuler-juste://espace/AGENTS.md` donne les consignes générales seules ; les `instructions` du serveur renvoient vers elles.
+La ressource `vigie-emploi://espace/AGENTS.md` donne les consignes générales seules ; les `instructions` du serveur renvoient vers elles.
 
 Les erreurs (offre introuvable, note hors échelle, lien invalide…) reviennent à l'IA comme résultat d'erreur lisible ; le serveur continue.
 
@@ -72,7 +72,7 @@ Fichier `.mcp.json` à la racine du dossier de données (ou du projet où l'on t
 ```json
 {
   "mcpServers": {
-    "postuler-juste": { "command": "postuler-juste", "args": ["mcp"] }
+    "vigie-emploi": { "command": "vigie-emploi", "args": ["mcp"] }
   }
 }
 ```
@@ -81,15 +81,15 @@ Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `n
 
 | Forme | `command` / `args` | Quand l'utiliser |
 |---|---|---|
-| Commande seule | `"postuler-juste"`, `["mcp"]` | Claude Code (il retrouve le `postuler-juste.cmd` de `npm link`) |
-| Via `cmd` | `"cmd"`, `["/c", "postuler-juste", "mcp"]` | Clients Windows qui lancent le programme sans shell |
-| Node direct | `"node"`, `["C:/chemin/postuler-juste/bin/postuler-juste.js", "mcp"]` | Partout, sans `npm link` ; la forme la plus robuste |
+| Commande seule | `"vigie-emploi"`, `["mcp"]` | Claude Code (il retrouve le `vigie-emploi.cmd` de `npm link`) |
+| Via `cmd` | `"cmd"`, `["/c", "vigie-emploi", "mcp"]` | Clients Windows qui lancent le programme sans shell |
+| Node direct | `"node"`, `["C:/chemin/vigie-emploi/bin/vigie-emploi.js", "mcp"]` | Partout, sans `npm link` ; la forme la plus robuste |
 
-Lancé sans shell (`child_process.spawn('postuler-juste')`), `postuler-juste` seul échoue sous Windows (`ENOENT` : npm crée un `.cmd`, pas un `.exe`) ; d'où les deux autres formes pour les clients génériques.
+Lancé sans shell (`child_process.spawn('vigie-emploi')`), `vigie-emploi` seul échoue sous Windows (`ENOENT` : npm crée un `.cmd`, pas un `.exe`) ; d'où les deux autres formes pour les clients génériques.
 
-Pour imposer le dossier de données : ajouter `"--data", "D:/chemin/donnees"` aux `args`, ou `"env": { "POSTULER_JUSTE_DATA": "D:/chemin/donnees" }`.
+Pour imposer le dossier de données : ajouter `"--data", "D:/chemin/donnees"` aux `args`, ou `"env": { "VIGIE_EMPLOI_DATA": "D:/chemin/donnees" }`.
 
-En ligne de commande : `claude mcp add postuler-juste -- postuler-juste mcp` (portée locale), ou `claude mcp add --scope project …` pour écrire `.mcp.json`. Au premier lancement, Claude Code demande d'approuver un serveur déclaré dans `.mcp.json`.
+En ligne de commande : `claude mcp add vigie-emploi -- vigie-emploi mcp` (portée locale), ou `claude mcp add --scope project …` pour écrire `.mcp.json`. Au premier lancement, Claude Code demande d'approuver un serveur déclaré dans `.mcp.json`.
 
 ## Claude Desktop
 
@@ -97,18 +97,18 @@ Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveu
 
 ### Extension en un clic (recommandé)
 
-**1. Installer** : double-clic sur `postuler-juste-<version>.mcpb` (ou le glisser dans la fenêtre de Claude Desktop, ou Paramètres → Extensions → Paramètres avancés → Installer une extension…). Claude Desktop affiche les outils et demande deux réglages :
+**1. Installer** : double-clic sur `vigie-emploi-<version>.mcpb` (ou le glisser dans la fenêtre de Claude Desktop, ou Paramètres → Extensions → Paramètres avancés → Installer une extension…). Claude Desktop affiche les outils et demande deux réglages :
 
 - **Dossier de l'espace** : par défaut `ma-recherche` dans votre dossier personnel. Il peut ne pas exister encore. Évitez un dossier synchronisé (OneDrive, Dropbox…) : la base SQLite s'y abîme facilement ;
 - **Langue** : `fr` ou `en` (consignes de l'IA, tableau de bord, suivi).
 
-Pour les changer ensuite : Paramètres → Extensions → postuler-juste → Configurer.
+Pour les changer ensuite : Paramètres → Extensions → vigie-emploi → Configurer.
 
 **2. Démarrer** : voir l'étape 2 plus bas (prompt `demarrage`).
 
 L'extension contient l'application compilée et ses dépendances ; Claude Desktop la lance avec son Node intégré (Node 24.22 dans Claude Desktop 5.11492, novembre 2026), qui comprend `node:sqlite`. Le manifeste exige Node 24 ou plus (`compatibility.runtimes.node`) : si un jour le Node intégré était plus ancien, Claude Desktop prendrait un `node` du système assez récent, et à défaut le serveur s'arrête avec un message clair (« installer Node 24 ou plus récent »), visible dans le journal de l'extension.
 
-**Si vous aviez déclaré le serveur à la main** (section suivante) : retirez cette entrée de `claude_desktop_config.json` avant d'installer l'extension, sinon Claude aura deux serveurs `postuler-juste` aux outils identiques.
+**Si vous aviez déclaré le serveur à la main** (section suivante) : retirez cette entrée de `claude_desktop_config.json` avant d'installer l'extension, sinon Claude aura deux serveurs `vigie-emploi` aux outils identiques.
 
 Construire l'extension : `npm run mcpb` dans le dépôt (voir le README).
 
@@ -123,39 +123,39 @@ Construire l'extension : `npm run mcpb` dans le dépôt (voir le README).
 ```json
 {
   "mcpServers": {
-    "postuler-juste": {
+    "vigie-emploi": {
       "command": "node",
-      "args": ["C:/chemin/postuler-juste/bin/postuler-juste.js", "mcp"],
-      "env": { "POSTULER_JUSTE_DATA": "C:/Users/vous/ma-recherche" }
+      "args": ["C:/chemin/vigie-emploi/bin/vigie-emploi.js", "mcp"],
+      "env": { "VIGIE_EMPLOI_DATA": "C:/Users/vous/ma-recherche" }
     }
   }
 }
 ```
 
-`command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/postuler-juste.js` de l'application, avec des barres obliques. `env.POSTULER_JUSTE_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/ma-recherche`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
+`command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/vigie-emploi.js` de l'application, avec des barres obliques. `env.VIGIE_EMPLOI_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/ma-recherche`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
 
-**2. Démarrer** : dans une nouvelle conversation, bouton « + » → postuler-juste → prompt **`demarrage`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialiser_espace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `POSTULER_JUSTE_DATA`) : sinon la session suivante repartira du dossier configuré.
+**2. Démarrer** : dans une nouvelle conversation, bouton « + » → vigie-emploi → prompt **`demarrage`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialiser_espace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `VIGIE_EMPLOI_DATA`) : sinon la session suivante repartira du dossier configuré.
 
 **3. Ensuite** : prompts `traiter-emails`, `preparer-go` et `cv-cible`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generer_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
 
-**Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `ouvrir_tableau_de_bord` vérifie `/api/sante` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`postuler-juste serve --inactivite 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `ouvrir: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
+**Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `ouvrir_tableau_de_bord` vérifie `/api/sante` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`vigie-emploi serve --inactivite 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `ouvrir: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
 
 Limites : l'IA ne lit pas LinkedIn, Indeed ni Glassdoor (pas de navigateur dans Claude Desktop sans extension) : collez le texte des offres quand elle le demande. Un PDF scanné, sans texte, ne se lit pas : glissez-le directement dans la conversation.
 
 ## Client générique
 
-Tout client MCP stdio convient : lancer `node <chemin>/bin/postuler-juste.js mcp [--data <dossier>]` et échanger du JSON-RPC sur stdin / stdout (un message par ligne). stdout ne porte que le protocole ; les messages de l'application (« postuler-juste MCP prêt ») sortent sur stderr. Exemple avec le SDK TypeScript :
+Tout client MCP stdio convient : lancer `node <chemin>/bin/vigie-emploi.js mcp [--data <dossier>]` et échanger du JSON-RPC sur stdin / stdout (un message par ligne). stdout ne porte que le protocole ; les messages de l'application (« vigie-emploi MCP prêt ») sortent sur stderr. Exemple avec le SDK TypeScript :
 
 ```ts
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const client = new Client({ name: 'mon-client', version: '1.0.0' });
-await client.connect(new StdioClientTransport({ command: 'node', args: ['C:/chemin/postuler-juste/bin/postuler-juste.js', 'mcp'] }));
+await client.connect(new StdioClientTransport({ command: 'node', args: ['C:/chemin/vigie-emploi/bin/vigie-emploi.js', 'mcp'] }));
 const r = await client.callTool({ name: 'offres_a_lire', arguments: { limite: 10 } });
 ```
 
-Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprotocol/inspector node bin/postuler-juste.js mcp --data <dossier>`.
+Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprotocol/inspector node bin/vigie-emploi.js mcp --data <dossier>`.
 
 ## Flux type
 

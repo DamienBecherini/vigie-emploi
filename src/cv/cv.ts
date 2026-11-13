@@ -269,7 +269,7 @@ const NAVIGATEURS_LINUX = [
   '/snap/bin/chromium',
 ];
 
-/** Premier Chrome / Edge / Chromium trouvé (POSTULER_JUSTE_NAVIGATEUR pour l'imposer), ou null. */
+/** Premier Chrome / Edge / Chromium trouvé (VIGIE_EMPLOI_NAVIGATEUR pour l'imposer), ou null. */
 export function trouverNavigateur(env: NodeJS.ProcessEnv = process.env): string | null {
   const impose = variable(env, 'NAVIGATEUR');
   if (impose) return existsSync(impose) ? impose : null;

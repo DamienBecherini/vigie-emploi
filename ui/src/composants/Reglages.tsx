@@ -630,7 +630,7 @@ export function Reglages({ fermer, choisir, annoncer }: { fermer: () => void; ch
         {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
         {q.data && !q.data.grille && (
           <p className="p-4 text-sm">
-            {t('reglages.pasDeGrille1')}<code>postuler-juste grille --init</code>{t('reglages.pasDeGrille2')}
+            {t('reglages.pasDeGrille1')}<code>vigie-emploi grille --init</code>{t('reglages.pasDeGrille2')}
             <code>profil/grille.json</code>{t('reglages.pasDeGrille3')}
           </p>
         )}

@@ -8,7 +8,7 @@ import { grilleObligatoire } from '../src/core/grille-stockage.ts';
 import { COPIE_CONSIGNES, initialiserEspace, lancement, MODELE } from '../src/init/init.ts';
 import { cvEnHtml } from '../src/cv/cv.ts';
 
-const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-init-'));
+const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-init-'));
 afterAll(() => rmSync(racine, { recursive: true, force: true }));
 
 /** Tous les fichiers d'un dossier, en chemins relatifs. */
@@ -21,7 +21,7 @@ function fichiers(dossier: string, prefixe = ''): string[] {
 
 describe('init : création d’un espace de travail', () => {
   const espace = join(racine, 'mon-espace');
-  const r = initialiserEspace({ dossier: espace, port: 4411, nomMcp: 'postuler-juste-test', env: { POSTULER_JUSTE_NAVIGATEUR: '/nulle/part' } });
+  const r = initialiserEspace({ dossier: espace, port: 4411, nomMcp: 'vigie-emploi-test', env: { VIGIE_EMPLOI_NAVIGATEUR: '/nulle/part' } });
 
   it('copie le modèle, le gabarit de CV et la grille d’exemple', () => {
     const copies = fichiers(espace);
@@ -54,9 +54,9 @@ describe('init : création d’un espace de travail', () => {
 
   it('déclare le serveur MCP avec le dossier de données', () => {
     const mcp = JSON.parse(readFileSync(join(espace, '.mcp.json'), 'utf8'));
-    const s = mcp.mcpServers['postuler-juste-test'];
+    const s = mcp.mcpServers['vigie-emploi-test'];
     expect(s.args[1]).toBe('mcp');
-    expect(s.env.POSTULER_JUSTE_DATA).toBe(espace);
+    expect(s.env.VIGIE_EMPLOI_DATA).toBe(espace);
   });
 
   it('lit les consignes de l’application sur place hors npx', () => {
@@ -65,21 +65,21 @@ describe('init : création d’un espace de travail', () => {
   });
 
   it('commande de lancement depuis le dépôt ou une installation durable : node + chemin absolu du binaire', () => {
-    const l = lancement('/opt/npm/lib/node_modules/postuler-juste', '1.2.3', 'linux', '/usr/bin/node');
+    const l = lancement('/opt/npm/lib/node_modules/vigie-emploi', '1.2.3', 'linux', '/usr/bin/node');
     expect(l.mode).toBe('chemin');
-    expect(l.commande).toBe('node "/opt/npm/lib/node_modules/postuler-juste/bin/postuler-juste.js"');
+    expect(l.commande).toBe('node "/opt/npm/lib/node_modules/vigie-emploi/bin/vigie-emploi.js"');
     expect(l.mcp.command).toBe('/usr/bin/node');
     expect(l.mcp.args[1]).toBe('mcp');
   });
 
   it('commande de lancement depuis le cache de npx : npx avec la version figée (cmd /c sous Windows)', () => {
-    const cache = 'C:\\Users\\x\\AppData\\Local\\npm-cache\\_npx\\abc123\\node_modules\\postuler-juste';
+    const cache = 'C:\\Users\\x\\AppData\\Local\\npm-cache\\_npx\\abc123\\node_modules\\vigie-emploi';
     const w = lancement(cache, '1.2.3', 'win32', 'node.exe');
     expect(w.mode).toBe('npx');
-    expect(w.commande).toBe('npx -y postuler-juste@1.2.3');
-    expect(w.mcp).toEqual({ command: 'cmd', args: ['/c', 'npx', '-y', 'postuler-juste@1.2.3', 'mcp'] });
-    const l = lancement('/home/x/.npm/_npx/abc123/node_modules/postuler-juste', '1.2.3', 'linux');
-    expect(l.mcp).toEqual({ command: 'npx', args: ['-y', 'postuler-juste@1.2.3', 'mcp'] });
+    expect(w.commande).toBe('npx -y vigie-emploi@1.2.3');
+    expect(w.mcp).toEqual({ command: 'cmd', args: ['/c', 'npx', '-y', 'vigie-emploi@1.2.3', 'mcp'] });
+    const l = lancement('/home/x/.npm/_npx/abc123/node_modules/vigie-emploi', '1.2.3', 'linux');
+    expect(l.mcp).toEqual({ command: 'npx', args: ['-y', 'vigie-emploi@1.2.3', 'mcp'] });
   });
 
   it('signale l’absence de navigateur et donne le prompt de démarrage', () => {
@@ -123,7 +123,19 @@ describe('cv : Markdown -> HTML', () => {
   });
 });
 
-describe('anciens noms (cap-emploi) encore reconnus', () => {
+describe('anciens noms (postuler-juste, cap-emploi) encore reconnus', () => {
+  it('lit postuler-juste.config.json, POSTULER_JUSTE_DATA et data/postuler-juste.sqlite', () => {
+    const ancien = join(racine, 'ancien-pj');
+    mkdirSync(join(ancien, 'data'), { recursive: true });
+    writeFileSync(join(ancien, 'postuler-juste.config.json'), JSON.stringify({ dossierDonnees: '.', port: 4501 }));
+    writeFileSync(join(ancien, 'data', 'postuler-juste.sqlite'), '');
+    const parConfig = chargerConfig({ cwd: ancien, env: {} });
+    expect(parConfig.port).toBe(4501);
+    expect(parConfig.base).toBe(join(ancien, 'data', 'postuler-juste.sqlite'));
+    const parVariable = chargerConfig({ cwd: racine, env: { POSTULER_JUSTE_DATA: ancien } });
+    expect(parVariable.dossierDonnees).toBe(ancien);
+  });
+
   it('lit cap-emploi.config.json, CAP_EMPLOI_DATA et data/cap-emploi.sqlite', () => {
     const ancien = join(racine, 'ancien');
     mkdirSync(join(ancien, 'data'), { recursive: true });
@@ -140,8 +152,8 @@ describe('anciens noms (cap-emploi) encore reconnus', () => {
     const neuf = join(racine, 'neuf');
     mkdirSync(join(neuf, 'data'), { recursive: true });
     writeFileSync(join(neuf, 'data', 'cap-emploi.sqlite'), '');
-    writeFileSync(join(neuf, 'data', 'postuler-juste.sqlite'), '');
-    expect(chargerConfig({ cwd: racine, env: { POSTULER_JUSTE_DATA: neuf } }).base).toBe(join(neuf, 'data', 'postuler-juste.sqlite'));
+    writeFileSync(join(neuf, 'data', 'vigie-emploi.sqlite'), '');
+    expect(chargerConfig({ cwd: racine, env: { VIGIE_EMPLOI_DATA: neuf } }).base).toBe(join(neuf, 'data', 'vigie-emploi.sqlite'));
   });
 });
 

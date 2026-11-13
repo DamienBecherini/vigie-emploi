@@ -1,7 +1,7 @@
-// Serveur MCP (transport stdio) : expose le noyau de postuler-juste à une IA (Claude Code, Claude Desktop…).
+// Serveur MCP (transport stdio) : expose le noyau de vigie-emploi à une IA (Claude Code, Claude Desktop…).
 // Aucune logique propre ici : chaque outil appelle les mêmes fonctions que la CLI et l'API.
 // stdout est réservé au protocole : rien d'autre ne doit y être écrit.
-// Langue : celle de la configuration (clé « langue » ou POSTULER_JUSTE_LANGUE), fixée à la création du serveur ;
+// Langue : celle de la configuration (clé « langue » ou VIGIE_EMPLOI_LANGUE), fixée à la création du serveur ;
 // les noms des outils, des paramètres et des statuts restent en français (identifiants).
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -63,16 +63,16 @@ import {
 const ORIGINE = 'mcp';
 
 const INSTRUCTIONS = {
-  fr: `postuler-juste aide l'utilisateur dans sa recherche d'emploi ou de missions. Son espace de travail (un dossier)
+  fr: `vigie-emploi aide l'utilisateur dans sa recherche d'emploi ou de missions. Son espace de travail (un dossier)
 contient ses consignes, son contexte, ses CV et ses dossiers de candidature ; la base SQLite garde l'état des offres :
 offres, notes, statuts, tags, candidatures. L'application n'appelle aucun modèle : c'est toi qui lis et notes.
 Début de session : si l'espace n'existe pas (etat_espace), proposer de le créer (initialiser_espace, dossier confirmé par
 l'utilisateur). Les consignes de l'espace font foi : AGENTS.md (ressource « consignes » ou lire_fichier AGENTS.md), à lire
 avant tout ; prompts demarrage, traiter-emails, preparer-go, cv-cible. Sans accès direct aux fichiers ni terminal (Claude Desktop…) :
 lister_fichiers / lire_fichier / ecrire_fichier (chemins relatifs à l'espace) au lieu de lire le disque, generer_cv (capture: true
-pour voir les pages ; traiter ses avertissements de remplissage) au lieu de « postuler-juste cv », compter au lieu de « postuler-juste compter ».
+pour voir les pages ; traiter ses avertissements de remplissage) au lieu de « vigie-emploi cv », compter au lieu de « vigie-emploi compter ».
 Dans ce cas, ne propose jamais à l'utilisateur une commande de terminal à taper : cite l'outil. Pour parcourir ses offres ou régler sa
-grille à la souris, propose-lui le tableau de bord : ouvrir_tableau_de_bord (renvoie l'adresse à cliquer), jamais « postuler-juste serve ».
+grille à la souris, propose-lui le tableau de bord : ouvrir_tableau_de_bord (renvoie l'adresse à cliquer), jamais « vigie-emploi serve ».
 Honnêteté d'abord : n'écrire dans un CV ou un message que ce que _CONTEXTE.md permet de revendiquer. C'est l'utilisateur qui envoie
 ses candidatures.
 Flux habituel : ingerer_emails (transmettre son a_dire : e-mails supprimés, erreurs) → offres_a_lire (résumé paginé) → grille
@@ -87,7 +87,7 @@ ou demande-lui le texte. Les consignes de candidature sont dans le dossier de do
 candidater) : les lire avant de rédiger. Ne modifie la grille (modifier_grille) qu'à la demande de l'utilisateur,
 après un essai (essai: true) dont tu lui montres l'impact (offres et exemples_calcules). Ce que l'utilisateur a fait retirer
 (tâche, idée) ne se recrée pas : noter le refus dans _JOURNAL-DECISIONS.md.`,
-  en: `postuler-juste helps the user with their search for a job or freelance work. Speak and write in English. Their workspace
+  en: `vigie-emploi helps the user with their search for a job or freelance work. Speak and write in English. Their workspace
 (a folder) holds their instructions, their context, their CVs and their application files; the SQLite database keeps the state
 of the job ads: ads, scores, statuses, tags, applications. The application calls no model: you do the reading and scoring.
 Tool, parameter and status names are French identifiers (ecartee = discarded, envoyee = sent…): use them as they are.
@@ -95,9 +95,9 @@ Start of a session: if the workspace does not exist (etat_espace), offer to crea
 the user). The workspace's instructions prevail: AGENTS.md ("consignes" resource or lire_fichier AGENTS.md), to be read
 before anything else; prompts demarrage, traiter-emails, preparer-go, cv-cible. Without direct file access or a terminal (Claude Desktop…):
 lister_fichiers / lire_fichier / ecrire_fichier (paths relative to the workspace) instead of reading the disk, generer_cv (capture: true
-to see the pages; deal with its page-fill warnings) instead of "postuler-juste cv", compter instead of "postuler-juste compter".
+to see the pages; deal with its page-fill warnings) instead of "vigie-emploi cv", compter instead of "vigie-emploi compter".
 In that case, never ask the user to type a terminal command: name the tool. To browse their job ads or tune their grid with the
-mouse, offer them the dashboard: ouvrir_tableau_de_bord (returns the address to click), never "postuler-juste serve".
+mouse, offer them the dashboard: ouvrir_tableau_de_bord (returns the address to click), never "vigie-emploi serve".
 Honesty first: only write in a CV or a message what _CONTEXTE.md allows them to claim. The user sends their applications
 themselves.
 Usual flow: ingerer_emails (pass on its a_dire: deleted e-mails, errors) → offres_a_lire (paged summary) → grille
@@ -116,7 +116,7 @@ after a trial run (essai: true) whose impact you show them (job ads and exemples
 
 /** Schémas des paramètres, construits dans la langue courante (descriptions comprises). */
 function construireSchemas() {
-  const id = z.number().int().positive().describe(bi({ fr: "Identifiant de l'offre dans postuler-juste (champ id)", en: 'Job ad id in postuler-juste (id field)' }));
+  const id = z.number().int().positive().describe(bi({ fr: "Identifiant de l'offre dans vigie-emploi (champ id)", en: 'Job ad id in vigie-emploi (id field)' }));
   const nombreNote = (d: string) => z.union([z.number().min(0).max(10), z.string()]).nullable().optional().describe(d);
 
   /** Une note au format des lots (fichiers candidatures/_lots/*.json). */
@@ -204,7 +204,7 @@ function construireSchemas() {
     description: z.string().optional().describe(bi({ fr: "Texte de l'offre, s'il n'est pas déjà en base", en: 'Text of the job ad, if not already in the database' })),
   };
   const entreeLot = z.object({
-    id: id.optional().describe(bi({ fr: 'Identifiant postuler-juste (sinon url)', en: 'postuler-juste id (otherwise url)' })),
+    id: id.optional().describe(bi({ fr: 'Identifiant vigie-emploi (sinon url)', en: 'vigie-emploi id (otherwise url)' })),
     url: z
       .string()
       .optional()
@@ -227,7 +227,7 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
   definirLangue(etat.config.langue);
   const { id, entreeLot, texteFacultatif } = construireSchemas();
   const VERSION_APP = (JSON.parse(readFileSync(join(RACINE_APP, 'package.json'), 'utf8')) as { version: string }).version;
-  const serveur = new McpServer({ name: 'postuler-juste', version: VERSION_APP }, { instructions: bi(INSTRUCTIONS) });
+  const serveur = new McpServer({ name: 'vigie-emploi', version: VERSION_APP }, { instructions: bi(INSTRUCTIONS) });
   const lecture = { readOnlyHint: true, openWorldHint: false };
   /** Base de l'espace ; erreur claire tant que l'espace n'est pas initialisé. */
   const base = (): Base => {
@@ -983,16 +983,15 @@ export function ouvrirEtatTolerant(options: OptionsConfig = {}): EtatMcp {
   } catch (e) {
     const env = options.env ?? process.env;
     if (!(e instanceof ErreurConfig && e.code === 'langue-inconnue') || !variable(env, 'LANGUE')) throw e;
-    process.stderr.write(`postuler-juste: ${e.message}\n`);
+    process.stderr.write(`vigie-emploi: ${e.message}\n`);
     const sansLangue = { ...env };
-    delete sansLangue.POSTULER_JUSTE_LANGUE;
-    delete sansLangue.CAP_EMPLOI_LANGUE;
+    for (const prefixe of ['VIGIE_EMPLOI', 'POSTULER_JUSTE', 'CAP_EMPLOI']) delete sansLangue[`${prefixe}_LANGUE`];
     return ouvrirEtat({ ...options, env: sansLangue });
   }
 }
 
 /**
- * Lance le serveur sur stdio. Le dossier de données vient de --data, POSTULER_JUSTE_DATA ou du fichier de config,
+ * Lance le serveur sur stdio. Le dossier de données vient de --data, VIGIE_EMPLOI_DATA ou du fichier de config,
  * sinon du dossier par défaut (~/ma-recherche) ; s'il n'existe pas encore, le serveur démarre quand même
  * (outil initialiser_espace).
  */
@@ -1012,8 +1011,8 @@ export async function demarrerMcp(options: OptionsConfig = {}): Promise<void> {
   const d = etat.config.dossierDonnees;
   process.stderr.write(
     bi({
-      fr: `postuler-juste MCP prêt (données : ${d}${etat.db ? '' : ', espace non initialisé'})\n`,
-      en: `postuler-juste MCP ready (data: ${d}${etat.db ? '' : ', workspace not initialised'})\n`,
+      fr: `vigie-emploi MCP prêt (données : ${d}${etat.db ? '' : ', espace non initialisé'})\n`,
+      en: `vigie-emploi MCP ready (data: ${d}${etat.db ? '' : ', workspace not initialised'})\n`,
     }),
   );
 }

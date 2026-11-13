@@ -9,13 +9,13 @@ import { cheminDansEspace, deplacerEspace, ecrireEspace, lireEspace, listerEspac
 import { compterTexte } from '../src/core/compter.ts';
 import { texteDocx } from '../src/core/extraction.ts';
 
-const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-fichiers-'));
+const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-fichiers-'));
 const espace = join(racine, 'espace');
 const dehors = join(racine, 'dehors');
 mkdirSync(join(espace, 'data'), { recursive: true });
 mkdirSync(join(espace, 'cv'), { recursive: true });
 mkdirSync(dehors, { recursive: true });
-writeFileSync(join(espace, 'data', 'postuler-juste.sqlite'), 'base');
+writeFileSync(join(espace, 'data', 'vigie-emploi.sqlite'), 'base');
 writeFileSync(join(espace, '_CONTEXTE.md'), '# Contexte\n');
 writeFileSync(join(espace, '.mcp.json'), '{}');
 writeFileSync(join(dehors, 'secret.txt'), 'secret');
@@ -48,9 +48,9 @@ describe('confinement des chemins', () => {
     [join(dehors, 'secret.txt'), /hors de l'espace/],
     ['C:/Windows/win.ini', /hors de l'espace/],
     ['/etc/passwd', /hors de l'espace/],
-    ['data/postuler-juste.sqlite', /data\//],
-    ['DATA/postuler-juste.sqlite', /data\//],
-    ['data./postuler-juste.sqlite', /invalide/],
+    ['data/vigie-emploi.sqlite', /data\//],
+    ['DATA/vigie-emploi.sqlite', /data\//],
+    ['data./vigie-emploi.sqlite', /invalide/],
     ['./data', /data\//],
     ['.mcp.json', /caché/],
     ['cv/.git/config', /caché/],
@@ -72,7 +72,7 @@ describe('confinement des chemins', () => {
       expect(existsSync(join(dehors, 'nouveau.md'))).toBe(false);
       expect(listerEspace(espace).entrees.map((e) => e.chemin)).not.toContain('lien-dossier/');
     }
-    if (versData) expect(() => lireEspace(espace, 'lien-data/postuler-juste.sqlite')).toThrow(/Accès refusé/);
+    if (versData) expect(() => lireEspace(espace, 'lien-data/vigie-emploi.sqlite')).toThrow(/Accès refusé/);
   });
 });
 
@@ -97,7 +97,7 @@ describe('lister, écrire, lire, déplacer', () => {
     expect(() => ecrireEspace(espace, 'cv/CV.pdf', 'x')).toThrow(/Extension non autorisée/);
     expect(() => ecrireEspace(espace, 'outil.js', 'x')).toThrow(/Extension non autorisée/);
     expect(() => ecrireEspace(espace, 'data/note.md', 'x')).toThrow(/data\//);
-    expect(readFileSync(join(espace, 'data', 'postuler-juste.sqlite'), 'utf8')).toBe('base');
+    expect(readFileSync(join(espace, 'data', 'vigie-emploi.sqlite'), 'utf8')).toBe('base');
   });
 
   it('liste sans data/ ni fichiers cachés, sur la profondeur demandée', () => {
@@ -121,7 +121,7 @@ describe('lister, écrire, lire, déplacer', () => {
     ecrireEspace(espace, 'a-deposer/notes.txt', 'autre');
     expect(() => deplacerEspace(espace, 'a-deposer/notes.txt', 'candidatures/acme-dev/notes.txt')).toThrow(/existe déjà/);
     expect(() => deplacerEspace(espace, 'a-deposer/notes.txt', '../dehors/notes.txt')).toThrow(/refusé/);
-    expect(() => deplacerEspace(espace, 'data/postuler-juste.sqlite', 'base.sqlite')).toThrow(/data\//);
+    expect(() => deplacerEspace(espace, 'data/vigie-emploi.sqlite', 'base.sqlite')).toThrow(/data\//);
   });
 
   it('lit un fichier binaire en octets (PDF, image…)', () => {

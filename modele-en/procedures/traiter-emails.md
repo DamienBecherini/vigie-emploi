@@ -48,4 +48,4 @@ A table of the job ads above the grid's threshold, best first: score, no., compa
 
 End with: "Tell me which job ads get a go; the others will be discarded." On their answer: the ads without a go go to `ecartee` (reason as the comment), then offer to prepare the applications (`preparer-go` procedure).
 
-If the workspace is under version control with git: commit the database (`data/postuler-juste.sqlite`) with a message such as "Batch of DD/MM: N job ads, X discarded, Y scored".
+If the workspace is under version control with git: commit the database (`data/vigie-emploi.sqlite`) with a message such as "Batch of DD/MM: N job ads, X discarded, Y scored".

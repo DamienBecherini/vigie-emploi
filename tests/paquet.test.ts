@@ -66,17 +66,17 @@ describe('extension Claude Desktop (mcpb/manifest.json)', () => {
     compatibility: { runtimes: { node: string } };
   };
 
-  it('lance le binaire de la commande postuler-juste avec le node de Claude Desktop', () => {
-    expect(m.name).toBe('postuler-juste');
-    expect(pkg.bin).toEqual({ 'postuler-juste': 'bin/postuler-juste.js' });
+  it('lance le binaire de la commande vigie-emploi avec le node de Claude Desktop', () => {
+    expect(m.name).toBe('vigie-emploi');
+    expect(pkg.bin).toEqual({ 'vigie-emploi': 'bin/vigie-emploi.js' });
     expect(m.server.type).toBe('node');
-    expect(m.server.entry_point).toBe(pkg.bin['postuler-juste']);
+    expect(m.server.entry_point).toBe(pkg.bin['vigie-emploi']);
     expect(m.server.mcp_config.command).toBe('node');
     expect(m.server.mcp_config.args).toEqual([`\${__dirname}/${m.server.entry_point}`, 'mcp']);
   });
 
   it('transmet le dossier et la langue choisis à l’installation', () => {
-    expect(m.server.mcp_config.env).toEqual({ POSTULER_JUSTE_DATA: '${user_config.dossier}', POSTULER_JUSTE_LANGUE: '${user_config.langue}' });
+    expect(m.server.mcp_config.env).toEqual({ VIGIE_EMPLOI_DATA: '${user_config.dossier}', VIGIE_EMPLOI_LANGUE: '${user_config.langue}' });
     expect(m.user_config.dossier).toMatchObject({ type: 'directory', default: '${HOME}/ma-recherche' });
     expect(m.user_config.langue).toMatchObject({ type: 'string', default: 'fr' });
   });

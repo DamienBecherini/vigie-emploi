@@ -11,7 +11,7 @@ import { commandeTerminal, compterEmails, environnementPropre, etatTravail, lanc
 
 const temporaires: string[] = [];
 function dossierTemporaire(): string {
-  const d = mkdtempSync(join(tmpdir(), 'postuler-juste-agent-'));
+  const d = mkdtempSync(join(tmpdir(), 'vigie-emploi-agent-'));
   temporaires.push(d);
   return d;
 }
@@ -93,7 +93,7 @@ describe('lancement de l’agent', () => {
   });
 
   it('un programme introuvable donne une erreur, pas un plantage', async () => {
-    await expect(lanceurTerminal(['programme-introuvable-postuler-juste'])('traiter-emails', tmpdir())).rejects.toThrow(/Impossible d'ouvrir le terminal/);
+    await expect(lanceurTerminal(['programme-introuvable-vigie-emploi'])('traiter-emails', tmpdir())).rejects.toThrow(/Impossible d'ouvrir le terminal/);
   });
 
   it('POST /api/travail/:action lance l’action, et seulement une action connue en JSON', async () => {
@@ -193,7 +193,7 @@ describe('notifications', () => {
     const dossier = dossierTemporaire();
     const emails = join(dossier, 'emails');
     mkdirSync(emails);
-    const fichier = join(dossier, 'data', 'postuler-juste.sqlite');
+    const fichier = join(dossier, 'data', 'vigie-emploi.sqlite');
     const serveur = ouvrirBase(fichier);
     const autre = ouvrirBase(fichier); // la CLI ou le serveur MCP de l'agent
     const diffusion = new Diffusion();

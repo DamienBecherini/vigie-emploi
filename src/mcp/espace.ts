@@ -86,11 +86,11 @@ const PROMPTS: Record<string, { titre: Bilingue; description: Bilingue; fichier:
 
 const ACCES_SANS_FICHIERS: Bilingue = {
   fr:
-    "Si tu n'as pas d'accès direct à mes fichiers ni de terminal, utilise les outils du serveur postuler-juste : lister_fichiers, " +
+    "Si tu n'as pas d'accès direct à mes fichiers ni de terminal, utilise les outils du serveur vigie-emploi : lister_fichiers, " +
     'lire_fichier, ecrire_fichier (chemins relatifs à mon espace), generer_cv (avec capture pour voir le rendu) et compter, ' +
     'à la place de la lecture directe et des commandes.',
   en:
-    "If you have no direct access to my files and no terminal, use the postuler-juste server's tools: lister_fichiers, " +
+    "If you have no direct access to my files and no terminal, use the vigie-emploi server's tools: lister_fichiers, " +
     'lire_fichier, ecrire_fichier (paths relative to my workspace), generer_cv (with capture to see the result) and compter, ' +
     'instead of reading files directly and running commands.',
 };
@@ -132,19 +132,19 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
             nom === 'demarrage'
               ? bi({
                   fr:
-                    `Je veux démarrer postuler-juste, mais mon espace de travail n'existe pas encore (${messageNonInitialise(etat)}). ` +
+                    `Je veux démarrer vigie-emploi, mais mon espace de travail n'existe pas encore (${messageNonInitialise(etat)}). ` +
                     `Propose-moi de le créer dans ${d}, ou dans le dossier que je choisis, et appelle initialiser_espace. ` +
                     "Ensuite, lis AGENTS.md puis DEMARRAGE.md de l'espace avec lire_fichier et suis le démarrage : vérifie d'abord de quels " +
                     'outils tu disposes, dis-moi de déposer mon CV dans a-deposer/, lis-le, puis pose-moi tes questions, quelques-unes à la fois.',
                   en:
-                    `I want to get started with postuler-juste, but my workspace does not exist yet (${messageNonInitialise(etat)}). ` +
+                    `I want to get started with vigie-emploi, but my workspace does not exist yet (${messageNonInitialise(etat)}). ` +
                     `Offer to create it in ${d}, or in the folder I choose, and call initialiser_espace. ` +
                     'Then read AGENTS.md and DEMARRAGE.md from the workspace with lire_fichier and follow the onboarding: first check which ' +
                     'tools you have, tell me to drop my CV into a-deposer/, read it, then ask me your questions, a few at a time. Talk to me in English.',
                 })
               : bi({
-                  fr: `Mon espace postuler-juste n'existe pas encore (${messageNonInitialise(etat)}). Commence par le prompt « demarrage ».`,
-                  en: `My postuler-juste workspace does not exist yet (${messageNonInitialise(etat)}). Start with the "demarrage" prompt.`,
+                  fr: `Mon espace vigie-emploi n'existe pas encore (${messageNonInitialise(etat)}). Commence par le prompt « demarrage ».`,
+                  en: `My vigie-emploi workspace does not exist yet (${messageNonInitialise(etat)}). Start with the "demarrage" prompt.`,
                 });
         } else {
           const dossier = etat.config.dossierDonnees;
@@ -152,8 +152,8 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
           const offre = visee ? `\n\n${bi({ fr: `Offre visée : ${visee}`, en: `Target job ad: ${visee}` })}` : '';
           texte =
             bi({
-              fr: `Consignes de mon espace postuler-juste (${oblique(dossier)}), lues sur le disque. ${ACCES_SANS_FICHIERS.fr}\n\n`,
-              en: `Instructions of my postuler-juste workspace (${oblique(dossier)}), read from disk. ${ACCES_SANS_FICHIERS.en}\n\n`,
+              fr: `Consignes de mon espace vigie-emploi (${oblique(dossier)}), lues sur le disque. ${ACCES_SANS_FICHIERS.fr}\n\n`,
+              en: `Instructions of my vigie-emploi workspace (${oblique(dossier)}), read from disk. ${ACCES_SANS_FICHIERS.en}\n\n`,
             }) +
             `===== AGENTS.md (${bi({ fr: 'consignes générales', en: 'general instructions' })}) =====\n\n${lireConsigne(dossier, 'AGENTS.md')}\n\n` +
             `===== ${p.fichier} =====\n\n${lireConsigne(dossier, p.fichier)}\n\n` +
@@ -166,7 +166,7 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
 
   serveur.registerResource(
     'consignes',
-    'postuler-juste://espace/AGENTS.md',
+    'vigie-emploi://espace/AGENTS.md',
     {
       title: bi({ fr: "Consignes générales de l'espace (AGENTS.md)", en: "The workspace's general instructions (AGENTS.md)" }),
       description: bi({
@@ -306,13 +306,13 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
                   fr:
                     `Ce dossier n'est pas celui que le serveur ouvrira au prochain lancement (${oblique(dossierDeDemarrage)}). ` +
                     `Pour les prochaines sessions, l'utilisateur doit l'indiquer à son client MCP. Extension Claude Desktop : ` +
-                    `Paramètres > Extensions > postuler-juste > Configurer, champ « Dossier de l'espace ». Configuration écrite à la main : ` +
-                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (claude_desktop_config.json, puis redémarrer).`,
+                    `Paramètres > Extensions > vigie-emploi > Configurer, champ « Dossier de l'espace ». Configuration écrite à la main : ` +
+                    `"env": { "VIGIE_EMPLOI_DATA": "${r.dossier}" } (claude_desktop_config.json, puis redémarrer).`,
                   en:
                     `This folder is not the one the server will open next time it starts (${oblique(dossierDeDemarrage)}). ` +
                     `For future sessions, the user must give it to their MCP client. Claude Desktop extension: ` +
-                    `Settings > Extensions > postuler-juste > Configure, "Workspace folder" field. Hand-written configuration: ` +
-                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (claude_desktop_config.json, then restart).`,
+                    `Settings > Extensions > vigie-emploi > Configure, "Workspace folder" field. Hand-written configuration: ` +
+                    `"env": { "VIGIE_EMPLOI_DATA": "${r.dossier}" } (claude_desktop_config.json, then restart).`,
                 }),
               ]),
         ],
@@ -553,8 +553,8 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
       if (!navigateur) {
         refuser(
           bi({
-            fr: 'Aucun Chrome, Edge ou Chromium trouvé : installer Chrome ou Edge, ou indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR',
-            en: 'No Chrome, Edge or Chromium found: install Chrome or Edge, or give its path in POSTULER_JUSTE_NAVIGATEUR',
+            fr: 'Aucun Chrome, Edge ou Chromium trouvé : installer Chrome ou Edge, ou indiquer son chemin dans VIGIE_EMPLOI_NAVIGATEUR',
+            en: 'No Chrome, Edge or Chromium found: install Chrome or Edge, or give its path in VIGIE_EMPLOI_NAVIGATEUR',
           }),
         );
       }

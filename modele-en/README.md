@@ -1,6 +1,6 @@
 # My job search
 
-Workspace created by **postuler-juste**: an AI (Claude Code, Cursor, Codex…) helps you here to sort job ads, prepare honest applications and keep track of your exchanges.
+Workspace created by **vigie-emploi**: an AI (Claude Code, Cursor, Codex…) helps you here to sort job ads, prepare honest applications and keep track of your exchanges.
 
 ## Getting started
 

@@ -1,4 +1,4 @@
-// Lance le vrai serveur MCP (node bin/postuler-juste.js mcp, transport stdio) et appelle ses outils comme une IA.
+// Lance le vrai serveur MCP (node bin/vigie-emploi.js mcp, transport stdio) et appelle ses outils comme une IA.
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,15 +22,15 @@ describe('serveur MCP (stdio)', () => {
   };
 
   beforeAll(async () => {
-    dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-mcp-'));
+    dossier = mkdtempSync(join(tmpdir(), 'vigie-emploi-mcp-'));
     cpSync(join(FIXTURES, 'donnees'), dossier, { recursive: true });
     cpSync(join(FIXTURES, 'emails'), join(dossier, 'emails'), { recursive: true });
     // cwd = dossier temporaire : la configuration personnelle éventuelle du dépôt n'est pas lue.
     const transport = new StdioClientTransport({
       command: process.execPath,
-      args: [join(RACINE, 'bin', 'postuler-juste.js'), 'mcp', '--data', dossier],
+      args: [join(RACINE, 'bin', 'vigie-emploi.js'), 'mcp', '--data', dossier],
       cwd: dossier,
-      env: { ...(process.env as Record<string, string>), POSTULER_JUSTE_CONFIG: '' },
+      env: { ...(process.env as Record<string, string>), VIGIE_EMPLOI_CONFIG: '' },
       stderr: 'pipe',
     });
     client = new Client({ name: 'test', version: '1.0.0' });
@@ -197,7 +197,7 @@ describe('serveur MCP (stdio)', () => {
     expect(h.versions.map((x) => [x.version, x.auteur, x.resume])).toEqual([
       [3, 'mcp', 'Retour à la version 1'],
       [2, 'mcp', 'Stages acceptés'],
-      [1, 'fichier', "Grille d'exemple de postuler-juste (à adapter)"],
+      [1, 'fichier', "Grille d'exemple de vigie-emploi (à adapter)"],
     ]);
   }, 30_000);
 

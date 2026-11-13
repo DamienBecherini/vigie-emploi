@@ -1,17 +1,17 @@
-# Driving postuler-juste from an AI
+# Driving vigie-emploi from an AI
 
 This file is for an agent (Claude Code or another) that helps the user sort their job ads. The application contacts no AI model: the agent reads, scores and reports back, and the application keeps the state. Work and write in English with the user; the names of the commands, options, MCP tools, parameters and statuses are French identifiers and stay as they are (`ecartee` = discarded, `envoyee` = sent, `relancee` = followed up, `entretien` = interview, `refus` = rejected…).
 
-Two ways to drive it: the **MCP tools** (`postuler-juste mcp`, preferred when the MCP client is connected, see [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)) or the **CLI** with `--json`. Both call the same core.
+Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the MCP client is connected, see [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)) or the **CLI** with `--json`. Both call the same core.
 
 ## Rules
 
 - CLI: always pass `--json`: the output is stable and unambiguous. Errors go to stderr (`{"ok": false, "erreur": "…"}`) with a non-zero exit code. MCP: an error comes back as an error result (`isError`), and the server keeps running.
-- `_SUIVI.md` (the tracker) is generated from the database (`generer_suivi` / `postuler-juste generer-suivi`): do not edit it by hand once the switch has been made. By default the preview `candidatures/_SUIVI.genere.md`; `remplacer` only if the user asks for it.
-- The data folder comes from `POSTULER_JUSTE_DATA`, `--data` or `postuler-juste.config.json`. Never write personal data into the application's repository.
+- `_SUIVI.md` (the tracker) is generated from the database (`generer_suivi` / `vigie-emploi generer-suivi`): do not edit it by hand once the switch has been made. By default the preview `candidatures/_SUIVI.genere.md`; `remplacer` only if the user asks for it.
+- The data folder comes from `VIGIE_EMPLOI_DATA`, `--data` or `vigie-emploi.config.json`. Never write personal data into the application's repository.
 - Do not download LinkedIn, Indeed or Glassdoor pages with a script: read them in the user's browser, or ask them for the text (Glassdoor blocks bots). The Hellowork and Free-Work descriptions are already in the database after `ingest`.
-- The scoring grid belongs to the user (`profil/grille.json` in their data folder): read it before scoring a batch (`grille` over MCP, `postuler-juste grille --consignes --json` on the CLI). Never give the final score: score the criteria, and the application calculates it.
-- Only change the grid (`modifier_grille`, `postuler-juste grille --modifier`) when the user asks: first a trial run (`essai: true` / `--essai`) whose impact you show them, then save it with a summary.
+- The scoring grid belongs to the user (`profil/grille.json` in their data folder): read it before scoring a batch (`grille` over MCP, `vigie-emploi grille --consignes --json` on the CLI). Never give the final score: score the criteria, and the application calculates it.
+- Only change the grid (`modifier_grille`, `vigie-emploi grille --modifier`) when the user asks: first a trial run (`essai: true` / `--essai`) whose impact you show them, then save it with a summary.
 
 ## Full flow over MCP
 
@@ -47,7 +47,7 @@ Sample entry:
 
 ## Log: when the user reports a call, an interview, a message, a quote
 
-1. **The event**: `ajouter_evenement` (CLI: `postuler-juste evenement <id> …`) with the type (`message`, `entretien` = interview, `test`, `proposition` = offer or quote, `decision`, `note`), the actual date (`le`), a short summary, and whatever is known: `sens` (message `envoye` = sent / `recu` = received), `canal`, `interlocuteurs`, `montant` + `unite` and `jours` for a quote, `details`.
+1. **The event**: `ajouter_evenement` (CLI: `vigie-emploi evenement <id> …`) with the type (`message`, `entretien` = interview, `test`, `proposition` = offer or quote, `decision`, `note`), the actual date (`le`), a short summary, and whatever is known: `sens` (message `envoye` = sent / `recu` = received), `canal`, `interlocuteurs`, `montant` + `unite` and `jours` for a quote, `details`.
 2. **Any document** (meeting notes, quote, call sheet): write it in the application folder (`candidatures/<company-role>/…`), then reference it in `fichiers` (path relative to the data folder; `fichiers_dossier` lists the existing ones). Never copy a document's content into the database.
 3. **The next deadline**: a second `ajouter_evenement` dated in the future (`fait: false`), for example "Follow up if no news" at D+7, "Technical interview" on the planned date.
 4. A deadline that has been met: `marquer_fait`, then the event for what happened. A change of stage remains a status (`changer_statut`: `relancee`, `entretien`, `refus`…).
@@ -57,17 +57,17 @@ A job ad already being followed that reappears in an alert or a batch keeps its 
 
 ## "Process the e-mails" flow (CLI)
 
-1. `postuler-juste ingest --json`: reads `<data>/emails/*.eml`, adds the new job ads, deletes the processed e-mails. Note `nouvelles`, `doublons`, `ecartees`, `a_lire`, `erreurs`.
-2. `postuler-juste a-lire --json`: job ads to process without a score. `lecture` field:
+1. `vigie-emploi ingest --json`: reads `<data>/emails/*.eml`, adds the new job ads, deletes the processed e-mails. Note `nouvelles`, `doublons`, `ecartees`, `a_lire`, `erreurs`.
+2. `vigie-emploi a-lire --json`: job ads to process without a score. `lecture` field:
    - `description`: the description is in the `description` field (truncated at 2,500 characters; `--complet` for all of it);
    - `navigateur`: open `url` in the user's browser;
    - `humain`: protected page, ask the user for the text.
-3. Read the grid (`postuler-juste grille --consignes --json`), then read each job ad and score its criteria.
-4. Write a batch file (JSON array, format below) then `postuler-juste noter --fichier lot.json` (`--essai` to check without saving). Job ads are found by `id` or `url`; they move to `notee` (scored).
+3. Read the grid (`vigie-emploi grille --consignes --json`), then read each job ad and score its criteria.
+4. Write a batch file (JSON array, format below) then `vigie-emploi noter --fichier lot.json` (`--essai` to check without saving). Job ads are found by `id` or `url`; they move to `notee` (scored).
 5. Summarise for the user: job ads scored, those above their threshold with conditions, what matches and the gaps.
 6. Depending on their answer:
-   - "go": `postuler-juste candidater <id> --json` (moves to `go`, returns the full job ad and a suggested folder);
-   - no go: `postuler-juste statut <id> ecartee --commentaire "reason"`.
+   - "go": `vigie-emploi candidater <id> --json` (moves to `go`, returns the full job ad and a suggested folder);
+   - no go: `vigie-emploi statut <id> ecartee --commentaire "reason"`.
 
 Format of a batch entry:
 
@@ -89,29 +89,29 @@ Format of a batch entry:
 
 | Need | Command |
 |---|---|
-| Seen before? | `postuler-juste list --texte "company" --json` |
-| Best unprocessed job ads | `postuler-juste list --statut notee --note-min 5 --tri note --json` |
-| By batch received, best scores first | `postuler-juste list --statut notee --tri recue_le:desc,note:desc --json` |
-| My applications | `postuler-juste list --candidatures --json` |
-| Details of a job ad | `postuler-juste show <id> --json` |
-| Application (folder, channel, date sent, next action) | `postuler-juste candidature <id> --dossier candidatures/x --canal LinkedIn --envoyee-le 02/11/2026 --prochaine-action "…" --json` |
-| Next action only | `postuler-juste prochaine-action <id> "Follow up on 09/11" --json` |
-| Follow-up, interview, rejection | `postuler-juste statut <id> relancee --commentaire "channel, date"` |
-| Application tracker | `postuler-juste generer-suivi --json` (preview `candidatures/_SUIVI.genere.md`) |
-| Tags | `postuler-juste tag <id> +a-reprendre -urgent --json` |
-| Event (call, quote…) | `postuler-juste evenement <id> --type proposition --le 15/10/2026 --resume "Quote sent via Upwork" --sens envoye --montant 3000 --unite "£" --jours 6 --fichier candidatures/x/quote.md --json` |
-| Deadline | `postuler-juste evenement <id> --type message --le +7 --resume "Follow up if no news" --json` |
-| Log, deadlines | `postuler-juste journal <id> --json`, `postuler-juste echeances --jours 7 --json`, `postuler-juste fait <evenement_id> --json` |
-| Files in the folder | `postuler-juste fichiers <id> --json` |
-| Single score | `postuler-juste noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "colle": "…", "ecarts": "…"}'` |
-| Grid, instructions | `postuler-juste grille --consignes --json` |
-| Change a weight (trial, then for real) | `postuler-juste grille --modifier '{"poids": {"teletravail": 30}}' --essai --json`, then `--resume "Remote work first"` |
-| History, going back | `postuler-juste grille --historique --json`, `postuler-juste grille --restaurer 2 --json` |
-| Recalculate | `postuler-juste renoter --json` |
+| Seen before? | `vigie-emploi list --texte "company" --json` |
+| Best unprocessed job ads | `vigie-emploi list --statut notee --note-min 5 --tri note --json` |
+| By batch received, best scores first | `vigie-emploi list --statut notee --tri recue_le:desc,note:desc --json` |
+| My applications | `vigie-emploi list --candidatures --json` |
+| Details of a job ad | `vigie-emploi show <id> --json` |
+| Application (folder, channel, date sent, next action) | `vigie-emploi candidature <id> --dossier candidatures/x --canal LinkedIn --envoyee-le 02/11/2026 --prochaine-action "…" --json` |
+| Next action only | `vigie-emploi prochaine-action <id> "Follow up on 09/11" --json` |
+| Follow-up, interview, rejection | `vigie-emploi statut <id> relancee --commentaire "channel, date"` |
+| Application tracker | `vigie-emploi generer-suivi --json` (preview `candidatures/_SUIVI.genere.md`) |
+| Tags | `vigie-emploi tag <id> +a-reprendre -urgent --json` |
+| Event (call, quote…) | `vigie-emploi evenement <id> --type proposition --le 15/10/2026 --resume "Quote sent via Upwork" --sens envoye --montant 3000 --unite "£" --jours 6 --fichier candidatures/x/quote.md --json` |
+| Deadline | `vigie-emploi evenement <id> --type message --le +7 --resume "Follow up if no news" --json` |
+| Log, deadlines | `vigie-emploi journal <id> --json`, `vigie-emploi echeances --jours 7 --json`, `vigie-emploi fait <evenement_id> --json` |
+| Files in the folder | `vigie-emploi fichiers <id> --json` |
+| Single score | `vigie-emploi noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "colle": "…", "ecarts": "…"}'` |
+| Grid, instructions | `vigie-emploi grille --consignes --json` |
+| Change a weight (trial, then for real) | `vigie-emploi grille --modifier '{"poids": {"teletravail": 30}}' --essai --json`, then `--resume "Remote work first"` |
+| History, going back | `vigie-emploi grille --historique --json`, `vigie-emploi grille --restaurer 2 --json` |
+| Recalculate | `vigie-emploi renoter --json` |
 
 The dashboard's "Process N e-mails" and "Prepare N applications" buttons open a terminal in the data folder and start the agent with `/traiter-emails` or `/preparer-go`: these commands come from the data folder (the user's instructions); follow them as if the user had typed them. The dashboard updates itself as things are written.
 
-The dashboard's "Apply" button copies `candidater <id>`: when the user pastes that text, run `postuler-juste candidater <id> --json` and prepare the application following their instructions.
+The dashboard's "Apply" button copies `candidater <id>`: when the user pastes that text, run `vigie-emploi candidater <id> --json` and prepare the application following their instructions.
 
 ## Developing on this repository
 

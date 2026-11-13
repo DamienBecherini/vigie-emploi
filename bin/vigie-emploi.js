@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Point d'entrée de la commande `postuler-juste`.
+// Point d'entrée de la commande `vigie-emploi`.
 // Dans le dépôt (src/ présent), Node 24 exécute directement le TypeScript (suppression des types).
 // Dans le paquet npm, src/ n'est pas livré : on charge le JavaScript compilé dans dist/ (`npm run build`),
 // car Node refuse de supprimer les types d'un fichier situé sous node_modules.
@@ -20,8 +20,8 @@ try {
   await import('node:sqlite');
 } catch {
   process.stderr.write(
-    `postuler-juste : Node ${process.versions.node} n'a pas node:sqlite ; installer Node 24 ou plus récent (https://nodejs.org).\n` +
-      `postuler-juste: Node ${process.versions.node} lacks node:sqlite; install Node 24 or later (https://nodejs.org).\n`,
+    `vigie-emploi : Node ${process.versions.node} n'a pas node:sqlite ; installer Node 24 ou plus récent (https://nodejs.org).\n` +
+      `vigie-emploi: Node ${process.versions.node} lacks node:sqlite; install Node 24 or later (https://nodejs.org).\n`,
   );
   process.exit(1);
 }

@@ -1,6 +1,6 @@
 // Résolution de la configuration : dossier de données, port, listes d'exclusion.
 // Le code ne contient aucune donnée personnelle : tout ce qui est propre à l'utilisateur
-// vit dans son dossier de données ou dans un postuler-juste.config.json non versionné.
+// vit dans son dossier de données ou dans un vigie-emploi.config.json non versionné.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { tl } from '../i18n/index.ts';
 export interface Config {
   /** Dossier de données de l'utilisateur (contient data/, emails/, candidatures/…). */
   dossierDonnees: string;
-  /** Base SQLite : <dossierDonnees>/data/postuler-juste.sqlite par défaut. */
+  /** Base SQLite : <dossierDonnees>/data/vigie-emploi.sqlite par défaut. */
   base: string;
   /** Boîte de réception des .eml : <dossierDonnees>/emails par défaut. */
   emails: string;
@@ -43,13 +43,14 @@ interface ConfigFichier {
 }
 
 export const RACINE_APP = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const NOM_FICHIER_CONFIG = 'postuler-juste.config.json';
-/** Ancien nom de l'application (cap-emploi) : fichier de config, base et variables encore reconnus. */
-export const ANCIEN_FICHIER_CONFIG = 'cap-emploi.config.json';
-const ANCIENNE_BASE = 'cap-emploi.sqlite';
+export const NOM_FICHIER_CONFIG = 'vigie-emploi.config.json';
+/** Anciens noms de l'application (postuler-juste, puis cap-emploi avant lui) : fichiers de config, bases et variables encore reconnus. */
+export const ANCIENS_NOMS = ['postuler-juste', 'cap-emploi'] as const;
+export const ANCIENS_FICHIERS_CONFIG = ANCIENS_NOMS.map((n) => `${n}.config.json`);
+const PREFIXES_VARIABLES = ['VIGIE_EMPLOI_', 'POSTULER_JUSTE_', 'CAP_EMPLOI_'];
 
 /**
- * Variable d'environnement POSTULER_JUSTE_<nom>, ou son ancien nom CAP_EMPLOI_<nom>.
+ * Variable d'environnement VIGIE_EMPLOI_<nom>, ou ses anciens noms POSTULER_JUSTE_<nom> et CAP_EMPLOI_<nom>.
  * Une valeur vide, ou restée sous la forme `${…}` (réglage d'une extension Claude Desktop laissé vide, non substitué),
  * compte comme absente.
  */
@@ -58,7 +59,11 @@ export function variable(env: NodeJS.ProcessEnv, nom: string): string | undefine
     const t = v?.trim();
     return t && !/^\$\{[^}]*\}$/.test(t) ? t : undefined;
   };
-  return utile(env[`POSTULER_JUSTE_${nom}`]) ?? utile(env[`CAP_EMPLOI_${nom}`]);
+  for (const prefixe of PREFIXES_VARIABLES) {
+    const v = utile(env[`${prefixe}${nom}`]);
+    if (v) return v;
+  }
+  return undefined;
 }
 
 /** Noms de langue saisis à la main (réglage de l'extension Claude Desktop) ramenés au code : « English » → en. */
@@ -72,7 +77,7 @@ export function normaliserLangue(v: string): string {
 
 /** Le fichier de config de ce dossier, sous son nom actuel ou l'ancien. */
 function configDuDossier(dossier: string): string[] {
-  return [join(dossier, NOM_FICHIER_CONFIG), join(dossier, ANCIEN_FICHIER_CONFIG)];
+  return [NOM_FICHIER_CONFIG, ...ANCIENS_FICHIERS_CONFIG].map((f) => join(dossier, f));
 }
 
 function lireJson(chemin: string): ConfigFichier {
@@ -107,7 +112,7 @@ function langueDesMessages(env: NodeJS.ProcessEnv, brut: ConfigFichier = {}): La
   return estLangue(brut.langue) ? brut.langue : LANGUE_DEFAUT;
 }
 
-/** Langue de la variable POSTULER_JUSTE_LANGUE, sinon du fichier, sinon le français ; une valeur inconnue est refusée. */
+/** Langue de la variable VIGIE_EMPLOI_LANGUE, sinon du fichier, sinon le français ; une valeur inconnue est refusée. */
 function langueDe(env: NodeJS.ProcessEnv, brut: ConfigFichier, fichier: string | null): Langue {
   const saisie = variable(env, 'LANGUE');
   const v = (saisie === undefined ? undefined : normaliserLangue(saisie)) ?? brut.langue ?? LANGUE_DEFAUT;
@@ -132,10 +137,11 @@ export interface OptionsConfig {
 
 /**
  * Ordre de priorité :
- * 1. option --data, sinon variable POSTULER_JUSTE_DATA, sinon "dossierDonnees" du fichier de config ;
- * 2. fichier de config : --config, POSTULER_JUSTE_CONFIG, ./postuler-juste.config.json, <data>/postuler-juste.config.json,
+ * 1. option --data, sinon variable VIGIE_EMPLOI_DATA, sinon "dossierDonnees" du fichier de config ;
+ * 2. fichier de config : --config, VIGIE_EMPLOI_CONFIG, ./vigie-emploi.config.json, <data>/vigie-emploi.config.json,
  *    puis celui à la racine de l'application.
- * Les anciens noms (CAP_EMPLOI_*, cap-emploi.config.json, data/cap-emploi.sqlite) restent reconnus.
+ * Les anciens noms (POSTULER_JUSTE_* et CAP_EMPLOI_*, postuler-juste.config.json et cap-emploi.config.json, leurs bases
+ * data/postuler-juste.sqlite et data/cap-emploi.sqlite) restent reconnus.
  */
 export function chargerConfig(opts: OptionsConfig = {}): Config {
   const env = opts.env ?? process.env;
@@ -171,10 +177,11 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
     throw new ErreurConfig('non-configure', tl(langueDesMessages(env, brut), 'core.config.nonConfigure', { fichier: NOM_FICHIER_CONFIG }));
   }
   const relatif = (p: string | undefined, defaut: string) => (p ? (isAbsolute(p) ? p : join(dossier, p)) : defaut);
-  // Base par défaut : data/postuler-juste.sqlite, ou l'ancienne data/cap-emploi.sqlite si elle seule existe.
-  const baseNeuve = join(dossier, 'data', 'postuler-juste.sqlite');
-  const baseAncienne = join(dossier, 'data', ANCIENNE_BASE);
-  const baseDefaut = !existsSync(baseNeuve) && existsSync(baseAncienne) ? baseAncienne : baseNeuve;
+  // Base par défaut : data/vigie-emploi.sqlite, ou la première ancienne base existante (postuler-juste, cap-emploi)
+  // tant que la nouvelle n'existe pas.
+  const baseNeuve = join(dossier, 'data', 'vigie-emploi.sqlite');
+  const baseAncienne = ANCIENS_NOMS.map((n) => join(dossier, 'data', `${n}.sqlite`)).find((b) => existsSync(b));
+  const baseDefaut = !existsSync(baseNeuve) && baseAncienne ? baseAncienne : baseNeuve;
   return {
     dossierDonnees: dossier,
     base: relatif(variable(env, 'BASE') ?? brut.base, baseDefaut),
@@ -191,7 +198,7 @@ export function chargerConfig(opts: OptionsConfig = {}): Config {
 
 /**
  * Langue configurée, sans jamais échouer (aide et erreurs de la CLI) : celle de la configuration si elle se charge,
- * sinon celle de POSTULER_JUSTE_LANGUE si elle est valide, sinon le français.
+ * sinon celle de VIGIE_EMPLOI_LANGUE si elle est valide, sinon le français.
  */
 export function langueConfiguree(opts: OptionsConfig = {}): Langue {
   try {

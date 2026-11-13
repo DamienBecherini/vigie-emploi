@@ -1,6 +1,6 @@
 # Ma recherche d'emploi
 
-Espace de travail créé par **postuler-juste** : une IA (Claude Code, Cursor, Codex…) t'y aide à trier les offres, à préparer des candidatures honnêtes et à suivre tes échanges.
+Espace de travail créé par **vigie-emploi** : une IA (Claude Code, Cursor, Codex…) t'y aide à trier les offres, à préparer des candidatures honnêtes et à suivre tes échanges.
 
 ## Pour commencer
 

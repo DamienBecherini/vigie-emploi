@@ -1,5 +1,5 @@
 {
-  "name": "postuler-juste",
+  "name": "vigie-emploi",
   "version": "0.5.0",
   "description": "Recherche d'emploi et de missions pilotée par une IA : tri des offres avec une grille transparente, candidatures et CV honnêtes, suivi. Base SQLite, tableau de bord web, CLI et serveur MCP.",
   "keywords": [
@@ -16,17 +16,17 @@
   ],
   "author": "Damien BECHERINI",
   "license": "MIT",
-  "homepage": "https://github.com/DamienBecherini/postuler-juste#readme",
+  "homepage": "https://github.com/DamienBecherini/vigie-emploi#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DamienBecherini/postuler-juste.git"
+    "url": "git+https://github.com/DamienBecherini/vigie-emploi.git"
   },
   "bugs": {
-    "url": "https://github.com/DamienBecherini/postuler-juste/issues"
+    "url": "https://github.com/DamienBecherini/vigie-emploi/issues"
   },
   "type": "module",
   "bin": {
-    "postuler-juste": "bin/postuler-juste.js"
+    "vigie-emploi": "bin/vigie-emploi.js"
   },
   "files": [
     "bin",
@@ -39,7 +39,7 @@
     "AGENTS.md",
     "AGENTS.en.md",
     "docs/utiliser-avec-une-ia.md",
-    "postuler-juste.config.example.json"
+    "vigie-emploi.config.example.json"
   ],
   "engines": {
     "node": ">=24"
@@ -49,7 +49,7 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p ui/tsconfig.json",
     "test": "vitest run",
     "dev:ui": "vite",
-    "postuler-juste": "node bin/postuler-juste.js",
+    "vigie-emploi": "node bin/vigie-emploi.js",
     "build:js": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "mcpb": "node scripts/mcpb.mjs"

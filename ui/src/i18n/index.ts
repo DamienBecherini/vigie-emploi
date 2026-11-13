@@ -15,7 +15,7 @@ export { LANGUES } from '../../../src/i18n/outil.ts';
 
 export const DICTIONNAIRES_UI = { fr, en };
 
-const CLE = 'postuler-juste:langue';
+const CLE = 'vigie-emploi:langue';
 let courante: Langue = LANGUE_DEFAUT;
 const auditeurs = new Set<() => void>();
 

@@ -1,4 +1,4 @@
-// Interface en ligne de commande de postuler-juste (pensée pour être pilotée par une IA : sorties JSON stables).
+// Interface en ligne de commande de vigie-emploi (pensée pour être pilotée par une IA : sorties JSON stables).
 // Les messages suivent la langue configurée (clé « langue », français par défaut) ; les noms des commandes,
 // des options et des statuts restent en français, et les sorties --json ne changent pas avec la langue.
 import { existsSync, readFileSync } from 'node:fs';
@@ -876,7 +876,7 @@ function optionBrute(argv: string[], nom: string): string | undefined {
 
 /**
  * Langue des messages : --langue d'init (l'espace qu'on crée), sinon la configuration (--data, --config,
- * POSTULER_JUSTE_LANGUE, fichier), sinon le français.
+ * VIGIE_EMPLOI_LANGUE, fichier), sinon le français.
  */
 function langueDesMessages(cmd: string | undefined, args: string[]) {
   const demandee = cmd === 'init' ? optionBrute(args, 'langue') : undefined;

@@ -1,6 +1,6 @@
 // Outil MCP ouvrir_tableau_de_bord : le tableau de bord web sans terminal (client MCP seul, comme Claude Desktop).
 // 1. Un tableau de bord répond déjà sur le port de l'espace (/api/sante, même dossier) : on renvoie son adresse.
-// 2. Sinon on le démarre dans un processus node séparé et détaché (`postuler-juste serve --inactivite 60`) : il survit
+// 2. Sinon on le démarre dans un processus node séparé et détaché (`vigie-emploi serve --inactivite 60`) : il survit
 //    au redémarrage du serveur MCP et s'arrête seul après une heure sans activité.
 // 3. Faute de node utilisable (extension Claude Desktop dans le Node intégré, sans node installé), on le démarre dans le
 //    processus du serveur MCP : il vit alors tant que Claude Desktop garde le serveur ouvert.
@@ -148,14 +148,14 @@ export async function ouvrirTableauDeBord(
   let libre: number | null = null;
   for (let port = config.port; port < config.port + PORTS_ESSAYES; port++) {
     const s = await dep.sonder(port);
-    if (s && s.service === 'postuler-juste' && s.dossier && memeDossier(s.dossier, dossier)) return fin(port, true, 'existant');
+    if (s && s.service === 'vigie-emploi' && s.dossier && memeDossier(s.dossier, dossier)) return fin(port, true, 'existant');
     if (!s && libre === null) libre = port;
   }
   if (libre === null) {
     throw new Error(
       bi({
-        fr: `Ports ${config.port} à ${config.port + PORTS_ESSAYES - 1} tous occupés : changer « port » dans postuler-juste.config.json de l'espace.`,
-        en: `Ports ${config.port} to ${config.port + PORTS_ESSAYES - 1} are all in use: change "port" in the workspace's postuler-juste.config.json.`,
+        fr: `Ports ${config.port} à ${config.port + PORTS_ESSAYES - 1} tous occupés : changer « port » dans vigie-emploi.config.json de l'espace.`,
+        en: `Ports ${config.port} to ${config.port + PORTS_ESSAYES - 1} are all in use: change "port" in the workspace's vigie-emploi.config.json.`,
       }),
     );
   }
@@ -169,16 +169,16 @@ export async function ouvrirTableauDeBord(
   for (let ecoule = 0; ecoule < ATTENTE_DEMARRAGE_MS; ecoule += 250) {
     await dep.attendre(250);
     const s = await dep.sonder(libre);
-    if (s?.service === 'postuler-juste' && s.dossier && memeDossier(s.dossier, dossier)) return fin(libre, false, 'detache');
+    if (s?.service === 'vigie-emploi' && s.dossier && memeDossier(s.dossier, dossier)) return fin(libre, false, 'detache');
   }
   throw new Error(
     bi({
       fr:
         `Le tableau de bord ne répond pas sur le port ${libre} après ${ATTENTE_DEMARRAGE_MS / 1000} s (node : ${oblique(node)}). ` +
-        `L'utilisateur peut le lancer lui-même dans un terminal : postuler-juste serve --data "${oblique(dossier)}".`,
+        `L'utilisateur peut le lancer lui-même dans un terminal : vigie-emploi serve --data "${oblique(dossier)}".`,
       en:
         `The dashboard does not respond on port ${libre} after ${ATTENTE_DEMARRAGE_MS / 1000} s (node: ${oblique(node)}). ` +
-        `The user can start it themselves in a terminal: postuler-juste serve --data "${oblique(dossier)}".`,
+        `The user can start it themselves in a terminal: vigie-emploi serve --data "${oblique(dossier)}".`,
     }),
   );
 }

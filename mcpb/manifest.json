@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@anthropic-ai/mcpb/dist/mcpb-manifest-v0.3.schema.json",
   "manifest_version": "0.3",
-  "name": "postuler-juste",
-  "display_name": "postuler-juste",
+  "name": "vigie-emploi",
+  "display_name": "vigie-emploi",
   "version": "0.0.0",
   "description": "Recherche d'emploi avec une IA : tri des offres avec une grille transparente, CV et candidatures honnêtes, suivi. / Job search with an AI: job ads scored with a transparent grid, honest CVs and applications, tracking.",
   "long_description": "Kit local de recherche d'emploi et de missions piloté par l'IA. Vos données restent sur votre ordinateur, dans le dossier choisi à l'installation (l'espace de travail) : consignes, contexte, CV, dossiers de candidature, base SQLite des offres. Dans une conversation, demandez de créer votre espace ou lancez le prompt « demarrage ». L'application n'appelle aucun modèle : c'est Claude qui lit et note.\n\nLocal kit for looking for a job or freelance work with an AI. Your data stays on your computer, in the folder chosen at install time (the workspace): instructions, context, CVs, application files, SQLite database of job ads. In a conversation, ask Claude to create your workspace or start the \"demarrage\" prompt. The application calls no model: Claude does the reading and scoring.",
@@ -12,23 +12,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/DamienBecherini/postuler-juste.git"
+    "url": "https://github.com/DamienBecherini/vigie-emploi.git"
   },
-  "homepage": "https://github.com/DamienBecherini/postuler-juste#readme",
-  "documentation": "https://github.com/DamienBecherini/postuler-juste/blob/main/docs/utiliser-avec-une-ia.md",
-  "support": "https://github.com/DamienBecherini/postuler-juste/issues",
+  "homepage": "https://github.com/DamienBecherini/vigie-emploi#readme",
+  "documentation": "https://github.com/DamienBecherini/vigie-emploi/blob/main/docs/utiliser-avec-une-ia.md",
+  "support": "https://github.com/DamienBecherini/vigie-emploi/issues",
   "icon": "icon.png",
   "license": "MIT",
   "keywords": ["emploi", "job-search", "cv", "resume", "candidature", "freelance", "sqlite"],
   "server": {
     "type": "node",
-    "entry_point": "bin/postuler-juste.js",
+    "entry_point": "bin/vigie-emploi.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/bin/postuler-juste.js", "mcp"],
+      "args": ["${__dirname}/bin/vigie-emploi.js", "mcp"],
       "env": {
-        "POSTULER_JUSTE_DATA": "${user_config.dossier}",
-        "POSTULER_JUSTE_LANGUE": "${user_config.langue}"
+        "VIGIE_EMPLOI_DATA": "${user_config.dossier}",
+        "VIGIE_EMPLOI_LANGUE": "${user_config.langue}"
       }
     }
   },

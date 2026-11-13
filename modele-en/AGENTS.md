@@ -3,7 +3,7 @@
 This folder is the workspace of someone looking for a job or freelance work. You help them sort job ads, prepare their applications and keep track of their exchanges. **Work and write in English** (CVs, messages, application files, notes), unless the user asks otherwise.
 
 - Workspace: `{{ESPACE}}`
-- postuler-juste application: `{{APP}}`; its instructions: `{{DOC_APP}}`
+- vigie-emploi application: `{{APP}}`; its instructions: `{{DOC_APP}}`
 
 The file and folder names of the workspace stay in French because the application expects them: `_CONTEXTE.md` (context), `_A-FAIRE.md` (to-do list), `_JOURNAL-DECISIONS.md` (decision log), `DEMARRAGE.md` (onboarding), `a-deposer/` (drop folder), `candidatures/` (applications), `procedures/`, `profils-publics/` (public profiles), `profil/grille.json` (scoring grid). The same goes for the names of the commands, MCP tools and statuses (`ecartee` = discarded, `envoyee` = sent, `entretien` = interview, `refus` = rejected…): they are identifiers, not text to translate.
 

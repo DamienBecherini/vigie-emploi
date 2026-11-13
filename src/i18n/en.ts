@@ -5,15 +5,15 @@ import type { Pluriel, Texte } from './outil.ts';
 const p = (one: string, other: string): Pluriel => ({ one, other });
 
 export const en: Record<CleServeur, Texte> = {
-  'cli.aide': `postuler-juste — job offers, scores and applications (local SQLite database)
+  'cli.aide': `vigie-emploi — job offers, scores and applications (local SQLite database)
 
-Usage: postuler-juste <command> [options]
+Usage: vigie-emploi <command> [options]
 
 Command and option names, statuses and event types stay in French (they are typed by the AI):
 for example « list --statut envoyee », « evenement 12 --type entretien ».
 
 Commands
-  init <folder> [--port 4410] [--nom-mcp postuler-juste] [--gabarit sobre|moderne|compact] [--langue fr|en]
+  init <folder> [--port 4410] [--nom-mcp vigie-emploi] [--gabarit sobre|moderne|compact] [--langue fr|en]
                         Creates a workspace (templates, résumé template, sample grid, config, .mcp.json)
                         and prints the starting prompt to give the AI; --langue: language of the dashboard,
                         the CLI and the tracking file (fr by default)
@@ -77,15 +77,15 @@ Commands
                         candidatures/_SUIVI.genere.md (preview); --remplacer writes candidatures/_SUIVI.md
   serve [--port 4410] [--inactivite <minutes>]
                         Starts the dashboard (http://localhost:4410); --inactivite: stops by itself after that idle time
-  mcp                   MCP server (stdio transport) to drive postuler-juste from an AI; without a configured
+  mcp                   MCP server (stdio transport) to drive vigie-emploi from an AI; without a configured
                         folder: ~/ma-recherche, created if needed by the initialiser_espace tool
 
 General options
-  --data <folder>       Data folder (else POSTULER_JUSTE_DATA or postuler-juste.config.json)
+  --data <folder>       Data folder (else VIGIE_EMPLOI_DATA or vigie-emploi.config.json)
   --config <file>       Configuration file
   --json                JSON output (all commands)
 
-Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_JUSTE_LANGUE variable.
+Language: « langue » key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_LANGUE variable.
 `,
 
   'cli.erreur': 'Error: {message}',
@@ -139,7 +139,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.ingest.sansOffre': '  no offer recognised, e-mail kept: {fichier}',
   'cli.ingest.accuse': '  application acknowledgement (not an alert): {sujet}{suite}',
   'cli.ingest.offreAbsente': ' → offer not in the database',
-  'cli.ingest.suite': 'Next: postuler-juste a-lire',
+  'cli.ingest.suite': 'Next: vigie-emploi a-lire',
 
   'cli.import.lots': 'Batches: {fichiers} file(s), {entrees} item(s), {offres} offer(s) created, {notes} score(s).',
   'cli.import.registre':
@@ -164,7 +164,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.aLire.navigateur': 'to read in the browser',
   'cli.aLire.humain': 'protected page: ask for the text',
   'cli.aLire.sansUrl': '(no URL)',
-  'cli.aLire.total': '{n} offer(s) to process. JSON details (descriptions included): postuler-juste a-lire --json',
+  'cli.aLire.total': '{n} offer(s) to process. JSON details (descriptions included): vigie-emploi a-lire --json',
   'cli.noter.attendu': "noter: --json '{...}' or --fichier lot.json expected",
   'cli.noter.uneSeule': 'noter <id>: a single score expected',
 
@@ -209,7 +209,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.fait.fait': 'Event #{id} done: {resume}',
   'cli.fait.rouvert': 'Event #{id} reopened (to do): {resume}',
 
-  'cli.fichiers.sansDossier': '#{id}: no application folder (postuler-juste candidature {id} --dossier candidatures/…)',
+  'cli.fichiers.sansDossier': '#{id}: no application folder (vigie-emploi candidature {id} --dossier candidatures/…)',
   'cli.fichiers.absent': '#{id}: folder {dossier} missing from the data folder',
   'cli.fichiers.titre': '{dossier} ({n} file(s)):',
   'cli.fichiers.ko': 'KB',
@@ -218,7 +218,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.stats.delai': 'Average delay before the first reply: {jours} d (over {n} application(s)).',
   'cli.suivi.resume': '{fichier}: {enCours} in progress, {sansSuite} sent without reply, {closes} closed.',
 
-  'cli.init.usage': 'Usage: postuler-juste init <folder> [--port 4410] [--nom-mcp postuler-juste] [--langue fr|en]',
+  'cli.init.usage': 'Usage: vigie-emploi init <folder> [--port 4410] [--nom-mcp vigie-emploi] [--langue fr|en]',
   'cli.init.cree': 'Workspace created: {dossier}',
   'cli.init.config': '  configuration: {config} (port {port}, language {langue})',
   'cli.init.mcp': '  MCP server “{nom}”: {mcp}',
@@ -229,15 +229,15 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'cli.init.etape2': '  2. Open your AI in {dossier} (Claude Code: cd into the folder then “claude”, and accept the MCP server)',
   'cli.init.etape3': '  3. Paste this prompt:',
 
-  'cli.compter.usage': 'Usage: postuler-juste compter <file>',
+  'cli.compter.usage': 'Usage: vigie-emploi compter <file>',
   'cli.compter.ligne': '{caracteres} characters  {mots} words  “{debut}…”',
-  'cli.gabarits.choisir': 'Choose: postuler-juste gabarit <name> (from the workspace; the old template is kept next to it).',
-  'cli.gabarit.usage': 'Usage: postuler-juste gabarit <name> (list: postuler-juste gabarits)',
+  'cli.gabarits.choisir': 'Choose: vigie-emploi gabarit <name> (from the workspace; the old template is kept next to it).',
+  'cli.gabarit.usage': 'Usage: vigie-emploi gabarit <name> (list: vigie-emploi gabarits)',
   'cli.gabarit.installe': 'Template “{nom}” installed in {dossier}{ancien}.',
   'cli.gabarit.ancien': ' (old template kept in {dossier})',
-  'cli.gabarit.regenerer': 'Regenerate the résumés to see the result: postuler-juste cv "cv/<name>.md" --capture',
-  'cli.cv.usage': 'Usage: postuler-juste cv <cv.md>… [--gabarit <folder>] [--capture]',
-  'cli.cv.sansNavigateur': 'No Chrome, Edge or Chromium found (set its path in POSTULER_JUSTE_NAVIGATEUR)',
+  'cli.gabarit.regenerer': 'Regenerate the résumés to see the result: vigie-emploi cv "cv/<name>.md" --capture',
+  'cli.cv.usage': 'Usage: vigie-emploi cv <cv.md>… [--gabarit <folder>] [--capture]',
+  'cli.cv.sansNavigateur': 'No Chrome, Edge or Chromium found (set its path in VIGIE_EMPLOI_NAVIGATEUR)',
   'cli.cv.pages': 'page(s)',
   'cli.cv.depasse': '  <-- MORE THAN 2 PAGES',
   'cli.cv.remplissage': 'fill: {taux}',
@@ -247,7 +247,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'serveur.demarre': 'Dashboard: http://localhost:{port}/  (data: {dossier})',
   'serveur.arreter': 'Ctrl+C to stop.',
   'serveur.portUtilise': 'Port {port} is already in use: the dashboard is probably already running at http://localhost:{port}/',
-  'serveur.autrePort': 'Otherwise, choose another port: postuler-juste serve --port {suivant}',
+  'serveur.autrePort': 'Otherwise, choose another port: vigie-emploi serve --port {suivant}',
   'serveur.inactivite': 'No activity for {minutes} min: stopping the dashboard.',
   'api.hoteRefuse': 'Host refused',
   'api.origineRefusee': 'Origin refused',
@@ -258,16 +258,16 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'api.champTexte': 'Field {champ}: text expected',
   'api.cheminMalEncode': 'Badly encoded path',
   'api.routeInconnue': 'Unknown route',
-  'api.nonCompilee': 'Dashboard not built: run “npm run build” in the postuler-juste folder.',
+  'api.nonCompilee': 'Dashboard not built: run “npm run build” in the vigie-emploi folder.',
   'api.sansTerminal':
-    'No terminal configured for this platform: add "terminal" to postuler-juste.config.json, or run “claude {invite}” in {dossier}.',
+    'No terminal configured for this platform: add "terminal" to vigie-emploi.config.json, or run “claude {invite}” in {dossier}.',
   'api.terminalImpossible': 'Cannot open the terminal ({programme}): {message}',
 
   'suivi.titre': '# Application tracking',
   'suivi.quand': '{date} at {heure}',
-  'suivi.avertissement1': '> **File generated by postuler-juste on {quand}: do not edit by hand.** Changes are made in the database',
+  'suivi.avertissement1': '> **File generated by vigie-emploi on {quand}: do not edit by hand.** Changes are made in the database',
   'suivi.avertissement2':
-    '> (dashboard, CLI or MCP tools), then `postuler-juste generer-suivi`. One line per offer; the details are in each offer’s folder.',
+    '> (dashboard, CLI or MCP tools), then `vigie-emploi generer-suivi`. One line per offer; the details are in each offer’s folder.',
   'suivi.enCours': 'In progress',
   'suivi.sansSuite': 'Sent without reply',
   'suivi.closes': 'Closed',
@@ -275,7 +275,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'suivi.entetesCloses': '| Offer | Outcome |',
   'suivi.estimations': 'Dates marked “≈” are estimates, not a record of sending. Correct them if you find the real date.',
   'suivi.pied':
-    'Offers seen, discarded or set aside: in the database (dashboard `postuler-juste serve`, or `postuler-juste list --statut ecartee`).',
+    'Offers seen, discarded or set aside: in the database (dashboard `vigie-emploi serve`, or `vigie-emploi list --statut ecartee`).',
   'suivi.aEnvoyer': '**To send** — GO',
   'suivi.teletravail': 'remote {valeur}',
   'suivi.dossier': 'folder',
@@ -284,17 +284,17 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
 
   'init.invite':
     'You are going to help me with my job search. Please talk to me in English. My workspace is {espace}. Read {espace}/AGENTS.md then {espace}/DEMARRAGE.md, and follow the onboarding: first check which tools you have, read what I dropped into a-deposer/, then ask me your questions, a few at a time.',
-  'init.dossierAttendu': 'Folder to create expected: postuler-juste init <folder>',
+  'init.dossierAttendu': 'Folder to create expected: vigie-emploi init <folder>',
   'init.pasUnDossier': '{dossier} exists and is not a folder',
   'init.nonVide': 'The folder {dossier} is not empty: choose a new or empty folder',
   'init.nomMcpInvalide': 'Invalid MCP server name: {nom} (letters, digits, - and _)',
   'init.gabaritInconnu': 'Unknown template: {gabarit} (available: {liste})',
   'init.langueInconnue': 'Unknown language: {langue} ({langues})',
   'init.npx':
-    'Started by npx: the MCP server and the instructions use “{commande}” (pinned version). On first launch, npx downloads it (connection needed), then keeps it in its cache. For a fixed path, install with “npm install -g postuler-juste” instead, then run init again.',
-  'init.nonCompile': 'Dashboard not built: run “npm run build” in {app} before “postuler-juste serve”.',
+    'Started by npx: the MCP server and the instructions use “{commande}” (pinned version). On first launch, npx downloads it (connection needed), then keeps it in its cache. For a fixed path, install with “npm install -g vigie-emploi” instead, then run init again.',
+  'init.nonCompile': 'Dashboard not built: run “npm run build” in {app} before “vigie-emploi serve”.',
   'init.sansNavigateur':
-    'No Chrome, Edge or Chromium found: generating PDF résumés will not work. Install Chrome or Edge, or set the browser path in POSTULER_JUSTE_NAVIGATEUR.',
+    'No Chrome, Edge or Chromium found: generating PDF résumés will not work. Install Chrome or Edge, or set the browser path in VIGIE_EMPLOI_NAVIGATEUR.',
   'init.modeleFrancais': 'The AI instructions (workspace templates) are in French for now; an English version will come later. Your AI can still talk to you in English.',
 
   // ---------------------------------------------------------------------------------------------
@@ -330,7 +330,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'core.noteEchelle': 'Score outside the 0-10 scale: {note}',
   'core.fusionImpossible': 'Cannot merge: job ad {cible} or {doublon} not found',
   'core.entreeSansId': 'Entry with neither "id" nor "url"',
-  'core.sansGrille': 'Criteria-based score without a scoring grid: create profil/grille.json in the data folder (postuler-juste grille --init)',
+  'core.sansGrille': 'Criteria-based score without a scoring grid: create profil/grille.json in the data folder (vigie-emploi grille --init)',
   'core.noteIgnoree': '"note" field ({note}) ignored: score calculated with grid v{version} = {calculee}',
   'core.noteBruteIgnoree': '"note_brute" field ignored: replaced by the weighted average',
   'core.lotIllisible': 'Unreadable batch: JSON array expected',
@@ -339,7 +339,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'core.etape.consignes': 'Apply the application instructions in the data folder (CLAUDE.md, AGENTS.md or equivalent)',
   'core.etape.dossier': 'Create the folder {dossier} with the ad, the fit, the gaps and the messages',
   'core.etape.enregistrer':
-    'Record the application (folder, CV, channel, next action): enregistrer_candidature or postuler-juste candidature {id} --dossier {dossier}',
+    'Record the application (folder, CV, channel, next action): enregistrer_candidature or vigie-emploi candidature {id} --dossier {dossier}',
   'core.etape.envoi': 'Once it is sent: record the date sent (envoyee_le); the job ad moves to "envoyee" (sent)',
   'core.grilleIllisible': 'Unreadable grid ({chemin}): {message}',
   'core.grilleObjet': 'Unreadable grid ({chemin}): JSON object expected',
@@ -347,7 +347,7 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
   'core.resumeChangement': 'A summary of the change is required',
   'core.grilleModifieeFichier': 'Changed in the grille.json file',
   'core.grilleInitiale': 'Initial version (grille.json file)',
-  'core.pasDeGrille': 'No scoring grid: create {chemin} (template: exemples/grille.en.json, or "postuler-juste grille --init")',
+  'core.pasDeGrille': 'No scoring grid: create {chemin} (template: exemples/grille.en.json, or "vigie-emploi grille --init")',
   'core.aucunChangement': 'No change compared with the current version',
   'core.retourVersion': 'Back to version {version}',
   'core.grille.calculAttendu': 'criterion {id}: "calcul" expected ({calculs})',
@@ -444,9 +444,9 @@ Language: « langue » key of postuler-juste.config.json (fr or en) or POSTULER_
     'Note: last page ({page}) is {pc}% full, leaving about {vide}% of the page empty; acceptable, but there is room for something useful for the job ad if anything is missing.',
   'core.pages.pourcent': '{pc}%',
   'core.config.nonConfigure':
-    'Data folder not configured: set POSTULER_JUSTE_DATA, pass --data <folder> or create {fichier} with "dossierDonnees" (see postuler-juste.config.example.json).',
+    'Data folder not configured: set VIGIE_EMPLOI_DATA, pass --data <folder> or create {fichier} with "dossierDonnees" (see vigie-emploi.config.example.json).',
   'core.config.introuvable': 'Configuration file not found: {chemin}',
-  'core.config.langue': 'Unknown language: {langue} ({langues}; POSTULER_JUSTE_LANGUE or "langue" in {fichier})',
+  'core.config.langue': 'Unknown language: {langue} ({langues}; VIGIE_EMPLOI_LANGUE or "langue" in {fichier})',
 
   'commun.offres': p('{n} offer', '{n} offers'),
 };

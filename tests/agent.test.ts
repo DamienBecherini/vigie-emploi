@@ -2,241 +2,241 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { ouvrirBase } from '../src/db/base.ts';
-import { ajouterStatut, enregistrerCandidature, enregistrerOffre } from '../src/core/offres.ts';
-import { creerApp } from '../src/api/serveur.ts';
-import { Veille } from '../src/api/veille.ts';
-import { Diffusion, regrouper, surveiller, type Notification } from '../src/api/diffusion.ts';
-import { commandeTerminal, compterEmails, environnementPropre, etatTravail, lanceurTerminal, type ActionAgent } from '../src/api/travail.ts';
+import { openDatabase } from '../src/db/database.ts';
+import { addStatus, saveApplication, saveOffer } from '../src/core/offers.ts';
+import { createApp } from '../src/api/server.ts';
+import { Idle } from '../src/api/idle.ts';
+import { Broadcast, group, watchChanges, type Notification } from '../src/api/broadcast.ts';
+import { commandTerminal, countEmails, environmentClean, stateWork, launcherTerminal, type ActionAgent } from '../src/api/work.ts';
 
-const temporaires: string[] = [];
-function dossierTemporaire(): string {
+const temporary: string[] = [];
+function folderTemporary(): string {
   const d = mkdtempSync(join(tmpdir(), 'vigie-emploi-agent-'));
-  temporaires.push(d);
+  temporary.push(d);
   return d;
 }
 afterAll(() => {
-  for (const d of temporaires) rmSync(d, { recursive: true, force: true });
+  for (const d of temporary) rmSync(d, { recursive: true, force: true });
 });
 
-const attendre = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Attend une notification du type voulu (ou échoue après delaiMs). */
-function prochaine(diffusion: Diffusion, type: Notification['type'], delaiMs = 3000): Promise<Notification> {
+function next(broadcast: Broadcast, type: Notification['type'], timeoutMs = 3000): Promise<Notification> {
   return new Promise((resolve, reject) => {
-    const minuterie = setTimeout(() => {
-      desabonner();
-      reject(new Error(`Pas de notification « ${type} » en ${delaiMs} ms`));
-    }, delaiMs);
-    const desabonner = diffusion.abonner((n) => {
+    const timer = setTimeout(() => {
+      unsubscribe();
+      reject(new Error(`Pas de notification « ${type} » en ${timeoutMs} ms`));
+    }, timeoutMs);
+    const unsubscribe = broadcast.subscribe((n) => {
       if (n.type !== type) return;
-      clearTimeout(minuterie);
-      desabonner();
+      clearTimeout(timer);
+      unsubscribe();
       resolve(n);
     });
   });
 }
 
-function donnees() {
-  const dossier = dossierTemporaire();
-  const emails = join(dossier, 'emails');
+function data() {
+  const folder = folderTemporary();
+  const emails = join(folder, 'emails');
   mkdirSync(emails);
-  const db = ouvrirBase(':memory:');
-  const offre = (idSite: string) => enregistrerOffre(db, 'linkedin', idSite, { titre: 'Développeur API', entreprise: 'Kappa' }, 'manuel').offre.id;
-  return { dossier, emails, db, offre };
+  const db = openDatabase(':memory:');
+  const offer = (siteId: string) => saveOffer(db, 'linkedin', siteId, { title: 'Développeur API', company: 'Kappa' }, 'manual').offer.id;
+  return { folder, emails, db, offer };
 }
 
 const POST_JSON = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' };
 
 describe('travail en attente', () => {
   it('compte les .eml de la boîte de réception (0 si elle n’existe pas)', () => {
-    const { emails } = donnees();
-    expect(compterEmails(emails)).toBe(0);
+    const { emails } = data();
+    expect(countEmails(emails)).toBe(0);
     writeFileSync(join(emails, 'a.eml'), '');
     writeFileSync(join(emails, 'b.EML'), '');
     writeFileSync(join(emails, 'notes.txt'), '');
-    expect(compterEmails(emails)).toBe(2);
-    expect(compterEmails(join(emails, 'absent'))).toBe(0);
+    expect(countEmails(emails)).toBe(2);
+    expect(countEmails(join(emails, 'absent'))).toBe(0);
   });
 
   it('liste les offres en go dont le dossier n’existe pas encore', () => {
-    const { dossier, emails, db, offre } = donnees();
-    const sansCandidature = offre('1');
-    const dossierAbsent = offre('2');
-    const prete = offre('3');
-    const notee = offre('4');
-    for (const id of [sansCandidature, dossierAbsent, prete]) ajouterStatut(db, id, 'go');
-    ajouterStatut(db, notee, 'notee');
-    enregistrerCandidature(db, dossierAbsent, { dossier: 'candidatures/absent' });
-    mkdirSync(join(dossier, 'candidatures', 'prete'), { recursive: true });
-    enregistrerCandidature(db, prete, { dossier: 'candidatures/prete' });
-    const etat = etatTravail(db, { dossierDonnees: dossier, emails });
-    expect(etat.go_a_preparer.map((o) => o.id)).toEqual([sansCandidature, dossierAbsent]);
-    expect(etat.go_a_preparer[0]).toEqual({ id: sansCandidature, titre: 'Développeur API', entreprise: 'Kappa' });
+    const { folder, emails, db, offer } = data();
+    const withoutApplication = offer('1');
+    const folderAbsent = offer('2');
+    const ready = offer('3');
+    const scored = offer('4');
+    for (const id of [withoutApplication, folderAbsent, ready]) addStatus(db, id, 'go');
+    addStatus(db, scored, 'scored');
+    saveApplication(db, folderAbsent, { folder: 'candidatures/absent' });
+    mkdirSync(join(folder, 'candidatures', 'prete'), { recursive: true });
+    saveApplication(db, ready, { folder: 'candidatures/prete' });
+    const state = stateWork(db, { dataDir: folder, emails });
+    expect(state.go_to_prepare.map((o) => o.id)).toEqual([withoutApplication, folderAbsent]);
+    expect(state.go_to_prepare[0]).toEqual({ id: withoutApplication, title: 'Développeur API', company: 'Kappa' });
   });
 });
 
 describe('lancement de l’agent', () => {
-  it('remplace {dossier} et {invite} dans la commande du terminal', () => {
-    expect(commandeTerminal(['wt.exe', '-d', '{dossier}', 'claude', '{invite}'], 'D:/donnees', 'traiter-emails')).toEqual([
-      'wt.exe', '-d', 'D:/donnees', 'claude', '/traiter-emails',
+  it('remplace {folder} et {prompt} dans la commande du terminal', () => {
+    expect(commandTerminal(['wt.exe', '-d', '{folder}', 'claude', '{prompt}'], 'D:/data', 'process-emails')).toEqual([
+      'wt.exe', '-d', 'D:/data', 'claude', '/traiter-emails',
     ]);
   });
 
   it('le terminal ne reçoit pas les marqueurs de session de Claude Code', () => {
-    const env = environnementPropre({ PATH: '/bin', CLAUDECODE: '1', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CONFIG_DIR: '/c' });
+    const env = environmentClean({ PATH: '/bin', CLAUDECODE: '1', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CONFIG_DIR: '/c' });
     expect(env).toEqual({ PATH: '/bin', CLAUDE_CONFIG_DIR: '/c' });
   });
 
   it('sans terminal configuré hors Windows : erreur explicite', async () => {
-    await expect(lanceurTerminal(null, 'linux')('preparer-go', '/d')).rejects.toThrow(/claude \/preparer-go/);
+    await expect(launcherTerminal(null, 'linux')('prepare-go', '/d')).rejects.toThrow(/claude \/preparer-go/);
   });
 
   it('un programme introuvable donne une erreur, pas un plantage', async () => {
-    await expect(lanceurTerminal(['programme-introuvable-vigie-emploi'])('traiter-emails', tmpdir())).rejects.toThrow(/Impossible d'ouvrir le terminal/);
+    await expect(launcherTerminal(['programme-introuvable-vigie-emploi'])('process-emails', tmpdir())).rejects.toThrow(/Impossible d'ouvrir le terminal/);
   });
 
   it('POST /api/travail/:action lance l’action, et seulement une action connue en JSON', async () => {
-    const { dossier, emails, db } = donnees();
-    const lances: [ActionAgent, string][] = [];
-    const app = creerApp(db, { dossierDonnees: dossier, emails }, new Veille(0), {
-      lanceur: async (action, d) => void lances.push([action, d]),
+    const { folder, emails, db } = data();
+    const launched: [ActionAgent, string][] = [];
+    const app = createApp(db, { dataDir: folder, emails }, new Idle(0), {
+      launcher: async (action, d) => void launched.push([action, d]),
     });
-    expect((await app.request('/api/travail/traiter-emails', POST_JSON)).status).toBe(200);
-    expect(lances).toEqual([['traiter-emails', dossier]]);
-    expect((await app.request('/api/travail/rm-rf', POST_JSON)).status).toBe(404);
-    expect((await app.request('/api/travail/preparer-go', { method: 'POST', body: 'x' })).status).toBe(415);
-    expect(lances).toHaveLength(1);
+    expect((await app.request('/api/work/process-emails', POST_JSON)).status).toBe(200);
+    expect(launched).toEqual([['process-emails', folder]]);
+    expect((await app.request('/api/work/rm-rf', POST_JSON)).status).toBe(404);
+    expect((await app.request('/api/work/prepare-go', { method: 'POST', body: 'x' })).status).toBe(415);
+    expect(launched).toHaveLength(1);
   });
 
   it('une erreur du lanceur revient à l’interface', async () => {
-    const { dossier, db } = donnees();
-    const app = creerApp(db, { dossierDonnees: dossier }, new Veille(0), {
-      lanceur: () => Promise.reject(new Error('wt.exe absent')),
+    const { folder, db } = data();
+    const app = createApp(db, { dataDir: folder }, new Idle(0), {
+      launcher: () => Promise.reject(new Error('wt.exe absent')),
     });
-    const r = await app.request('/api/travail/preparer-go', POST_JSON);
+    const r = await app.request('/api/work/prepare-go', POST_JSON);
     expect(r.status).toBe(400);
-    expect(await r.json()).toMatchObject({ ok: false, erreur: 'wt.exe absent' });
+    expect(await r.json()).toMatchObject({ ok: false, error: 'wt.exe absent' });
   });
 
   it('GET /api/travail : e-mails et go à préparer', async () => {
-    const { dossier, emails, db, offre } = donnees();
+    const { folder, emails, db, offer } = data();
     writeFileSync(join(emails, 'alerte.eml'), '');
-    ajouterStatut(db, offre('9'), 'go');
-    const app = creerApp(db, { dossierDonnees: dossier, emails });
-    const etat = (await (await app.request('/api/travail')).json()) as { emails: number; go_a_preparer: unknown[] };
-    expect(etat.emails).toBe(1);
-    expect(etat.go_a_preparer).toHaveLength(1);
+    addStatus(db, offer('9'), 'go');
+    const app = createApp(db, { dataDir: folder, emails });
+    const state = (await (await app.request('/api/work')).json()) as { emails: number; go_to_prepare: unknown[] };
+    expect(state.emails).toBe(1);
+    expect(state.go_to_prepare).toHaveLength(1);
   });
 });
 
 describe('écritures venues d’une autre origine', () => {
-  const { dossier, db, offre } = donnees();
-  const id = offre('origine');
-  const lances: string[] = [];
-  const app = creerApp(db, { dossierDonnees: dossier }, new Veille(0), { lanceur: async (a) => void lances.push(a) });
-  const statut = (headers: Record<string, string>) =>
-    app.request(`/api/offres/${id}/statut`, {
+  const { folder, db, offer } = data();
+  const id = offer('origin');
+  const launched: string[] = [];
+  const app = createApp(db, { dataDir: folder }, new Idle(0), { launcher: async (a) => void launched.push(a) });
+  const status = (headers: Record<string, string>) =>
+    app.request(`/api/offers/${id}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify({ statut: 'notee' }),
+      body: JSON.stringify({ status: 'scored' }),
     });
 
   it('refusées depuis une page tierce (Origin ou Sec-Fetch-Site)', async () => {
-    expect((await statut({ Origin: 'https://exemple.com' })).status).toBe(403);
-    expect((await statut({ 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403);
-    expect((await app.request('/api/travail/traiter-emails', { ...POST_JSON, headers: { ...POST_JSON.headers, Origin: 'https://exemple.com' } })).status).toBe(403);
-    expect(lances).toEqual([]);
+    expect((await status({ Origin: 'https://example.com' })).status).toBe(403);
+    expect((await status({ 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403);
+    expect((await app.request('/api/work/process-emails', { ...POST_JSON, headers: { ...POST_JSON.headers, Origin: 'https://example.com' } })).status).toBe(403);
+    expect(launched).toEqual([]);
   });
 
   it('acceptées depuis l’interface locale ou sans navigateur (CLI, tests)', async () => {
-    expect((await statut({ Origin: 'http://localhost:4410', 'Sec-Fetch-Site': 'same-origin' })).status).toBe(200);
-    expect((await statut({ Origin: 'http://127.0.0.1:5173' })).status).toBe(200);
-    expect((await statut({})).status).toBe(200);
+    expect((await status({ Origin: 'http://localhost:4410', 'Sec-Fetch-Site': 'same-origin' })).status).toBe(200);
+    expect((await status({ Origin: 'http://127.0.0.1:5173' })).status).toBe(200);
+    expect((await status({})).status).toBe(200);
   });
 
   it('les lectures ne sont pas concernées', async () => {
-    expect((await app.request('/api/meta', { headers: { Origin: 'https://exemple.com' } })).status).toBe(200);
+    expect((await app.request('/api/meta', { headers: { Origin: 'https://example.com' } })).status).toBe(200);
   });
 });
 
 describe('notifications', () => {
   it('regrouper : une rafale d’appels donne un seul déclenchement', async () => {
     let n = 0;
-    const r = regrouper(() => n++, 30);
-    r.declencher();
-    r.declencher();
-    r.declencher();
-    await attendre(80);
+    const r = group(() => n++, 30);
+    r.trigger();
+    r.trigger();
+    r.trigger();
+    await wait(80);
     expect(n).toBe(1);
-    r.declencher();
-    r.arreter();
-    await attendre(60);
+    r.trigger();
+    r.stop();
+    await wait(60);
     expect(n).toBe(1);
   });
 
   it('une écriture par l’API notifie « base » ; une lecture ou une erreur non', async () => {
-    const { dossier, db, offre } = donnees();
-    const id = offre('api');
-    const diffusion = new Diffusion();
-    const recues: Notification[] = [];
-    diffusion.abonner((n) => recues.push(n));
-    const app = creerApp(db, { dossierDonnees: dossier }, new Veille(0), { diffusion });
-    await app.request(`/api/offres/${id}`);
-    await app.request(`/api/offres/99999/statut`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"statut":"notee"}' });
-    expect(recues).toEqual([]);
-    await app.request(`/api/offres/${id}/statut`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"statut":"notee"}' });
-    expect(recues).toEqual([{ type: 'base' }]);
+    const { folder, db, offer } = data();
+    const id = offer('api');
+    const broadcast = new Broadcast();
+    const received: Notification[] = [];
+    broadcast.subscribe((n) => received.push(n));
+    const app = createApp(db, { dataDir: folder }, new Idle(0), { broadcast });
+    await app.request(`/api/offers/${id}`);
+    await app.request(`/api/offers/99999/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"status":"scored"}' });
+    expect(received).toEqual([]);
+    await app.request(`/api/offers/${id}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"status":"scored"}' });
+    expect(received).toEqual([{ type: 'database' }]);
   });
 
   it('une écriture d’un autre processus dans la base notifie « base » ; un e-mail déposé notifie « emails »', async () => {
-    const dossier = dossierTemporaire();
-    const emails = join(dossier, 'emails');
+    const folder = folderTemporary();
+    const emails = join(folder, 'emails');
     mkdirSync(emails);
-    const fichier = join(dossier, 'data', 'vigie-emploi.sqlite');
-    const serveur = ouvrirBase(fichier);
-    const autre = ouvrirBase(fichier); // la CLI ou le serveur MCP de l'agent
-    const diffusion = new Diffusion();
-    const arreter = surveiller({ db: serveur, diffusion, base: fichier, emails, delaiMs: 50 });
+    const file = join(folder, 'data', 'vigie-emploi.sqlite');
+    const server = openDatabase(file);
+    const other = openDatabase(file); // la CLI ou le serveur MCP de l'agent
+    const broadcast = new Broadcast();
+    const stop = watchChanges({ db: server, broadcast, database: file, emails, timeoutMs: 50 });
     try {
-      const base = prochaine(diffusion, 'base');
-      enregistrerOffre(autre, 'linkedin', 'externe', { titre: 'Offre ajoutée par la CLI' }, 'manuel');
-      await expect(base).resolves.toEqual({ type: 'base' });
+      const database = next(broadcast, 'database');
+      saveOffer(other, 'linkedin', 'externe', { title: 'Offre ajoutée par la CLI' }, 'manual');
+      await expect(database).resolves.toEqual({ type: 'database' });
 
-      const courrier = prochaine(diffusion, 'emails');
+      const mail = next(broadcast, 'emails');
       writeFileSync(join(emails, 'alerte.eml'), '');
-      await expect(courrier).resolves.toEqual({ type: 'emails', nombre: 1 });
+      await expect(mail).resolves.toEqual({ type: 'emails', number: 1 });
     } finally {
-      arreter();
-      serveur.close();
-      autre.close();
+      stop();
+      server.close();
+      other.close();
     }
   });
 
   it('GET /api/flux : flux d’événements, premier message « pret », puis les notifications', async () => {
-    const { dossier, db } = donnees();
-    const diffusion = new Diffusion();
-    const app = creerApp(db, { dossierDonnees: dossier }, new Veille(0), { diffusion });
-    const r = await app.request('/api/flux');
+    const { folder, db } = data();
+    const broadcast = new Broadcast();
+    const app = createApp(db, { dataDir: folder }, new Idle(0), { broadcast });
+    const r = await app.request('/api/stream');
     expect(r.headers.get('content-type')).toMatch(/text\/event-stream/);
-    const lecteur = r.body!.getReader();
-    const decodeur = new TextDecoder();
-    let texte = '';
-    while (!texte.includes('event: pret')) texte += decodeur.decode((await lecteur.read()).value);
-    expect(diffusion.nombreAbonnes).toBe(1);
-    diffusion.emettre({ type: 'emails', nombre: 3 });
-    while (!texte.includes('event: emails')) texte += decodeur.decode((await lecteur.read()).value);
-    expect(texte).toContain('data: {"type":"emails","nombre":3}');
-    await lecteur.cancel();
+    const reader = r.body!.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    while (!text.includes('event: ready')) text += decoder.decode((await reader.read()).value);
+    expect(broadcast.numberSubscribers).toBe(1);
+    broadcast.emit({ type: 'emails', number: 3 });
+    while (!text.includes('event: emails')) text += decoder.decode((await reader.read()).value);
+    expect(text).toContain('data: {"type":"emails","number":3}');
+    await reader.cancel();
   });
 
   it('le flux ne compte pas comme activité (l’arrêt automatique reste possible)', async () => {
     let t = 0;
-    const veille = new Veille(60, () => t);
-    const app = creerApp(ouvrirBase(':memory:'), { dossierDonnees: '/d' }, veille);
+    const idle = new Idle(60, () => t);
+    const app = createApp(openDatabase(':memory:'), { dataDir: '/d' }, idle);
     t = 50;
-    const r = await app.request('/api/flux');
+    const r = await app.request('/api/stream');
     await r.body!.cancel();
-    expect(veille.restantS()).toBe(10);
+    expect(idle.remainingS()).toBe(10);
   });
 });

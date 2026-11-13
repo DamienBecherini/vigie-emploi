@@ -5,12 +5,12 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
-import { RACINE_APP, variable } from '../core/config.ts';
-import { capturerPages } from './pages.ts';
-import { LANGUE_DEFAUT, langueCourante, t, type Langue } from '../i18n/index.ts';
+import { APP_ROOT, variable } from '../core/config.ts';
+import { capturePages } from './pages.ts';
+import { LANGUAGE_DEFAULT, languageCurrent, t, type Language } from '../i18n/index.ts';
 
 /** Gabarit livré avec l'application. */
-export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
+export const TEMPLATE_DEFAULT = join(APP_ROOT, 'templates', 'cv', 'plain');
 
 /**
  * Sections rendues sur deux colonnes (listes courtes), reconnues à leur titre en français comme en anglais,
@@ -18,29 +18,29 @@ export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
  * Skills, Technical Skills, Key Competencies, Education (& Certifications), Certifications, Languages.
  * Les autres sections (Résumé / Summary, Expérience / Experience…) restent sur une colonne.
  */
-export const SECTIONS_DEUX_COLONNES = /compétences|competences|competencies|formations|certifications|langues|skills|education|languages/i;
+export const SECTIONS_TWO_COLUMNS = /compétences|competences|competencies|formations|certifications|langues|skills|education|languages/i;
 
 /**
  * Titres de section usuels d'un CV dans les langues autres que celle par défaut : un CV qui en a au moins deux est déclaré
  * dans cette langue (attribut lang). Une langue absente de la table n'est simplement jamais détectée.
  */
-const SECTIONS_PAR_LANGUE: Partial<Record<Langue, RegExp>> = {
+const SECTIONS_BY_LANGUAGE: Partial<Record<Language, RegExp>> = {
   en: /^(summary|profile|professional summary|about me|(work |professional )?experience|employment history|(technical |key |core )?skills|(key |core )?competencies|education|education (&|and) certifications|certifications|languages|projects|interests)$/i,
 };
 
 /** Marqueurs de saut de page manuel : <!-- saut-de-page -->, son alias anglais <!-- page-break -->, ou un div break-after. */
-const SAUT_DE_PAGE = /saut-de-page|page-break|break-after/i;
+const PAGE_BREAK = /saut-de-page|page-break|break-after/i;
 
 /** Langue d'un CV Markdown d'après ses titres de section : la première langue dont il a au moins deux titres usuels, sinon la langue par défaut. */
-export function langueDuCv(markdown: string): Langue {
-  const titres = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
-  for (const [langue, motif] of Object.entries(SECTIONS_PAR_LANGUE) as [Langue, RegExp][]) {
-    if (titres.filter((x) => motif.test(x)).length >= 2) return langue;
+export function languageOfCv(markdown: string): Language {
+  const titles = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
+  for (const [language, pattern] of Object.entries(SECTIONS_BY_LANGUAGE) as [Language, RegExp][]) {
+    if (titles.filter((x) => pattern.test(x)).length >= 2) return language;
   }
-  return LANGUE_DEFAUT;
+  return LANGUAGE_DEFAULT;
 }
 
-const ICONES: Record<string, string> = {
+const ICONS: Record<string, string> = {
   mail: '<path d="M2 5.5A2.5 2.5 0 0 1 4.5 3h15A2.5 2.5 0 0 1 22 5.5v13A2.5 2.5 0 0 1 19.5 21h-15A2.5 2.5 0 0 1 2 18.5v-13Zm2.2-.5 7.8 6.1L19.8 5H4.2ZM20 7.4l-7.4 5.8a1 1 0 0 1-1.2 0L4 7.4V19h16V7.4Z"/>',
   phone:
     '<path d="M6.6 2.5a1.8 1.8 0 0 1 2.5.6l1.7 2.8c.4.7.3 1.6-.3 2.1l-1.3 1.2a12 12 0 0 0 4.6 4.6l1.2-1.3c.5-.6 1.4-.7 2.1-.3l2.8 1.7a1.8 1.8 0 0 1 .6 2.5l-1.2 1.9a3 3 0 0 1-3.4 1.3C11.1 18.2 5.8 12.9 4.4 6.1A3 3 0 0 1 5.7 2.7l.9-.2Z"/>',
@@ -57,62 +57,62 @@ const ICONES: Record<string, string> = {
   link: '<path d="M3.7 12a5.1 5.1 0 0 1 5.1-5.1h3.4v2.2H8.8a2.9 2.9 0 0 0 0 5.8h3.4v2.2H8.8A5.1 5.1 0 0 1 3.7 12Zm6.2 1.1h4.2v-2.2H9.9v2.2Zm6.2-6.2h-3.4v2.2h3.4a2.9 2.9 0 1 1 0 5.8h-3.4v2.2h3.4a5.1 5.1 0 0 0 0-10.2Z"/>',
 };
 
-const PROFILS = /linkedin|github|gitlab|malt|behance|dribbble|stackoverflow|codeur|free-?work/;
-const TELEPHONE = /^\D*(\+?\d[\d\s().-]{7,})\D*$/;
-const DISPONIBILITE = /disponib|immédiat|immediat|availab/;
+const PROFILES = /linkedin|github|gitlab|malt|behance|dribbble|stackoverflow|codeur|free-?work/;
+const PHONE = /^\D*(\+?\d[\d\s().-]{7,})\D*$/;
+const AVAILABILITY = /disponib|immédiat|immediat|availab/;
 
-function estProfil(texte: string): boolean {
-  return PROFILS.test(texte.toLowerCase());
+function isProfile(text: string): boolean {
+  return PROFILES.test(text.toLowerCase());
 }
 
 /** Adresse / lieu : tout ce qui n'est ni un moyen de contact ni un profil. */
-function estAdresse(texte: string): boolean {
-  if (estProfil(texte)) return false;
-  const t = texte.toLowerCase();
+function isAddress(text: string): boolean {
+  if (isProfile(text)) return false;
+  const t = text.toLowerCase();
   if (/@/.test(t) && !/https?:/.test(t)) return false;
-  if (DISPONIBILITE.test(t)) return false;
-  if (TELEPHONE.test(texte)) return false;
+  if (AVAILABILITY.test(t)) return false;
+  if (PHONE.test(text)) return false;
   if (/portfolio|https?:|\.[a-z]{2,6}\b\/?$/.test(t)) return false;
   return true;
 }
 
-function icone(texte: string): string {
-  const t = texte.toLowerCase();
-  let nom = 'pin';
-  if (/linkedin/.test(t)) nom = 'linkedin';
-  else if (/github/.test(t)) nom = 'github';
-  else if (PROFILS.test(t)) nom = 'link';
-  else if (/@/.test(t) && !/https?:/.test(t)) nom = 'mail';
-  else if (DISPONIBILITE.test(t)) nom = 'clock';
-  else if (TELEPHONE.test(texte)) nom = 'phone';
-  else if (/https?:|portfolio|\.[a-z]{2,6}\b/.test(t)) nom = 'globe';
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
+function icon(text: string): string {
+  const t = text.toLowerCase();
+  let name = 'pin';
+  if (/linkedin/.test(t)) name = 'linkedin';
+  else if (/github/.test(t)) name = 'github';
+  else if (PROFILES.test(t)) name = 'link';
+  else if (/@/.test(t) && !/https?:/.test(t)) name = 'mail';
+  else if (AVAILABILITY.test(t)) name = 'clock';
+  else if (PHONE.test(text)) name = 'phone';
+  else if (/https?:|portfolio|\.[a-z]{2,6}\b/.test(t)) name = 'globe';
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 }
 
-const enLigne = (texte: string): string => marked.parseInline(texte) as string;
+const inline = (text: string): string => marked.parseInline(text) as string;
 
 /** Intitulé d'une expérience : « 01/2019 – aujourd'hui · Lyon » ou « … | Lyon ». */
-function metaPoste(titre: string): string {
-  const parts = titre
+function metaJob(title: string): string {
+  const parts = title
     .split(/\s+[·|]\s+/)
     .map((p) => p.trim())
     .filter(Boolean);
-  return `<div class="job-meta">${parts.map((p) => `<span>${enLigne(p)}</span>`).join('')}</div>`;
+  return `<div class="job-meta">${parts.map((p) => `<span>${inline(p)}</span>`).join('')}</div>`;
 }
 
-function rendreJeton(t: Token): string {
-  if (t.type === 'paragraph') return `<p>${enLigne((t as Tokens.Paragraph).text)}</p>`;
-  if (t.type === 'list') return `<ul>${(t as Tokens.List).items.map((it) => `<li>${enLigne(it.text)}</li>`).join('')}</ul>`;
+function renderToken(t: Token): string {
+  if (t.type === 'paragraph') return `<p>${inline((t as Tokens.Paragraph).text)}</p>`;
+  if (t.type === 'list') return `<ul>${(t as Tokens.List).items.map((it) => `<li>${inline(it.text)}</li>`).join('')}</ul>`;
   if (t.type === 'blockquote') {
-    const lignes = ((t as Tokens.Blockquote).tokens ?? [])
+    const lines = ((t as Tokens.Blockquote).tokens ?? [])
       .filter((x) => x.type === 'paragraph')
-      .map((x) => `<p>${enLigne((x as Tokens.Paragraph).text)}</p>`)
+      .map((x) => `<p>${inline((x as Tokens.Paragraph).text)}</p>`)
       .join('');
-    return `<blockquote>${lignes}</blockquote>`;
+    return `<blockquote>${lines}</blockquote>`;
   }
   if (t.type === 'space' || t.type === 'hr') return '';
   if (t.type === 'html') return t.raw;
-  if (t.raw) return `<p>${enLigne(t.raw.trim())}</p>`;
+  if (t.raw) return `<p>${inline(t.raw.trim())}</p>`;
   return '';
 }
 
@@ -121,7 +121,7 @@ export interface OptionsHtml {
   css: string;
   /** Photo, relative à l'HTML produit (absente : pas de photo). */
   portrait?: string | null;
-  langue?: string;
+  language?: string;
 }
 
 /**
@@ -129,123 +129,123 @@ export interface OptionsHtml {
  * `# Prénom NOM`, titre en **gras**, sous-titre en *italique*, lignes de contact (séparées par « · »),
  * puis des sections `##` ; dans l'expérience, un poste = `### dates · lieu` suivi d'une ligne en gras (l'intitulé).
  */
-export function cvEnHtml(markdown: string, o: OptionsHtml): string {
-  const jetons = marked.lexer(markdown);
-  const sortie: string[] = [];
+export function cvToHtml(markdown: string, o: OptionsHtml): string {
+  const tokens = marked.lexer(markdown);
+  const output: string[] = [];
   let i = 0;
 
-  let nom = '';
-  const h1 = jetons.find((t) => t.type === 'heading' && (t as Tokens.Heading).depth === 1) as Tokens.Heading | undefined;
+  let name = '';
+  const h1 = tokens.find((t) => t.type === 'heading' && (t as Tokens.Heading).depth === 1) as Tokens.Heading | undefined;
   if (h1) {
-    nom = enLigne(h1.text);
-    i = jetons.indexOf(h1) + 1;
+    name = inline(h1.text);
+    i = tokens.indexOf(h1) + 1;
   }
 
-  const entete: Token[] = [];
-  while (i < jetons.length && !(jetons[i].type === 'heading' && (jetons[i] as Tokens.Heading).depth === 2)) {
-    entete.push(jetons[i]);
+  const header: Token[] = [];
+  while (i < tokens.length && !(tokens[i].type === 'heading' && (tokens[i] as Tokens.Heading).depth === 2)) {
+    header.push(tokens[i]);
     i += 1;
   }
 
-  let titre = '';
-  let sousTitre = '';
+  let title = '';
+  let subTitle = '';
   const contacts: string[] = [];
-  for (const t of entete) {
+  for (const t of header) {
     if (t.type === 'paragraph') {
-      const lignes = (t as Tokens.Paragraph).text
+      const lines = (t as Tokens.Paragraph).text
         .split('\n')
         .map((l) => l.trim())
         .filter(Boolean);
-      for (const ligne of lignes) {
-        const estSous = /^\*\(.+\)\*$/.test(ligne) || /^[*_][^*_].*[*_]$/.test(ligne);
-        if (!titre && /^\*\*/.test(ligne) && !/·/.test(ligne)) titre = enLigne(ligne.replace(/^\*\*|\*\*$/g, ''));
-        else if (!sousTitre && estSous) sousTitre = enLigne(ligne.replace(/^\*|\*$/g, ''));
-        else contacts.push(...ligne.split(/\s+·\s+/).map((s) => s.trim()).filter(Boolean));
+      for (const line of lines) {
+        const isSub = /^\*\(.+\)\*$/.test(line) || /^[*_][^*_].*[*_]$/.test(line);
+        if (!title && /^\*\*/.test(line) && !/·/.test(line)) title = inline(line.replace(/^\*\*|\*\*$/g, ''));
+        else if (!subTitle && isSub) subTitle = inline(line.replace(/^\*|\*$/g, ''));
+        else contacts.push(...line.split(/\s+·\s+/).map((s) => s.trim()).filter(Boolean));
       }
     } else if (t.type === 'list') {
       contacts.push(...(t as Tokens.List).items.map((it) => it.text.trim()));
     }
   }
 
-  const elements = contacts.map((brut) => {
+  const elements = contacts.map((raw) => {
     // « **E-mail :** valeur » : la valeur reste, le libellé choisit l'icône.
-    const libelle = brut.match(/^\*\*([^*]+?)\s*:\*\*\s*(.+)$/);
-    const valeur = libelle ? libelle[2].trim() : brut;
-    const indice = libelle ? `${libelle[1]} ${valeur}` : valeur;
-    const genre = estProfil(indice) ? 'profil' : estAdresse(indice) ? 'adresse' : 'principal';
-    return { genre, html: `<li>${icone(indice)}<span>${enLigne(valeur)}</span></li>` };
+    const label = raw.match(/^\*\*([^*]+?)\s*:\*\*\s*(.+)$/);
+    const value = label ? label[2].trim() : raw;
+    const index = label ? `${label[1]} ${value}` : value;
+    const kind = isProfile(index) ? 'profil' : isAddress(index) ? 'address' : 'principal';
+    return { kind, html: `<li>${icon(index)}<span>${inline(value)}</span></li>` };
   });
-  const groupe = (genre: string, classe: string) => {
-    const items = elements.filter((c) => c.genre === genre).map((c) => c.html);
-    return items.length ? `<ul class="contacts${classe ? ` ${classe}` : ''}">\n${items.join('\n')}\n</ul>` : '';
+  const group = (kind: string, cls: string) => {
+    const items = elements.filter((c) => c.kind === kind).map((c) => c.html);
+    return items.length ? `<ul class="contacts${cls ? ` ${cls}` : ''}">\n${items.join('\n')}\n</ul>` : '';
   };
-  const blocContacts = [groupe('principal', ''), groupe('adresse', 'contacts-address'), groupe('profil', 'contacts-profiles')]
+  const blockContacts = [group('principal', ''), group('address', 'contacts-address'), group('profil', 'contacts-profiles')]
     .filter(Boolean)
     .join('\n');
 
-  sortie.push(`<header class="cv-header">
+  output.push(`<header class="cv-header">
 <div class="cv-id">
-${nom ? `<h1>${nom}</h1>` : ''}
-${titre ? `<div class="headline">${titre}</div>` : ''}
-${sousTitre ? `<div class="subline">${sousTitre}</div>` : ''}
-${blocContacts}
+${name ? `<h1>${name}</h1>` : ''}
+${title ? `<div class="headline">${title}</div>` : ''}
+${subTitle ? `<div class="subline">${subTitle}</div>` : ''}
+${blockContacts}
 </div>
 ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
 </header>`);
 
-  let section: { titre: string; deuxColonnes: boolean; corps: string[] } | null = null;
-  let poste: { meta: string; corps: string[] } | null = null;
-  const fermerPoste = () => {
-    if (poste && section) section.corps.push(`<div class="job">${poste.meta}<div class="job-body">${poste.corps.join('\n')}</div></div>`);
-    poste = null;
+  let section: { title: string; twoColumns: boolean; body: string[] } | null = null;
+  let machine: { meta: string; body: string[] } | null = null;
+  const closeJob = () => {
+    if (machine && section) section.body.push(`<div class="job">${machine.meta}<div class="job-body">${machine.body.join('\n')}</div></div>`);
+    machine = null;
   };
-  const fermerSection = () => {
-    if (section) sortie.push(`<section class="${section.deuxColonnes ? 'two-col' : ''}"><h2>${section.titre}</h2>\n${section.corps.join('\n')}</section>`);
+  const closeSection = () => {
+    if (section) output.push(`<section class="${section.twoColumns ? 'two-col' : ''}"><h2>${section.title}</h2>\n${section.body.join('\n')}</section>`);
     section = null;
   };
 
-  for (; i < jetons.length; i += 1) {
-    const t = jetons[i];
+  for (; i < tokens.length; i += 1) {
+    const t = tokens[i];
     // Saut de page manuel (<!-- saut-de-page -->, <!-- page-break --> ou un div break-after) : il ferme le poste et la section
     // en cours, sinon il resterait enfermé dans le dernier poste, sans effet.
-    if (t.type === 'html' && SAUT_DE_PAGE.test(t.raw)) {
-      fermerPoste();
-      fermerSection();
-      sortie.push('<div class="saut-de-page" style="break-after: page"></div>');
+    if (t.type === 'html' && PAGE_BREAK.test(t.raw)) {
+      closeJob();
+      closeSection();
+      output.push('<div class="saut-de-page" style="break-after: page"></div>');
       continue;
     }
     if (t.type === 'heading' && (t as Tokens.Heading).depth === 2) {
-      fermerPoste();
-      fermerSection();
-      const texte = (t as Tokens.Heading).text;
-      section = { titre: enLigne(texte), deuxColonnes: SECTIONS_DEUX_COLONNES.test(texte), corps: [] };
+      closeJob();
+      closeSection();
+      const text = (t as Tokens.Heading).text;
+      section = { title: inline(text), twoColumns: SECTIONS_TWO_COLUMNS.test(text), body: [] };
       continue;
     }
     if (t.type === 'heading' && (t as Tokens.Heading).depth === 3) {
-      fermerPoste();
-      poste = { meta: metaPoste((t as Tokens.Heading).text), corps: [] };
+      closeJob();
+      machine = { meta: metaJob((t as Tokens.Heading).text), body: [] };
       continue;
     }
-    const html = rendreJeton(t);
+    const html = renderToken(t);
     if (!html) continue;
-    const p = poste as { meta: string; corps: string[] } | null;
-    const s = section as { corps: string[] } | null;
-    if (p) p.corps.push(p.corps.length === 0 && /^<p><strong>/.test(html) ? html.replace(/^<p>/, '<p class="job-role">') : html);
-    else if (s) s.corps.push(html);
-    else sortie.push(html);
+    const p = machine as { meta: string; body: string[] } | null;
+    const s = section as { body: string[] } | null;
+    if (p) p.body.push(p.body.length === 0 && /^<p><strong>/.test(html) ? html.replace(/^<p>/, '<p class="job-role">') : html);
+    else if (s) s.body.push(html);
+    else output.push(html);
   }
-  fermerPoste();
-  fermerSection();
+  closeJob();
+  closeSection();
 
   return `<!DOCTYPE html>
-<html lang="${o.langue ?? langueDuCv(markdown)}">
+<html lang="${o.language ?? languageOfCv(markdown)}">
 <head>
 <meta charset="utf-8">
 <title>CV</title>
 <link rel="stylesheet" href="${o.css}">
 </head>
 <body>
-${sortie.join('\n')}
+${output.join('\n')}
 </body>
 </html>
 `;
@@ -254,20 +254,20 @@ ${sortie.join('\n')}
 // ---------------------------------------------------------------------------------------------
 // Navigateur et PDF
 
-const NAVIGATEURS_WINDOWS = [
+const BROWSERS_WINDOWS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
 ];
-const NAVIGATEURS_MAC = [
+const BROWSERS_MAC = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
 ];
 const HEADLESS = join(process.env.HOME ?? '', '.cache', 'chrome-headless');
 const HEADLESS_SHELL = join(HEADLESS, 'chrome-headless-shell-linux64', 'chrome-headless-shell');
-const NAVIGATEURS_LINUX = [
+const BROWSERS_LINUX = [
   HEADLESS_SHELL,
   '/usr/bin/google-chrome',
   '/usr/bin/google-chrome-stable',
@@ -277,45 +277,45 @@ const NAVIGATEURS_LINUX = [
   '/snap/bin/chromium',
 ];
 
-/** Premier Chrome / Edge / Chromium trouvé (VIGIE_EMPLOI_NAVIGATEUR pour l'imposer), ou null. */
-export function trouverNavigateur(env: NodeJS.ProcessEnv = process.env): string | null {
-  const impose = variable(env, 'NAVIGATEUR');
-  if (impose) return existsSync(impose) ? impose : null;
-  const liste =
+/** Premier Chrome / Edge / Chromium trouvé (VIGIE_EMPLOI_BROWSER pour l'imposer), ou null. */
+export function findBrowser(env: NodeJS.ProcessEnv = process.env): string | null {
+  const forced = variable(env, 'BROWSER');
+  if (forced) return existsSync(forced) ? forced : null;
+  const list =
     process.platform === 'win32'
       ? [
-          ...NAVIGATEURS_WINDOWS,
+          ...BROWSERS_WINDOWS,
           ...(env.LOCALAPPDATA ? [join(env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe')] : []),
         ]
       : process.platform === 'darwin'
-        ? NAVIGATEURS_MAC
-        : NAVIGATEURS_LINUX;
-  return liste.find((p) => existsSync(p)) ?? null;
+        ? BROWSERS_MAC
+        : BROWSERS_LINUX;
+  return list.find((p) => existsSync(p)) ?? null;
 }
 
-function urlFichier(chemin: string): string {
-  const p = chemin.replace(/\\/g, '/');
+function urlFile(path: string): string {
+  const p = path.replace(/\\/g, '/');
   return p.startsWith('//') ? `file:${encodeURI(p)}` : `file:///${encodeURI(p.replace(/^\/+/, ''))}`;
 }
 
-export function compterPages(pdf: string): number {
-  const texte = readFileSync(pdf).toString('latin1');
-  return texte.match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
+export function countPages(pdf: string): number {
+  const text = readFileSync(pdf).toString('latin1');
+  return text.match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
 }
 
-export function cheminPortrait(dossierGabarit: string): string | null {
+export function pathPortrait(folderTemplate: string): string | null {
   for (const ext of ['webp', 'jpg', 'jpeg', 'png']) {
-    if (existsSync(join(dossierGabarit, `portrait.${ext}`))) return `portrait.${ext}`;
+    if (existsSync(join(folderTemplate, `portrait.${ext}`))) return `portrait.${ext}`;
   }
   return null;
 }
 
-function portraitRelatif(gabarit: string): string | null {
-  const p = cheminPortrait(gabarit);
+function portraitRelative(template: string): string | null {
+  const p = pathPortrait(template);
   return p ? `../${p}` : null;
 }
 
-export interface ResultatCv {
+export interface ResultCv {
   markdown: string;
   html: string;
   pdf: string;
@@ -325,21 +325,21 @@ export interface ResultatCv {
 }
 
 /** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
-export function genererCv(markdown: string, dossierGabarit: string, navigateur: string, o: { capture?: boolean } = {}): ResultatCv {
+export function generateCv(markdown: string, folderTemplate: string, browser: string, o: { capture?: boolean } = {}): ResultCv {
   const md = resolve(markdown);
-  if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.introuvable', { chemin: md })), { utilisateur: true });
-  const gabarit = resolve(dossierGabarit);
-  if (!existsSync(join(gabarit, 'gabarit.css'))) {
-    throw Object.assign(new Error(t('core.cv.gabaritIncomplet', { chemin: join(gabarit, 'gabarit.css') })), { utilisateur: true });
+  if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.notFound', { path: md })), { user: true });
+  const template = resolve(folderTemplate);
+  if (!existsSync(join(template, 'gabarit.css'))) {
+    throw Object.assign(new Error(t('core.cv.templateIncomplete', { path: join(template, 'gabarit.css') })), { user: true });
   }
-  const nom = basename(md).replace(/\.md$/i, '');
-  const apercu = join(gabarit, 'apercu');
-  mkdirSync(apercu, { recursive: true });
-  const html = join(apercu, `${nom}.html`);
-  const pdf = join(dirname(md), `${nom}.pdf`);
-  writeFileSync(html, cvEnHtml(readFileSync(md, 'utf8'), { css: '../gabarit.css', portrait: portraitRelatif(gabarit) }), 'utf8');
+  const name = basename(md).replace(/\.md$/i, '');
+  const preview = join(template, 'preview');
+  mkdirSync(preview, { recursive: true });
+  const html = join(preview, `${name}.html`);
+  const pdf = join(dirname(md), `${name}.pdf`);
+  writeFileSync(html, cvToHtml(readFileSync(md, 'utf8'), { css: '../gabarit.css', portrait: portraitRelative(template) }), 'utf8');
   execFileSync(
-    navigateur,
+    browser,
     [
       '--headless=new',
       '--disable-gpu',
@@ -347,53 +347,53 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
       '--run-all-compositor-stages-before-draw',
       '--virtual-time-budget=4000',
       `--print-to-pdf=${pdf}`,
-      urlFichier(html),
+      urlFile(html),
     ],
     {
       stdio: 'pipe',
-      env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
+      env: browser === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
     },
   );
-  const pages = compterPages(pdf);
-  const resultat: ResultatCv = { markdown: md, html, pdf, pages };
+  const pages = countPages(pdf);
+  const result: ResultCv = { markdown: md, html, pdf, pages };
   if (o.capture) {
     // Vraies pages du PDF (rendues par pdf.js), et non le rendu HTML écran : les sauts de page sont ceux du PDF.
-    const png = join(apercu, `${nom}.png`);
-    capturerPages(pdf, png, navigateur, {
+    const png = join(preview, `${name}.png`);
+    capturePages(pdf, png, browser, {
       pages,
-      env: navigateur === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
+      env: browser === HEADLESS_SHELL ? { ...process.env, LD_LIBRARY_PATH: join(HEADLESS, 'lib') } : process.env,
     });
-    resultat.capture = png;
+    result.capture = png;
   }
-  return resultat;
+  return result;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Gabarits livrés et choix du gabarit de l'espace
 
-export const DOSSIER_GABARITS = join(RACINE_APP, 'gabarits', 'cv');
+export const FOLDER_TEMPLATES = join(APP_ROOT, 'templates', 'cv');
 
 /** Descriptions traduites des gabarits livrés, par langue (l'en-tête des feuilles, lu à défaut, est en français). */
-const DESCRIPTIONS_GABARITS: Partial<Record<Langue, Record<string, string>>> = {
+const DESCRIPTIONS_TEMPLATES: Partial<Record<Language, Record<string, string>>> = {
   en: {
     compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
-    moderne: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
-    sobre:
+    modern: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
+    plain:
       '"sobre" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
   },
 };
 
 /** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
-export function listerGabarits(): { nom: string; description: string }[] {
-  return readdirSync(DOSSIER_GABARITS)
-    .filter((n) => existsSync(join(DOSSIER_GABARITS, n, 'gabarit.css')))
-    .map((nom) => {
-      const css = readFileSync(join(DOSSIER_GABARITS, nom, 'gabarit.css'), 'utf8');
-      const entete = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
-      const phrase = entete.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
+export function listTemplates(): { name: string; description: string }[] {
+  return readdirSync(FOLDER_TEMPLATES)
+    .filter((n) => existsSync(join(FOLDER_TEMPLATES, n, 'gabarit.css')))
+    .map((name) => {
+      const css = readFileSync(join(FOLDER_TEMPLATES, name, 'gabarit.css'), 'utf8');
+      const header = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
+      const phrase = header.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
       // La description vient de l'en-tête (français) de la feuille ; traduite pour les gabarits livrés connus.
-      const traduite = DESCRIPTIONS_GABARITS[langueCourante()]?.[nom];
-      return { nom, description: traduite ?? phrase };
+      const translated = DESCRIPTIONS_TEMPLATES[languageCurrent()]?.[name];
+      return { name, description: translated ?? phrase };
     });
 }
 
@@ -401,22 +401,22 @@ export function listerGabarits(): { nom: string; description: string }[] {
  * Installe un gabarit livré dans <espace>/cv/gabarit. L'ancien est renommé cv/gabarit-<AAAAMMJJ-HHMMSS>
  * (rien n'est perdu) ; la photo (portrait.*) est reprise dans le nouveau.
  */
-export function choisirGabarit(espace: string, nom: string): { dossier: string; ancien: string | null } {
-  const source = join(DOSSIER_GABARITS, nom);
-  if (!/^[\w-]+$/.test(nom) || !existsSync(join(source, 'gabarit.css'))) {
-    const noms = listerGabarits().map((g) => g.nom).join(', ');
-    throw Object.assign(new Error(t('core.cv.gabaritInconnu', { nom, liste: noms })), { utilisateur: true });
+export function chooseTemplate(workspace: string, name: string): { folder: string; old: string | null } {
+  const source = join(FOLDER_TEMPLATES, name);
+  if (!/^[\w-]+$/.test(name) || !existsSync(join(source, 'gabarit.css'))) {
+    const names = listTemplates().map((g) => g.name).join(', ');
+    throw Object.assign(new Error(t('core.cv.templateUnknown', { name, list: names })), { user: true });
   }
-  const cible = join(espace, 'cv', 'gabarit');
-  let ancien: string | null = null;
-  if (existsSync(cible)) {
+  const target = join(workspace, 'cv', 'gabarit');
+  let old: string | null = null;
+  if (existsSync(target)) {
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
-    ancien = join(espace, 'cv', `gabarit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`);
-    renameSync(cible, ancien);
+    old = join(workspace, 'cv', `gabarit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`);
+    renameSync(target, old);
   }
-  cpSync(source, cible, { recursive: true });
-  const portrait = ancien ? cheminPortrait(ancien) : null;
-  if (ancien && portrait) cpSync(join(ancien, portrait), join(cible, portrait));
-  return { dossier: cible, ancien };
+  cpSync(source, target, { recursive: true });
+  const portrait = old ? pathPortrait(old) : null;
+  if (old && portrait) cpSync(join(old, portrait), join(target, portrait));
+  return { folder: target, old };
 }

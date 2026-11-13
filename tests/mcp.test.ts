@@ -6,30 +6,30 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-const RACINE = join(import.meta.dirname, '..');
+const ROOT = join(import.meta.dirname, '..');
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 
-type Resultat = { isError?: boolean; content: { type: string; text: string }[] };
+type Result = { isError?: boolean; content: { type: string; text: string }[] };
 
 describe('serveur MCP (stdio)', () => {
-  let dossier: string;
+  let folder: string;
   let client: Client;
 
-  const appeler = async (name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> => {
-    const r = (await client.callTool({ name, arguments: args })) as Resultat;
-    if (r.isError) return { erreur: r.content[0].text };
+  const call = async (name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> => {
+    const r = (await client.callTool({ name, arguments: args })) as Result;
+    if (r.isError) return { error: r.content[0].text };
     return JSON.parse(r.content[0].text) as Record<string, unknown>;
   };
 
   beforeAll(async () => {
-    dossier = mkdtempSync(join(tmpdir(), 'vigie-emploi-mcp-'));
-    cpSync(join(FIXTURES, 'donnees'), dossier, { recursive: true });
-    cpSync(join(FIXTURES, 'emails'), join(dossier, 'emails'), { recursive: true });
+    folder = mkdtempSync(join(tmpdir(), 'vigie-emploi-mcp-'));
+    cpSync(join(FIXTURES, 'data'), folder, { recursive: true });
+    cpSync(join(FIXTURES, 'emails'), join(folder, 'emails'), { recursive: true });
     // cwd = dossier temporaire : la configuration personnelle éventuelle du dépôt n'est pas lue.
     const transport = new StdioClientTransport({
       command: process.execPath,
-      args: [join(RACINE, 'bin', 'vigie-emploi.js'), 'mcp', '--data', dossier],
-      cwd: dossier,
+      args: [join(ROOT, 'bin', 'vigie-emploi.js'), 'mcp', '--data', folder],
+      cwd: folder,
       env: { ...(process.env as Record<string, string>), VIGIE_EMPLOI_CONFIG: '' },
       stderr: 'pipe',
     });
@@ -39,174 +39,174 @@ describe('serveur MCP (stdio)', () => {
 
   afterAll(async () => {
     await client?.close();
-    rmSync(dossier, { recursive: true, force: true });
+    rmSync(folder, { recursive: true, force: true });
   });
 
   it('expose les outils attendus, décrits en français', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
-        'ajouter_evenement',
-        'candidater',
-        'changer_statut',
-        'echeances',
-        'enregistrer_candidature',
-        'fichiers_dossier',
-        'generer_suivi',
-        'grille',
-        'historique_grille',
-        'ingerer_emails',
+        'add_event',
+        'apply',
+        'change_status',
+        'deadlines',
+        'save_application',
+        'folder_files',
+        'generate_tracker',
+        'rubric',
+        'rubric_history',
+        'ingest_emails',
         'journal',
-        'lire_offre',
-        'marquer_fait',
-        'modifier_evenement',
-        'lister_offres',
-        'modifier_lien',
-        'modifier_tags',
-        'noter_lot',
-        'noter_offre',
-        'offres_a_lire',
-        'modifier_grille',
-        'renoter',
+        'read_offer',
+        'mark_done',
+        'update_event',
+        'list_offers',
+        'update_link',
+        'update_tags',
+        'score_batch',
+        'score_offer',
+        'offers_to_read',
+        'update_rubric',
+        'rescore',
         // Espace, fichiers et CV (client MCP sans accès aux fichiers)
-        'etat_espace',
-        'initialiser_espace',
-        'lister_fichiers',
-        'lire_fichier',
-        'ecrire_fichier',
-        'deplacer_fichier',
-        'generer_cv',
-        'compter',
-        'lister_gabarits',
-        'choisir_gabarit',
-        'ouvrir_tableau_de_bord',
+        'workspace_state',
+        'initialize_workspace',
+        'list_files',
+        'read_file',
+        'write_file',
+        'move_file',
+        'generate_cv',
+        'count',
+        'list_templates',
+        'choose_template',
+        'open_dashboard',
       ].sort(),
     );
-    const noter = tools.find((t) => t.name === 'noter_offre')!;
-    expect(noter.description).toMatch(/historique/);
-    expect(Object.keys(noter.inputSchema.properties ?? {})).toEqual(expect.arrayContaining(['id', 'url', 'note', 'colle', 'ecarts']));
+    const score = tools.find((t) => t.name === 'score_offer')!;
+    expect(score.description).toMatch(/historique/);
+    expect(Object.keys(score.inputSchema.properties ?? {})).toEqual(expect.arrayContaining(['id', 'url', 'score', 'fit', 'gaps']));
   });
 
   it('flux complet : ingérer → lire → noter → candidater → enregistrer → générer le suivi', async () => {
-    const ing = await appeler('ingerer_emails', { garder: true, telecharger: false });
-    expect(ing.nouvelles).toBeGreaterThan(0);
-    expect(readdirSync(join(dossier, 'emails')).length).toBe(4); // garder : e-mails conservés
+    const ing = await call('ingest_emails', { keep: true, download: false });
+    expect(ing.added).toBeGreaterThan(0);
+    expect(readdirSync(join(folder, 'emails')).length).toBe(4); // garder : e-mails conservés
 
-    const aLire = (await appeler('offres_a_lire', { limite: 3 })) as unknown as { total: number; offres: { id: number; lecture: string }[] };
-    expect(aLire.offres.length).toBeGreaterThan(0);
-    const id = aLire.offres[0].id;
+    const toRead = (await call('offers_to_read', { limit: 3 })) as unknown as { total: number; offers: { id: number; reading: string }[] };
+    expect(toRead.offers.length).toBeGreaterThan(0);
+    const id = toRead.offers[0].id;
 
-    const n = await appeler('noter_offre', { id, note: 6, note_brute: 6.5, penalites: '-0,5 trajet', colle: 'PHP', ecarts: 'sur site', lu: true });
-    expect(n).toMatchObject({ ok: true, id, note: 6, statut: 'notee' });
-    const lot = await appeler('noter_lot', { offres: [{ id: aLire.offres[1].id, note: 3, ecarts: 'hors cible' }] });
-    expect(lot).toMatchObject({ ok: true, notees: 1 });
+    const n = await call('score_offer', { id, score: 6, raw_score: 6.5, penalties: '-0,5 trajet', fit: 'PHP', gaps: 'sur site', read: true });
+    expect(n).toMatchObject({ ok: true, id, score: 6, status: 'scored' });
+    const batch = await call('score_batch', { offers: [{ id: toRead.offers[1].id, score: 3, gaps: 'hors cible' }] });
+    expect(batch).toMatchObject({ ok: true, scored: 1 });
 
-    const liste = (await appeler('lister_offres', { statuts: ['notee'], note_min: 5, tri: 'note' })) as unknown as { offres: { id: number }[] };
-    expect(liste.offres.map((o) => o.id)).toContain(id);
+    const list = (await call('list_offers', { statuses: ['scored'], score_min: 5, sort: 'score' })) as unknown as { offers: { id: number }[] };
+    expect(list.offers.map((o) => o.id)).toContain(id);
 
-    const tags = await appeler('modifier_tags', { id, ajouter: ['a-relancer'] });
-    expect(tags).toMatchObject({ tags: ['a-relancer'] });
+    const tags = await call('update_tags', { id, add: ['to-follow-up'] });
+    expect(tags).toMatchObject({ tags: ['to-follow-up'] });
 
-    const c = (await appeler('candidater', { id })) as unknown as { dossier_suggere: string; offre: { statut: string } };
-    expect(c.offre.statut).toBe('go');
-    expect(c.dossier_suggere).toMatch(/^candidatures\//);
+    const c = (await call('apply', { id })) as unknown as { suggested_folder: string; offer: { status: string } };
+    expect(c.offer.status).toBe('go');
+    expect(c.suggested_folder).toMatch(/^candidatures\//);
 
-    const e = await appeler('enregistrer_candidature', {
+    const e = await call('save_application', {
       id,
-      dossier: c.dossier_suggere,
-      canal: 'LinkedIn',
-      envoyee_le: '02/11/2026',
-      prochaine_action: 'Relancer le 09/11',
+      folder: c.suggested_folder,
+      channel: 'LinkedIn',
+      sent_at: '02/11/2026',
+      next_action: 'Relancer le 09/11',
     });
-    expect(e).toMatchObject({ ok: true, statut: 'envoyee', statut_ajoute: 'envoyee' });
+    expect(e).toMatchObject({ ok: true, status: 'sent', status_added: 'sent' });
 
-    const detail = (await appeler('lire_offre', { id })) as unknown as { candidature: { prochaine_action: string; envoyee_le: string } };
-    expect(detail.candidature).toMatchObject({ prochaine_action: 'Relancer le 09/11', envoyee_le: '2026-11-02' });
+    const detail = (await call('read_offer', { id })) as unknown as { application: { next_action: string; sent_at: string } };
+    expect(detail.application).toMatchObject({ next_action: 'Relancer le 09/11', sent_at: '2026-11-02' });
 
     // Journal : l'appel raconté par l'utilisateur, puis la prochaine échéance.
-    const ev = (await appeler('ajouter_evenement', {
+    const ev = (await call('add_event', {
       id,
-      type: 'entretien',
-      le: '02/11/2026 11:00',
-      resume: 'Appel avec la RH : périmètre et salaire',
-      canal: 'Téléphone',
-    })) as unknown as { evenement: { id: number; fait: boolean } };
-    expect(ev.evenement.fait).toBe(true);
-    const ech = (await appeler('ajouter_evenement', { id, type: 'message', sens: 'envoye', le: '+3', resume: 'Relancer la RH' })) as unknown as {
-      evenement: { id: number; fait: boolean };
+      type: 'interview',
+      at: '02/11/2026 11:00',
+      summary: 'Appel avec la RH : périmètre et salaire',
+      channel: 'Téléphone',
+    })) as unknown as { event: { id: number; done: boolean } };
+    expect(ev.event.done).toBe(true);
+    const ech = (await call('add_event', { id, type: 'message', direction: 'sent', at: '+3', summary: 'Relancer la RH' })) as unknown as {
+      event: { id: number; done: boolean };
     };
-    expect(ech.evenement.fait).toBe(false);
-    const prochaines = (await appeler('echeances', { jours: 7 })) as unknown as { a_venir: { id: number; offre_id: number }[] };
-    expect(prochaines.a_venir).toEqual([expect.objectContaining({ id: ech.evenement.id, offre_id: id })]);
-    const j = (await appeler('journal', { id })) as unknown as { evenements: { id: number }[] };
-    expect(j.evenements.map((e) => e.id)).toEqual([ech.evenement.id, ev.evenement.id]);
-    expect(((await appeler('marquer_fait', { evenement_id: ech.evenement.id })) as { evenement: { fait: boolean } }).evenement.fait).toBe(true);
-    expect((await appeler('modifier_evenement', { evenement_id: ev.evenement.id, interlocuteurs: 'Julie (RH)' })).evenement).toMatchObject({
-      interlocuteurs: 'Julie (RH)',
+    expect(ech.event.done).toBe(false);
+    const next = (await call('deadlines', { days: 7 })) as unknown as { upcoming: { id: number; offer_id: number }[] };
+    expect(next.upcoming).toEqual([expect.objectContaining({ id: ech.event.id, offer_id: id })]);
+    const j = (await call('journal', { id })) as unknown as { events: { id: number }[] };
+    expect(j.events.map((e) => e.id)).toEqual([ech.event.id, ev.event.id]);
+    expect(((await call('mark_done', { event_id: ech.event.id })) as { event: { done: boolean } }).event.done).toBe(true);
+    expect((await call('update_event', { event_id: ev.event.id, contacts: 'Julie (RH)' })).event).toMatchObject({
+      contacts: 'Julie (RH)',
     });
-    const f = (await appeler('fichiers_dossier', { id })) as unknown as { dossier: string; existe: boolean };
-    expect(f).toMatchObject({ dossier: c.dossier_suggere, existe: false });
-    expect((await appeler('ajouter_evenement', { id, type: 'note', resume: 'x', le: 'bientôt' })).erreur).toMatch(/Date invalide/);
+    const f = (await call('folder_files', { id })) as unknown as { folder: string; exists: boolean };
+    expect(f).toMatchObject({ folder: c.suggested_folder, exists: false });
+    expect((await call('add_event', { id, type: 'note', summary: 'x', at: 'bientôt' })).error).toMatch(/Date invalide/);
 
-    const s = (await appeler('generer_suivi')) as unknown as { fichier: string; en_cours: number };
-    expect(s.fichier).toBe(join(dossier, 'candidatures', '_SUIVI.genere.md'));
-    expect(existsSync(s.fichier)).toBe(true);
-    expect(s.en_cours).toBe(1);
+    const s = (await call('generate_tracker')) as unknown as { file: string; in_progress: number };
+    expect(s.file).toBe(join(folder, 'candidatures', '_SUIVI.genere.md'));
+    expect(existsSync(s.file)).toBe(true);
+    expect(s.in_progress).toBe(1);
   }, 30_000);
 
   it('grille : lire, noter à critères, modifier (essai puis enregistrement), renoter, historique', async () => {
-    expect((await appeler('grille')).erreur).toMatch(/Pas de grille/);
-    cpSync(join(RACINE, 'exemples', 'grille.json'), join(dossier, 'profil', 'grille.json'));
-    const g = (await appeler('grille')) as unknown as { version: number; consignes_ia: string[]; exemples_calcules: { note: number }[] };
+    expect((await call('rubric')).error).toMatch(/Pas de grille/);
+    cpSync(join(ROOT, 'examples', 'rubric.json'), join(folder, 'profil', 'grille.json'));
+    const g = (await call('rubric')) as unknown as { version: number; instructions_ai: string[]; computed_examples: { score: number }[] };
     expect(g.version).toBe(1);
-    expect(g.consignes_ia.join(' ')).toMatch(/Ne donne pas la note finale/);
-    expect(g.exemples_calcules.map((e) => e.note)).toEqual([8, 3.5, 0]);
+    expect(g.instructions_ai.join(' ')).toMatch(/Ne donne pas la note finale/);
+    expect(g.computed_examples.map((e) => e.score)).toEqual([8, 3.5, 0]);
 
-    const aLire = (await appeler('lister_offres', { taille: 2 })) as unknown as { offres: { id: number }[] };
-    const [a, b] = aLire.offres.map((o) => o.id);
-    const lot = (await appeler('noter_lot', {
-      offres: [
-        { id: a, note: 2, criteres: { technique: { note: 8, justification: 'PHP' }, role: { note: 7 }, interet: { note: 6 }, risque: { note: 7 } }, entrees: { jours_sur_site: 1, salaire_min: 55000, salaire_max: 60000, unite: 'an' } },
-        { id: b, criteres: { technique: { note: 9 } }, bloquants: ['stage'] },
+    const toRead = (await call('list_offers', { size: 2 })) as unknown as { offers: { id: number }[] };
+    const [a, b] = toRead.offers.map((o) => o.id);
+    const batch = (await call('score_batch', {
+      offers: [
+        { id: a, score: 2, criteria: { technique: { score: 8, justification: 'PHP' }, role: { score: 7 }, interet: { score: 6 }, risque: { score: 7 } }, inputs: { onsite_days: 1, salary_min: 55000, salary_max: 60000, unit: 'year' } },
+        { id: b, criteria: { technique: { score: 9 } }, blockers: ['stage'] },
       ],
-    })) as unknown as { offres: { note: number; avertissements?: string[]; decomposition: { criteres: unknown[] } }[] };
+    })) as unknown as { offers: { score: number; warnings?: string[]; breakdown: { criteria: unknown[] } }[] };
     // 8×.35 + 8×.2 + (57,5 K€ : 5 + 5×17,5/20 = 9,375)×.2 + 7×.1 + 6×.1 + 7×.05 = 7,925 → 8
-    expect(lot.offres[0].note).toBe(8);
-    expect(lot.offres[0].avertissements?.[0]).toMatch(/ignoré/);
-    expect(lot.offres[0].decomposition.criteres).toHaveLength(6);
-    expect(lot.offres[1].note).toBe(0);
-    expect((await appeler('noter_offre', { id: a, criteres: { teletravail: { note: 3 } } })).erreur).toMatch(/calculé/);
-    expect((await appeler('noter_offre', { id: a, criteres: { technique: { note: 3 } }, bloquants: ['armee'] })).erreur).toMatch(/Règle bloquante inconnue/);
+    expect(batch.offers[0].score).toBe(8);
+    expect(batch.offers[0].warnings?.[0]).toMatch(/ignoré/);
+    expect(batch.offers[0].breakdown.criteria).toHaveLength(6);
+    expect(batch.offers[1].score).toBe(0);
+    expect((await call('score_offer', { id: a, criteria: { teletravail: { score: 3 } } })).error).toMatch(/calculé/);
+    expect((await call('score_offer', { id: a, criteria: { technique: { score: 3 } }, blockers: ['armee'] })).error).toMatch(/Règle bloquante inconnue/);
 
-    const essai = (await appeler('modifier_grille', { changement: { regles: [{ id: 'stage', actif: false }] }, essai: true })) as unknown as {
-      enregistree: boolean;
-      impact: { montent: { id: number }[] };
+    const dry_run = (await call('update_rubric', { change: { rules: [{ id: 'stage', active: false }] }, dry_run: true })) as unknown as {
+      saved: boolean;
+      impact: { rising: { id: number }[] };
     };
-    expect(essai.enregistree).toBe(false);
-    expect(essai.impact.montent.map((x) => x.id)).toEqual([b]);
-    expect((await appeler('modifier_grille', { changement: { seuil: 5 } })).erreur).toMatch(/resume/);
-    const m = (await appeler('modifier_grille', { changement: { regles: [{ id: 'stage', actif: false }] }, resume: 'Stages acceptés' })) as unknown as {
+    expect(dry_run.saved).toBe(false);
+    expect(dry_run.impact.rising.map((x) => x.id)).toEqual([b]);
+    expect((await call('update_rubric', { change: { threshold: 5 } })).error).toMatch(/resume/);
+    const m = (await call('update_rubric', { change: { rules: [{ id: 'stage', active: false }] }, summary: 'Stages acceptés' })) as unknown as {
       version: number;
     };
     expect(m.version).toBe(2);
-    expect(((await appeler('lire_offre', { id: b })) as unknown as { note: number }).note).toBeGreaterThan(0);
-    expect(await appeler('renoter')).toMatchObject({ ok: true, version: 2, impact: { offres_recalculees: 2, changees: 0 } });
-    const r = (await appeler('modifier_grille', { restaurer_version: 1 })) as unknown as { version: number };
+    expect(((await call('read_offer', { id: b })) as unknown as { score: number }).score).toBeGreaterThan(0);
+    expect(await call('rescore')).toMatchObject({ ok: true, version: 2, impact: { offers_recalculated: 2, changed: 0 } });
+    const r = (await call('update_rubric', { restore_version: 1 })) as unknown as { version: number };
     expect(r.version).toBe(3);
-    const h = (await appeler('historique_grille')) as unknown as { versions: { version: number; auteur: string; resume: string }[] };
-    expect(h.versions.map((x) => [x.version, x.auteur, x.resume])).toEqual([
+    const h = (await call('rubric_history')) as unknown as { versions: { version: number; author: string; summary: string }[] };
+    expect(h.versions.map((x) => [x.version, x.author, x.summary])).toEqual([
       [3, 'mcp', 'Retour à la version 1'],
       [2, 'mcp', 'Stages acceptés'],
-      [1, 'fichier', "Grille d'exemple de vigie-emploi (à adapter)"],
+      [1, 'file', "Grille d'exemple de vigie-emploi (à adapter)"],
     ]);
   }, 30_000);
 
   it('erreurs renvoyées à l’IA sans arrêter le serveur', async () => {
-    expect((await appeler('lire_offre', { id: 999999 })).erreur).toMatch(/introuvable/);
-    expect((await appeler('noter_offre', { note: 5 })).erreur).toMatch(/id.*url/);
-    expect((await appeler('modifier_lien', { id: 1, url: 'pas-un-lien' })).erreur).toMatch(/Lien invalide/);
-    const r = (await client.callTool({ name: 'changer_statut', arguments: { id: 1, statut: 'inconnu' } })) as Resultat;
+    expect((await call('read_offer', { id: 999999 })).error).toMatch(/introuvable/);
+    expect((await call('score_offer', { score: 5 })).error).toMatch(/id.*url/);
+    expect((await call('update_link', { id: 1, url: 'not-one-link' })).error).toMatch(/Lien invalide/);
+    const r = (await client.callTool({ name: 'change_status', arguments: { id: 1, status: 'unknown' } })) as Result;
     expect(r.isError).toBe(true);
-    expect((await appeler('changer_statut', { id: 1, statut: 'ecartee', commentaire: 'hors cible' })).statut).toBe('ecartee');
+    expect((await call('change_status', { id: 1, status: 'dismissed', comment: 'hors cible' })).status).toBe('dismissed');
   });
 });

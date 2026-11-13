@@ -8,28 +8,28 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table';
-import { STATUTS_A_TRAITER } from '../../src/core/statuts.ts';
-import { api, type LigneOffre } from './api.ts';
-import { basculerNiveau, ecrireNiveaux, lireNiveaux } from './tri.ts';
-import { choisirLangue, langue, LANGUES, locale, NOMS_LANGUES, nombre, t, type Langue } from './i18n/index.ts';
-import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FILTRES } from './etat.ts';
-import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
-import { Filtres } from './composants/Filtres.tsx';
-import { DefilementHorizontal } from './composants/DefilementHorizontal.tsx';
-import { EnteteColle } from './composants/EnteteColle.tsx';
-import { Detail } from './composants/Detail.tsx';
-import { AVenir } from './composants/AVenir.tsx';
-import { ActionsAgent, useNotifications } from './composants/ActionsAgent.tsx';
-import { Reglages } from './composants/Reglages.tsx';
-import { ChoixTheme, type Mode } from './composants/Theme.tsx';
+import { STATUSES_TO_PROCESS } from '../../src/core/statuses.ts';
+import { api, type LineOffer } from './api.ts';
+import { toggleLevel, writeLevels, readLevels } from './sort.ts';
+import { chooseLanguage, language, LANGUAGES, locale, NAMES_LANGUAGES, number, t, type Language } from './i18n/index.ts';
+import { useParameters, usePreference, usePreferenceText, useDebounce, KEYS_FILTERS } from './state.ts';
+import { BadgeScore, BadgeStatus, formatDate } from './components/Badges.tsx';
+import { Filters } from './components/Filters.tsx';
+import { ScrollHorizontal } from './components/ScrollHorizontal.tsx';
+import { StickyHeader } from './components/StickyHeader.tsx';
+import { Detail } from './components/Detail.tsx';
+import { Upcoming } from './components/Upcoming.tsx';
+import { ActionsAgent, useNotifications } from './components/ActionsAgent.tsx';
+import { Settings } from './components/Settings.tsx';
+import { ChoiceTheme, type Mode } from './components/Theme.tsx';
 import {
-  appliquerPalette,
-  PALETTE_CLAIRE_DEFAUT,
-  PALETTE_SOMBRE_DEFAUT,
-  PALETTES_CLAIRES,
-  PALETTES_SOMBRES,
-  PERSO_DEFAUT,
-  trouverPalette,
+  applyPalette,
+  PALETTE_LIGHT_DEFAULT,
+  PALETTE_DARK_DEFAULT,
+  PALETTES_LIGHT,
+  PALETTES_DARK,
+  PERSONAL_DEFAULT,
+  findPalette,
   variablesPalette,
   type Palette,
 } from './theme.ts';
@@ -45,7 +45,7 @@ import {
   Funnel,
   RefreshCw,
   Moon,
-  Palette as PaletteIcone,
+  Palette as PaletteIcon,
   SlidersHorizontal,
   Sun,
   X,
@@ -53,31 +53,31 @@ import {
   ZoomOut,
 } from 'lucide-react';
 
-const TAILLES = [25, 50, 100, 200, 500];
+const SIZES = [25, 50, 100, 200, 500];
 
 /** Colonnes du tableau (libellés dans la langue courante : l'application est remontée à chaque changement de langue). */
-const colonnes = (): ColumnDef<LigneOffre>[] => [
-  { id: 'note', accessorKey: 'note', header: t('col.note'), cell: (c) => <BadgeNote note={c.row.original.note} /> },
-  { id: 'statut', accessorKey: 'statut', header: t('col.statut'), cell: (c) => <BadgeStatut statut={c.row.original.statut} /> },
+const columnDefs = (): ColumnDef<LineOffer>[] => [
+  { id: 'score', accessorKey: 'score', header: t('col.score'), cell: (c) => <BadgeScore score={c.row.original.score} /> },
+  { id: 'status', accessorKey: 'status', header: t('col.status'), cell: (c) => <BadgeStatus status={c.row.original.status} /> },
   {
-    id: 'titre',
-    accessorKey: 'titre',
-    header: t('col.titre'),
-    cell: (c) => <span className="line-clamp-2 font-medium">{c.row.original.titre || t('liste.sansTitre')}</span>,
+    id: 'title',
+    accessorKey: 'title',
+    header: t('col.title'),
+    cell: (c) => <span className="line-clamp-2 font-medium">{c.row.original.title || t('list.withoutTitle')}</span>,
   },
-  { id: 'entreprise', accessorKey: 'entreprise', header: t('col.entreprise'), cell: (c) => <span className="line-clamp-2">{c.row.original.entreprise ?? '—'}</span> },
-  { id: 'lieu', accessorKey: 'lieu', header: t('col.lieu'), cell: (c) => <span className="line-clamp-2">{c.row.original.lieu ?? '—'}</span> },
-  { id: 'contrat', accessorKey: 'contrat', header: t('col.contrat'), cell: (c) => c.row.original.contrat ?? '—' },
+  { id: 'company', accessorKey: 'company', header: t('col.company'), cell: (c) => <span className="line-clamp-2">{c.row.original.company ?? '—'}</span> },
+  { id: 'location', accessorKey: 'location', header: t('col.location'), cell: (c) => <span className="line-clamp-2">{c.row.original.location ?? '—'}</span> },
+  { id: 'contract', accessorKey: 'contract', header: t('col.contract'), cell: (c) => c.row.original.contract ?? '—' },
   {
-    id: 'remuneration_min',
-    accessorKey: 'remuneration',
-    header: t('col.remuneration'),
-    cell: (c) => <span className="line-clamp-2">{c.row.original.remuneration ?? '—'}</span>,
+    id: 'compensation_min',
+    accessorKey: 'compensation',
+    header: t('col.compensation'),
+    cell: (c) => <span className="line-clamp-2">{c.row.original.compensation ?? '—'}</span>,
   },
-  { id: 'teletravail', accessorKey: 'teletravail', header: t('col.teletravail'), cell: (c) => <span className="line-clamp-2">{c.row.original.teletravail ?? '—'}</span> },
+  { id: 'remote', accessorKey: 'remote', header: t('col.remote'), cell: (c) => <span className="line-clamp-2">{c.row.original.remote ?? '—'}</span> },
   { id: 'source', accessorKey: 'source', header: t('col.source') },
-  { id: 'recue_le', accessorKey: 'recue_le', header: t('col.recue'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.recue_le)}</span> },
-  { id: 'publiee_le', accessorKey: 'publiee_le', header: t('col.publiee'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formaterDate(c.row.original.publiee_le)}</span> },
+  { id: 'received_at', accessorKey: 'received_at', header: t('col.received'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.received_at)}</span> },
+  { id: 'published_at', accessorKey: 'published_at', header: t('col.published'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.published_at)}</span> },
   {
     id: 'tags',
     accessorKey: 'tags',
@@ -96,81 +96,81 @@ const colonnes = (): ColumnDef<LigneOffre>[] => [
   { id: 'id', accessorKey: 'id', header: t('col.id'), cell: (c) => <span className="text-slate-500 tabular-nums dark:text-slate-400">{c.row.original.id}</span> },
 ];
 
-const VISIBILITE_DEFAUT: VisibilityState = { lieu: true, contrat: false, teletravail: true, publiee_le: false, id: false, tags: true };
+const VISIBILITY_DEFAULT: VisibilityState = { location: true, contract: false, remote: true, published_at: false, id: false, tags: true };
 
 /** Recharge toutes les données depuis la base (modifications faites par la CLI ou une IA). */
-function BoutonRafraichir() {
+function ButtonRefresh() {
   const client = useQueryClient();
-  const enCours = useIsFetching() > 0;
+  const inProgress = useIsFetching() > 0;
   return (
     <button
       type="button"
-      className="bouton"
+      className="button"
       onClick={() => client.invalidateQueries()}
-      aria-label={t('entete.rafraichir')}
-      title={t('entete.rafraichir')}
-      aria-busy={enCours}
+      aria-label={t('header.refresh')}
+      title={t('header.refresh')}
+      aria-busy={inProgress}
     >
-      <RefreshCw className={`size-4 ${enCours ? 'animate-spin' : ''}`} aria-hidden="true" />
+      <RefreshCw className={`size-4 ${inProgress ? 'animate-spin' : ''}`} aria-hidden="true" />
     </button>
   );
 }
 
 /** Écran étroit (téléphone, moins de 768 px) : les filtres passent dans un tiroir au lieu d'une colonne. */
-const ECRAN_ETROIT = '(max-width: 767px)';
+const NARROW_SCREEN = '(max-width: 767px)';
 
 /**
  * Colonne Intitulé collée au bord gauche quand le tableau défile horizontalement. Son ombre (un dégradé sur toute la
  * hauteur de chaque cellule, donc continu d'une ligne à l'autre) n'apparaît que lorsqu'elle est réellement collée et
  * que des colonnes passent dessous (data-collee du conteneur, voir DefilementHorizontal).
  */
-const COLLEE =
-  'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[collee=true]/defilement:after:opacity-100';
+const STUCK =
+  'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[stuck=true]/scroll:after:opacity-100';
 
-function useEcranEtroit(): boolean {
-  const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
+function useNarrowScreen(): boolean {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW_SCREEN).matches);
   useEffect(() => {
-    const media = window.matchMedia(ECRAN_ETROIT);
-    const maj = () => setEtroit(media.matches);
-    media.addEventListener('change', maj);
-    return () => media.removeEventListener('change', maj);
+    const media = window.matchMedia(NARROW_SCREEN);
+    const updated = () => setNarrow(media.matches);
+    media.addEventListener('change', updated);
+    return () => media.removeEventListener('change', updated);
   }, []);
-  return etroit;
+  return narrow;
 }
 
-function useSombreSysteme(): boolean {
-  const [sombre, setSombre] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+function useDarkSystem(): boolean {
+  const [dark, setDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const maj = () => setSombre(media.matches);
-    media.addEventListener('change', maj);
-    return () => media.removeEventListener('change', maj);
+    const updated = () => setDark(media.matches);
+    media.addEventListener('change', updated);
+    return () => media.removeEventListener('change', updated);
   }, []);
-  return sombre;
+  return dark;
 }
 
-function enregistrer(cle: string, valeur: unknown) {
+function save(key: string, value: unknown) {
   try {
-    localStorage.setItem(`vigie-emploi:${cle}`, JSON.stringify(valeur));
+    localStorage.setItem(`vigie-emploi:${key}`, JSON.stringify(value));
   } catch {
     /* stockage indisponible : la préférence vaut pour la session */
   }
 }
 
 /** Langue de l'interface : le choix est mémorisé (localStorage) et l'emporte sur la configuration. */
-function ChoixLangue() {
+function ChoiceLanguage() {
   // Codes courts dans l'en-tête (FR / EN), nom complet de la langue dans l'infobulle de chaque option.
   return (
     <select
-      className="champ py-1 text-sm"
+      className="field py-1 text-sm"
       style={{ width: 'auto' }}
-      value={langue()}
-      onChange={(e) => choisirLangue(e.target.value as Langue)}
-      aria-label={t('entete.langue')}
-      title={t('entete.langue')}
+      value={language()}
+      onChange={(e) => chooseLanguage(e.target.value as Language)}
+      aria-label={t('header.language')}
+      title={t('header.language')}
     >
-      {LANGUES.map((l) => (
-        <option key={l} value={l} lang={l} title={NOMS_LANGUES[l]}>
+      {LANGUAGES.map((l) => (
+        <option key={l} value={l} lang={l} title={NAMES_LANGUAGES[l]}>
           {l.toUpperCase()}
         </option>
       ))}
@@ -179,45 +179,45 @@ function ChoixLangue() {
 }
 
 function Preferences() {
-  const [mode, setMode] = usePreferenceTexte('theme', 'systeme') as [Mode, (m: Mode) => void];
-  const [paletteClaire, setPaletteClaire] = usePreferenceTexte('palette-claire', PALETTE_CLAIRE_DEFAUT);
-  const [paletteSombre, setPaletteSombre] = usePreferenceTexte('palette-sombre', PALETTE_SOMBRE_DEFAUT);
-  const [persoClaire, setPersoClaire] = usePreference<Palette>('palette-perso-claire', PERSO_DEFAUT);
-  const [persoSombre, setPersoSombre] = usePreference<Palette>('palette-perso-sombre', PERSO_DEFAUT);
+  const [mode, setMode] = usePreferenceText('theme', 'system') as [Mode, (m: Mode) => void];
+  const [paletteLight, setPaletteLight] = usePreferenceText('palette-light', PALETTE_LIGHT_DEFAULT);
+  const [paletteDark, setPaletteDark] = usePreferenceText('palette-dark', PALETTE_DARK_DEFAULT);
+  const [personalLight, setPersonalLight] = usePreference<Palette>('palette-personal-light', PERSONAL_DEFAULT);
+  const [personalDark, setPersonalDark] = usePreference<Palette>('palette-personal-dark', PERSONAL_DEFAULT);
   const [zoom, setZoom] = usePreference<number>('zoom', 100);
-  const [fenetre, setFenetre] = useState(false);
-  const sombreSysteme = useSombreSysteme();
-  const sombre = mode === 'sombre' || (mode === 'systeme' && sombreSysteme);
-  const claire = trouverPalette(PALETTES_CLAIRES, paletteClaire, persoClaire);
-  const foncee = trouverPalette(PALETTES_SOMBRES, paletteSombre, persoSombre);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const darkSystem = useDarkSystem();
+  const dark = mode === 'dark' || (mode === 'system' && darkSystem);
+  const light = findPalette(PALETTES_LIGHT, paletteLight, personalLight);
+  const darkPalette = findPalette(PALETTES_DARK, paletteDark, personalDark);
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', sombre);
-    appliquerPalette(sombre ? foncee : claire);
+    document.documentElement.classList.toggle('dark', dark);
+    applyPalette(dark ? darkPalette : light);
     // Variables reprises par le script de index.html au chargement suivant (pas de flash de couleurs).
-    enregistrer('palette-vars-claire', variablesPalette(claire));
-    enregistrer('palette-vars-sombre', variablesPalette(foncee));
-  }, [sombre, claire, foncee]);
+    save('palette-vars-light', variablesPalette(light));
+    save('palette-vars-dark', variablesPalette(darkPalette));
+  }, [dark, light, darkPalette]);
   useEffect(() => {
     document.documentElement.style.fontSize = `${zoom}%`;
   }, [zoom]);
-  const fermer = useCallback(() => setFenetre(false), []);
+  const close = useCallback(() => setDrawerOpen(false), []);
   return (
     <div className="flex items-center gap-1">
-      <ChoixLangue />
+      <ChoiceLanguage />
       <button
         type="button"
-        className="bouton"
-        onClick={() => setMode(sombre ? 'clair' : 'sombre')}
-        aria-label={sombre ? t('theme.versClair') : t('theme.versSombre')}
-        title={sombre ? t('theme.versClair') : t('theme.versSombre')}
+        className="button"
+        onClick={() => setMode(dark ? 'light' : 'dark')}
+        aria-label={dark ? t('theme.toLight') : t('theme.toDark')}
+        title={dark ? t('theme.toLight') : t('theme.toDark')}
       >
-        {sombre ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
+        {dark ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
       </button>
-      <button type="button" className="bouton" onClick={() => setFenetre(true)} aria-haspopup="dialog" title={t('theme.palettes')}>
-        <PaletteIcone className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">{t('theme.bouton')}</span>
+      <button type="button" className="button" onClick={() => setDrawerOpen(true)} aria-haspopup="dialog" title={t('theme.palettes')}>
+        <PaletteIcon className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">{t('theme.button')}</span>
       </button>
-      <div role="group" aria-label={t('zoom.groupe')} className="flex items-center">
-        <button type="button" className="bouton rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label={t('zoom.reduire')} title={t('zoom.reduire')}>
+      <div role="group" aria-label={t('zoom.group')} className="flex items-center">
+        <button type="button" className="button rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label={t('zoom.collapse')} title={t('zoom.collapse')}>
           <ZoomOut className="size-4" aria-hidden="true" />
         </button>
         <button
@@ -225,33 +225,33 @@ function Preferences() {
           className="border-y border-slate-300 bg-white px-2 py-1 text-sm whitespace-nowrap tabular-nums hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700"
           onClick={() => setZoom(100)}
           aria-live="polite"
-          aria-label={t('zoom.taille', { zoom })}
-          title={t('zoom.revenir')}
+          aria-label={t('zoom.size', { zoom })}
+          title={t('zoom.back')}
         >
           {zoom} %
         </button>
-        <button type="button" className="bouton rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label={t('zoom.agrandir')} title={t('zoom.agrandir')}>
+        <button type="button" className="button rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label={t('zoom.expand')} title={t('zoom.expand')}>
           <ZoomIn className="size-4" aria-hidden="true" />
         </button>
       </div>
-      {fenetre && (
-        <ChoixTheme
-          fermer={fermer}
+      {drawerOpen && (
+        <ChoiceTheme
+          close={close}
           mode={mode}
           setMode={setMode}
-          clair={{ palettes: PALETTES_CLAIRES, choisie: paletteClaire, choisir: setPaletteClaire, perso: persoClaire, setPerso: setPersoClaire }}
-          sombre={{ palettes: PALETTES_SOMBRES, choisie: paletteSombre, choisir: setPaletteSombre, perso: persoSombre, setPerso: setPersoSombre }}
+          light={{ palettes: PALETTES_LIGHT, chosen: paletteLight, choose: setPaletteLight, personal: personalLight, setPersonal: setPersonalLight }}
+          dark={{ palettes: PALETTES_DARK, chosen: paletteDark, choose: setPaletteDark, personal: personalDark, setPersonal: setPersonalDark }}
         />
       )}
     </div>
   );
 }
 
-function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<LigneOffre>> }) {
+function ChoiceColumns({ table }: { table: ReturnType<typeof useReactTable<LineOffer>> }) {
   return (
     <details className="relative" data-menu>
-      <summary className="bouton cursor-pointer list-none">
-        <Columns3 className="size-4" aria-hidden="true" /> {t('liste.colonnes')}
+      <summary className="button cursor-pointer list-none">
+        <Columns3 className="size-4" aria-hidden="true" /> {t('list.columns')}
       </summary>
       <div className="absolute right-0 z-20 mt-1 w-52 rounded-md border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
         {table.getAllLeafColumns().map((col) => (
@@ -260,7 +260,7 @@ function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<Ligne
               type="checkbox"
               className="size-4 accent-blue-700 dark:accent-blue-400"
               checked={col.getIsVisible()}
-              disabled={col.id === 'titre'}
+              disabled={col.id === 'title'}
               onChange={col.getToggleVisibilityHandler()}
             />
             {String(col.columnDef.header)}
@@ -272,124 +272,124 @@ function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<Ligne
 }
 
 export function App() {
-  const [params, modifier] = useParametres();
-  const [visibilite, setVisibilite] = usePreference<VisibilityState>('colonnes', VISIBILITE_DEFAUT);
+  const [params, update] = useParameters();
+  const [visibility, setVisibility] = usePreference<VisibilityState>('columns', VISIBILITY_DEFAULT);
   // Colonne des filtres sur grand écran (préférence retenue) ; tiroir fermé par défaut sur téléphone.
-  const [colonneFiltres, setColonneFiltres] = usePreference<boolean>('filtres-ouverts', true);
-  const [tiroirFiltres, setTiroirFiltres] = useState(false);
-  const etroit = useEcranEtroit();
-  const filtresOuverts = etroit ? tiroirFiltres : colonneFiltres;
-  const setFiltresOuverts = etroit ? setTiroirFiltres : setColonneFiltres;
+  const [columnFilters, setColumnFilters] = usePreference<boolean>('filters-open', true);
+  const [drawerFilters, setDrawerFilters] = useState(false);
+  const narrow = useNarrowScreen();
+  const filtersOpen = narrow ? drawerFilters : columnFilters;
+  const setFiltersOpen = narrow ? setDrawerFilters : setColumnFilters;
   useEffect(() => {
-    if (!etroit || !tiroirFiltres) return;
-    const clavier = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setTiroirFiltres(false);
+    if (!narrow || !drawerFilters) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerFilters(false);
     };
-    document.addEventListener('keydown', clavier);
+    document.addEventListener('keydown', onKey);
     // La page derrière le tiroir ne défile pas.
-    const debordement = document.body.style.overflow;
+    const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', clavier);
-      document.body.style.overflow = debordement;
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
     };
-  }, [etroit, tiroirFiltres]);
-  const [annonce, setAnnonce] = useState('');
-  const [reglages, setReglages] = useState(false);
-  const grille = useQuery({ queryKey: ['grille'], queryFn: api.grille });
+  }, [narrow, drawerFilters]);
+  const [ad, setAd] = useState('');
+  const [settings, setSettings] = useState(false);
+  const rubric = useQuery({ queryKey: ['rubric'], queryFn: api.rubric });
   useNotifications();
-  const seuil = String(grille.data?.grille?.seuil ?? 4.5);
-  const [recherche, setRecherche] = useState(params.get('q') ?? '');
-  const rechercheDifferee = useDebounce(recherche, 300);
+  const threshold = String(rubric.data?.rubric?.threshold ?? 4.5);
+  const [search, setSearch] = useState(params.get('q') ?? '');
+  const searchDeferred = useDebounce(search, 300);
 
   useEffect(() => {
-    if ((params.get('q') ?? '') !== rechercheDifferee) modifier({ q: rechercheDifferee || null, page: null });
+    if ((params.get('q') ?? '') !== searchDeferred) update({ q: searchDeferred || null, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rechercheDifferee]);
+  }, [searchDeferred]);
 
   const page = Number(params.get('page') ?? 1);
-  const taille = Number(params.get('taille') ?? 50);
+  const size = Number(params.get('size') ?? 50);
 
   // Repères de mise en page : en-tête de l'application (et sa rangée collée en fenêtre étroite), barre au-dessus du
   // tableau (cible de la remontée au changement de page), tableau et son conteneur à défilement horizontal.
-  const enteteRef = useRef<HTMLElement>(null);
-  const ligneRef = useRef<HTMLDivElement>(null);
-  const barreRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const defilementRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   /** Partie collée de l'en-tête : tout l'en-tête sur grand écran, la rangée de recherche en fenêtre étroite. */
-  const partieCollee = useCallback(() => {
-    const entete = enteteRef.current;
-    return entete && getComputedStyle(entete).display !== 'contents' ? entete : ligneRef.current;
+  const partStuck = useCallback(() => {
+    const header = headerRef.current;
+    return header && getComputedStyle(header).display !== 'contents' ? header : lineRef.current;
   }, []);
-  const basEntete = useCallback(() => partieCollee()?.getBoundingClientRect().bottom ?? 0, [partieCollee]);
-  // Hauteur de la partie collée dans --haut-entete : la copie collée de l'en-tête du tableau se place dessous (CSS).
+  const lowHeader = useCallback(() => partStuck()?.getBoundingClientRect().bottom ?? 0, [partStuck]);
+  // Hauteur de la partie collée dans --header-height : la copie collée de l'en-tête du tableau se place dessous (CSS).
   useEffect(() => {
-    const maj = () => document.documentElement.style.setProperty('--haut-entete', `${partieCollee()?.offsetHeight ?? 0}px`);
-    maj();
-    const obs = new ResizeObserver(maj);
-    for (const el of [enteteRef.current, ligneRef.current]) if (el) obs.observe(el);
-    window.addEventListener('resize', maj);
+    const updated = () => document.documentElement.style.setProperty('--header-height', `${partStuck()?.offsetHeight ?? 0}px`);
+    updated();
+    const obs = new ResizeObserver(updated);
+    for (const el of [headerRef.current, lineRef.current]) if (el) obs.observe(el);
+    window.addEventListener('resize', updated);
     return () => {
       obs.disconnect();
-      window.removeEventListener('resize', maj);
+      window.removeEventListener('resize', updated);
     };
-  }, [partieCollee]);
+  }, [partStuck]);
   // La remontée attend les lignes de la nouvelle page (effet plus bas, après la requête) : une page plus courte
   // (souvent la dernière) réduit la hauteur du document à leur arrivée, ce qui recale le défilement et casserait
   // une remontée lancée trop tôt.
-  const pagePrecedente = useRef(page);
-  const remonteeEnAttente = useRef(false);
-  if (pagePrecedente.current !== page) {
-    pagePrecedente.current = page;
-    remonteeEnAttente.current = true;
+  const pagePrevious = useRef(page);
+  const scrollUpPending = useRef(false);
+  if (pagePrevious.current !== page) {
+    pagePrevious.current = page;
+    scrollUpPending.current = true;
   }
   // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
-  const ordreDefaut = params.get('ordre') === 'asc' ? 'asc' : 'desc';
-  const niveaux = useMemo(() => lireNiveaux(params.get('tri'), ordreDefaut), [params, ordreDefaut]);
-  const tri = ecrireNiveaux(niveaux);
-  const offreChoisie = params.get('offre') ? Number(params.get('offre')) : null;
+  const orderDefault = params.get('order') === 'asc' ? 'asc' : 'desc';
+  const levels = useMemo(() => readLevels(params.get('sort'), orderDefault), [params, orderDefault]);
+  const sort = writeLevels(levels);
+  const offerChosen = params.get('offer') ? Number(params.get('offer')) : null;
 
-  const requete = new URLSearchParams(params);
-  requete.delete('offre');
-  requete.set('tri', tri);
-  requete.delete('ordre');
-  if (!requete.has('taille')) requete.set('taille', String(taille));
-  const cle = requete.toString();
+  const request = new URLSearchParams(params);
+  request.delete('offer');
+  request.set('sort', sort);
+  request.delete('order');
+  if (!request.has('size')) request.set('size', String(size));
+  const key = request.toString();
 
-  const columns = useMemo(colonnes, []);
-  const liste = useQuery({ queryKey: ['offres', cle], queryFn: () => api.offres(requete), placeholderData: keepPreviousData });
+  const columns = useMemo(columnDefs, []);
+  const list = useQuery({ queryKey: ['offers', key], queryFn: () => api.offers(request), placeholderData: keepPreviousData });
 
   // Changement de page : une fois les lignes de la nouvelle page affichées (plus les données de l'ancienne gardées en
   // attendant), si la barre au-dessus du tableau est sortie de l'écran, on remonte jusqu'à elle, sous l'en-tête collé.
-  const pretePage = liste.data !== undefined && !liste.isPlaceholderData;
+  const pageReady = list.data !== undefined && !list.isPlaceholderData;
   useEffect(() => {
-    if (!remonteeEnAttente.current || !pretePage) return;
-    remonteeEnAttente.current = false;
-    const barre = barreRef.current;
-    if (!barre) return;
-    const sousEntete = basEntete() + 8;
-    const haut = barre.getBoundingClientRect().top;
-    if (haut >= sousEntete) return;
+    if (!scrollUpPending.current || !pageReady) return;
+    scrollUpPending.current = false;
+    const bar = barRef.current;
+    if (!bar) return;
+    const subHeader = lowHeader() + 8;
+    const high = bar.getBoundingClientRect().top;
+    if (high >= subHeader) return;
     // Saut immédiat (pas d'animation) : on veut voir tout de suite le haut de la nouvelle page, et une animation est
     // interrompue par le navigateur quand la hauteur du contenu change encore (recalage du défilement).
-    window.scrollTo({ top: window.scrollY + haut - sousEntete, behavior: 'instant' });
-  }, [pretePage, liste.data, page, basEntete]);
+    window.scrollTo({ top: window.scrollY + high - subHeader, behavior: 'instant' });
+  }, [pageReady, list.data, page, lowHeader]);
   const meta = useQuery({ queryKey: ['meta'], queryFn: api.meta });
 
-  const tri2: SortingState = useMemo(() => niveaux.map((n) => ({ id: n.colonne, desc: n.ordre === 'desc' })), [niveaux]);
+  const tri2: SortingState = useMemo(() => levels.map((n) => ({ id: n.column, desc: n.order === 'desc' })), [levels]);
   const table = useReactTable({
-    data: liste.data?.offres ?? [],
+    data: list.data?.offers ?? [],
     columns,
     manualSorting: true,
     manualPagination: true,
-    pageCount: liste.data?.pages ?? 1,
-    state: { sorting: tri2, columnVisibility: visibilite },
-    onColumnVisibilityChange: (maj) => setVisibilite(typeof maj === 'function' ? maj(visibilite) : maj),
-    onSortingChange: (maj) => {
-      const s = typeof maj === 'function' ? maj(tri2) : maj;
-      if (!s.length) modifier({ tri: null, ordre: null, page: null });
-      else modifier({ tri: ecrireNiveaux(s.map((x) => ({ colonne: x.id, ordre: x.desc ? 'desc' : 'asc' }))), ordre: null, page: null });
+    pageCount: list.data?.pages ?? 1,
+    state: { sorting: tri2, columnVisibility: visibility },
+    onColumnVisibilityChange: (updated) => setVisibility(typeof updated === 'function' ? updated(visibility) : updated),
+    onSortingChange: (updated) => {
+      const s = typeof updated === 'function' ? updated(tri2) : updated;
+      if (!s.length) update({ sort: null, order: null, page: null });
+      else update({ sort: writeLevels(s.map((x) => ({ column: x.id, order: x.desc ? 'desc' : 'asc' }))), order: null, page: null });
     },
     getCoreRowModel: getCoreRowModel(),
     getRowId: (r) => String(r.id),
@@ -397,84 +397,84 @@ export function App() {
 
   // Menus déroulants (<details data-menu>) : un clic ailleurs ou Échap les referme.
   useEffect(() => {
-    const ouverts = () => document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]');
-    const clic = (e: MouseEvent) => {
-      for (const d of ouverts()) if (!d.contains(e.target as Node)) d.open = false;
+    const open = () => document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]');
+    const onClick = (e: MouseEvent) => {
+      for (const d of open()) if (!d.contains(e.target as Node)) d.open = false;
     };
-    const clavier = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') for (const d of ouverts()) d.open = false;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') for (const d of open()) d.open = false;
     };
-    document.addEventListener('mousedown', clic);
-    document.addEventListener('keydown', clavier);
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', clic);
-      document.removeEventListener('keydown', clavier);
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
     };
   }, []);
 
-  const fermer = useCallback(() => modifier({ offre: null }), [modifier]);
-  const annoncer = useCallback((m: string) => {
-    setAnnonce(m);
-    window.setTimeout(() => setAnnonce((a) => (a === m ? '' : a)), 6000);
+  const close = useCallback(() => update({ offer: null }), [update]);
+  const announce = useCallback((m: string) => {
+    setAd(m);
+    window.setTimeout(() => setAd((a) => (a === m ? '' : a)), 6000);
   }, []);
 
-  const raccourci = (nom: 'toutes' | 'a-traiter' | 'candidatures' | 'bonnes') => {
-    const vide = Object.fromEntries([...CLES_FILTRES, 'page'].map((k) => [k, null])) as Record<string, null>;
-    if (nom === 'toutes') modifier(vide);
-    if (nom === 'a-traiter') modifier({ ...vide, statut: STATUTS_A_TRAITER.join(',') });
-    if (nom === 'candidatures') modifier({ ...vide, candidatures: '1' });
-    if (nom === 'bonnes') modifier({ ...vide, noteMin: seuil, statut: 'notee,go' });
-    setRecherche('');
+  const shortcut = (name: 'all' | 'to-process' | 'applications' | 'good') => {
+    const empty = Object.fromEntries([...KEYS_FILTERS, 'page'].map((k) => [k, null])) as Record<string, null>;
+    if (name === 'all') update(empty);
+    if (name === 'to-process') update({ ...empty, status: STATUSES_TO_PROCESS.join(',') });
+    if (name === 'applications') update({ ...empty, applications: '1' });
+    if (name === 'good') update({ ...empty, scoreMin: threshold, status: 'scored,go' });
+    setSearch('');
   };
-  const raccourciActif =
-    params.get('candidatures') === '1'
-      ? 'candidatures'
-      : params.get('statut') === STATUTS_A_TRAITER.join(',')
-        ? 'a-traiter'
-        : params.get('noteMin') === seuil && params.get('statut') === 'notee,go'
-          ? 'bonnes'
-          : CLES_FILTRES.some((k) => params.has(k))
+  const shortcutActive =
+    params.get('applications') === '1'
+      ? 'applications'
+      : params.get('status') === STATUSES_TO_PROCESS.join(',')
+        ? 'to-process'
+        : params.get('scoreMin') === threshold && params.get('status') === 'scored,go'
+          ? 'good'
+          : KEYS_FILTERS.some((k) => params.has(k))
             ? null
-            : 'toutes';
+            : 'all';
 
-  const total = liste.data?.total ?? 0;
-  const pages = liste.data?.pages ?? 1;
+  const total = list.data?.total ?? 0;
+  const pages = list.data?.pages ?? 1;
 
   /** Lignes de l'en-tête du tableau ; `copie` : celles de la copie collée (EnteteColle), hors de l'ordre de tabulation. */
-  const lignesEntete = (copie: boolean) =>
+  const linesHeader = (copy: boolean) =>
     table.getHeaderGroups().map((hg) => (
       <tr key={hg.id}>
         {hg.headers.map((h) => {
-          const triable = h.column.getCanSort();
-          const sens = h.column.getIsSorted();
-          const rang = niveaux.findIndex((n) => n.colonne === h.column.id);
+          const sortable = h.column.getCanSort();
+          const direction = h.column.getIsSorted();
+          const rank = levels.findIndex((n) => n.column === h.column.id);
           return (
             <th
               key={h.id}
               scope="col"
-              data-colonne-collee={!copie && h.column.id === 'titre' ? '' : undefined}
-              aria-sort={copie ? undefined : sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
-              className={`bg-slate-100 px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:bg-slate-800 dark:text-slate-200 ${h.column.id === 'titre' ? COLLEE : ''}`}
+              data-column-stuck={!copy && h.column.id === 'title' ? '' : undefined}
+              aria-sort={copy ? undefined : direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none'}
+              className={`bg-slate-100 px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:bg-slate-800 dark:text-slate-200 ${h.column.id === 'title' ? STUCK : ''}`}
             >
-              {triable ? (
+              {sortable ? (
                 <button
                   type="button"
-                  tabIndex={copie ? -1 : undefined}
+                  tabIndex={copy ? -1 : undefined}
                   className="inline-flex items-center gap-1 rounded hover:underline"
-                  title={t('liste.titreTri')}
-                  onClick={() => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id)), ordre: null, page: null })}
+                  title={t('list.titleSort')}
+                  onClick={() => update({ sort: writeLevels(toggleLevel(levels, h.column.id)), order: null, page: null })}
                 >
                   {flexRender(h.column.columnDef.header, h.getContext())}
-                  {sens === 'asc' ? (
+                  {direction === 'asc' ? (
                     <ArrowUp className="size-3.5" aria-hidden="true" />
-                  ) : sens === 'desc' ? (
+                  ) : direction === 'desc' ? (
                     <ArrowDown className="size-3.5" aria-hidden="true" />
                   ) : (
                     <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
                   )}
-                  {niveaux.length > 1 && rang >= 0 && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('liste.niveauTri', { n: rang + 1 })}>
-                      {rang + 1}
+                  {levels.length > 1 && rank >= 0 && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('list.levelSort', { n: rank + 1 })}>
+                      {rank + 1}
                     </span>
                   )}
                 </button>
@@ -489,122 +489,122 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <a href="#tableau" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
-        {t('entete.allerTableau')}
+      <a href="#table" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
+        {t('header.goTable')}
       </a>
       {/* Grand écran : tout l'en-tête reste collé en haut, sur une ligne. Fenêtre étroite : seule la rangée logo +
           recherche reste collée ; vues et boutons défilent avec la page (l'en-tête et son bloc deviennent « contents »). */}
       <header
-        ref={enteteRef}
+        ref={headerRef}
         className="max-md:contents md:sticky md:top-0 md:z-10 md:border-b md:border-slate-200 md:bg-white/95 md:px-4 md:py-2 md:backdrop-blur md:dark:border-slate-800 md:dark:bg-slate-900/95"
       >
         <div className="max-md:contents md:flex md:flex-wrap md:items-center md:gap-3">
           <div
-            ref={ligneRef}
+            ref={lineRef}
             className="flex items-center gap-3 max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-slate-200 max-md:bg-white/95 max-md:px-4 max-md:py-2 max-md:backdrop-blur md:contents dark:max-md:border-slate-800 dark:max-md:bg-slate-900/95"
           >
           <h1 className="text-lg font-extrabold tracking-tight">
             vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
           </h1>
           <div className="min-w-48 flex-1">
-            <label htmlFor="recherche" className="sr-only">
-              {t('entete.rechercheLibelle')}
+            <label htmlFor="search" className="sr-only">
+              {t('header.searchLabel')}
             </label>
             <input
-              id="recherche"
+              id="search"
               type="search"
-              className="champ"
-              placeholder={t('entete.recherche')}
-              value={recherche}
-              onChange={(e) => setRecherche(e.target.value)}
+              className="field"
+              placeholder={t('header.search')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 max-md:border-b max-md:border-slate-200 max-md:px-4 max-md:py-2 md:contents dark:max-md:border-slate-800">
-          <nav aria-label={t('entete.vues')} className="flex flex-wrap gap-1">
+          <nav aria-label={t('header.views')} className="flex flex-wrap gap-1">
             {(
               [
-                ['toutes', t('entete.toutes')],
-                ['a-traiter', t('entete.aTraiter')],
-                ['bonnes', t('entete.bonnes', { seuil: nombre(Number(seuil)) })],
-                ['candidatures', t('entete.candidatures')],
+                ['all', t('header.all')],
+                ['to-process', t('header.toProcess')],
+                ['good', t('header.good', { threshold: number(Number(threshold)) })],
+                ['applications', t('header.applications')],
               ] as const
-            ).map(([nom, libelle]) => (
+            ).map(([name, label]) => (
               <button
-                key={nom}
+                key={name}
                 type="button"
-                className={`bouton ${raccourciActif === nom ? 'bouton-actif' : ''}`}
-                aria-pressed={raccourciActif === nom}
-                onClick={() => raccourci(nom)}
+                className={`button ${shortcutActive === name ? 'button-active' : ''}`}
+                aria-pressed={shortcutActive === name}
+                onClick={() => shortcut(name)}
               >
-                {libelle}
+                {label}
               </button>
             ))}
           </nav>
-          <button type="button" className="bouton" onClick={() => setReglages(true)} aria-haspopup="dialog">
-            <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('entete.reglages')}
+          <button type="button" className="button" onClick={() => setSettings(true)} aria-haspopup="dialog">
+            <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('header.settings')}
           </button>
-          <BoutonRafraichir />
+          <ButtonRefresh />
           <Preferences />
           </div>
         </div>
       </header>
 
       <div className="flex flex-1 gap-4 p-2 sm:p-4">
-        {filtresOuverts && !etroit && (
-          <aside aria-label={t('liste.filtres')} className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        {filtersOpen && !narrow && (
+          <aside aria-label={t('list.filters')} className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <ActionsAgent className="mb-3 border-b border-slate-200 pb-3 dark:border-slate-800" />
-            <Filtres params={params} modifier={modifier} meta={meta.data} />
+            <Filters params={params} update={update} meta={meta.data} />
           </aside>
         )}
-        {filtresOuverts && etroit && (
+        {filtersOpen && narrow && (
           <div className="fixed inset-0 z-40">
             {/* Page derrière : assombrie et floutée, pour que le tiroir s'en détache aussi en thème sombre. */}
-            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] dark:bg-black/55" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
+            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] dark:bg-black/55" aria-hidden="true" onClick={() => setDrawerFilters(false)} />
             <aside
-              aria-label={t('liste.filtres')}
+              aria-label={t('list.filters')}
               className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-slate-300 bg-white shadow-2xl shadow-black/50 dark:border-slate-500 dark:bg-slate-800 dark:shadow-black"
             >
               <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-600">
-                <h2 className="font-semibold">{t('liste.filtres')}</h2>
+                <h2 className="font-semibold">{t('list.filters')}</h2>
                 <button
                   type="button"
-                  className="bouton"
+                  className="button"
                   autoFocus
-                  onClick={() => setTiroirFiltres(false)}
-                  aria-label={t('liste.masquerFiltres')}
-                  title={t('liste.masquerFiltres')}
+                  onClick={() => setDrawerFilters(false)}
+                  aria-label={t('list.hideFilters')}
+                  title={t('list.hideFilters')}
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-3">
-                <Filtres params={params} modifier={modifier} meta={meta.data} />
+                <Filters params={params} update={update} meta={meta.data} />
               </div>
             </aside>
           </div>
         )}
-        <main className="min-w-0 flex-1" id="tableau" tabIndex={-1}>
-          {(etroit || !filtresOuverts) && <ActionsAgent className="mb-3 max-w-xs" />}
-          <AVenir choisir={(id) => modifier({ offre: String(id) })} />
-          <div ref={barreRef} className="mb-2 flex flex-wrap items-center gap-2">
-            <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>
-              <Funnel className="size-4" aria-hidden="true" /> {filtresOuverts ? t('liste.masquerFiltres') : t('liste.afficherFiltres')}
+        <main className="min-w-0 flex-1" id="table" tabIndex={-1}>
+          {(narrow || !filtersOpen) && <ActionsAgent className="mb-3 max-w-xs" />}
+          <Upcoming choose={(id) => update({ offer: String(id) })} />
+          <div ref={barRef} className="mb-2 flex flex-wrap items-center gap-2">
+            <button type="button" className="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
+              <Funnel className="size-4" aria-hidden="true" /> {filtersOpen ? t('list.hideFilters') : t('list.showFilters')}
             </button>
             <p className="text-sm text-slate-700 dark:text-slate-300" aria-live="polite">
-              {liste.isLoading ? t('liste.chargement') : t('liste.nbOffres', { n: total.toLocaleString(locale()) })}
-              {liste.isFetching && !liste.isLoading ? t('liste.miseAJour') : ''}
+              {list.isLoading ? t('list.loading') : t('list.countOffers', { n: total.toLocaleString(locale()) })}
+              {list.isFetching && !list.isLoading ? t('list.miseToDay') : ''}
             </p>
             <div className="ml-auto flex items-center gap-2">
-              <ChoixColonnes table={table} />
+              <ChoiceColumns table={table} />
               <label className="flex items-center gap-1 text-sm">
-                {t('liste.parPage')}
+                {t('list.byPage')}
                 <select
-                  className="champ w-20"
-                  value={taille}
-                  onChange={(e) => modifier({ taille: e.target.value === '50' ? null : e.target.value, page: null })}
+                  className="field w-20"
+                  value={size}
+                  onChange={(e) => update({ size: e.target.value === '50' ? null : e.target.value, page: null })}
                 >
-                  {TAILLES.map((t) => (
+                  {SIZES.map((t) => (
                     <option key={t} value={t}>
                       {t}
                     </option>
@@ -614,97 +614,97 @@ export function App() {
             </div>
           </div>
 
-          {liste.isError && (
+          {list.isError && (
             <p role="alert" className="mb-2 rounded border border-rose-300 bg-rose-50 p-2 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
-              {(liste.error as Error).message}
+              {(list.error as Error).message}
             </p>
           )}
 
           {/* Bloc du tableau : la copie collée de l'en-tête (EnteteColle) ne dépasse pas sa fin. */}
           <div>
-          <EnteteColle tableRef={tableRef} defilementRef={defilementRef} lignes={lignesEntete(true)} />
-          <DefilementHorizontal
-            refConteneur={defilementRef}
-            ombreGauche={false}
+          <StickyHeader tableRef={tableRef} scrollRef={scrollRef} lines={linesHeader(true)} />
+          <ScrollHorizontal
+            refContainer={scrollRef}
+            shadowLeft={false}
             className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
           >
             <table ref={tableRef} className="w-full border-collapse text-sm">
               <caption className="sr-only">
-                {t('liste.legende', {
-                  niveaux: niveaux
-                    .map((n) => `${String(columns.find((c) => c.id === n.colonne)?.header ?? n.colonne)} (${n.ordre === 'asc' ? t('liste.croissant') : t('liste.decroissant')})`)
-                    .join(t('liste.puis')),
+                {t('list.legend', {
+                  levels: levels
+                    .map((n) => `${String(columns.find((c) => c.id === n.column)?.header ?? n.column)} (${n.order === 'asc' ? t('list.ascending') : t('list.descending')})`)
+                    .join(t('list.then')),
                 })}
               </caption>
-              <thead className="bg-slate-100 text-left dark:bg-slate-800">{lignesEntete(false)}</thead>
+              <thead className="bg-slate-100 text-left dark:bg-slate-800">{linesHeader(false)}</thead>
               <tbody>
                 {table.getRowModel().rows.map((r) => {
-                  const choisie = r.original.id === offreChoisie;
+                  const chosen = r.original.id === offerChosen;
                   return (
                     <tr
                       key={r.id}
                       tabIndex={0}
-                      aria-selected={choisie}
-                      onClick={() => modifier({ offre: String(r.original.id) })}
+                      aria-selected={chosen}
+                      onClick={() => update({ offer: String(r.original.id) })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          modifier({ offre: String(r.original.id) });
+                          update({ offer: String(r.original.id) });
                         }
                       }}
                       className={`cursor-pointer border-t border-slate-200 align-top hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
-                        choisie ? 'bg-blue-100 dark:bg-blue-950' : 'bg-white dark:bg-slate-900'
+                        chosen ? 'bg-blue-100 dark:bg-blue-950' : 'bg-white dark:bg-slate-900'
                       }`}
                     >
                       {r.getVisibleCells().map((c) => (
                         // Intitulé collé : fond hérité de la ligne (survol, sélection) pour masquer les colonnes qui passent dessous.
-                        <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'titre' ? `min-w-64 max-md:min-w-44 ${COLLEE} bg-inherit` : ''}`}>
+                        <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'title' ? `min-w-64 max-md:min-w-44 ${STUCK} bg-inherit` : ''}`}>
                           {flexRender(c.column.columnDef.cell, c.getContext())}
                         </td>
                       ))}
                     </tr>
                   );
                 })}
-                {!liste.isLoading && total === 0 && (
+                {!list.isLoading && total === 0 && (
                   <tr>
                     <td colSpan={table.getVisibleLeafColumns().length} className="p-6 text-center text-slate-600 dark:text-slate-400">
-                      {t('liste.aucune')}
+                      {t('list.none')}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </DefilementHorizontal>
+          </ScrollHorizontal>
           </div>
 
-          <nav aria-label={t('liste.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-            <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: null })}>
-              <ChevronsLeft className="size-4" aria-hidden="true" /> {t('liste.premiere')}
+          <nav aria-label={t('list.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <button type="button" className="button" disabled={page <= 1} onClick={() => update({ page: null })}>
+              <ChevronsLeft className="size-4" aria-hidden="true" /> {t('list.first')}
             </button>
-            <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: page - 1 > 1 ? String(page - 1) : null })}>
-              <ChevronLeft className="size-4" aria-hidden="true" /> {t('liste.precedente')}
+            <button type="button" className="button" disabled={page <= 1} onClick={() => update({ page: page - 1 > 1 ? String(page - 1) : null })}>
+              <ChevronLeft className="size-4" aria-hidden="true" /> {t('list.previous')}
             </button>
             <span className="tabular-nums">
-              {t('liste.page', { page, pages })}
+              {t('list.page', { page, pages })}
             </span>
-            <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(page + 1) })}>
-              {t('liste.suivante')} <ChevronRight className="size-4" aria-hidden="true" />
+            <button type="button" className="button" disabled={page >= pages} onClick={() => update({ page: String(page + 1) })}>
+              {t('list.next')} <ChevronRight className="size-4" aria-hidden="true" />
             </button>
-            <button type="button" className="bouton" disabled={page >= pages} onClick={() => modifier({ page: String(pages) })}>
-              {t('liste.derniere')} <ChevronsRight className="size-4" aria-hidden="true" />
+            <button type="button" className="button" disabled={page >= pages} onClick={() => update({ page: String(pages) })}>
+              {t('list.last')} <ChevronsRight className="size-4" aria-hidden="true" />
             </button>
           </nav>
         </main>
       </div>
 
-      {offreChoisie !== null && <Detail id={offreChoisie} fermer={fermer} annoncer={annoncer} />}
-      {reglages && (
-        <Reglages
-          fermer={() => setReglages(false)}
-          annoncer={annoncer}
-          choisir={(id) => {
-            setReglages(false);
-            modifier({ offre: String(id) });
+      {offerChosen !== null && <Detail id={offerChosen} close={close} announce={announce} />}
+      {settings && (
+        <Settings
+          close={() => setSettings(false)}
+          announce={announce}
+          choose={(id) => {
+            setSettings(false);
+            update({ offer: String(id) });
           }}
         />
       )}
@@ -713,10 +713,10 @@ export function App() {
         role="status"
         aria-live="polite"
         className={`fixed bottom-4 left-1/2 z-40 -translate-x-1/2 rounded-md bg-slate-900 px-4 py-2 text-sm text-white shadow-lg transition-opacity dark:bg-slate-100 dark:text-slate-900 ${
-          annonce ? 'opacity-100' : 'pointer-events-none opacity-0'
+          ad ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
-        {annonce}
+        {ad}
       </div>
     </div>
   );

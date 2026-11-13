@@ -1,0 +1,38 @@
+[
+  {
+    "source": "linkedin",
+    "url": "https://www.linkedin.com/jobs/view/4200000002/",
+    "title": "API Engineer (H/F)",
+    "company": "Bêta",
+    "location": "Issy-les-Moulineaux",
+    "contract": "CDI",
+    "compensation": "55-65 K€",
+    "remote": "hybride",
+    "published": "NC",
+    "stack": "PHP, API REST, MySQL",
+    "raw_score": 7,
+    "penalties": "-0,5 difficultés (anglais)",
+    "score": 6.5,
+    "fit": "API, PHP",
+    "gaps": "Anglais oral",
+    "read": true
+  },
+  {
+    "source": "hellowork",
+    "url": "https://www.hellowork.com/fr-fr/emplois/80000050.html",
+    "title": "Développeur Web",
+    "company": "Omicron",
+    "location": "Évry",
+    "contract": "CDI",
+    "compensation": "40-48 K€",
+    "remote": "NC",
+    "published": "28/10/2026",
+    "stack": "PHP, Symfony",
+    "raw_score": 3,
+    "penalties": "",
+    "score": 3,
+    "fit": "PHP",
+    "gaps": "Symfony",
+    "read": true
+  }
+]

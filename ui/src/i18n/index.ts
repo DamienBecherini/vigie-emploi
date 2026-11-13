@@ -2,103 +2,103 @@
 // configuration (renvoyée par /api/sante) ; français à défaut. Le changement de langue redessine toute l'application
 // (main.tsx la remonte) : les composants appellent simplement t().
 import { useSyncExternalStore } from 'react';
-import { creerTraducteur, estLangue, LANGUE_DEFAUT, LOCALES, type Langue } from '../../../src/i18n/outil.ts';
-import { libelleNiveau, libelleStatut, libelleType, messageDrapeau } from '../../../src/i18n/libelles.ts';
-import { definirLangue as definirLangueNoyau } from '../../../src/i18n/index.ts';
-import type { Statut, TypeEvenement } from '../../../src/core/statuts.ts';
-import type { Niveau } from '../../../src/core/grille.ts';
+import { createTranslator, isLanguage, LANGUAGE_DEFAULT, LOCALES, type Language } from '../../../src/i18n/tool.ts';
+import { labelLevel, labelStatus, labelType, messageFlag } from '../../../src/i18n/labels.ts';
+import { defineLanguage as defineLanguageCore } from '../../../src/i18n/index.ts';
+import type { Status, TypeEvent } from '../../../src/core/statuses.ts';
+import type { Level } from '../../../src/core/rubric.ts';
 import { en } from './en.ts';
-import { fr, type CleUi } from './fr.ts';
+import { fr, type KeyUi } from './fr.ts';
 
-export type { CleUi, Langue };
-export { LANGUES, NOMS_LANGUES } from '../../../src/i18n/outil.ts';
+export type { KeyUi, Language };
+export { LANGUAGES, NAMES_LANGUAGES } from '../../../src/i18n/tool.ts';
 
-export const DICTIONNAIRES_UI = { fr, en };
+export const DICTIONARIES_UI = { fr, en };
 
-const CLE = 'vigie-emploi:langue';
-let courante: Langue = LANGUE_DEFAUT;
-const auditeurs = new Set<() => void>();
+const KEY = 'vigie-emploi:language';
+let current: Language = LANGUAGE_DEFAULT;
+const listeners = new Set<() => void>();
 
-export function langue(): Langue {
-  return courante;
+export function language(): Language {
+  return current;
 }
 
 /** Locale Intl de la langue courante (dates, nombres). */
 export function locale(): string {
-  return LOCALES[courante];
+  return LOCALES[current];
 }
 
-export const t = creerTraducteur<CleUi>(DICTIONNAIRES_UI, langue);
+export const t = createTranslator<KeyUi>(DICTIONARIES_UI, language);
 
-function appliquer(l: Langue) {
-  courante = l;
+function apply(l: Language) {
+  current = l;
   // Messages du noyau calculés dans le navigateur (validation de la grille, justifications des exemples).
-  definirLangueNoyau(l);
+  defineLanguageCore(l);
   // globalThis : ce module est aussi chargé par les tests (Node, sans DOM).
   const doc = (globalThis as { document?: { documentElement: { lang: string } } }).document;
   if (doc) doc.documentElement.lang = l;
-  auditeurs.forEach((f) => f());
+  listeners.forEach((f) => f());
 }
 
 /** Langue choisie dans l'en-tête, si elle a été mémorisée. */
-function memorisee(): Langue | null {
+function remembered(): Language | null {
   try {
-    const v = localStorage.getItem(CLE);
-    return estLangue(v) ? v : null;
+    const v = localStorage.getItem(KEY);
+    return isLanguage(v) ? v : null;
   } catch {
     return null;
   }
 }
 
 /** Choix de l'utilisateur (sélecteur de l'en-tête) : mémorisé, il l'emporte ensuite sur la configuration. */
-export function choisirLangue(l: Langue): void {
+export function chooseLanguage(l: Language): void {
   try {
-    localStorage.setItem(CLE, l);
+    localStorage.setItem(KEY, l);
   } catch {
     /* stockage indisponible : le choix vaut pour la session */
   }
-  appliquer(l);
+  apply(l);
 }
 
 /** Au chargement : langue mémorisée, sinon celle de la configuration (/api/sante), sinon le français. */
-export async function initialiserLangue(): Promise<void> {
-  const choisie = memorisee();
-  if (choisie) return appliquer(choisie);
+export async function initializeLanguage(): Promise<void> {
+  const chosen = remembered();
+  if (chosen) return apply(chosen);
   try {
-    const r = await fetch('/api/sante');
-    const corps = (await r.json()) as { langue?: unknown };
-    appliquer(estLangue(corps.langue) ? corps.langue : LANGUE_DEFAUT);
+    const r = await fetch('/api/health');
+    const body = (await r.json()) as { language?: unknown };
+    apply(isLanguage(body.language) ? body.language : LANGUAGE_DEFAULT);
   } catch {
-    appliquer(LANGUE_DEFAUT);
+    apply(LANGUAGE_DEFAULT);
   }
 }
 
-export function useLangue(): Langue {
+export function useLanguage(): Language {
   return useSyncExternalStore(
     (f) => {
-      auditeurs.add(f);
-      return () => auditeurs.delete(f);
+      listeners.add(f);
+      return () => listeners.delete(f);
     },
-    () => courante,
+    () => current,
   );
 }
 
 /** Nombre au format de la langue (« 6,5 » / « 6.5 »). */
-export function nombre(n: number, decimales = 2): string {
-  return n.toLocaleString(locale(), { maximumFractionDigits: decimales });
+export function number(n: number, decimals = 2): string {
+  return n.toLocaleString(locale(), { maximumFractionDigits: decimals });
 }
 
 /** Date AAAA-MM-JJ (ou ISO) au format de la langue : JJ/MM/AAAA dans les deux cas. */
-export function dateCourte(d: Date): string {
+export function dateShort(d: Date): string {
   return d.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export const statutAffiche = (s: Statut) => libelleStatut(s, courante);
-export const typeAffiche = (x: TypeEvenement) => libelleType(x, courante);
-export const niveauAffiche = (n: Niveau) => libelleNiveau(n, courante);
-export const drapeauAffiche = (d: { code: string; message: string }) => messageDrapeau(d, courante);
+export const statusShown = (s: Status) => labelStatus(s, current);
+export const typeShown = (x: TypeEvent) => labelType(x, current);
+export const levelShown = (n: Level) => labelLevel(n, current);
+export const flagShown = (d: { code: string; message: string }) => messageFlag(d, current);
 
 /** Pourcentage entier au format de la langue (« 35 % » en français, « 35% » en anglais). */
-export function pourcent(n: number): string {
+export function percent(n: number): string {
   return (Math.round(n) / 100).toLocaleString(locale(), { style: 'percent', maximumFractionDigits: 0 });
 }

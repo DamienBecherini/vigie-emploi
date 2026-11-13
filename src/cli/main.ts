@@ -3,85 +3,85 @@
 // des options et des statuts restent en français, et les sorties --json ne changent pas avec la langue.
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { chargerConfig, langueConfiguree, normaliserLangue, type Config } from '../core/config.ts';
-import { ouvrirBase, type Base } from '../db/base.ts';
-import { ingererSelonConfig } from '../ingest/ingest.ts';
-import { importerHistorique } from '../import/historique.ts';
-import { listerOffres, type OptionsListe } from '../core/requetes.ts';
+import { loadConfig, languageConfigured, normalizeLanguage, type Config } from '../core/config.ts';
+import { openDatabase, type Database } from '../db/database.ts';
+import { ingestPerConfig } from '../ingest/ingest.ts';
+import { importHistory } from '../import/history.ts';
+import { listOffers, type OptionsList } from '../core/queries.ts';
 import {
-  ajouterStatut,
-  detailOffre,
-  modifierLien,
-  modifierTags,
-  offreParId,
-  type ChampsCandidature,
-  type DetailOffre,
-} from '../core/offres.ts';
-import { entreesDuLot, type EntreeLot } from '../core/notation.ts';
-import { noterOffres, offresALire, preparerCandidature, suivreCandidature } from '../core/actions.ts';
-import { estStatut, STATUTS } from '../core/statuts.ts';
-import { ecrireSuivi } from '../export/suivi.ts';
-import { demarrerServeur } from '../api/serveur.ts';
+  addStatus,
+  detailOffer,
+  updateLink,
+  updateTags,
+  offerById,
+  type FieldsApplication,
+  type DetailOffer,
+} from '../core/offers.ts';
+import { inputsOfBatch, type InputBatch } from '../core/scoring.ts';
+import { scoreOffers, offersToRead, prepareApplication, trackApplication } from '../core/actions.ts';
+import { isStatus, STATUSES } from '../core/statuses.ts';
+import { writeTracker } from '../export/tracker.ts';
+import { startServer } from '../api/server.ts';
 import {
-  ajouterEvenement,
-  echeances,
-  evenementOuErreur,
+  addEvent,
+  deadlines,
+  eventOrError,
   journal,
-  marquerFait,
-  TYPES_EVENEMENT,
-  type EvenementJournal,
-  type SaisieEvenement,
-} from '../core/evenements.ts';
-import { fichiersDossier } from '../core/fichiers.ts';
-import { statistiques } from '../core/statistiques.ts';
-import { consignesIa, noteExemple, type Decomposition } from '../core/grille.ts';
+  markDone,
+  TYPES_EVENT,
+  type EventJournal,
+  type EventInput,
+} from '../core/events.ts';
+import { filesFolder } from '../core/files.ts';
+import { statistics } from '../core/statistics.ts';
+import { instructionsAi, scoreExample, type Breakdown } from '../core/rubric.ts';
 import {
-  cheminGrille,
-  grilleCourante,
-  grilleObligatoire,
-  historiqueGrille,
-  initialiserGrille,
-  modifierGrille,
-  renoter,
-  restaurerGrille,
-  versionGrille,
+  pathRubric,
+  rubricCurrent,
+  rubricRequired,
+  historyRubric,
+  initializeRubric,
+  updateRubric,
+  rescore,
+  restoreRubric,
+  versionRubric,
   type Impact,
-} from '../core/grille-stockage.ts';
-import { initialiserEspace } from '../init/init.ts';
-import { compterTexte } from '../core/compter.ts';
-import { choisirGabarit, GABARIT_DEFAUT, genererCv, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
-import { decimal, definirLangue, estLangue, langueCourante, LANGUES, t } from '../i18n/index.ts';
-import { libelleNiveau, libelleStatut, libelleType, messageDrapeau } from '../i18n/libelles.ts';
-import { analyserPages } from '../cv/pages.ts';
+} from '../core/rubric-storage.ts';
+import { initializeWorkspace } from '../init/init.ts';
+import { countText } from '../core/count.ts';
+import { chooseTemplate, TEMPLATE_DEFAULT, generateCv, listTemplates, findBrowser } from '../cv/cv.ts';
+import { decimal, defineLanguage, isLanguage, languageCurrent, LANGUAGES, t } from '../i18n/index.ts';
+import { labelLevel, labelStatus, labelType, messageFlag } from '../i18n/labels.ts';
+import { analyzePages } from '../cv/pages.ts';
 
-function aide(): string {
-  return t('cli.aide', { statuts: STATUTS.join(', '), types: TYPES_EVENEMENT.join('|') });
+function help(): string {
+  return t('cli.help', { statuses: STATUSES.join(', '), types: TYPES_EVENT.join('|') });
 }
 
-type Valeurs = Record<string, string | boolean | string[] | undefined>;
+type Values = Record<string, string | boolean | string[] | undefined>;
 
-function erreur(message: string): never {
-  throw Object.assign(new Error(message), { utilisateur: true });
+function error(message: string): never {
+  throw Object.assign(new Error(message), { user: true });
 }
 
 function json(x: unknown): void {
   process.stdout.write(`${JSON.stringify(x, null, 2)}\n`);
 }
 
-function entier(v: unknown, nom: string): number {
+function whole(v: unknown, name: string): number {
   const n = Number(v);
-  if (!Number.isInteger(n) || n <= 0) erreur(t('cli.invalide', { nom, valeur: String(v) }));
+  if (!Number.isInteger(n) || n <= 0) error(t('cli.invalid', { name, value: String(v) }));
   return n;
 }
 
-function nombre(v: unknown, nom: string): number | undefined {
+function number(v: unknown, name: string): number | undefined {
   if (v === undefined) return undefined;
   const n = Number(String(v).replace(',', '.'));
-  if (!Number.isFinite(n)) erreur(t('cli.invalide', { nom, valeur: String(v) }));
+  if (!Number.isFinite(n)) error(t('cli.invalid', { name, value: String(v) }));
   return n;
 }
 
-function liste(v: unknown): string[] | undefined {
+function list(v: unknown): string[] | undefined {
   if (typeof v !== 'string' || !v.trim()) return undefined;
   return v
     .split(',')
@@ -89,827 +89,826 @@ function liste(v: unknown): string[] | undefined {
     .filter(Boolean);
 }
 
-function tronquer(s: string | null | undefined, n: number): string {
+function truncate(s: string | null | undefined, n: number): string {
   const x = (s ?? '').replace(/\s+/g, ' ');
   return x.length > n ? `${x.slice(0, n - 1)}…` : x;
 }
 
-function tableau(entetes: string[], lignes: string[][]): string {
-  const largeurs = entetes.map((e, i) => Math.max(e.length, ...lignes.map((l) => (l[i] ?? '').length)));
-  const ligne = (l: string[]) => l.map((c, i) => (c ?? '').padEnd(largeurs[i])).join('  ').trimEnd();
-  return [ligne(entetes), largeurs.map((w) => '-'.repeat(w)).join('  '), ...lignes.map(ligne)].join('\n');
+function table(headers: string[], lines: string[][]): string {
+  const widths = headers.map((e, i) => Math.max(e.length, ...lines.map((l) => (l[i] ?? '').length)));
+  const line = (l: string[]) => l.map((c, i) => (c ?? '').padEnd(widths[i])).join('  ').trimEnd();
+  return [line(headers), widths.map((w) => '-'.repeat(w)).join('  '), ...lines.map(line)].join('\n');
 }
 
 /** Date d'un événement : « 05/11/2026 14 h 30 » (français) ou « 05/11/2026 14:30 » (anglais). */
-function dateEvenement(le: string): string {
-  const m = le.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
-  if (!m) return le;
-  const heure = m[4] ? ` ${t('suivi.heure', { h: m[4], m: m[5] })}` : '';
-  return `${m[3]}/${m[2]}/${m[1]}${heure}`;
+function dateEvent(at: string): string {
+  const m = at.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!m) return at;
+  const hour = m[4] ? ` ${t('tracker.hour', { h: m[4], m: m[5] })}` : '';
+  return `${m[3]}/${m[2]}/${m[1]}${hour}`;
 }
 
-const OPTIONS_GENERALES = {
+const GENERAL_OPTIONS = {
   data: { type: 'string' },
   config: { type: 'string' },
   json: { type: 'boolean' },
-  aide: { type: 'boolean', short: 'h' },
-  help: { type: 'boolean' },
+  help: { type: 'boolean', short: 'h' },
 } as const;
 
-function analyser(args: string[], options: Record<string, { type: 'string' | 'boolean'; short?: string; multiple?: boolean }>) {
+function analyze(args: string[], options: Record<string, { type: 'string' | 'boolean'; short?: string; multiple?: boolean }>) {
   const { values, positionals } = parseArgs({
     args,
-    options: { ...OPTIONS_GENERALES, ...options },
+    options: { ...GENERAL_OPTIONS, ...options },
     allowPositionals: true,
     allowNegative: true,
     strict: true,
   });
-  return { v: values as Valeurs, pos: positionals };
+  return { v: values as Values, pos: positionals };
 }
 
-interface Contexte {
+interface Context {
   config: Config;
-  db: Base;
+  db: Database;
 }
 
-function contexte(v: Valeurs): Contexte {
-  const config = chargerConfig({
-    dossierDonnees: v.data as string | undefined,
-    fichierConfig: v.config as string | undefined,
+function context(v: Values): Context {
+  const config = loadConfig({
+    dataDir: v.data as string | undefined,
+    fileConfig: v.config as string | undefined,
   });
-  return { config, db: ouvrirBase(config.base) };
+  return { config, db: openDatabase(config.database) };
 }
 
-function afficherDetail(d: DetailOffre): string {
+function showDetail(d: DetailOffer): string {
   const l: string[] = [];
-  const langue = langueCourante();
-  l.push(`#${d.id} ${d.titre}${d.entreprise ? ` — ${d.entreprise}` : ''}`);
-  l.push(t('cli.detail.statut', { statut: libelleStatut(d.statut, langue), note: d.note ?? '—', source: d.source, id_site: d.id_site }));
-  if (d.url_canonique) l.push(t('cli.detail.url', { url: d.url_canonique }));
-  const infos = [d.lieu, d.contrat, d.remuneration, d.teletravail && t('cli.detail.teletravail', { valeur: d.teletravail })].filter(Boolean);
-  if (infos.length) l.push(infos.join(' · '));
-  l.push(t('cli.detail.dates', { recue: d.recue_le ?? '—', publiee: d.publiee_le ?? '—' }));
+  const language = languageCurrent();
+  l.push(`#${d.id} ${d.title}${d.company ? ` — ${d.company}` : ''}`);
+  l.push(t('cli.detail.status', { status: labelStatus(d.status, language), score: d.score ?? '—', source: d.source, site_id: d.site_id }));
+  if (d.canonical_url) l.push(t('cli.detail.url', { url: d.canonical_url }));
+  const info = [d.location, d.contract, d.compensation, d.remote && t('cli.detail.remote', { value: d.remote })].filter(Boolean);
+  if (info.length) l.push(info.join(' · '));
+  l.push(t('cli.detail.dates', { received: d.received_at ?? '—', published: d.published_at ?? '—' }));
   if (d.stack) l.push(t('cli.detail.stack', { stack: d.stack }));
   if (d.tags.length) l.push(t('cli.detail.tags', { tags: d.tags.join(', ') }));
-  const n = d.notes[0];
-  if (n?.decomposition) {
+  const n = d.scores[0];
+  if (n?.breakdown) {
     l.push(
       '',
-      t('cli.detail.noteGrille', { note: n.note, version: n.grille_version, exacte: n.note_exacte, le: n.notee_le }),
-      ...lignesDecomposition(n.decomposition),
+      t('cli.detail.scoreRubric', { score: n.score, version: n.rubric_version, exact: n.exact_score, at: n.scored_at }),
+      ...linesBreakdown(n.breakdown),
     );
-    if (n.colle) l.push(t('cli.detail.colle', { texte: n.colle }));
-    if (n.ecarts) l.push(t('cli.detail.ecarts', { texte: n.ecarts }));
+    if (n.fit) l.push(t('cli.detail.fit', { text: n.fit }));
+    if (n.gaps) l.push(t('cli.detail.gaps', { text: n.gaps }));
   } else if (n) {
     l.push(
       '',
-      t('cli.detail.noteAncienne', {
-        note: n.note ?? '—',
-        brute: n.note_brute ?? '—',
-        penalites: n.penalites ? t('cli.detail.penalites', { penalites: n.penalites }) : '',
-        le: n.notee_le,
+      t('cli.detail.scoreOld', {
+        score: n.score ?? '—',
+        raw: n.raw_score ?? '—',
+        penalties: n.penalties ? t('cli.detail.penalties', { penalties: n.penalties }) : '',
+        at: n.scored_at,
       }),
     );
-    if (n.colle) l.push(t('cli.detail.colle', { texte: n.colle }));
-    if (n.ecarts) l.push(t('cli.detail.ecarts', { texte: n.ecarts }));
+    if (n.fit) l.push(t('cli.detail.fit', { text: n.fit }));
+    if (n.gaps) l.push(t('cli.detail.gaps', { text: n.gaps }));
   }
-  if (d.candidature) {
-    const c = d.candidature;
-    const infosCandidature = [c.dossier, c.canal, c.envoyee_le && t('cli.detail.envoyeeLe', { date: c.envoyee_le })].filter(Boolean).join(' · ');
-    l.push('', t('cli.detail.candidature', { infos: infosCandidature }));
-    if (c.prochaine_action) l.push(t('cli.detail.prochaineAction', { texte: c.prochaine_action }));
+  if (d.application) {
+    const c = d.application;
+    const infoApplication = [c.folder, c.channel, c.sent_at && t('cli.detail.sentAt', { date: c.sent_at })].filter(Boolean).join(' · ');
+    l.push('', t('cli.detail.application', { info: infoApplication }));
+    if (c.next_action) l.push(t('cli.detail.nextAction', { text: c.next_action }));
   }
-  if (d.evenements.length) l.push('', t('cli.detail.journal'), ...d.evenements.map(ligneJournal));
-  if (d.statuts.length) {
-    l.push('', t('cli.detail.historique'));
-    for (const s of d.statuts) l.push(`  ${s.le.slice(0, 10)}  ${s.statut.padEnd(10)} ${tronquer(s.commentaire, 100)}`);
+  if (d.events.length) l.push('', t('cli.detail.journal'), ...d.events.map(lineJournal));
+  if (d.statuses.length) {
+    l.push('', t('cli.detail.history'));
+    for (const s of d.statuses) l.push(`  ${s.at.slice(0, 10)}  ${s.status.padEnd(10)} ${truncate(s.comment, 100)}`);
   }
   if (d.description) l.push('', t('cli.detail.description'), d.description);
   return l.join('\n');
 }
 
-function virgule(n: number, d = 2): string {
-  return decimal(n, langueCourante(), d);
+function comma(n: number, d = 2): string {
+  return decimal(n, languageCurrent(), d);
 }
 
 /** Décomposition d'une note : un critère par ligne, puis règles et drapeaux. */
-function lignesDecomposition(d: Decomposition): string[] {
-  const l = d.criteres.map(
+function linesBreakdown(d: Breakdown): string[] {
+  const l = d.criteria.map(
     (c) =>
-      `  ${c.libelle.padEnd(26)} ${virgule(c.note, 1).padStart(4)} × ${String(Math.round(c.poids_normalise * 100)).padStart(3)} % = ${virgule(c.contribution).padStart(5)}` +
-      `  ${c.origine === 'neutre' ? t('cli.decomp.neutre') : c.origine === 'interface' ? t('cli.decomp.main') : ''}${tronquer(c.justification, 90)}`,
+      `  ${c.label.padEnd(26)} ${comma(c.score, 1).padStart(4)} × ${String(Math.round(c.normalized_weight * 100)).padStart(3)} % = ${comma(c.contribution).padStart(5)}` +
+      `  ${c.origin === 'neutral' ? t('cli.breakdown.neutral') : c.origin === 'interface' ? t('cli.breakdown.main') : ''}${truncate(c.justification, 90)}`,
   );
-  l.push(`  ${t('cli.decomp.moyenne').padEnd(26)} ${virgule(d.moyenne)}`);
-  for (const r of d.regles) {
-    const effet = r.effet === 'zero' ? '0' : t('cli.decomp.plafond', { valeur: virgule(r.valeur!) });
-    l.push(`  ${t('cli.decomp.regle', { libelle: r.libelle, effet, sansEffet: r.effective ? '' : t('cli.decomp.sansEffet') })}`);
+  l.push(`  ${t('cli.breakdown.average').padEnd(26)} ${comma(d.average)}`);
+  for (const r of d.rules) {
+    const effect = r.effect === 'zero' ? '0' : t('cli.breakdown.cap', { value: comma(r.value!) });
+    l.push(`  ${t('cli.breakdown.rule', { label: r.label, effect, withoutEffect: r.effective ? '' : t('cli.breakdown.withoutEffect') })}`);
   }
-  for (const b of d.bloquants_ignores) l.push(`  ${t('cli.decomp.ignoree', { regle: b })}`);
-  for (const f of d.drapeaux) l.push(`  ⚑ ${messageDrapeau(f, langueCourante())}`);
-  l.push(`  ${t('cli.decomp.note', { exacte: virgule(d.note_exacte), note: virgule(d.note, 1) })}`);
+  for (const b of d.ignored_blockers) l.push(`  ${t('cli.breakdown.ignored', { rule: b })}`);
+  for (const f of d.flags) l.push(`  ⚑ ${messageFlag(f, languageCurrent())}`);
+  l.push(`  ${t('cli.breakdown.score', { exact: comma(d.exact_score), score: comma(d.score, 1) })}`);
   return l;
 }
 
-function afficherImpact(i: Impact): void {
-  console.log(t('cli.impact.resume', { recalculees: i.offres_recalculees, changees: i.changees }));
-  const ligne = (c: Impact['changements'][number]) =>
-    `  #${String(c.id).padEnd(5)} ${String(c.avant ?? '—').padStart(4)} → ${String(c.apres).padEnd(4)} ${tronquer(`${c.entreprise ?? ''} ${c.titre}`, 80)}`;
-  const seuil = i.seuil_apres;
-  if (i.montent.length) console.log(`${t('cli.impact.montent', { seuil, n: i.montent.length })}\n${i.montent.map(ligne).join('\n')}`);
-  if (i.descendent.length) console.log(`${t('cli.impact.descendent', { seuil, n: i.descendent.length })}\n${i.descendent.map(ligne).join('\n')}`);
+function showImpact(i: Impact): void {
+  console.log(t('cli.impact.summary', { recalculated: i.offers_recalculated, changed: i.changed }));
+  const line = (c: Impact['changes'][number]) =>
+    `  #${String(c.id).padEnd(5)} ${String(c.before ?? '—').padStart(4)} → ${String(c.after).padEnd(4)} ${truncate(`${c.company ?? ''} ${c.title}`, 80)}`;
+  const threshold = i.threshold_after;
+  if (i.rising.length) console.log(`${t('cli.impact.rising', { threshold, n: i.rising.length })}\n${i.rising.map(line).join('\n')}`);
+  if (i.falling.length) console.log(`${t('cli.impact.falling', { threshold, n: i.falling.length })}\n${i.falling.map(line).join('\n')}`);
 }
 
-function ligneJournal(e: EvenementJournal): string {
-  const etat = (e.en_retard ? t('cli.journal.enRetard') : e.echeance ? t('cli.journal.aFaire') : '').padEnd(10);
-  const sens = e.sens ? ` ${e.sens === 'envoye' ? '→' : '←'}` : '';
-  const montant = e.montant !== null ? ` · ${e.montant} ${e.unite ?? ''}`.trimEnd() : '';
-  const fichiers = e.fichiers.length ? ` · ${e.fichiers.join(', ')}` : '';
-  return `  #${String(e.id).padEnd(5)} ${dateEvenement(e.le).padEnd(19)} ${etat}${e.type.padEnd(11)}${sens} ${tronquer(e.resume, 90)}${montant}${fichiers}`;
+function lineJournal(e: EventJournal): string {
+  const state = (e.overdue ? t('cli.journal.overdue') : e.deadline ? t('cli.journal.toDo') : '').padEnd(10);
+  const direction = e.direction ? ` ${e.direction === 'sent' ? '→' : '←'}` : '';
+  const amount = e.amount !== null ? ` · ${e.amount} ${e.unit ?? ''}`.trimEnd() : '';
+  const files = e.files.length ? ` · ${e.files.join(', ')}` : '';
+  return `  #${String(e.id).padEnd(5)} ${dateEvent(e.at).padEnd(19)} ${state}${e.type.padEnd(11)}${direction} ${truncate(e.summary, 90)}${amount}${files}`;
 }
 
-function sansErreur<T>(fn: () => T): T {
+function withoutError<T>(fn: () => T): T {
   try {
     return fn();
   } catch (e) {
-    erreur((e as Error).message);
+    error((e as Error).message);
   }
 }
 
-const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
+const commands: Record<string, (args: string[]) => Promise<void> | void> = {
   async ingest(args) {
-    const { v } = analyser(args, { keep: { type: 'boolean' }, fetch: { type: 'boolean' }, emails: { type: 'string' } });
-    const { config, db } = contexte(v);
-    const r = await ingererSelonConfig(db, config, {
-      dossierEmails: v.emails as string | undefined,
-      garder: Boolean(v.keep),
-      telecharger: v.fetch === false ? false : undefined,
+    const { v } = analyze(args, { keep: { type: 'boolean' }, fetch: { type: 'boolean' }, emails: { type: 'string' } });
+    const { config, db } = context(v);
+    const r = await ingestPerConfig(db, config, {
+      folderEmails: v.emails as string | undefined,
+      keep: Boolean(v.keep),
+      download: v.fetch === false ? false : undefined,
     });
     if (v.json) return json(r);
     console.log(
-      t('cli.ingest.resume', {
-        fichiers: r.fichiers,
-        offres: r.offres_trouvees,
-        nouvelles: r.nouvelles,
-        avecDescription: r.avec_description,
-        aLire: r.a_lire,
-        doublons: r.doublons,
-        ecartees: r.ecartees,
+      t('cli.ingest.summary', {
+        files: r.files,
+        offers: r.offers_found,
+        added: r.added,
+        withDescription: r.with_description,
+        toRead: r.to_read,
+        duplicates: r.duplicates,
+        dismissed: r.dismissed,
       }),
     );
-    console.log(v.keep ? t('cli.ingest.conserves') : t('cli.ingest.supprimes', { n: r.fichiers_supprimes }));
-    for (const e of r.detail.ecartees) console.log(t('cli.ingest.ecartee', { id: e.id, titre: tronquer(e.titre, 70), motif: e.motif }));
-    for (const e of r.erreurs) console.log(t('cli.ingest.erreur', { fichier: e.fichier ?? e.url, message: e.message }));
-    for (const f of r.sans_offre) console.log(t('cli.ingest.sansOffre', { fichier: f }));
+    console.log(v.keep ? t('cli.ingest.kept') : t('cli.ingest.deleted', { n: r.files_deleted }));
+    for (const e of r.detail.dismissed) console.log(t('cli.ingest.dismissed', { id: e.id, title: truncate(e.title, 70), pattern: e.pattern }));
+    for (const e of r.errors) console.log(t('cli.ingest.error', { file: e.file ?? e.url, message: e.message }));
+    for (const f of r.without_offer) console.log(t('cli.ingest.withoutOffer', { file: f }));
     for (const c of r.confirmations) {
-      const connues = c.offres_connues.map((x) => `#${x.id} (${x.statut})`).join(', ');
-      console.log(t('cli.ingest.accuse', { sujet: c.sujet, suite: connues ? ` → ${connues}` : t('cli.ingest.offreAbsente') }));
+      const known = c.offers_known.map((x) => `#${x.id} (${x.status})`).join(', ');
+      console.log(t('cli.ingest.acknowledgment', { subject: c.subject, more: known ? ` → ${known}` : t('cli.ingest.offerMissing') }));
     }
-    if (r.nouvelles) console.log(t('cli.ingest.suite'));
+    if (r.added) console.log(t('cli.ingest.suite'));
   },
 
-  'import-historique'(args) {
-    const { v } = analyser(args, { source: { type: 'string' } });
-    const { config, db } = contexte(v);
-    const r = importerHistorique(db, (v.source as string | undefined) ?? config.dossierDonnees);
+  'import-history'(args) {
+    const { v } = analyze(args, { source: { type: 'string' } });
+    const { config, db } = context(v);
+    const r = importHistory(db, (v.source as string | undefined) ?? config.dataDir);
     if (v.json) return json(r);
-    console.log(t('cli.import.lots', { fichiers: r.lots.fichiers, entrees: r.lots.entrees, offres: r.lots.offres_creees, notes: r.lots.notes_ajoutees }));
+    console.log(t('cli.import.batches', { files: r.batches.files, inputs: r.batches.inputs, offers: r.batches.offers_created, scores: r.batches.scores_added }));
     console.log(
-      t('cli.import.registre', {
-        lignes: r.registre.lignes,
-        offres: r.registre.offres,
-        creees: r.registre.offres_creees,
-        sansLien: r.registre.offres_sans_lien,
-        statuts: r.registre.statuts_ajoutes,
-        notes: r.registre.notes_ajoutees,
-        corrigees: r.registre.entreprises_corrigees,
+      t('cli.import.register', {
+        lines: r.register.lines,
+        offers: r.register.offers,
+        created: r.register.offers_created,
+        withoutLink: r.register.offers_without_link,
+        statuses: r.register.statuses_added,
+        scores: r.register.scores_added,
+        corrected: r.register.companies_corrected,
       }),
     );
-    if (r.suivi.ignore) console.log(t('cli.import.suiviIgnore', { raison: r.suivi.ignore }));
+    if (r.tracker.ignore) console.log(t('cli.import.trackerIgnore', { reason: r.tracker.ignore }));
     else
       console.log(
-        t('cli.import.suivi', { lignes: r.suivi.lignes, offres: r.suivi.offres_creees, candidatures: r.suivi.candidatures, statuts: r.suivi.statuts_ajoutes }),
+        t('cli.import.tracker', { lines: r.tracker.lines, offers: r.tracker.offers_created, applications: r.tracker.applications, statuses: r.tracker.statuses_added }),
       );
     const J = r.journal;
     console.log(
-      t('cli.import.journaux', {
-        dossiers: J.dossiers,
-        lignes: J.lignes,
-        crees: J.evenements_crees,
-        existants: J.evenements_existants,
-        retires: J.evenements_retires,
-        echeances: J.echeances,
-        types: Object.entries(J.par_type).map(([x, n]) => `${x} ${n}`).join(', ') || '—',
+      t('cli.import.journals', {
+        folders: J.folders,
+        lines: J.lines,
+        created: J.events_created,
+        existing: J.events_existing,
+        removed: J.events_removed,
+        deadlines: J.deadlines,
+        types: Object.entries(J.by_type).map(([x, n]) => `${x} ${n}`).join(', ') || '—',
       }),
     );
-    for (const d of J.dossiers_rattaches) console.log(t('cli.import.rattache', { offre: d.offre_id, dossier: d.dossier }));
-    for (const d of J.dossiers_sans_offre) console.log(t('cli.import.sansOffre', { dossier: d }));
-    for (const d of J.dossiers_sans_suivi) console.log(t('cli.import.sansSuivi', { dossier: d }));
-    if (J.non_typees.length) {
-      console.log(t('cli.import.nonTypees', { n: J.non_typees.length }));
-      for (const n of J.non_typees) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
+    for (const d of J.folders_attached) console.log(t('cli.import.attached', { offer: d.offer_id, folder: d.folder }));
+    for (const d of J.folders_without_offer) console.log(t('cli.import.withoutOffer', { folder: d }));
+    for (const d of J.folders_without_tracker) console.log(t('cli.import.withoutTracker', { folder: d }));
+    if (J.untyped.length) {
+      console.log(t('cli.import.untyped', { n: J.untyped.length }));
+      for (const n of J.untyped) console.log(`  ${n.folder}:${n.line} ${n.excerpt}`);
     }
-    if (J.sans_date.length) {
-      console.log(t('cli.import.sansDate', { n: J.sans_date.length }));
-      for (const n of J.sans_date) console.log(`  ${n.dossier}:${n.ligne} ${n.extrait}`);
+    if (J.without_date.length) {
+      console.log(t('cli.import.withoutDate', { n: J.without_date.length }));
+      for (const n of J.without_date) console.log(`  ${n.folder}:${n.line} ${n.excerpt}`);
     }
-    for (const f of r.suivi.fusions) console.log(t('cli.import.fusion', { doublon: f.doublon, offre: f.offre, entreprise: f.entreprise }));
-    const non = [...r.lots.erreurs, ...r.registre.non_reconnues, ...r.suivi.non_reconnues];
-    if (non.length) {
-      console.log(t('cli.import.nonReconnues', { n: non.length }));
-      for (const n of non) console.log(`  ${n.fichier}:${n.ligne} ${n.raison} — ${n.extrait}`);
+    for (const f of r.tracker.merges) console.log(t('cli.import.merge', { duplicate: f.duplicate, offer: f.offer, company: f.company }));
+    const not = [...r.batches.errors, ...r.register.unrecognized, ...r.tracker.unrecognized];
+    if (not.length) {
+      console.log(t('cli.import.unrecognized', { n: not.length }));
+      for (const n of not) console.log(`  ${n.file}:${n.line} ${n.reason} — ${n.excerpt}`);
     }
-    if (r.registre.liens_non_reconnus.length) {
-      console.log(t('cli.import.liensNonReconnus', { n: r.registre.liens_non_reconnus.length }));
-      for (const n of r.registre.liens_non_reconnus) console.log(`  _ecartees.md:${n.ligne} ${n.url}`);
+    if (r.register.links_not_recognized.length) {
+      console.log(t('cli.import.linksNotRecognized', { n: r.register.links_not_recognized.length }));
+      for (const n of r.register.links_not_recognized) console.log(`  _ecartees.md:${n.line} ${n.url}`);
     }
   },
 
   list(args) {
-    const { v } = analyser(args, {
-      statut: { type: 'string' },
-      'note-min': { type: 'string' },
-      'note-max': { type: 'string' },
-      'sans-note': { type: 'boolean' },
+    const { v } = analyze(args, {
+      status: { type: 'string' },
+      'score-min': { type: 'string' },
+      'score-max': { type: 'string' },
+      'unscored': { type: 'boolean' },
       source: { type: 'string' },
       tag: { type: 'string' },
-      depuis: { type: 'string' },
-      jusqua: { type: 'string' },
-      'publiee-depuis': { type: 'string' },
-      texte: { type: 'string', short: 'q' },
-      contrat: { type: 'string' },
-      teletravail: { type: 'string' },
-      candidatures: { type: 'boolean' },
+      from: { type: 'string' },
+      until: { type: 'string' },
+      'published-from': { type: 'string' },
+      text: { type: 'string', short: 'q' },
+      contract: { type: 'string' },
+      remote: { type: 'string' },
+      applications: { type: 'boolean' },
       page: { type: 'string' },
-      taille: { type: 'string' },
-      tri: { type: 'string' },
-      ordre: { type: 'string' },
+      size: { type: 'string' },
+      sort: { type: 'string' },
+      order: { type: 'string' },
     });
-    const { db } = contexte(v);
-    const statuts = liste(v.statut);
-    for (const s of statuts ?? []) if (!estStatut(s)) erreur(t('cli.statutInconnu', { statut: s }));
-    const o: OptionsListe = {
-      statuts,
-      sources: liste(v.source),
-      tags: liste(v.tag),
-      noteMin: nombre(v['note-min'], 'note-min'),
-      noteMax: nombre(v['note-max'], 'note-max'),
-      sansNote: v['sans-note'] === true ? true : v['sans-note'] === false ? false : undefined,
-      recueDepuis: v.depuis as string | undefined,
-      recueJusqua: v.jusqua as string | undefined,
-      publieeDepuis: v['publiee-depuis'] as string | undefined,
-      q: v.texte as string | undefined,
-      contrat: v.contrat as string | undefined,
-      teletravail: v.teletravail as string | undefined,
-      mesCandidatures: Boolean(v.candidatures),
-      page: v.page ? entier(v.page, 'page') : 1,
-      taille: v.taille ? entier(v.taille, 'taille') : 50,
-      tri: (v.tri as string | undefined) ?? 'recue_le',
-      ordre: v.ordre === 'asc' ? 'asc' : 'desc',
+    const { db } = context(v);
+    const statuses = list(v.status);
+    for (const s of statuses ?? []) if (!isStatus(s)) error(t('cli.statusUnknown', { status: s }));
+    const o: OptionsList = {
+      statuses,
+      sources: list(v.source),
+      tags: list(v.tag),
+      scoreMin: number(v['score-min'], 'score-min'),
+      scoreMax: number(v['score-max'], 'score-max'),
+      unscored: v['unscored'] === true ? true : v['unscored'] === false ? false : undefined,
+      receivedFrom: v.from as string | undefined,
+      receivedUntil: v.until as string | undefined,
+      publishedFrom: v['published-from'] as string | undefined,
+      q: v.text as string | undefined,
+      contract: v.contract as string | undefined,
+      remote: v.remote as string | undefined,
+      myApplications: Boolean(v.applications),
+      page: v.page ? whole(v.page, 'page') : 1,
+      size: v.size ? whole(v.size, 'size') : 50,
+      sort: (v.sort as string | undefined) ?? 'received_at',
+      order: v.order === 'asc' ? 'asc' : 'desc',
     };
-    const r = listerOffres(db, o);
+    const r = listOffers(db, o);
     if (v.json) return json(r);
     console.log(
-      tableau(
-        t('cli.list.entetes').split('|'),
-        r.offres.map((x) => [
+      table(
+        t('cli.list.headers').split('|'),
+        r.offers.map((x) => [
           String(x.id),
-          x.note === null ? '—' : String(x.note),
-          x.statut,
+          x.score === null ? '—' : String(x.score),
+          x.status,
           x.source,
-          x.recue_le ?? '',
-          tronquer(x.entreprise, 24),
-          tronquer(x.titre, 60),
+          x.received_at ?? '',
+          truncate(x.company, 24),
+          truncate(x.title, 60),
         ]),
       ),
     );
-    console.log(t('cli.list.pied', { page: r.page, pages: r.pages, total: r.total }));
+    console.log(t('cli.list.footer', { page: r.page, pages: r.pages, total: r.total }));
   },
 
   show(args) {
-    const { v, pos } = analyser(args, {});
-    const { db } = contexte(v);
-    const d = detailOffre(db, entier(pos[0], 'id'));
-    if (!d) erreur(t('cli.offreIntrouvable', { id: pos[0] }));
+    const { v, pos } = analyze(args, {});
+    const { db } = context(v);
+    const d = detailOffer(db, whole(pos[0], 'id'));
+    if (!d) error(t('cli.offerNotFound', { id: pos[0] }));
     if (v.json) return json(d);
-    console.log(afficherDetail(d));
+    console.log(showDetail(d));
   },
 
-  'a-lire'(args) {
-    const { v } = analyser(args, { limite: { type: 'string' }, complet: { type: 'boolean' } });
-    const { db } = contexte(v);
-    const r = offresALire(db, { limite: v.limite ? entier(v.limite, 'limite') : 500, complet: Boolean(v.complet) });
-    const offres = r.offres;
+  'to-read'(args) {
+    const { v } = analyze(args, { limit: { type: 'string' }, full: { type: 'boolean' } });
+    const { db } = context(v);
+    const r = offersToRead(db, { limit: v.limit ? whole(v.limit, 'limit') : 500, full: Boolean(v.full) });
+    const offers = r.offers;
     if (v.json) return json(r);
-    if (!offres.length) return console.log(t('cli.aLire.aucune'));
-    for (const o of offres) {
-      const mode = { description: t('cli.aLire.description'), navigateur: t('cli.aLire.navigateur'), humain: t('cli.aLire.humain') }[o.lecture];
-      console.log(`#${o.id} [${o.source}] ${tronquer(o.titre, 80)}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
-      console.log(`    ${o.url ?? t('cli.aLire.sansUrl')} · ${mode}`);
+    if (!offers.length) return console.log(t('cli.toRead.none'));
+    for (const o of offers) {
+      const mode = { description: t('cli.toRead.description'), browser: t('cli.toRead.browser'), human: t('cli.toRead.human') }[o.reading];
+      console.log(`#${o.id} [${o.source}] ${truncate(o.title, 80)}${o.company ? ` — ${o.company}` : ''}`);
+      console.log(`    ${o.url ?? t('cli.toRead.withoutUrl')} · ${mode}`);
     }
-    console.log(t('cli.aLire.total', { n: r.total }));
+    console.log(t('cli.toRead.total', { n: r.total }));
   },
 
-  noter(args) {
-    const { v, pos } = analyser(args, { fichier: { type: 'string' }, json: { type: 'string' }, essai: { type: 'boolean' } });
-    const { config, db } = contexte(v);
-    let entrees: EntreeLot[];
-    if (v.fichier) {
-      entrees = entreesDuLot(JSON.parse(readFileSync(v.fichier as string, 'utf8').replace(/^﻿/, '')));
+  score(args) {
+    const { v, pos } = analyze(args, { file: { type: 'string' }, json: { type: 'string' }, dry_run: { type: 'boolean' } });
+    const { config, db } = context(v);
+    let inputs: InputBatch[];
+    if (v.file) {
+      inputs = inputsOfBatch(JSON.parse(readFileSync(v.file as string, 'utf8').replace(/^﻿/, '')));
     } else {
-      if (typeof v.json !== 'string') erreur(t('cli.noter.attendu'));
-      const e = JSON.parse(v.json) as EntreeLot | EntreeLot[];
-      entrees = Array.isArray(e) ? e : [e];
+      if (typeof v.json !== 'string') error(t('cli.score.expected'));
+      const e = JSON.parse(v.json) as InputBatch | InputBatch[];
+      inputs = Array.isArray(e) ? e : [e];
       if (pos[0]) {
-        if (entrees.length !== 1) erreur(t('cli.noter.uneSeule'));
-        entrees[0] = { ...entrees[0], id: entier(pos[0], 'id') };
+        if (inputs.length !== 1) error(t('cli.score.oneSingle'));
+        inputs[0] = { ...inputs[0], id: whole(pos[0], 'id') };
       }
     }
-    const resultats = sansErreur(() =>
-      noterOffres(db, entrees, 'cli', { grille: () => grilleCourante(db, config.dossierDonnees), essai: Boolean(v.essai) }),
+    const results = withoutError(() =>
+      scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: Boolean(v.dry_run) }),
     );
-    json({ ok: true, essai: Boolean(v.essai), notees: v.essai ? 0 : resultats.length, offres: resultats });
+    json({ ok: true, dry_run: Boolean(v.dry_run), scored: v.dry_run ? 0 : results.length, offers: results });
   },
 
-  grille(args) {
-    const { v } = analyser(args, {
-      consignes: { type: 'boolean' },
-      historique: { type: 'boolean' },
+  rubric(args) {
+    const { v } = analyze(args, {
+      instructions: { type: 'boolean' },
+      history: { type: 'boolean' },
       version: { type: 'string' },
-      restaurer: { type: 'string' },
+      restore: { type: 'string' },
       init: { type: 'boolean' },
-      modifier: { type: 'string' },
-      resume: { type: 'string' },
-      essai: { type: 'boolean' },
+      update: { type: 'string' },
+      summary: { type: 'string' },
+      dry_run: { type: 'boolean' },
     });
-    const { config, db } = contexte(v);
-    const dossier = config.dossierDonnees;
+    const { config, db } = context(v);
+    const folder = config.dataDir;
     if (v.init) {
-      const r = sansErreur(() => initialiserGrille(db, dossier, config.langue));
-      if (v.json) return json({ ok: true, cree: r.cree, chemin: r.chemin, version: r.version.version });
-      return console.log(r.cree ? t('cli.grille.copiee', { chemin: r.chemin }) : t('cli.grille.existe', { chemin: r.chemin }));
+      const r = withoutError(() => initializeRubric(db, folder, config.language));
+      if (v.json) return json({ ok: true, created: r.created, path: r.path, version: r.version.version });
+      return console.log(r.created ? t('cli.rubric.copied', { path: r.path }) : t('cli.rubric.exists', { path: r.path }));
     }
-    if (v.historique) {
-      sansErreur(() => grilleCourante(db, dossier));
-      const h = historiqueGrille(db);
+    if (v.history) {
+      withoutError(() => rubricCurrent(db, folder));
+      const h = historyRubric(db);
       if (v.json) return json({ ok: true, versions: h });
-      for (const x of h) console.log(`  v${String(x.version).padEnd(4)} ${x.le.slice(0, 16).replace('T', ' ')}  ${x.auteur.padEnd(9)} ${x.resume}`);
+      for (const x of h) console.log(`  v${String(x.version).padEnd(4)} ${x.at.slice(0, 16).replace('T', ' ')}  ${x.author.padEnd(9)} ${x.summary}`);
       return;
     }
-    if (v.restaurer !== undefined) {
-      const r = sansErreur(() => restaurerGrille(db, dossier, entier(v.restaurer, 'version'), { auteur: 'cli', resume: v.resume as string | undefined }));
+    if (v.restore !== undefined) {
+      const r = withoutError(() => restoreRubric(db, folder, whole(v.restore, 'version'), { author: 'cli', summary: v.summary as string | undefined }));
       if (v.json) return json({ ok: true, version: r.version.version, impact: r.impact });
-      console.log(t('cli.grille.version', { version: r.version.version, resume: r.version.resume }));
-      return afficherImpact(r.impact);
+      console.log(t('cli.rubric.version', { version: r.version.version, summary: r.version.summary }));
+      return showImpact(r.impact);
     }
-    if (v.modifier !== undefined) {
-      if (!v.essai && !v.resume) erreur(t('cli.grille.resumeAttendu'));
-      let changement: unknown;
+    if (v.update !== undefined) {
+      if (!v.dry_run && !v.summary) error(t('cli.rubric.summaryExpected'));
+      let change: unknown;
       try {
-        changement = JSON.parse(v.modifier as string);
+        change = JSON.parse(v.update as string);
       } catch (e) {
-        erreur(t('cli.grille.jsonInvalide', { message: (e as Error).message }));
+        error(t('cli.grille.jsonInvalide', { message: (e as Error).message }));
       }
-      const r = sansErreur(() => modifierGrille(db, dossier, changement, { auteur: 'cli', resume: (v.resume as string) ?? '', essai: Boolean(v.essai) }));
+      const r = withoutError(() => updateRubric(db, folder, change, { author: 'cli', summary: (v.summary as string) ?? '', dry_run: Boolean(v.dry_run) }));
       if (v.json) return json({ ok: true, ...r });
-      console.log(r.enregistree ? t('cli.grille.enregistree', { version: r.version }) : t('cli.grille.essai'));
-      if (r.exemples_calcules.length) {
-        console.log(t('cli.grille.exemplesAvantApres'));
-        for (const e of r.exemples_calcules) {
-          const avant = e.avant === null || e.avant === undefined ? t('cli.grille.nouveau') : virgule(e.avant);
-          console.log(`  ${avant.padStart(7)} → ${virgule(e.note).padEnd(4)} ${e.titre}${e.entreprise ? ` — ${e.entreprise}` : ''}`);
+      console.log(r.saved ? t('cli.rubric.saved', { version: r.version }) : t('cli.rubric.dry_run'));
+      if (r.computed_examples.length) {
+        console.log(t('cli.rubric.examplesBeforeAfter'));
+        for (const e of r.computed_examples) {
+          const before = e.before === null || e.before === undefined ? t('cli.rubric.new') : comma(e.before);
+          console.log(`  ${before.padStart(7)} → ${comma(e.score).padEnd(4)} ${e.title}${e.company ? ` — ${e.company}` : ''}`);
         }
       }
-      return afficherImpact(r.impact);
+      return showImpact(r.impact);
     }
-    const g = v.version !== undefined ? sansErreur(() => versionGrille(db, entier(v.version, 'version'))) : sansErreur(() => grilleObligatoire(db, dossier));
+    const g = v.version !== undefined ? withoutError(() => versionRubric(db, whole(v.version, 'version'))) : withoutError(() => rubricRequired(db, folder));
     if (v.json) {
       return json({
         ok: true,
-        fichier: cheminGrille(dossier),
+        file: pathRubric(folder),
         ...g,
-        consignes_ia: consignesIa(g.grille),
-        exemples_calcules: g.grille.exemples.map((e) => ({ titre: e.titre, entreprise: e.entreprise ?? null, ...noteExemple(g.grille, e, g.version) })),
+        instructions_ai: instructionsAi(g.rubric),
+        computed_examples: g.rubric.examples.map((e) => ({ title: e.title, company: e.company ?? null, ...scoreExample(g.rubric, e, g.version) })),
       });
     }
-    const G = g.grille;
-    const langue = langueCourante();
-    console.log(t('cli.grille.titre', { nom: G.nom, version: g.version, le: g.le.slice(0, 10), auteur: g.auteur, resume: g.resume }));
-    console.log(t('cli.grille.fichier', { chemin: cheminGrille(dossier), seuil: virgule(G.seuil) }));
-    const somme = G.criteres.reduce((s, c) => s + c.poids, 0);
-    console.log(`\n${t('cli.grille.criteres')}`);
-    for (const c of G.criteres) {
-      const source = (c.source === 'ia' ? t('cli.grille.ia') : t('cli.grille.calcul')).padEnd(8);
-      console.log(`  ${c.id.padEnd(14)} ${String(Math.round((c.poids / somme) * 100)).padStart(3)} %  ${source}  ${c.libelle}`);
+    const G = g.rubric;
+    const language = languageCurrent();
+    console.log(t('cli.rubric.title', { name: G.name, version: g.version, at: g.at.slice(0, 10), author: g.author, summary: g.summary }));
+    console.log(t('cli.rubric.file', { path: pathRubric(folder), threshold: comma(G.threshold) }));
+    const sum = G.criteria.reduce((s, c) => s + c.weight, 0);
+    console.log(`\n${t('cli.rubric.criteria')}`);
+    for (const c of G.criteria) {
+      const source = (c.source === 'ai' ? t('cli.rubric.ai') : t('cli.rubric.computation')).padEnd(8);
+      console.log(`  ${c.id.padEnd(14)} ${String(Math.round((c.weight / sum) * 100)).padStart(3)} %  ${source}  ${c.label}`);
     }
-    const tt = G.baremes.teletravail;
-    const r = G.baremes.remuneration;
-    console.log(`\n${t('cli.grille.teletravail', { jours: tt.jours_sur_site.join(' / '), inconnu: tt.inconnu })}`);
+    const tt = G.scales.remote;
+    const r = G.scales.compensation;
+    console.log(`\n${t('cli.rubric.remote', { days: tt.onsite_days.join(' / '), unknown: tt.unknown })}`);
     console.log(
-      t('cli.grille.remuneration', {
+      t('cli.rubric.compensation', {
         reference: r.reference,
-        plancher: r.salaire.plancher,
-        basse: r.salaire.cible_basse,
-        haute: r.salaire.cible_haute,
-        tjm: r.tjm.plancher,
-        fullRemote: r.tjm.plancher_full_remote ? t('cli.grille.fullRemote', { valeur: r.tjm.plancher_full_remote }) : '',
-        tjmBasse: r.tjm.cible_basse,
-        tjmHaute: r.tjm.cible_haute,
-        inconnue: r.inconnue,
+        floor: r.salary.floor,
+        low: r.salary.target_low,
+        high: r.salary.target_high,
+        daily_rate: r.daily_rate.floor,
+        fullRemote: r.daily_rate.floor_full_remote ? t('cli.rubric.fullRemote', { value: r.daily_rate.floor_full_remote }) : '',
+        tjmLow: r.daily_rate.target_low,
+        tjmHigh: r.daily_rate.target_high,
+        unknown: r.unknown,
       }),
     );
-    console.log(`\n${t('cli.grille.regles')}`);
-    for (const x of G.regles) {
-      const effet = x.effet === 'zero' ? '0' : x.effet === 'plafond' ? t('cli.decomp.plafond', { valeur: x.valeur }) : `${x.critere} < ${x.seuil}`;
-      console.log(`  ${x.actif ? '●' : '○'} ${x.id.padEnd(18)} ${effet.padEnd(10)} ${x.libelle}`);
+    console.log(`\n${t('cli.rubric.rules')}`);
+    for (const x of G.rules) {
+      const effect = x.effect === 'zero' ? '0' : x.effect === 'cap' ? t('cli.breakdown.cap', { value: x.value }) : `${x.criterion} < ${x.threshold}`;
+      console.log(`  ${x.active ? '●' : '○'} ${x.id.padEnd(18)} ${effect.padEnd(10)} ${x.label}`);
     }
-    console.log(`\n${t('cli.grille.inventaire')}`);
-    for (const n of ['fort', 'moyen', 'leger', 'zero'] as const) {
-      const items = G.inventaire.filter((x) => x.niveau === n).map((x) => x.techno);
-      if (items.length) console.log(`  ${libelleNiveau(n, langue).padEnd(6)} ${items.join(', ')}`);
+    console.log(`\n${t('cli.rubric.inventory')}`);
+    for (const n of ['strong', 'medium', 'light', 'zero'] as const) {
+      const items = G.inventory.filter((x) => x.level === n).map((x) => x.technology);
+      if (items.length) console.log(`  ${labelLevel(n, language).padEnd(6)} ${items.join(', ')}`);
     }
-    if (G.exemples.length) {
-      console.log(`\n${t('cli.grille.exemples')}`);
-      for (const e of G.exemples) console.log(`  ${virgule(noteExemple(G, e).note, 1).padStart(4)}  ${e.entreprise ? `${e.entreprise} — ` : ''}${e.titre}`);
+    if (G.examples.length) {
+      console.log(`\n${t('cli.rubric.examples')}`);
+      for (const e of G.examples) console.log(`  ${comma(scoreExample(G, e).score, 1).padStart(4)}  ${e.company ? `${e.company} — ` : ''}${e.title}`);
     }
-    if (v.consignes) console.log(`\n${t('cli.grille.consignes')}\n${[...G.consignes, ...consignesIa(G)].map((x) => `- ${x}`).join('\n')}`);
+    if (v.instructions) console.log(`\n${t('cli.rubric.instructions')}\n${[...G.instructions, ...instructionsAi(G)].map((x) => `- ${x}`).join('\n')}`);
   },
 
-  renoter(args) {
-    const { v } = analyser(args, {});
-    const { config, db } = contexte(v);
-    const r = sansErreur(() => renoter(db, config.dossierDonnees));
+  rescore(args) {
+    const { v } = analyze(args, {});
+    const { config, db } = context(v);
+    const r = withoutError(() => rescore(db, config.dataDir));
     if (v.json) return json({ ok: true, ...r });
-    console.log(t('cli.renoter', { version: r.version }));
-    afficherImpact(r.impact);
+    console.log(t('cli.rescore', { version: r.version }));
+    showImpact(r.impact);
   },
 
-  statut(args) {
-    const { v, pos } = analyser(args, { commentaire: { type: 'string', short: 'm' } });
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    const statut = pos[1];
-    if (!statut || !estStatut(statut)) erreur(t('cli.statutAttendu', { statuts: STATUTS.join(', ') }));
-    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
-    ajouterStatut(db, id, statut, { commentaire: (v.commentaire as string | undefined) ?? null, origine: 'cli' });
-    const o = offreParId(db, id)!;
-    if (v.json) return json({ ok: true, id, statut: o.statut });
-    console.log(`#${id} → ${libelleStatut(o.statut, langueCourante())}`);
+  status(args) {
+    const { v, pos } = analyze(args, { comment: { type: 'string', short: 'm' } });
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    const status = pos[1];
+    if (!status || !isStatus(status)) error(t('cli.statusExpected', { statuses: STATUSES.join(', ') }));
+    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    addStatus(db, id, status, { comment: (v.comment as string | undefined) ?? null, origin: 'cli' });
+    const o = offerById(db, id)!;
+    if (v.json) return json({ ok: true, id, status: o.status });
+    console.log(`#${id} → ${labelStatus(o.status, languageCurrent())}`);
   },
 
   tag(args) {
     // Analyse manuelle : « -retrait » ne doit pas être pris pour une option.
-    const opts: Valeurs = {};
-    const reste: string[] = [];
+    const opts: Values = {};
+    const rest: string[] = [];
     for (let i = 0; i < args.length; i++) {
       const a = args[i];
       if (a === '--json') opts.json = true;
       else if (a === '--data' || a === '--config') opts[a.slice(2)] = args[++i];
-      else reste.push(a);
+      else rest.push(a);
     }
-    const { db } = contexte(opts);
-    const id = entier(reste[0], 'id');
-    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
-    const ajouts = reste.slice(1).filter((x) => x.startsWith('+')).map((x) => x.slice(1));
-    const retraits = reste.slice(1).filter((x) => x.startsWith('-')).map((x) => x.slice(1));
-    const autres = reste.slice(1).filter((x) => !/^[+-]/.test(x));
-    if (autres.length) erreur(t('cli.tag.prefixe', { tags: autres.join(' ') }));
-    const tags = modifierTags(db, id, ajouts, retraits);
+    const { db } = context(opts);
+    const id = whole(rest[0], 'id');
+    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    const additions = rest.slice(1).filter((x) => x.startsWith('+')).map((x) => x.slice(1));
+    const removals = rest.slice(1).filter((x) => x.startsWith('-')).map((x) => x.slice(1));
+    const others = rest.slice(1).filter((x) => !/^[+-]/.test(x));
+    if (others.length) error(t('cli.tag.prefix', { tags: others.join(' ') }));
+    const tags = updateTags(db, id, additions, removals);
     if (opts.json) return json({ ok: true, id, tags });
-    console.log(`#${id} : ${tags.join(', ') || t('cli.tag.aucun')}`);
+    console.log(`#${id} : ${tags.join(', ') || t('cli.tag.none')}`);
   },
 
-  lien(args) {
-    const { v, pos } = analyser(args, {});
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
-    if (pos[1] === undefined) erreur(t('cli.lien.attendu'));
+  link(args) {
+    const { v, pos } = analyze(args, {});
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    if (pos[1] === undefined) error(t('cli.link.expected'));
     try {
-      modifierLien(db, id, pos[1] === '-' ? null : pos[1]);
+      updateLink(db, id, pos[1] === '-' ? null : pos[1]);
     } catch (e) {
-      erreur((e as Error).message);
+      error((e as Error).message);
     }
-    const o = offreParId(db, id)!;
-    if (v.json) return json({ ok: true, id, url: o.url_canonique });
-    console.log(`#${id} : ${o.url_canonique ?? t('cli.lien.aucun')}`);
+    const o = offerById(db, id)!;
+    if (v.json) return json({ ok: true, id, url: o.canonical_url });
+    console.log(`#${id} : ${o.canonical_url ?? t('cli.link.none')}`);
   },
 
-  candidater(args) {
-    const { v, pos } = analyser(args, {});
-    const { config, db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    const r = sansErreur(() => preparerCandidature(db, config.dossierDonnees, id, 'cli'));
+  apply(args) {
+    const { v, pos } = analyze(args, {});
+    const { config, db } = context(v);
+    const id = whole(pos[0], 'id');
+    const r = withoutError(() => prepareApplication(db, config.dataDir, id, 'cli'));
     if (v.json) return json(r);
-    console.log(afficherDetail(r.offre));
-    console.log(`\n${t('cli.candidater.dossier', { dossier: r.dossier_suggere })}`);
-    console.log(r.etapes.map((e, i) => `${i + 1}. ${e}`).join('\n'));
+    console.log(showDetail(r.offer));
+    console.log(`\n${t('cli.apply.folder', { folder: r.suggested_folder })}`);
+    console.log(r.steps.map((e, i) => `${i + 1}. ${e}`).join('\n'));
   },
 
-  candidature(args) {
-    const { v, pos } = analyser(args, {
-      dossier: { type: 'string' },
+  application(args) {
+    const { v, pos } = analyze(args, {
+      folder: { type: 'string' },
       cv: { type: 'string' },
-      canal: { type: 'string' },
-      'envoyee-le': { type: 'string' },
+      channel: { type: 'string' },
+      'sent-at': { type: 'string' },
       message: { type: 'string' },
-      'prochaine-action': { type: 'string' },
+      'next-action': { type: 'string' },
     });
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    const champs: ChampsCandidature = {
-      dossier: v.dossier as string | undefined,
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    const fields: FieldsApplication = {
+      folder: v.folder as string | undefined,
       cv: v.cv as string | undefined,
-      canal: v.canal as string | undefined,
-      envoyee_le: v['envoyee-le'] as string | undefined,
+      channel: v.channel as string | undefined,
+      sent_at: v['sent-at'] as string | undefined,
       message: v.message as string | undefined,
-      prochaine_action: v['prochaine-action'] as string | undefined,
+      next_action: v['next-action'] as string | undefined,
     };
-    if (Object.values(champs).every((x) => x === undefined)) erreur(t('cli.candidature.option'));
-    const r = sansErreur(() => suivreCandidature(db, id, champs, 'cli'));
-    if (v.json) return json({ ok: true, id, statut: r.offre.statut, statut_ajoute: r.statut_ajoute, candidature: r.offre.candidature });
-    console.log(afficherDetail(r.offre).split(`\n\n${t('cli.detail.description')}`)[0]);
+    if (Object.values(fields).every((x) => x === undefined)) error(t('cli.application.option'));
+    const r = withoutError(() => trackApplication(db, id, fields, 'cli'));
+    if (v.json) return json({ ok: true, id, status: r.offer.status, status_added: r.status_added, application: r.offer.application });
+    console.log(showDetail(r.offer).split(`\n\n${t('cli.detail.description')}`)[0]);
   },
 
-  'prochaine-action'(args) {
-    const { v, pos } = analyser(args, {});
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    if (pos[1] === undefined) erreur(t('cli.prochaineAction.attendu'));
-    const texte = pos.slice(1).join(' ');
-    const r = sansErreur(() => suivreCandidature(db, id, { prochaine_action: texte === '-' ? null : texte }, 'cli'));
-    const action = r.offre.candidature?.prochaine_action ?? null;
-    if (v.json) return json({ ok: true, id, prochaine_action: action });
-    console.log(`#${id} : ${action ?? t('cli.prochaineAction.aucune')}`);
+  'next-action'(args) {
+    const { v, pos } = analyze(args, {});
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    if (pos[1] === undefined) error(t('cli.nextAction.expected'));
+    const text = pos.slice(1).join(' ');
+    const r = withoutError(() => trackApplication(db, id, { next_action: text === '-' ? null : text }, 'cli'));
+    const action = r.offer.application?.next_action ?? null;
+    if (v.json) return json({ ok: true, id, next_action: action });
+    console.log(`#${id} : ${action ?? t('cli.nextAction.none')}`);
   },
 
-  evenement(args) {
-    const { v, pos } = analyser(args, {
+  event(args) {
+    const { v, pos } = analyze(args, {
       type: { type: 'string', short: 't' },
-      le: { type: 'string' },
-      resume: { type: 'string', short: 'r' },
-      sens: { type: 'string' },
+      at: { type: 'string' },
+      summary: { type: 'string', short: 'r' },
+      direction: { type: 'string' },
       details: { type: 'string' },
-      canal: { type: 'string' },
-      interlocuteurs: { type: 'string' },
-      montant: { type: 'string' },
-      unite: { type: 'string' },
-      jours: { type: 'string' },
-      fichier: { type: 'string', multiple: true },
-      fait: { type: 'boolean' },
+      channel: { type: 'string' },
+      contacts: { type: 'string' },
+      amount: { type: 'string' },
+      unit: { type: 'string' },
+      days: { type: 'string' },
+      file: { type: 'string', multiple: true },
+      done: { type: 'boolean' },
     });
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    if (!v.type) erreur(t('cli.evenement.typeAttendu', { types: TYPES_EVENEMENT.join(', ') }));
-    if (!v.resume) erreur(t('cli.evenement.resumeAttendu'));
-    const saisie: SaisieEvenement = {
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    if (!v.type) error(t('cli.event.typeExpected', { types: TYPES_EVENT.join(', ') }));
+    if (!v.summary) error(t('cli.event.summaryExpected'));
+    const input: EventInput = {
       type: v.type as string,
-      le: v.le as string | undefined,
-      resume: v.resume as string,
-      sens: v.sens as string | undefined,
+      at: v.at as string | undefined,
+      summary: v.summary as string,
+      direction: v.direction as string | undefined,
       details: v.details as string | undefined,
-      canal: v.canal as string | undefined,
-      interlocuteurs: v.interlocuteurs as string | undefined,
-      montant: v.montant as string | undefined,
-      unite: v.unite as string | undefined,
-      jours: v.jours as string | undefined,
-      fichiers: v.fichier as unknown as string[] | undefined,
-      fait: v.fait as boolean | undefined,
+      channel: v.channel as string | undefined,
+      contacts: v.contacts as string | undefined,
+      amount: v.amount as string | undefined,
+      unit: v.unit as string | undefined,
+      days: v.days as string | undefined,
+      files: v.file as unknown as string[] | undefined,
+      done: v.done as boolean | undefined,
     };
-    const e = sansErreur(() => ajouterEvenement(db, id, saisie, 'cli'));
-    if (v.json) return json({ ok: true, evenement: e });
+    const e = withoutError(() => addEvent(db, id, input, 'cli'));
+    if (v.json) return json({ ok: true, event: e });
     console.log(
-      t('cli.evenement.ajoute', { id: e.id, offre: id, le: dateEvenement(e.le), type: e.type, echeance: e.fait ? '' : t('cli.evenement.echeance'), resume: e.resume }),
+      t('cli.event.added', { id: e.id, offer: id, at: dateEvent(e.at), type: e.type, deadline: e.done ? '' : t('cli.event.deadline'), summary: e.summary }),
     );
   },
 
   journal(args) {
-    const { v, pos } = analyser(args, {});
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    const o = offreParId(db, id);
-    if (!o) erreur(t('cli.offreIntrouvable', { id }));
+    const { v, pos } = analyze(args, {});
+    const { db } = context(v);
+    const id = whole(pos[0], 'id');
+    const o = offerById(db, id);
+    if (!o) error(t('cli.offerNotFound', { id }));
     const j = journal(db, id);
-    if (v.json) return json({ ok: true, id, evenements: j });
-    console.log(`#${id} ${o.titre}${o.entreprise ? ` — ${o.entreprise}` : ''}`);
-    if (!j.length) return console.log(t('cli.journal.vide'));
-    for (const e of j) console.log(ligneJournal(e));
+    if (v.json) return json({ ok: true, id, events: j });
+    console.log(`#${id} ${o.title}${o.company ? ` — ${o.company}` : ''}`);
+    if (!j.length) return console.log(t('cli.journal.empty'));
+    for (const e of j) console.log(lineJournal(e));
   },
 
-  echeances(args) {
-    const { v } = analyser(args, { jours: { type: 'string' } });
-    const { db } = contexte(v);
-    const r = sansErreur(() => echeances(db, { jours: v.jours !== undefined ? Number(v.jours) : 7 }));
+  deadlines(args) {
+    const { v } = analyze(args, { days: { type: 'string' } });
+    const { db } = context(v);
+    const r = withoutError(() => deadlines(db, { days: v.days !== undefined ? Number(v.days) : 7 }));
     if (v.json) return json({ ok: true, ...r });
-    const langue = langueCourante();
-    const ligne = (e: (typeof r.a_venir)[number]) =>
-      `  #${String(e.id).padEnd(5)} ${dateEvenement(e.le).padEnd(19)} ${t('cli.echeances.offre', { id: e.offre_id })} ${tronquer(e.entreprise ?? e.titre, 28).padEnd(28)} ${libelleType(e.type, langue)} : ${tronquer(e.resume, 80)}`;
-    console.log(t('cli.echeances.enRetard', { n: r.en_retard.length }));
-    for (const e of r.en_retard) console.log(ligne(e));
-    console.log(t('cli.echeances.aVenir', { date: dateEvenement(r.jusqua), n: r.a_venir.length }));
-    for (const e of r.a_venir) console.log(ligne(e));
+    const language = languageCurrent();
+    const line = (e: (typeof r.upcoming)[number]) =>
+      `  #${String(e.id).padEnd(5)} ${dateEvent(e.at).padEnd(19)} ${t('cli.deadlines.offer', { id: e.offer_id })} ${truncate(e.company ?? e.title, 28).padEnd(28)} ${labelType(e.type, language)} : ${truncate(e.summary, 80)}`;
+    console.log(t('cli.deadlines.overdue', { n: r.overdue.length }));
+    for (const e of r.overdue) console.log(line(e));
+    console.log(t('cli.deadlines.upcoming', { date: dateEvent(r.until), n: r.upcoming.length }));
+    for (const e of r.upcoming) console.log(line(e));
   },
 
-  fait(args) {
-    const { v, pos } = analyser(args, { fait: { type: 'boolean' } });
-    const { db } = contexte(v);
-    const id = entier(pos[0], 'evenement_id');
-    sansErreur(() => evenementOuErreur(db, id));
-    const e = marquerFait(db, id, v.fait !== false);
-    if (v.json) return json({ ok: true, evenement: e });
-    console.log(t(e.fait ? 'cli.fait.fait' : 'cli.fait.rouvert', { id, resume: e.resume }));
+  done(args) {
+    const { v, pos } = analyze(args, { done: { type: 'boolean' } });
+    const { db } = context(v);
+    const id = whole(pos[0], 'event_id');
+    withoutError(() => eventOrError(db, id));
+    const e = markDone(db, id, v.done !== false);
+    if (v.json) return json({ ok: true, event: e });
+    console.log(t(e.done ? 'cli.done.done' : 'cli.done.reopened', { id, summary: e.summary }));
   },
 
-  fichiers(args) {
-    const { v, pos } = analyser(args, {});
-    const { config, db } = contexte(v);
-    const id = entier(pos[0], 'id');
-    if (!offreParId(db, id)) erreur(t('cli.offreIntrouvable', { id }));
-    const r = fichiersDossier(db, config.dossierDonnees, id);
+  files(args) {
+    const { v, pos } = analyze(args, {});
+    const { config, db } = context(v);
+    const id = whole(pos[0], 'id');
+    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    const r = filesFolder(db, config.dataDir, id);
     if (v.json) return json({ ok: true, ...r });
-    if (!r.dossier) return console.log(t('cli.fichiers.sansDossier', { id }));
-    if (!r.existe) return console.log(t('cli.fichiers.absent', { id, dossier: r.dossier }));
-    console.log(t('cli.fichiers.titre', { dossier: r.dossier, n: r.fichiers.length }));
-    for (const f of r.fichiers) {
-      console.log(`  ${f.chemin.padEnd(70)} ${String(Math.ceil(f.taille / 1024)).padStart(5)} ${t('cli.fichiers.ko')}  ${f.modifie_le.slice(0, 10)}`);
+    if (!r.folder) return console.log(t('cli.files.withoutFolder', { id }));
+    if (!r.exists) return console.log(t('cli.files.absent', { id, folder: r.folder }));
+    console.log(t('cli.files.title', { folder: r.folder, n: r.files.length }));
+    for (const f of r.files) {
+      console.log(`  ${f.path.padEnd(70)} ${String(Math.ceil(f.size / 1024)).padStart(5)} ${t('cli.files.ko')}  ${f.modified_at.slice(0, 10)}`);
     }
   },
 
   stats(args) {
-    const { v } = analyser(args, {});
-    const { db } = contexte(v);
-    const s = statistiques(db);
+    const { v } = analyze(args, {});
+    const { db } = context(v);
+    const s = statistics(db);
     if (v.json) return json({ ok: true, ...s });
-    console.log(t('cli.stats.etapes', { envoyees: s.envoyees, reponses: s.reponses, entretiens: s.entretiens, propositions: s.propositions }));
+    console.log(t('cli.stats.steps', { sent: s.sent, replies: s.replies, interviews: s.interviews, proposals: s.proposals }));
     console.log(
-      s.delai_moyen_reponse_jours === null
-        ? t('cli.stats.pasAssez')
-        : t('cli.stats.delai', { jours: virgule(s.delai_moyen_reponse_jours, 1), n: s.delai_base }),
+      s.timeout_medium_reply_days === null
+        ? t('cli.stats.notEnough')
+        : t('cli.stats.timeout', { days: comma(s.timeout_medium_reply_days, 1), n: s.timeout_database }),
     );
   },
 
-  'generer-suivi'(args) {
-    const { v } = analyser(args, { sortie: { type: 'string', short: 'o' }, remplacer: { type: 'boolean' } });
-    const { config, db } = contexte(v);
-    const r = ecrireSuivi(db, config.dossierDonnees, { sortie: v.sortie as string | undefined, remplacer: Boolean(v.remplacer), langue: config.langue });
+  'generate-tracker'(args) {
+    const { v } = analyze(args, { output: { type: 'string', short: 'o' }, replace: { type: 'boolean' } });
+    const { config, db } = context(v);
+    const r = writeTracker(db, config.dataDir, { output: v.output as string | undefined, replace: Boolean(v.replace), language: config.language });
     if (v.json) return json({ ok: true, ...r });
-    console.log(t('cli.suivi.resume', { fichier: r.fichier, enCours: r.en_cours, sansSuite: r.sans_suite, closes: r.closes }));
+    console.log(t('cli.tracker.summary', { file: r.file, inProgress: r.in_progress, noFollowUp: r.no_follow_up, closes: r.closes }));
   },
 
   async mcp(args) {
-    const { v } = analyser(args, {});
+    const { v } = analyze(args, {});
     // Le serveur démarre même sans espace (dossier par défaut, outil initialiser_espace) : pas de contexte() ici.
-    const { demarrerMcp } = await import('../mcp/serveur.ts');
-    await demarrerMcp({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined });
+    const { startMcp } = await import('../mcp/server.ts');
+    await startMcp({ dataDir: v.data as string | undefined, fileConfig: v.config as string | undefined });
   },
 
   async serve(args) {
-    const { v } = analyser(args, { port: { type: 'string' }, inactivite: { type: 'string' } });
-    const { config, db } = contexte(v);
-    const port = v.port ? entier(v.port, 'port') : config.port;
-    await demarrerServeur({ db, config, port, inactiviteMin: nombre(v.inactivite, 'inactivite') ?? 0 });
+    const { v } = analyze(args, { port: { type: 'string' }, idle: { type: 'string' } });
+    const { config, db } = context(v);
+    const port = v.port ? whole(v.port, 'port') : config.port;
+    await startServer({ db, config, port, idleMin: number(v.idle, 'idle') ?? 0 });
   },
 
   init(args) {
-    const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' }, gabarit: { type: 'string' }, langue: { type: 'string' } });
-    if (pos.length !== 1) erreur(t('cli.init.usage'));
-    const langue = typeof v.langue === 'string' ? normaliserLangue(v.langue) : undefined;
-    if (langue !== undefined && !estLangue(langue)) {
-      erreur(t('cli.invalide', { nom: '--langue', valeur: `${String(v.langue)} (${LANGUES.join(', ')})` }));
+    const { v, pos } = analyze(args, { port: { type: 'string' }, 'name-mcp': { type: 'string' }, template: { type: 'string' }, language: { type: 'string' } });
+    if (pos.length !== 1) error(t('cli.init.usage'));
+    const language = typeof v.language === 'string' ? normalizeLanguage(v.language) : undefined;
+    if (language !== undefined && !isLanguage(language)) {
+      error(t('cli.invalid', { name: '--language', value: `${String(v.language)} (${LANGUAGES.join(', ')})` }));
     }
-    const r = initialiserEspace({
-      dossier: pos[0],
-      port: v.port ? entier(v.port, 'port') : undefined,
-      nomMcp: v['nom-mcp'] as string | undefined,
-      gabarit: v.gabarit as string | undefined,
-      langue,
+    const r = initializeWorkspace({
+      folder: pos[0],
+      port: v.port ? whole(v.port, 'port') : undefined,
+      nameMcp: v['name-mcp'] as string | undefined,
+      template: v.template as string | undefined,
+      language,
     });
     if (v.json) return json(r);
-    console.log(t('cli.init.cree', { dossier: r.dossier }));
-    console.log(t('cli.init.config', { config: r.config, port: r.port, langue: r.langue }));
-    console.log(t('cli.init.mcp', { nom: r.nom_mcp, mcp: r.mcp }));
-    console.log(t('cli.init.navigateur', { navigateur: r.navigateur ?? t('cli.aucun') }));
-    for (const a of r.avertissements) console.log(`  ⚠ ${a}`);
-    console.log(`\n${t('cli.init.commande', { commande: r.commande })}`);
-    console.log(`\n${t('cli.init.etapes')}`);
-    console.log(t('cli.init.etape1', { dossier: r.dossier }));
-    console.log(t('cli.init.etape2', { dossier: r.dossier }));
-    console.log(`${t('cli.init.etape3')}\n`);
-    console.log(r.invite);
+    console.log(t('cli.init.created', { folder: r.folder }));
+    console.log(t('cli.init.config', { config: r.config, port: r.port, language: r.language }));
+    console.log(t('cli.init.mcp', { name: r.name_mcp, mcp: r.mcp }));
+    console.log(t('cli.init.browser', { browser: r.browser ?? t('cli.none') }));
+    for (const a of r.warnings) console.log(`  ⚠ ${a}`);
+    console.log(`\n${t('cli.init.command', { command: r.command })}`);
+    console.log(`\n${t('cli.init.steps')}`);
+    console.log(t('cli.init.step1', { folder: r.folder }));
+    console.log(t('cli.init.step2', { folder: r.folder }));
+    console.log(`${t('cli.init.step3')}\n`);
+    console.log(r.prompt);
   },
 
-  compter(args) {
-    const { v, pos } = analyser(args, {});
-    if (pos.length !== 1) erreur(t('cli.compter.usage'));
-    const resultat = compterTexte(sansErreur(() => readFileSync(pos[0], 'utf8')));
-    if (v.json) return json({ ok: true, fichier: pos[0], blocs: resultat });
-    for (const b of resultat) {
-      console.log(t('cli.compter.ligne', { caracteres: String(b.caracteres).padStart(6), mots: String(b.mots).padStart(4), debut: b.debut }));
+  count(args) {
+    const { v, pos } = analyze(args, {});
+    if (pos.length !== 1) error(t('cli.count.usage'));
+    const result = countText(withoutError(() => readFileSync(pos[0], 'utf8')));
+    if (v.json) return json({ ok: true, file: pos[0], blocks: result });
+    for (const b of result) {
+      console.log(t('cli.count.line', { characters: String(b.characters).padStart(6), words: String(b.words).padStart(4), start: b.start }));
     }
   },
 
-  gabarits(args) {
-    const { v } = analyser(args, {});
-    const gabarits = listerGabarits();
-    if (v.json) return json({ ok: true, gabarits });
-    for (const g of gabarits) console.log(`${g.nom.padEnd(10)} ${g.description}`);
-    console.log(`\n${t('cli.gabarits.choisir')}`);
+  templates(args) {
+    const { v } = analyze(args, {});
+    const templates = listTemplates();
+    if (v.json) return json({ ok: true, templates });
+    for (const g of templates) console.log(`${g.name.padEnd(10)} ${g.description}`);
+    console.log(`\n${t('cli.templates.choose')}`);
   },
 
-  gabarit(args) {
-    const { v, pos } = analyser(args, {});
-    if (pos.length !== 1) erreur(t('cli.gabarit.usage'));
-    const espace = chargerConfig({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined }).dossierDonnees;
-    const r = sansErreur(() => choisirGabarit(espace, pos[0]));
+  template(args) {
+    const { v, pos } = analyze(args, {});
+    if (pos.length !== 1) error(t('cli.template.usage'));
+    const workspace = loadConfig({ dataDir: v.data as string | undefined, fileConfig: v.config as string | undefined }).dataDir;
+    const r = withoutError(() => chooseTemplate(workspace, pos[0]));
     if (v.json) return json({ ok: true, ...r });
-    console.log(t('cli.gabarit.installe', { nom: pos[0], dossier: r.dossier, ancien: r.ancien ? t('cli.gabarit.ancien', { dossier: r.ancien }) : '' }));
-    console.log(t('cli.gabarit.regenerer'));
+    console.log(t('cli.template.installed', { name: pos[0], folder: r.folder, old: r.old ? t('cli.template.old', { folder: r.old }) : '' }));
+    console.log(t('cli.template.regenerate'));
   },
 
   async cv(args) {
-    const { v, pos } = analyser(args, { gabarit: { type: 'string' }, capture: { type: 'boolean' } });
-    if (!pos.length) erreur(t('cli.cv.usage'));
-    let choisi = v.gabarit as string | undefined;
-    if (!choisi) {
-      let espace: string | null = null;
+    const { v, pos } = analyze(args, { template: { type: 'string' }, capture: { type: 'boolean' } });
+    if (!pos.length) error(t('cli.cv.usage'));
+    let chosen = v.template as string | undefined;
+    if (!chosen) {
+      let workspace: string | null = null;
       try {
-        espace = chargerConfig({ dossierDonnees: v.data as string | undefined, fichierConfig: v.config as string | undefined }).dossierDonnees;
+        workspace = loadConfig({ dataDir: v.data as string | undefined, fileConfig: v.config as string | undefined }).dataDir;
       } catch {
-        espace = null;
+        workspace = null;
       }
-      const local = espace ? `${espace}/cv/gabarit` : null;
-      choisi = local && existsSync(`${local}/gabarit.css`) ? local : GABARIT_DEFAUT;
+      const local = workspace ? `${workspace}/cv/gabarit` : null;
+      chosen = local && existsSync(`${local}/gabarit.css`) ? local : TEMPLATE_DEFAULT;
     }
-    const gabarit = choisi;
-    const navigateur = trouverNavigateur();
-    if (!navigateur) erreur(t('cli.cv.sansNavigateur'));
-    const generes = pos.map((md) => sansErreur(() => genererCv(md, gabarit, navigateur, { capture: Boolean(v.capture) })));
-    const resultats = [];
-    for (const r of generes) {
-      const mise = await analyserPages(readFileSync(r.pdf)).catch(() => null);
-      resultats.push({ ...r, remplissage: mise?.pages.map((p) => p.remplissage) ?? null, avertissements: mise?.avertissements ?? [] });
+    const template = chosen;
+    const browser = findBrowser();
+    if (!browser) error(t('cli.cv.withoutBrowser'));
+    const generated = pos.map((md) => withoutError(() => generateCv(md, template, browser, { capture: Boolean(v.capture) })));
+    const results = [];
+    for (const r of generated) {
+      const layout = await analyzePages(readFileSync(r.pdf)).catch(() => null);
+      results.push({ ...r, fill: layout?.pages.map((p) => p.fill) ?? null, warnings: layout?.warnings ?? [] });
     }
-    if (v.json) return json({ ok: true, gabarit, cv: resultats });
-    for (const r of resultats) {
-      const taux = r.remplissage
-        ? ` (${t('cli.cv.remplissage', { taux: r.remplissage.map((x) => t('core.pages.pourcent', { pc: x })).join(', ') })})`
+    if (v.json) return json({ ok: true, template, cv: results });
+    for (const r of results) {
+      const rate = r.fill
+        ? ` (${t('cli.cv.fill', { rate: r.fill.map((x) => t('core.pages.percent', { pc: x })).join(', ') })})`
         : '';
-      console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.depasse') : ''}`);
+      console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.exceeded') : ''}`);
       // Lignes lues par les outils et l'IA (HTML, PDF, IMAGE, PAGES) : mêmes libellés dans les deux langues.
-      if (resultats.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${taux}`);
-      else if (taux) console.log(`    ${taux.trim()}`);
-      for (const a of r.avertissements) console.log(`    ! ${a}`);
+      if (results.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${rate}`);
+      else if (rate) console.log(`    ${rate.trim()}`);
+      for (const a of r.warnings) console.log(`    ! ${a}`);
     }
   },
 
-  aide() {
-    process.stdout.write(aide());
+  help() {
+    process.stdout.write(help());
   },
 };
 
 /** Valeur d'une option (--nom valeur ou --nom=valeur) lue avant l'analyse complète. */
-function optionBrute(argv: string[], nom: string): string | undefined {
+function optionRaw(argv: string[], name: string): string | undefined {
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === `--${nom}`) return argv[i + 1];
-    if (argv[i].startsWith(`--${nom}=`)) return argv[i].slice(nom.length + 3);
+    if (argv[i] === `--${name}`) return argv[i + 1];
+    if (argv[i].startsWith(`--${name}=`)) return argv[i].slice(name.length + 3);
   }
   return undefined;
 }
 
 /**
  * Langue des messages : --langue d'init (l'espace qu'on crée), sinon la configuration (--data, --config,
- * VIGIE_EMPLOI_LANGUE, fichier), sinon le français.
+ * VIGIE_EMPLOI_LANGUAGE, fichier), sinon le français.
  */
-function langueDesMessages(cmd: string | undefined, args: string[]) {
-  const brute = cmd === 'init' ? optionBrute(args, 'langue') : undefined;
-  const demandee = brute === undefined ? undefined : normaliserLangue(brute);
-  if (estLangue(demandee)) return demandee;
-  return langueConfiguree({ dossierDonnees: optionBrute(args, 'data'), fichierConfig: optionBrute(args, 'config') });
+function languageOfMessages(cmd: string | undefined, args: string[]) {
+  const raw = cmd === 'init' ? optionRaw(args, 'language') : undefined;
+  const requested = raw === undefined ? undefined : normalizeLanguage(raw);
+  if (isLanguage(requested)) return requested;
+  return languageConfigured({ dataDir: optionRaw(args, 'data'), fileConfig: optionRaw(args, 'config') });
 }
 
 export async function main(argv: string[]): Promise<number> {
   const [cmd, ...args] = argv;
-  definirLangue(langueDesMessages(cmd, args));
+  defineLanguage(languageOfMessages(cmd, args));
   if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') {
-    process.stdout.write(aide());
+    process.stdout.write(help());
     return 0;
   }
-  const fn = commandes[cmd];
+  const fn = commands[cmd];
   if (!fn) {
-    process.stderr.write(`${t('cli.commandeInconnue', { commande: cmd })}\n\n${aide()}`);
+    process.stderr.write(`${t('cli.commandUnknown', { command: cmd })}\n\n${help()}`);
     return 2;
   }
   if (args.includes('--help') || args.includes('-h')) {
-    process.stdout.write(aide());
+    process.stdout.write(help());
     return 0;
   }
   try {
     await fn(args);
     return 0;
   } catch (e) {
-    const err = e as Error & { utilisateur?: boolean; code?: string };
-    const message = err.code?.startsWith('ERR_PARSE_ARGS') || err.utilisateur ? err.message : (err.stack ?? err.message);
-    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, erreur: err.message })}\n`);
-    else process.stderr.write(`${t('cli.erreur', { message })}\n`);
+    const err = e as Error & { user?: boolean; code?: string };
+    const message = err.code?.startsWith('ERR_PARSE_ARGS') || err.user ? err.message : (err.stack ?? err.message);
+    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, error: err.message })}\n`);
+    else process.stderr.write(`${t('cli.error', { message })}\n`);
     return 1;
   }
 }

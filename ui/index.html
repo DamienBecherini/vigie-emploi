@@ -7,31 +7,31 @@
     <title>vigie-emploi</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
-      // Thème, palette, zoom et langue choisie appliqués avant le rendu (pas de flash).
+      // Theme, palette, zoom and chosen language applied before rendering (no flash).
       try {
-        // Réglages des anciens noms de l'application (postuler-juste, cap-emploi) repris une fois, sans écraser les nouveaux.
-        ['postuler-juste:', 'cap-emploi:'].forEach(function (ancien) {
+        // Settings saved under the application's former names (postuler-juste, cap-emploi), copied once without overwriting the new ones.
+        ['postuler-juste:', 'cap-emploi:'].forEach(function (old) {
           for (var i = localStorage.length - 1; i >= 0; i--) {
-            var cle = localStorage.key(i);
-            if (!cle || cle.indexOf(ancien) !== 0) continue;
-            var neuve = 'vigie-emploi:' + cle.slice(ancien.length);
-            if (localStorage.getItem(neuve) === null) localStorage.setItem(neuve, localStorage.getItem(cle));
+            var key = localStorage.key(i);
+            if (!key || key.indexOf(old) !== 0) continue;
+            var renamed = 'vigie-emploi:' + key.slice(old.length);
+            if (localStorage.getItem(renamed) === null) localStorage.setItem(renamed, localStorage.getItem(key));
           }
         });
-        var t = localStorage.getItem('vigie-emploi:theme') || 'systeme';
-        var sombre = t === 'sombre' || (t === 'systeme' && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.classList.toggle('dark', sombre);
-        var v = JSON.parse(localStorage.getItem(sombre ? 'vigie-emploi:palette-vars-sombre' : 'vigie-emploi:palette-vars-claire') || '{}');
+        var t = localStorage.getItem('vigie-emploi:theme') || 'system';
+        var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        var v = JSON.parse(localStorage.getItem(dark ? 'vigie-emploi:palette-vars-dark' : 'vigie-emploi:palette-vars-light') || '{}');
         for (var k in v) document.documentElement.style.setProperty(k, v[k]);
         var z = Number(localStorage.getItem('vigie-emploi:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
-        var l = localStorage.getItem('vigie-emploi:langue');
+        var l = localStorage.getItem('vigie-emploi:language');
         if (l && /^[a-z]{2,3}(-[A-Za-z0-9]+)?$/.test(l)) document.documentElement.lang = l;
       } catch (e) {}
     </script>
   </head>
   <body>
-    <div id="racine"></div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

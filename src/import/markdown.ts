@@ -1,83 +1,83 @@
 // Lecture des tableaux Markdown des registres (sections ## et lignes | … |).
 
-export interface LigneTableau {
+export interface LineTable {
   section: string;
-  numero: number;
-  entetes: string[];
-  cellules: string[];
-  brut: string;
+  number: number;
+  headers: string[];
+  cells: string[];
+  raw: string;
 }
 
 /** Découpe une ligne « | a | b | » en cellules (les \| échappés restent dans la cellule). */
-export function cellules(ligne: string): string[] {
-  const t = ligne.trim().replace(/^\|/, '').replace(/\|$/, '');
+export function cells(line: string): string[] {
+  const t = line.trim().replace(/^\|/, '').replace(/\|$/, '');
   return t.split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, '|').trim());
 }
 
-const SEPARATEUR = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+const SEPARATOR = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
 /** Toutes les lignes de données des tableaux, avec la section ## et les en-têtes du tableau. */
-export function lignesTableaux(texte: string): LigneTableau[] {
-  const lignes = texte.split(/\r?\n/);
-  const r: LigneTableau[] = [];
+export function linesTables(text: string): LineTable[] {
+  const lines = text.split(/\r?\n/);
+  const r: LineTable[] = [];
   let section = '';
-  let entetes: string[] | null = null;
-  for (let i = 0; i < lignes.length; i++) {
-    const l = lignes[i];
-    const titre = l.match(/^#{2,3}\s+(.*)$/);
-    if (titre) {
-      section = titre[1].trim();
-      entetes = null;
+  let headers: string[] | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    const title = l.match(/^#{2,3}\s+(.*)$/);
+    if (title) {
+      section = title[1].trim();
+      headers = null;
       continue;
     }
     if (!l.trim().startsWith('|')) {
-      entetes = null;
+      headers = null;
       continue;
     }
-    if (SEPARATEUR.test(l.trim())) continue;
-    if (!entetes) {
+    if (SEPARATOR.test(l.trim())) continue;
+    if (!headers) {
       // Première ligne du tableau = en-têtes, si la suivante est un séparateur.
-      if (SEPARATEUR.test((lignes[i + 1] ?? '').trim())) {
-        entetes = cellules(l);
+      if (SEPARATOR.test((lines[i + 1] ?? '').trim())) {
+        headers = cells(l);
         continue;
       }
-      entetes = [];
+      headers = [];
     }
-    r.push({ section, numero: i + 1, entetes, cellules: cellules(l), brut: l });
+    r.push({ section, number: i + 1, headers, cells: cells(l), raw: l });
   }
   return r;
 }
 
-export interface LienMd {
-  texte: string;
+export interface LinkMd {
+  text: string;
   url: string;
   index: number;
 }
 
-export function liensMarkdown(texte: string): LienMd[] {
-  return [...texte.matchAll(/\[([^\]]*)\]\(([^)\s]+)\)/g)].map((m) => ({ texte: m[1], url: m[2], index: m.index! }));
+export function linksMarkdown(text: string): LinkMd[] {
+  return [...text.matchAll(/\[([^\]]*)\]\(([^)\s]+)\)/g)].map((m) => ({ text: m[1], url: m[2], index: m.index! }));
 }
 
 /** Découpe un texte sur un séparateur, sans couper à l'intérieur d'un lien Markdown. */
-export function decouper(texte: string, sep: string): string[] {
+export function split(text: string, sep: string): string[] {
   const r: string[] = [];
-  let courant = '';
-  const lien = /\[[^\]]*\]\([^)\s]*\)/y;
-  for (let i = 0; i < texte.length; ) {
-    lien.lastIndex = i;
-    const m = lien.exec(texte);
+  let current = '';
+  const link = /\[[^\]]*\]\([^)\s]*\)/y;
+  for (let i = 0; i < text.length; ) {
+    link.lastIndex = i;
+    const m = link.exec(text);
     if (m) {
-      courant += m[0];
+      current += m[0];
       i += m[0].length;
-    } else if (texte.startsWith(sep, i)) {
-      r.push(courant);
-      courant = '';
+    } else if (text.startsWith(sep, i)) {
+      r.push(current);
+      current = '';
       i += sep.length;
     } else {
-      courant += texte[i];
+      current += text[i];
       i++;
     }
   }
-  r.push(courant);
+  r.push(current);
   return r.map((s) => s.trim()).filter(Boolean);
 }

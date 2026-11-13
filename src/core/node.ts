@@ -6,27 +6,27 @@ import { spawnSync } from 'node:child_process';
 import { basename } from 'node:path';
 
 /** Version minimale de Node : node:sqlite sans option (22.13), et engines de package.json (24). */
-export const NODE_MINIMUM = { majeure: 24, mineure: 0 };
+export const NODE_MINIMUM = { major: 24, minor: 0 };
 
-export function versionSuffisante(version: string): boolean {
+export function versionSufficient(version: string): boolean {
   const m = version.trim().replace(/^v/, '').match(/^(\d+)\.(\d+)/);
   if (!m) return false;
-  const [majeure, mineure] = [Number(m[1]), Number(m[2])];
-  return majeure > NODE_MINIMUM.majeure || (majeure === NODE_MINIMUM.majeure && mineure >= NODE_MINIMUM.mineure);
+  const [major, minor] = [Number(m[1]), Number(m[2])];
+  return major > NODE_MINIMUM.major || (major === NODE_MINIMUM.major && minor >= NODE_MINIMUM.minor);
 }
 
 /** true si l'exécutable courant est un vrai node (et pas une application Electron qui embarque Node). */
-export function estNodeAutonome(execPath: string = process.execPath, versions: NodeJS.ProcessVersions = process.versions): boolean {
+export function isNodeStandalone(execPath: string = process.execPath, versions: NodeJS.ProcessVersions = process.versions): boolean {
   return !('electron' in versions) && /^node(\.exe)?$/i.test(basename(execPath));
 }
 
 /** Commande « node » à écrire dans la configuration d'un autre client MCP : le chemin du node courant, sinon « node ». */
-export function commandeNode(execPath: string = process.execPath, versions: NodeJS.ProcessVersions = process.versions): string {
-  return estNodeAutonome(execPath, versions) ? execPath : 'node';
+export function commandNode(execPath: string = process.execPath, versions: NodeJS.ProcessVersions = process.versions): string {
+  return isNodeStandalone(execPath, versions) ? execPath : 'node';
 }
 
 /** Version du node du PATH (« v24.12.0 »), ou null s'il est absent. */
-function versionDuPath(): string | null {
+function versionOfPath(): string | null {
   const r = spawnSync('node', ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 10_000 });
   return r.status === 0 ? r.stdout.trim() : null;
 }
@@ -40,7 +40,7 @@ export function nodeExecutable(
 ): string | null {
   const execPath = o.execPath ?? process.execPath;
   const versions = o.versions ?? process.versions;
-  if (estNodeAutonome(execPath, versions)) return execPath;
-  const v = (o.versionPath ?? versionDuPath)();
-  return v && versionSuffisante(v) ? 'node' : null;
+  if (isNodeStandalone(execPath, versions)) return execPath;
+  const v = (o.versionPath ?? versionOfPath)();
+  return v && versionSufficient(v) ? 'node' : null;
 }

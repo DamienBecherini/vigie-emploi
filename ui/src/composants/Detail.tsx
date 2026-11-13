@@ -624,8 +624,14 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             </h3>
             {o.candidature && (
               <dl className="mb-2">
+                {/* Dossier et ses fichiers réunis : lien (ou ouverture dans l'explorateur), puis la liste des fichiers. */}
                 <Ligne libelle={t('detail.dossier')}>
-                  {o.candidature.dossier && <LienDossier offreId={o.id} dossier={o.candidature.dossier} />}
+                  {o.candidature.dossier && (
+                    <div className="space-y-1.5">
+                      <LienDossier offreId={o.id} dossier={o.candidature.dossier} />
+                      <FichiersDuDossier offre={o} sansChemin />
+                    </div>
+                  )}
                 </Ligne>
                 <Ligne libelle={t('detail.cv')}>{o.candidature.cv && <LienCv chemin={o.candidature.cv} />}</Ligne>
                 <Ligne libelle={t('detail.conditions')}>{o.candidature.conditions}</Ligne>
@@ -644,13 +650,6 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
               )}
             </h3>
             <Journal key={o.id} offre={o} />
-          </section>
-
-          <section aria-labelledby={`${titre}-fichiers`}>
-            <h3 id={`${titre}-fichiers`} className="mb-2 font-bold">
-              {t('detail.fichiers')}
-            </h3>
-            <FichiersDuDossier offre={o} />
           </section>
 
           <section aria-labelledby={`${titre}-tags`}>

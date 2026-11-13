@@ -449,16 +449,20 @@ export function Journal({ offre }: { offre: DetailOffre }) {
   );
 }
 
-export function FichiersDuDossier({ offre }: { offre: DetailOffre }) {
+/**
+ * Fichiers du dossier de candidature. `sansChemin` : affichés sous la ligne « Dossier » de la candidature, qui montre
+ * déjà le dossier (ni chemin répété, ni message quand l'offre n'a pas de dossier).
+ */
+export function FichiersDuDossier({ offre, sansChemin = false }: { offre: DetailOffre; sansChemin?: boolean }) {
   const q = useFichiers(offre.id);
   if (q.isLoading) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.chargement')}</p>;
   if (q.isError) return <p className="text-sm text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>;
   const f = q.data!;
-  if (!f.dossier) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.sansDossier')}</p>;
+  if (!f.dossier) return sansChemin ? null : <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.sansDossier')}</p>;
   if (!f.existe) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('fichiers.introuvable', { dossier: f.dossier })}</p>;
   return (
     <div>
-      <p className="mb-1 text-xs text-slate-600 dark:text-slate-400">{f.dossier}</p>
+      {!sansChemin && <p className="mb-1 text-xs text-slate-600 dark:text-slate-400">{f.dossier}</p>}
       <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 text-sm dark:divide-slate-700 dark:border-slate-700">
         {f.fichiers.map((x) => (
           <li key={x.chemin} className="flex flex-wrap items-baseline gap-x-3 px-2 py-1">

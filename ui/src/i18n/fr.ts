@@ -169,7 +169,6 @@ export const fr = {
   'detail.conditions': 'Conditions',
   'detail.journal': 'Journal',
   'detail.enRetard': '{n} en retard',
-  'detail.fichiers': 'Fichiers du dossier',
   'detail.tags': 'Tags',
   'detail.description': 'Description',
   'detail.sansDescription': 'Pas de description en base.',

@@ -161,7 +161,6 @@ export const en: Record<CleUi, Texte> = {
   'detail.conditions': 'Conditions',
   'detail.journal': 'Journal',
   'detail.enRetard': '{n} overdue',
-  'detail.fichiers': 'Folder files',
   'detail.tags': 'Tags',
   'detail.description': 'Description',
   'detail.sansDescription': 'No description in the database.',

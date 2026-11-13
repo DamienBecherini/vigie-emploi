@@ -36,7 +36,7 @@ describe('GET /api/sante', () => {
 
   it('suit le contrat « service local » et garde les anciens champs', async () => {
     const d = await health(createApp({} as Database, { dataDir: '/d' }, new Idle(3600, () => 0)));
-    expect(d).toMatchObject({ ok: true, folder: '/d', state: 'ready', contract: 1, service: 'vigie-emploi', busy: false, activity: '' });
+    expect(d).toMatchObject({ ok: true, folder: '/d', state: 'ready', contract: 2, service: 'vigie-emploi', busy: false, activity: '', remaining_work_s: null });
     expect(d.idle).toEqual({ timeout_s: 3600, remaining_s: 3600 });
     expect(typeof d.version).toBe('string');
   });

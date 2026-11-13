@@ -30,8 +30,8 @@ Espace de travail : `{{WORKSPACE}}` · application : `{{APP}}` · commande : `{{
 
 Fais le point, puis annonce-le en deux lignes à l'utilisateur :
 
-- **Application** : `{{CMD}} grille --json` doit répondre (ou l'outil MCP `grille`, si le serveur MCP est branché). Sinon : le signaler et s'arrêter (installation à reprendre).
-- **Fichiers** : accès direct au dossier, ou seulement les outils MCP (`lire_fichier`, `ecrire_fichier`, `generer_cv`, `compter` : voir `AGENTS.md`). Dans ce cas, l'utilisateur dépose ses documents dans `a-deposer/` avec son explorateur de fichiers, ou les glisse dans la conversation.
+- **Application** : `{{CMD}} rubric --json` doit répondre (ou l'outil MCP `rubric`, si le serveur MCP est branché). Sinon : le signaler et s'arrêter (installation à reprendre).
+- **Fichiers** : accès direct au dossier, ou seulement les outils MCP (`read_file`, `write_file`, `generate_cv`, `count` : voir `AGENTS.md`). Dans ce cas, l'utilisateur dépose ses documents dans `a-deposer/` avec son explorateur de fichiers, ou les glisse dans la conversation.
 - **Lecture de pages publiques** (site personnel, portfolio) : un outil de lecture d'URL ?
 - **Navigateur connecté** (par exemple Claude in Chrome, ou un autre outil qui pilote le navigateur de l'utilisateur, avec ses comptes) : il permet de lire son profil Malt ou LinkedIn tel qu'il le voit, et plus tard les offres LinkedIn, Indeed et Glassdoor.
   Si tu ne vois pas d'outil de navigateur, ne conclus pas qu'il n'y en a pas : certains clients ne l'activent qu'à la demande (dans Claude Desktop, l'extension Claude in Chrome se branche par le menu des outils de la conversation). **Pose la question une fois** : « Avez-vous Chrome avec l'extension Claude, connecté à LinkedIn et à Malt ? Si oui, activez-la ici : je lirai vos profils moi-même, puis les offres que les alertes ne détaillent pas. » Note la réponse dans `_CONTEXTE.md` (section 9, Canaux) pour ne pas la reposer aux sessions suivantes.
@@ -71,23 +71,23 @@ Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois l
 
 ## 6. Adapter la grille de notation
 
-`profil/grille.json` est une grille d'exemple. Lis-la (`grille`), puis adapte-la avec l'utilisateur par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`) : elle ne change que ce que tu lui passes, exemples compris (`exemples.ajouter` remplace un exemple de même titre et entreprise, `exemples.retirer` par titre) ; ne réécris pas le fichier. Fais d'abord un essai et montre-lui l'effet sur les exemples de référence (`exemples_calcules` : note avant → après) : la base est encore vide, ce sont eux qui montrent si la grille classe bien. À adapter :
+`profil/grille.json` est une grille d'exemple. Lis-la (`rubric`), puis adapte-la avec l'utilisateur par `update_rubric` (ou `{{CMD}} rubric --update '{…}' --dry-run`, puis sans `--dry-run` avec `--summary`) : elle ne change que ce que tu lui passes, exemples compris (`examples.add` remplace un exemple de même titre et entreprise, `examples.remove` par titre) ; ne réécris pas le fichier. Fais d'abord un essai et montre-lui l'effet sur les exemples de référence (`computed_examples` : note avant → après) : la base est encore vide, ce sont eux qui montrent si la grille classe bien. À adapter :
 
-- `consignes` : ses cibles et ce qu'il faut signaler ;
-- `inventaire` : ses technologies et leur niveau (repris de l'inventaire de `_CONTEXTE.md`) ;
-- `baremes.remuneration` : plancher, cible basse, cible haute (salaire en K€ brut annuel, TJM en €/jour). `plancher_full_remote` (TJM) : plancher qui remplace l'autre pour une mission en full remote, plus haut ou plus bas. Si la section « Conditions » parle d'un TJM différent en full remote, **pose la question** et propose ce champ ;
-- `baremes.teletravail` : la note selon le nombre de jours sur site (0 à 5) ;
-- `regles` : ce qui doit mettre une offre à zéro ou la plafonner (stage, trajet, technologie rédhibitoire…) ;
-- `exemples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
-- `seuil` : la note à partir de laquelle une offre lui est présentée.
+- `instructions` : ses cibles et ce qu'il faut signaler ;
+- `inventory` : ses technologies et leur niveau (repris de l'inventaire de `_CONTEXTE.md`) ;
+- `scales.compensation` : plancher, cible basse, cible haute (salaire en K€ brut annuel, TJM en €/jour). `floor_full_remote` (TJM) : plancher qui remplace l'autre pour une mission en full remote, plus haut ou plus bas. Si la section « Conditions » parle d'un TJM différent en full remote, **pose la question** et propose ce champ ;
+- `scales.remote` : la note selon le nombre de jours sur site (0 à 5) ;
+- `rules` : ce qui doit mettre une offre à zéro ou la plafonner (stage, trajet, technologie rédhibitoire…) ;
+- `examples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
+- `threshold` : la note à partir de laquelle une offre lui est présentée.
 
-Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il le souhaite, il peut aussi la régler lui-même dans le tableau de bord (« Réglages de la note » ; outil `ouvrir_tableau_de_bord`, ou `{{CMD}} serve` avec un terminal) : c'est facultatif.
+Après chaque modification, relis la grille (`rubric`, ou `{{CMD}} rubric --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il le souhaite, il peut aussi la régler lui-même dans le tableau de bord (« Réglages de la note » ; outil `open_dashboard`, ou `{{CMD}} serve` avec un terminal) : c'est facultatif.
 
 ## 7. Premier CV générique
 
 1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
 2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
-3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generer_cv` avec `capture: true`) : vérifie **2 pages**, le remplissage de chaque page (une page 1 à moins de ~80 % signale un saut de page mal placé ; une dernière page à moitié vide, de la place perdue) et regarde l'image des pages (titre sur une ligne, coupure). Traite les avertissements avant de lui montrer le CV. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
+3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generate_cv` avec `capture: true`) : vérifie **2 pages**, le remplissage de chaque page (une page 1 à moins de ~80 % signale un saut de page mal placé ; une dernière page à moitié vide, de la place perdue) et regarde l'image des pages (titre sur une ligne, coupure). Traite les avertissements avant de lui montrer le CV. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
 4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
 5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
 
@@ -97,7 +97,7 @@ Explique comment alimenter le tri des offres :
 
 1. Créer des alertes sur les sites d'emploi (LinkedIn, Indeed, Hellowork, Free-Work, Glassdoor…) avec ses mots-clés.
 2. Faire arriver les alertes en `.eml` dans `emails/`. **Propose de l'automatiser maintenant**, c'est ce qui rend l'outil vraiment pratique : demande quelle messagerie il utilise et guide-le pas à pas avec [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (Thunderbird et FiltaQuilla ; messagerie web ou Outlook : passer par Thunderbird). S'il préfère plus tard, note-le dans `_A-FAIRE.md` ; le glisser-déposer à la main reste possible.
-3. Regarde tout de suite si `emails/` contient des `.eml` (`lister_fichiers` ou lecture du dossier). S'il y en a : propose de les traiter maintenant, c'est le but de tout ce qui précède. Sinon : propose à l'utilisateur d'y glisser dès maintenant quelques alertes déjà reçues, pour faire un premier tri ensemble avant de clore.
+3. Regarde tout de suite si `emails/` contient des `.eml` (`list_files` ou lecture du dossier). S'il y en a : propose de les traiter maintenant, c'est le but de tout ce qui précède. Sinon : propose à l'utilisateur d'y glisser dès maintenant quelques alertes déjà reçues, pour faire un premier tri ensemble avant de clore.
 
 ## 9. Fin
 

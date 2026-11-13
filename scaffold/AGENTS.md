@@ -9,8 +9,8 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 1. **Premier lancement** (`_CONTEXTE.md` encore à trous) : suivre [`DEMARRAGE.md`](DEMARRAGE.md), rien d'autre.
 2. Sinon, lire **[`_CONTEXTE.md`](_CONTEXTE.md)** avant toute analyse d'offre ou rédaction : positionnement, faits, ce qui est revendicable ou non, interdits.
-3. **Démarrage fait, nouvelle session sans demande précise** : fais le point en une ligne et propose l'action utile, sans attendre qu'on te la demande : des `.eml` dans `emails/` → les traiter ; des offres en `go` sans dossier → préparer les candidatures ; des échéances en retard ou proches (`echeances`) → les rappeler.
-4. Quand tu crées ou modifies un document que l'utilisateur doit lire, valider ou envoyer (CV, dossier de candidature, message), donne-lui son **lien cliquable** en chemin absolu (`file:///…`) ; pour un CV, le PDF et le Markdown (`generer_cv` les renvoie dans `liens`).
+3. **Démarrage fait, nouvelle session sans demande précise** : fais le point en une ligne et propose l'action utile, sans attendre qu'on te la demande : des `.eml` dans `emails/` → les traiter ; des offres en `go` sans dossier → préparer les candidatures ; des échéances en retard ou proches (`deadlines`) → les rappeler.
+4. Quand tu crées ou modifies un document que l'utilisateur doit lire, valider ou envoyer (CV, dossier de candidature, message), donne-lui son **lien cliquable** en chemin absolu (`file:///…`) ; pour un CV, le PDF et le Markdown (`generate_cv` les renvoie dans `liens`).
 5. L'état des offres et des candidatures est dans la base : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
 
 ## Procédures
@@ -25,13 +25,13 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 ## Outils de l'application
 
 - Préférer les **outils MCP** de l'application quand ils sont branchés. Sinon la CLI : `{{CMD}} <commande> --json`, lancée depuis l'espace de travail.
-- **Sans accès aux fichiers ni terminal** (Claude Desktop ou autre client MCP seul) : partout où ces consignes disent de lire, écrire ou lancer une commande, utiliser les outils du serveur : `lister_fichiers`, `lire_fichier` (lit aussi les PDF, Word et images déposés), `ecrire_fichier` (fichier entier, chemins relatifs à l'espace), `generer_cv` (au lieu de `{{CMD}} cv`, `capture: true` pour voir les pages), `compter` (au lieu de `{{CMD}} compter`). Les procédures existent aussi en prompts MCP : `demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`.
-- **Commandes `{{CMD}} …` citées dans ces consignes** : c'est toi qui les lances, si tu as un terminal. En client MCP seul, utilise et cite l'outil équivalent ; ne propose jamais à l'utilisateur une commande à taper à ta place. Le tableau de bord (parcourir ses offres, régler sa grille à la souris) aussi : en client MCP seul, propose l'outil `ouvrir_tableau_de_bord`, qui le démarre en arrière-plan et renvoie l'adresse à cliquer (`ouvrir: true` l'ouvre dans son navigateur, s'il le souhaite) ; avec un terminal, `{{CMD}} serve` puis http://localhost:4410. Présente-le comme une option, jamais comme une étape.
+- **Sans accès aux fichiers ni terminal** (Claude Desktop ou autre client MCP seul) : partout où ces consignes disent de lire, écrire ou lancer une commande, utiliser les outils du serveur : `list_files`, `read_file` (lit aussi les PDF, Word et images déposés), `write_file` (fichier entier, chemins relatifs à l'espace), `generate_cv` (au lieu de `{{CMD}} cv`, `capture: true` pour voir les pages), `count` (au lieu de `{{CMD}} count`). Les procédures existent aussi en prompts MCP : `onboarding`, `process-emails`, `prepare-go`, `targeted-cv`.
+- **Commandes `{{CMD}} …` citées dans ces consignes** : c'est toi qui les lances, si tu as un terminal. En client MCP seul, utilise et cite l'outil équivalent ; ne propose jamais à l'utilisateur une commande à taper à ta place. Le tableau de bord (parcourir ses offres, régler sa grille à la souris) aussi : en client MCP seul, propose l'outil `open_dashboard`, qui le démarre en arrière-plan et renvoie l'adresse à cliquer (`open: true` l'ouvre dans son navigateur, s'il le souhaite) ; avec un terminal, `{{CMD}} serve` puis http://localhost:4410. Présente-le comme une option, jamais comme une étape.
 - Lancer la commande avec l'outil Bash (pas PowerShell) et lire la sortie JSON directement : pas de tube vers un autre programme (python, jq…), souvent bloqué par les permissions.
-- Compter les caractères d'un message : `{{CMD}} compter <fichier>` (chaque bloc à copier-coller du fichier, ou le fichier entier).
+- Compter les caractères d'un message : `{{CMD}} count <fichier>` (chaque bloc à copier-coller du fichier, ou le fichier entier).
 - Ce qui doit durer (une règle, une décision, une tâche) va dans `_CONTEXTE.md`, `_JOURNAL-DECISIONS.md` ou `_A-FAIRE.md`, pas dans une mémoire propre à ton outil : une autre IA doit pouvoir le retrouver.
 - Aucun agenda n'est branché par défaut : ne propose pas d'ajouter un rendez-vous à un agenda si tu n'as pas l'outil ; l'échéance en base suffit.
-- **Grille de notation** : la modifier par `modifier_grille` (ou `{{CMD}} grille --modifier '{…}' --essai`, puis sans `--essai` avec `--resume`), qui ne change que ce qu'on lui passe, exemples de référence compris (`exemples.ajouter` / `exemples.retirer`). L'essai renvoie aussi la note de chaque exemple avant et après (`exemples_calcules`) : c'est ce qu'on montre à l'utilisateur quand aucune offre n'est encore notée. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
+- **Grille de notation** : la modifier par `update_rubric` (ou `{{CMD}} rubric --update '{…}' --dry-run`, puis sans `--dry-run` avec `--summary`), qui ne change que ce qu'on lui passe, exemples de référence compris (`examples.add` / `examples.remove`). L'essai renvoie aussi la note de chaque exemple avant et après (`computed_examples`) : c'est ce qu'on montre à l'utilisateur quand aucune offre n'est encore notée. Ne réécrire `profil/grille.json` à la main qu'en entier et en connaissance de cause : une section omise est perdue.
 
 ## Règles non négociables
 
@@ -43,17 +43,17 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 ## Quand l'utilisateur présente une offre
 
-0. Déjà vue ? `lister_offres` avec `texte` (ou `{{CMD}} list --texte "…" --json`).
+0. Déjà vue ? `list_offers` avec `text` (ou `{{CMD}} list --text "…" --json`).
 1. Analyser le fit contre l'inventaire de `_CONTEXTE.md` : ce qui colle, les écarts à assumer, un verdict sur 10, les conditions (rémunération, télétravail, trajet).
-2. S'il dit « go » : `candidater`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `enregistrer_candidature` et `generer_suivi` (`remplacer: true`).
+2. S'il dit « go » : `apply`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `save_application` et `generate_tracker` (`remplacer: true`).
 3. **Lire le formulaire de candidature avant d'écrire** : CV seul, message (et sa limite de caractères), questions, lettre exigée ou non. Une lettre de motivation ne s'écrit que si le formulaire l'exige : une page, même matière que le message.
 4. Messages : respecter la limite du canal, les enregistrer dans le dossier, **version envoyée comprise**.
-5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages bien remplies** (`generer_cv` ou `{{CMD}} cv <fichier.md>` : nombre de pages, remplissage de chacune, avertissements).
-6. Sans « go » : `changer_statut` vers `ecartee`, avec la raison en commentaire, sans redemander.
-7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base, puis `generer_suivi`.
-   - **Envoi** : `enregistrer_candidature` avec `envoyee_le` (date réelle de l'envoi) et le CV envoyé (le PDF), puis une relance en échéance (délai : section « Conditions » de `_CONTEXTE.md`, sinon 7 jours).
-   - **Réponse, entretien, refus** : `ajouter_evenement` (daté), le statut (`entretien`, `refus`…), la prochaine échéance.
-   - **Échéance devenue sans objet** (relance inutile après une réponse) : la modifier (`modifier_evenement`) en note « Sans objet : … » **et** la marquer faite (`marquer_fait`). Une note faite n'est qu'une trace au journal ; non faite, elle resterait une échéance et prendrait la place de la vraie prochaine action dans le suivi.
+5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages bien remplies** (`generate_cv` ou `{{CMD}} cv <fichier.md>` : nombre de pages, remplissage de chacune, avertissements).
+6. Sans « go » : `change_status` vers `dismissed`, avec la raison en commentaire, sans redemander.
+7. Quand l'utilisateur annonce un envoi, une réponse, un entretien, un refus : mettre à jour le dossier, puis la base, puis `generate_tracker`.
+   - **Envoi** : `save_application` avec `sent_at` (date réelle de l'envoi) et le CV envoyé (le PDF), puis une relance en échéance (délai : section « Conditions » de `_CONTEXTE.md`, sinon 7 jours).
+   - **Réponse, entretien, refus** : `add_event` (daté), le statut (`interview`, `rejected`…), la prochaine échéance.
+   - **Échéance devenue sans objet** (relance inutile après une réponse) : la modifier (`update_event`) en note « Sans objet : … » **et** la marquer faite (`mark_done`). Une note faite n'est qu'une trace au journal ; non faite, elle resterait une échéance et prendrait la place de la vraie prochaine action dans le suivi.
    - Ne propose pas d'ajouter un rendez-vous à un agenda : l'échéance en base suffit, sauf si un outil d'agenda est branché.
    - Dates relatives (« hier », « jeudi prochain ») : calculer la date réelle et la dire en clair.
 

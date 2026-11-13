@@ -104,7 +104,7 @@ describe('standalone MCP server (in memory)', () => {
     expect(p).toContain('# Démarrage — consignes pour l');
     expect(p).toContain(workspace.replace(/\\/g, '/')); // {{WORKSPACE}} markers replaced by init
     expect(p).not.toMatch(/\{\{\w+\}\}/);
-    expect(p).toMatch(/lire_fichier/);
+    expect(p).toMatch(/read_file/);
 
     appendFileSync(join(workspace, 'procedures', 'traiter-emails.md'), '\nConsigne ajoutée par l’utilisateur : trier par date.\n');
     const t = textPrompt(await client.getPrompt({ name: 'process-emails' }));

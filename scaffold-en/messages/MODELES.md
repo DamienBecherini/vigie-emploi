@@ -4,7 +4,7 @@
 
 ## Common rules
 
-- **Channel limit**: the one shown on the form is what counts (counter under the field). Measure with `{{CMD}} compter <file>` (or the `compter` tool) and note the length in the application file. Rough guide: an Indeed form (including Glassdoor "Easy Apply") takes up to 4,000 characters; a LinkedIn connection note is very short (a few hundred characters at most); a first message on a freelance platform is best kept to one phone screen.
+- **Channel limit**: the one shown on the form is what counts (counter under the field). Measure with `{{CMD}} count <file>` (or the `count` tool) and note the length in the application file. Rough guide: an Indeed form (including Glassdoor "Easy Apply") takes up to 4,000 characters; a LinkedIn connection note is very short (a few hundred characters at most); a first message on a freelance platform is best kept to one phone screen.
 - **Structure**: an opening that answers the ad (not "I am writing to apply for…"); two or three pieces of evidence from `_CONTEXTE.md`, with figures where possible; any obvious gap owned up to in one sentence; the conditions (availability or notice period, remote work, pay if the channel lends itself to it); a close that suggests a next step (a call, a slot).
 - **Honesty**: nothing that cannot be claimed under `_CONTEXTE.md`. No superlatives without evidence.
 - **Format**: plain text, no Markdown (forms do not render it). Give it to the user in the "text to copy and paste" format of `AGENTS.md`; keep the version actually sent in the application file.

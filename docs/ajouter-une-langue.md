@@ -12,7 +12,7 @@ export const LOCALES: Record<Langue, string> = { fr: 'fr-FR', en: 'en-GB', es: '
 export const NOMS_LANGUES: Record<Langue, string> = { fr: 'Français', en: 'English', es: 'Español' };
 ```
 
-La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom apparaît dans le sélecteur de l'interface et est accepté comme valeur de `langue` (« Español », « espanol », « es »).
+La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom apparaît dans le sélecteur de l'interface et est accepté comme valeur de `language` (« Español », « espanol », « es »).
 
 ## 2. Traduire ce que le compilateur signale
 
@@ -22,7 +22,7 @@ La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom appara�
 |---|---|
 | `src/i18n/es.ts` (copie de `en.ts`), à ajouter dans `DICTIONNAIRES` de `src/i18n/index.ts` | CLI, API, suivi généré, initialisation |
 | `ui/src/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_UI` de `ui/src/i18n/index.ts` | Tableau de bord |
-| `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_MCP` de `src/mcp/textes.ts` | Instructions, outils, paramètres, résultats et erreurs du serveur MCP |
+| `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_MCP` de `src/mcp/texts.ts` | Instructions, outils, paramètres, résultats et erreurs du serveur MCP |
 | `src/i18n/libelles.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
 | `ui/src/theme.ts` | Noms des couleurs (`LIBELLES_NEUTRES`, `LIBELLES_ACCENTS`) |
 
@@ -34,12 +34,12 @@ Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `
 
 | Fichier | Rôle | Sans traduction |
 |---|---|---|
-| `modele-es/` (copie de `modele-en/`) | Espace de travail créé par `init --langue es` : consignes de l'IA, démarrage, exemple de CV | Le modèle français est copié, avec un avertissement |
+| `scaffold-es/` (copie de `scaffold-en/`) | Espace de travail créé par `init --language es` : consignes de l'IA, démarrage, exemple de CV | Le modèle français est copié, avec un avertissement |
 | `AGENTS.es.md` | Consignes de l'application pour l'agent | `AGENTS.md` (français) |
-| `exemples/grille.es.json` | Grille d'exemple | Grille française |
+| `examples/rubric.es.json` | Grille d'exemple | Grille française |
 | `README.es.md` | Présentation, à relier au sélecteur de langue en tête des README | — |
 
-`npm test` (fichier `tests/langues.test.ts`) vérifie que ces fichiers existent, que `modele-es/` contient les mêmes fichiers que `modele/`, et qu'aucun texte des dictionnaires n'est vide ou resté en français.
+`npm test` (fichier `tests/languages.test.ts`) vérifie que ces fichiers existent, que `scaffold-es/` contient les mêmes fichiers que `scaffold/`, et qu'aucun texte des dictionnaires n'est vide ou resté en français.
 
 ## 4. Facultatif
 
@@ -51,9 +51,9 @@ Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `
 
 ```bash
 npm run typecheck && npm test && npm run build
-node bin/vigie-emploi.js init /tmp/essai-es --langue es
+node bin/vigie-emploi.js init /tmp/essai-es --language es
 ```
 
 Puis ouvrir le tableau de bord (`node bin/vigie-emploi.js serve --data /tmp/essai-es`) et choisir la langue dans l'en-tête. Faire relire les textes par une personne dont c'est la langue.
 
-Les identifiants (statuts `nouvelle`, `envoyee`…, noms de commandes, noms de fichiers de l'espace) restent en français dans toutes les langues : l'IA et les scripts s'appuient dessus.
+Les identifiants (statuts `new`, `sent`…, noms de commandes, en anglais) et les noms de fichiers de l'espace (en français) sont les mêmes dans toutes les langues : l'IA et les scripts s'appuient dessus.

@@ -6,7 +6,7 @@ CVs are written in Markdown, one file per CV, then converted into an A4 PDF:
 {{CMD}} cv "cv/<name>.md"
 ```
 
-Without a terminal (MCP-only client), the `generer_cv` tool does the same thing. The PDF is written next to the `.md`; the command shows the page count and how full each page is, measured on the PDF (`PAGES : 2 (fill: 96%, 58%)`), with a warning if a page followed by another is less than 80% full (badly placed page break) or if the last one is less than 50% full. **Target: 2 well-filled pages.** If there are 3, cut text rather than shrinking the font.
+Without a terminal (MCP-only client), the `generate_cv` tool does the same thing. The PDF is written next to the `.md`; the command shows the page count and how full each page is, measured on the PDF (`PAGES : 2 (fill: 96%, 58%)`), with a warning if a page followed by another is less than 80% full (badly placed page break) or if the last one is less than 50% full. **Target: 2 well-filled pages.** If there are 3, cut text rather than shrinking the font.
 
 - `cv/<FirstName>_<LASTNAME>_CV-<JobTitle>.md`: the generic CV approved during onboarding.
 - `cv/<FirstName>_<LASTNAME>_CV-for-<Company>-<Role>.md`: a CV targeted at one job ad, when the ad warrants it.
@@ -25,9 +25,9 @@ Without a terminal (MCP-only client), the `generer_cv` tool does the same thing.
 
 ## Template
 
-The template is in [`gabarit/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
+The template is in [`template/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
 
-- pick another bundled template: `{{CMD}} gabarits` (tool `lister_gabarits`) lists them ("sobre", serif; "moderne", with a coloured band; "compact", single column), `{{CMD}} gabarit <name>` (tool `choisir_gabarit`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
+- pick another bundled template: `{{CMD}} templates` (tool `list_templates`) lists them ("sobre", serif; "moderne", with a coloured band; "compact", single column), `{{CMD}} template <name>` (tool `choose_template`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
 
 - ask the AI: "adapt `cv/gabarit/gabarit.css` to this design", giving it a screenshot or a PDF of the look you want; it edits the stylesheet, regenerates the CV and checks the 2 pages;
 - or edit `gabarit.css` yourself (accent colour, font, margins).

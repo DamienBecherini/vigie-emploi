@@ -4,7 +4,7 @@ Des **trames**, pas des textes à recopier : l'IA les remplit avec l'offre, le d
 
 ## Règles communes
 
-- **Limite du canal** : celle qu'affiche le formulaire fait foi (compteur sous le champ). Mesurer avec `{{CMD}} compter <fichier>` (ou l'outil `compter`) et indiquer la longueur dans le dossier. Repères : formulaire Indeed (dont la « candidature facile » Glassdoor) jusqu'à 4 000 caractères ; une note d'invitation LinkedIn est très courte (quelques centaines de caractères au plus) ; un premier message sur une plateforme freelance gagne à tenir sur un écran de téléphone.
+- **Limite du canal** : celle qu'affiche le formulaire fait foi (compteur sous le champ). Mesurer avec `{{CMD}} count <fichier>` (ou l'outil `count`) et indiquer la longueur dans le dossier. Repères : formulaire Indeed (dont la « candidature facile » Glassdoor) jusqu'à 4 000 caractères ; une note d'invitation LinkedIn est très courte (quelques centaines de caractères au plus) ; un premier message sur une plateforme freelance gagne à tenir sur un écran de téléphone.
 - **Structure** : une accroche qui répond à l'offre (pas « je me permets de… ») ; deux ou trois preuves tirées de `_CONTEXTE.md`, chiffrées si possible ; les écarts assumés en une phrase s'ils sautent aux yeux ; les conditions (disponibilité, télétravail, rémunération si le canal s'y prête) ; une fin qui propose la suite (un échange, un créneau).
 - **Honnêteté** : rien qui ne soit revendicable dans `_CONTEXTE.md`. Pas de superlatifs sans preuve.
 - **Format** : texte brut, sans Markdown (les formulaires ne le rendent pas). Le donner à l'utilisateur au format « texte à copier-coller » d'`AGENTS.md` ; garder dans le dossier la version envoyée.

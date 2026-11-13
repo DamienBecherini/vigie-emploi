@@ -73,9 +73,9 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 1. Téléchargez le fichier `vigie-emploi-<version>.mcpb` (page [Releases](https://github.com/DamienBecherini/vigie-emploi/releases) du dépôt).
 2. Double-cliquez dessus (ou glissez-le dans la fenêtre de Claude Desktop, ou **Paramètres → Extensions → Paramètres avancés → Installer une extension…**), puis cliquez sur **Installer**.
 3. Choisissez le **dossier de l'espace** (par défaut `ma-recherche` dans votre dossier personnel ; il n'a pas besoin d'exister) et la **langue** (`fr` ou `en`).
-4. Dans une nouvelle conversation, demandez « crée mon espace vigie-emploi », ou bouton **+** → vigie-emploi → prompt **`demarrage`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
+4. Dans une nouvelle conversation, demandez « crée mon espace vigie-emploi », ou bouton **+** → vigie-emploi → prompt **`onboarding`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
 
-Pas de terminal ni de Node à installer : l'extension contient l'application et utilise le Node intégré à Claude Desktop. Pour parcourir vos offres dans le tableau de bord, demandez à Claude de l'ouvrir (outil `ouvrir_tableau_de_bord`). Détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+Pas de terminal ni de Node à installer : l'extension contient l'application et utilise le Node intégré à Claude Desktop. Pour parcourir vos offres dans le tableau de bord, demandez à Claude de l'ouvrir (outil `open_dashboard`). Détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
 ### Avec Claude Code ou un autre agent
 
@@ -85,7 +85,7 @@ npx vigie-emploi init ~/ma-recherche
 
 Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
-`init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV, `--langue en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes, de statuts et de fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
+`init` crée votre espace de travail (`--template modern` ou `compact` pour changer de gabarit de CV, `--language en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes et de statuts sont les mêmes dans toutes les langues, ceux des fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
 1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
 2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
@@ -163,26 +163,26 @@ Noms de travail d'avant la publication (`postuler-juste`, `cap-emploi`) : leurs 
 ### Créer son espace de travail
 
 ```sh
-vigie-emploi init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--langue fr|en]
+vigie-emploi init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]
 ```
 
-Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`gabarits/cv/sobre/`) et la grille d'exemple, puis écrit `vigie-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
+Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`scaffold/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`templates/cv/plain/`) et la grille d'exemple, puis écrit `vigie-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
 
-Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp vigie-emploi-test`).
+Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --mcp-name vigie-emploi-test`).
 
 ### Avec Claude Desktop ou un autre client MCP
 
-Le serveur MCP (`vigie-emploi mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`ouvrir_tableau_de_bord`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `VIGIE_EMPLOI_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+Le serveur MCP (`vigie-emploi mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialize_workspace`, sans passer par `init`), fournit les consignes en prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`open_dashboard`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `VIGIE_EMPLOI_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
 Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/vigie-emploi/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/vigie-emploi-<version>.mcpb` (environ 5 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
 
 ### CV en PDF
 
 ```sh
-vigie-emploi cv "cv/<nom>.md" [--gabarit <dossier>]
+vigie-emploi cv "cv/<nom>.md" [--template <dossier>]
 ```
 
-Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `VIGIE_EMPLOI_NAVIGATEUR` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--gabarit`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `modele/cv/LISEZMOI.md`.
+Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `VIGIE_EMPLOI_BROWSER` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--template`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `scaffold/cv/LISEZMOI.md`.
 
 ### Configuration du dossier de données
 
@@ -192,8 +192,8 @@ Le dossier de données contient la base et la boîte de réception :
 <dossier>/
   data/vigie-emploi.sqlite   base (créée au premier lancement)
   emails/                  .eml à ingérer (supprimés une fois traités)
-  candidatures/            historique facultatif à reprendre (voir import-historique)
-  profil/grille.json       grille de notation (vigie-emploi grille --init copie l'exemple)
+  candidatures/            historique facultatif à reprendre (voir import-history)
+  profil/grille.json       grille de notation (vigie-emploi rubric --init copie l'exemple)
 ```
 
 Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
@@ -204,17 +204,17 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 
 | Clé | Rôle | Défaut |
 |---|---|---|
-| `dossierDonnees` | Dossier de données (chemin absolu ou relatif au fichier) | — |
-| `base` | Chemin de la base | `<données>/data/vigie-emploi.sqlite` |
+| `dataDir` | Dossier de données (chemin absolu ou relatif au fichier) | — |
+| `database` | Chemin de la base | `<données>/data/vigie-emploi.sqlite` |
 | `emails` | Boîte de réception | `<données>/emails` |
 | `port` | Port du tableau de bord | `4410` |
-| `telechargerJsonLd` | Lire les pages Hellowork / Free-Work | `true` |
-| `titresExclus` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
-| `employeursRefuses` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
-| `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{dossier}` et `{invite}` y sont remplacés | Windows : `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]` ; ailleurs : aucune |
-| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
+| `fetchJsonLd` | Lire les pages Hellowork / Free-Work | `true` |
+| `excludedTitles` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
+| `rejectedEmployers` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
+| `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{folder}` et `{prompt}` y sont remplacés | Windows : `["wt.exe", "-d", "{folder}", "claude", "{prompt}"]` ; ailleurs : aucune |
+| `language` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --language`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
 
-Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_BASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUE`.
+Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_DATABASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`.
 
 ### Commandes
 
@@ -222,104 +222,104 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 
 | Commande | Effet |
 |---|---|
-| `vigie-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`nouvelle`, ou `ecartee` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
-| `vigie-emploi import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par vigie-emploi n'est pas relu |
-| `vigie-emploi list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` ; tri sur plusieurs niveaux : `--tri recue_le:desc,note:desc` |
+| `vigie-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`new`, ou `dismissed` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
+| `vigie-emploi import-history` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par vigie-emploi n'est pas relu |
+| `vigie-emploi list [filtres]` | Liste paginée : `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (réception), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order` ; tri sur plusieurs niveaux : `--sort received_at:desc,note:desc` |
 | `vigie-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
-| `vigie-emploi a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
-| `vigie-emploi noter <id> --json '{…}'` | Enregistre une note pour une offre |
-| `vigie-emploi noter --fichier lot.json [--essai]` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) ; `--essai` calcule sans enregistrer |
-| `vigie-emploi grille [--consignes]` | Grille de notation courante : critères et poids, barèmes, règles, inventaire, exemples (`--consignes` : consignes pour l'IA) |
-| `vigie-emploi grille --modifier '{…}' --resume "…" [--essai]` | Changement partiel (poids, seuil, barèmes, règles, inventaire) ; nouvelle version et renotation, ou aperçu avec `--essai` |
-| `vigie-emploi grille --historique` / `--version N` / `--restaurer N` / `--init` | Versions de la grille, retour à une version, copie de la grille d'exemple |
-| `vigie-emploi renoter` | Recalcule les notes à critères avec la grille courante |
-| `vigie-emploi statut <id> <statut> [--commentaire "…"]` | Change le statut (historisé) |
+| `vigie-emploi to-read [--limit N] [--full]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
+| `vigie-emploi score <id> --json '{…}'` | Enregistre une note pour une offre |
+| `vigie-emploi score --file lot.json [--dry-run]` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) ; `--dry-run` calcule sans enregistrer |
+| `vigie-emploi rubric [--instructions]` | Grille de notation courante : critères et poids, barèmes, règles, inventaire, exemples (`--instructions` : consignes pour l'IA) |
+| `vigie-emploi rubric --update '{…}' --summary "…" [--dry-run]` | Changement partiel (poids, seuil, barèmes, règles, inventaire) ; nouvelle version et renotation, ou aperçu avec `--dry-run` |
+| `vigie-emploi rubric --history` / `--version N` / `--restore N` / `--init` | Versions de la grille, retour à une version, copie de la grille d'exemple |
+| `vigie-emploi rescore` | Recalcule les notes à critères avec la grille courante |
+| `vigie-emploi status <id> <statut> [--comment "…"]` | Change le statut (historisé) |
 | `vigie-emploi tag <id> +ajout -retrait` | Ajoute / retire des tags |
-| `vigie-emploi candidater <id>` | Passe l'offre en `go` et affiche ce qu'il faut pour préparer la candidature |
-| `vigie-emploi candidature <id> [--dossier] [--cv] [--canal] [--envoyee-le] [--message] [--prochaine-action]` | Enregistre la candidature (`""` efface un champ) ; avec `--envoyee-le`, l'offre passe en `envoyee` |
-| `vigie-emploi prochaine-action <id> "texte"` | Prochaine action de la candidature (`-` pour l'effacer) |
-| `vigie-emploi lien <id> <url ou ->` | Lien de l'offre |
-| `vigie-emploi evenement <id> --type <type> [--le "JJ/MM/AAAA HH:MM"] --resume "…" [--sens envoye\|recu] [--canal] [--interlocuteurs] [--details] [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier <chemin>]… [--fait\|--no-fait]` | Ajoute un événement au journal (types : `message`, `entretien`, `test`, `proposition`, `decision`, `note`). `--le` : JJ/MM/AAAA, AAAA-MM-JJ, avec heure facultative, `demain`, `+3` ; par défaut maintenant. Daté dans le futur, il n'est pas fait : c'est une échéance |
+| `vigie-emploi apply <id>` | Passe l'offre en `go` et affiche ce qu'il faut pour préparer la candidature |
+| `vigie-emploi application <id> [--folder] [--cv] [--channel] [--sent-at] [--message] [--next-action]` | Enregistre la candidature (`""` efface un champ) ; avec `--sent-at`, l'offre passe en `sent` |
+| `vigie-emploi next-action <id> "texte"` | Prochaine action de la candidature (`-` pour l'effacer) |
+| `vigie-emploi link <id> <url ou ->` | Lien de l'offre |
+| `vigie-emploi event <id> --type <type> [--at "JJ/MM/AAAA HH:MM"] --summary "…" [--direction sent\|received] [--channel] [--contacts] [--details] [--amount 3000 --unit "€ HT"] [--days 6] [--file <chemin>]… [--done\|--no-done]` | Ajoute un événement au journal (types : `message`, `interview`, `test`, `proposal`, `decision`, `score`). `--at` : JJ/MM/AAAA, AAAA-MM-JJ, avec heure facultative, `demain`, `+3` ; par défaut maintenant. Daté dans le futur, il n'est pas fait : c'est une échéance |
 | `vigie-emploi journal <id>` | Journal de la candidature : échéances d'abord (retards en tête), puis du plus récent au plus ancien |
-| `vigie-emploi echeances [--jours 7]` | Échéances en retard et à venir sur N jours, toutes offres confondues |
-| `vigie-emploi fait <evenement_id> [--no-fait]` | Marque une échéance comme faite (ou la rouvre) |
-| `vigie-emploi fichiers <id>` | Fichiers du dossier de candidature (chemins à citer dans `--fichier`) |
+| `vigie-emploi deadlines [--days 7]` | Échéances en retard et à venir sur N jours, toutes offres confondues |
+| `vigie-emploi done <event_id> [--no-done]` | Marque une échéance comme faite (ou la rouvre) |
+| `vigie-emploi files <id>` | Fichiers du dossier de candidature (chemins à citer dans `--file`) |
 | `vigie-emploi stats` | Candidatures par étape (envoyée, réponse, entretien, proposition) et délai moyen avant la première réponse |
-| `vigie-emploi generer-suivi [--sortie <fichier>] [--remplacer]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--remplacer` |
+| `vigie-emploi generate-tracker [--output <fichier>] [--replace]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--replace` |
 | `vigie-emploi mcp` | Serveur MCP (stdio) pour une IA |
-| `vigie-emploi serve [--port 4410] [--inactivite <minutes>]` | Lance le tableau de bord sur http://localhost:4410 ; avec `--inactivite`, il s'arrête seul après ce temps sans visite (`GET /api/sante` donne le temps restant) |
+| `vigie-emploi serve [--port 4410] [--idle <minutes>]` | Lance le tableau de bord sur http://localhost:4410 ; avec `--idle`, il s'arrête seul après ce temps sans visite (`GET /api/health` donne le temps restant) |
 
-Statuts : `nouvelle`, `a-lire`, `notee`, `ecartee`, `go`, `envoyee`, `relancee`, `entretien`, `refus`, `close`, `abandonnee`. « Mes candidatures » regroupe `envoyee` et les suivants.
+Statuts : `new`, `to-read`, `scored`, `dismissed`, `go`, `sent`, `followed-up`, `interview`, `rejected`, `closed`, `withdrawn`. « Mes candidatures » regroupe `sent` et les suivants.
 
 Format d'une note (celui des lots) :
 
 ```json
 {
   "source": "linkedin", "url": "https://www.linkedin.com/jobs/view/1234567890/",
-  "titre": "…", "entreprise": "…", "lieu": "…", "contrat": "CDI", "remuneration": "50-60 K€",
-  "teletravail": "hybride", "publiee": "NC", "stack": "PHP, API",
-  "criteres": {
-    "technique": { "note": 8, "justification": "PHP, API REST ; écart : PostgreSQL" },
-    "role": { "note": 7, "justification": "…" },
-    "interet": { "note": 6, "justification": "…" },
-    "risque": { "note": 7, "justification": "…" }
+  "title": "…", "company": "…", "location": "…", "contract": "CDI", "compensation": "50-60 K€",
+  "remote": "hybride", "published": "NC", "stack": "PHP, API",
+  "criteria": {
+    "technique": { "score": 8, "justification": "PHP, API REST ; écart : PostgreSQL" },
+    "role": { "score": 7, "justification": "…" },
+    "interet": { "score": 6, "justification": "…" },
+    "risque": { "score": 7, "justification": "…" }
   },
-  "entrees": { "jours_sur_site": 2, "salaire_min": 55000, "salaire_max": 65000, "unite": "an" },
-  "bloquants": [],
-  "colle": "…", "ecarts": "…", "lu": true
+  "inputs": { "onsite_days": 2, "salary_min": 55000, "salary_max": 65000, "unit": "year" },
+  "blockers": [],
+  "fit": "…", "gaps": "…", "read": true
 }
 ```
 
-Avec `criteres` (ou `entrees`, `bloquants`), la note est **calculée** avec la grille ; un champ `note` fourni est ignoré et signalé dans `avertissements`. La réponse contient la note, la valeur exacte et la décomposition. Sans `criteres`, c'est une note globale de l'ancienne grille (`note`, `note_brute`, `penalites`), qui reste figée. Champs facultatifs : `id` (à la place de `url`), `description`, `tags`. Les champs descriptifs ne complètent que ce qui manque ; la dernière note fait foi.
+Avec `criteria` (ou `inputs`, `blockers`), la note est **calculée** avec la grille ; un champ `score` fourni est ignoré et signalé dans `warnings`. La réponse contient la note, la valeur exacte et la décomposition. Sans `criteria`, c'est une note globale de l'ancienne grille (`score`, `raw_score`, `penalties`), qui reste figée. Champs facultatifs : `id` (à la place de `url`), `description`, `tags`. Les champs descriptifs ne complètent que ce qui manque ; la dernière note fait foi.
 
 ### Grille de notation
 
-La grille vit dans `<données>/profil/grille.json` (modèle générique : [`exemples/grille.json`](exemples/grille.json), copié par `vigie-emploi grille --init`). Elle contient :
+La grille vit dans `<données>/profil/grille.json` (modèle générique : [`examples/rubric.json`](examples/rubric.json), copié par `vigie-emploi rubric --init`). Elle contient :
 
-- **critères pondérés** (7 au plus) notés de 0 à 10 : par l'IA (`source: "ia"`, avec une consigne dans `description`) ou par l'application (`source: "calcul"`, `calcul: "teletravail"` ou `"remuneration"`) ; poids relatifs, normalisés à 100 % ;
-- **barèmes** : télétravail (sous-note pour 0 à 5 jours sur site, valeur « inconnu ») ; rémunération (salaire en K€/an et TJM en €/j : plancher = 5, cible haute = 10, sous le plancher = 0, linéaire entre ; plancher full remote facultatif ; milieu, bas ou haut de fourchette) ;
-- **règles bloquantes** : identifiant, libellé, effet `zero` ou `plafond` + valeur, active ou non ;
+- **critères pondérés** (7 au plus) notés de 0 à 10 : par l'IA (`source: "ai"`, avec une consigne dans `description`) ou par l'application (`source: "computation"`, `computation: "remote"` ou `"compensation"`) ; poids relatifs, normalisés à 100 % ;
+- **barèmes** : télétravail (sous-note pour 0 à 5 jours sur site, valeur « unknown ») ; rémunération (salaire en K€/an et TJM en €/j : plancher = 5, cible haute = 10, sous le plancher = 0, linéaire entre ; plancher full remote facultatif ; milieu, bas ou haut de fourchette) ;
+- **règles bloquantes** : identifiant, libellé, effet `zero` ou `cap` + valeur, active ou non ;
 - **inventaire de compétences** (technologie → fort / moyen / léger / zéro), lu par l'IA pour le critère technique ;
 - **seuil « à regarder »** (vue rapide « Notées ≥ … ») ;
 - **exemples de référence** (offres notées critère par critère, avec justification) pour caler l'IA ;
 - **consignes** générales pour l'IA.
 
-Calcul : moyenne pondérée des sous-notes → règles bloquantes (zéro, plafond) → arrondi au demi-point pour l'affichage et les filtres (la valeur exacte est gardée). Donnée manquante (critère non noté, télétravail ou salaire inconnus) : valeur neutre 5 et un **drapeau** sur l'offre. Les jours sur site et le salaire viennent de `entrees`, sinon des champs télétravail et rémunération de l'offre.
+Calcul : moyenne pondérée des sous-notes → règles bloquantes (zéro, plafond) → arrondi au demi-point pour l'affichage et les filtres (la valeur exacte est gardée). Donnée manquante (critère non noté, télétravail ou salaire inconnus) : valeur neutre 5 et un **drapeau** sur l'offre. Les jours sur site et le salaire viennent de `inputs`, sinon des champs télétravail et rémunération de l'offre.
 
 Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée une **version** (numéro, date, auteur, résumé) et **recalcule toutes les notes à critères**, sans relire d'offre. Les anciennes notes globales restent telles quelles (badge « ancienne grille »). On peut revenir à une version précédente (elle devient une nouvelle version).
 
 ### Tableau de bord
 
-`vigie-emploi serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement). `--inactivite <minutes>` l'arrête après une période sans activité.
+`vigie-emploi serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement). `--idle <minutes>` l'arrête après une période sans activité.
 
-Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L'outil MCP `ouvrir_tableau_de_bord` le démarre en arrière-plan s'il ne tourne pas déjà (processus séparé qui survit au redémarrage du serveur MCP et s'arrête après 60 minutes sans activité), sur le port de l'espace ou le suivant libre, et renvoie l'adresse à cliquer ; `ouvrir: true` l'ouvre dans le navigateur par défaut. Il lui faut un `node` (24 ou plus) installé ; sinon il tourne dans le processus du serveur MCP, tant que Claude Desktop reste ouvert.
+Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L'outil MCP `open_dashboard` le démarre en arrière-plan s'il ne tourne pas déjà (processus séparé qui survit au redémarrage du serveur MCP et s'arrête après 60 minutes sans activité), sur le port de l'espace ou le suivant libre, et renvoie l'adresse à cliquer ; `open: true` l'ouvre dans le navigateur par défaut. Il lui faut un `node` (24 ou plus) installé ; sinon il tourne dans le processus du serveur MCP, tant que Claude Desktop reste ouvert.
 
 - Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne à la Thunderbird (le dernier en-tête cliqué devient le tri principal, le précédent passe en secondaire : cliquer Note puis Reçue le trie par date, puis par note à date égale ; l'adresse garde les niveaux), colonnes masquables.
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
 - Vues rapides : à traiter, notées ≥ seuil de la grille (4,5 par défaut), mes candidatures.
 - **Réglages de la note** (bouton de l'en-tête) : curseurs des poids (total normalisé affiché), seuil, barèmes télétravail et rémunération, règles bloquantes (activer, effet, plafond, ajout, suppression), inventaire (ajout, modification, suppression, filtre), exemples de référence recalculés en direct ; **aperçu avant d'enregistrer** (offres dont la note change, offres qui franchissent le seuil, cliquables) ; résumé du changement obligatoire ; historique des versions et restauration.
 - **Travail pour l'agent**, au-dessus des filtres, seulement s'il y en a : « Traiter N e-mails » (des `.eml` attendent dans la boîte de réception) et « Préparer N candidatures » (offres en `go` sans dossier). Chaque bouton ouvre un terminal dans le dossier de données avec l'agent et la commande `/traiter-emails` ou `/preparer-go` (à fournir par le dossier de données, par exemple sous forme de skills Claude Code) ; la suite se passe dans ce terminal. Voir [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
-- **Mise à jour en direct** : le serveur prévient la page (Server-Sent Events, `/api/flux`) quand la base change, quelle que soit l'origine de l'écriture (CLI, agent, autre onglet), et quand la boîte de réception change ; la page recharge alors ses données. Le bouton « Rafraîchir » reste disponible.
+- **Mise à jour en direct** : le serveur prévient la page (Server-Sent Events, `/api/stream`) quand la base change, quelle que soit l'origine de l'écriture (CLI, agent, autre onglet), et quand la boîte de réception change ; la page recharge alors ses données. Le bouton « Rafraîchir » reste disponible.
 - Bandeau **À venir** au-dessus du tableau : échéances en retard et des 7 prochains jours, chacune ouvre son offre ; bouton **Statistiques** (candidatures par étape, délai de réponse).
-- Panneau de détail : description, lien vers l'offre (modifiable), **décomposition de la note** (critère par critère : sous-note, poids, apport, justification, origine ; règles appliquées ; drapeaux ; valeur exacte et version de la grille), badge « ancienne grille » pour une note globale, **correction des sous-notes** (critères IA, jours sur site, salaire, règles ; la note est recalculée et s'ajoute à l'historique), note globale à l'ancienne, **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
-- Fichiers : servis en lecture par `/api/fichier/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?brut=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`, et les écritures venues d'une autre origine (en-tête `Origin` non local ou `Sec-Fetch-Site: cross-site`).
+- Panneau de détail : description, lien vers l'offre (modifiable), **décomposition de la note** (critère par critère : sous-note, poids, apport, justification, origine ; règles appliquées ; drapeaux ; valeur exacte et version de la grille), badge « ancienne grille » pour une note globale, **correction des sous-notes** (critères IA, jours sur site, salaire, règles ; la note est recalculée et s'ajoute à l'historique), note globale à l'ancienne, **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `apply <id>` dans le presse-papiers et passe l'offre en `go`).
+- Fichiers : servis en lecture par `/api/file/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?raw=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`, et les écritures venues d'une autre origine (en-tête `Origin` non local ou `Sec-Fetch-Site: cross-site`).
 - Langue (sélecteur de l'en-tête), thème clair / sombre / système et palettes, taille du texte (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau). Sur téléphone, les filtres s'ouvrent dans un tiroir.
 
 Développement de l'interface : `vigie-emploi serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `VIGIE_EMPLOI_API` pour en changer).
 
 ### Suivi des candidatures généré
 
-`vigie-emploi generer-suivi` écrit le suivi en Markdown (`candidatures/_SUIVI.md`), lisible sans l'application : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par vigie-emploi le … : ne pas éditer à la main ».
+`vigie-emploi generate-tracker` écrit le suivi en Markdown (`candidatures/_SUIVI.md`), lisible sans l'application : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par vigie-emploi le … : ne pas éditer à la main ».
 
-Colonne Prochaine action : la prochaine échéance du journal (« **04/11** : Relancer », « (en retard) » si la date est passée), sinon le champ `prochaine_action`.
+Colonne Prochaine action : la prochaine échéance du journal (« **04/11** : Relancer », « (en retard) » si la date est passée), sinon le champ `next_action`.
 
-La base fait foi : le fichier est régénéré, jamais relu. Si vous reprenez un suivi Markdown existant (`import-historique`), tant qu'une candidature reprise n'a pas bougé, ses cellules sont réécrites telles quelles ; la prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise. Avant de remplacer un ancien `_SUIVI.md`, comparez-le à l'aperçu `_SUIVI.genere.md`.
+La base fait foi : le fichier est régénéré, jamais relu. Si vous reprenez un suivi Markdown existant (`import-history`), tant qu'une candidature reprise n'a pas bougé, ses cellules sont réécrites telles quelles ; la prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise. Avant de remplacer un ancien `_SUIVI.md`, comparez-le à l'aperçu `_SUIVI.genere.md`.
 
 ### Journal et échéances
 
 **La base sait ce qui s'est passé et quand ; le dossier Markdown garde les documents.** Un événement a un type, une date (ou date-heure), un résumé, et au besoin : sens (envoyé / reçu), canal, interlocuteurs, montant + unité, jours, détails, fichiers (chemins relatifs au dossier de données). Une date future non faite est une échéance ; passée et non faite, elle est en retard.
 
-Reprise (`import-historique`) : les sections « Suivi » des dossiers actifs (`candidatures/*/dossier-candidature.md`, pas `_archives/`) deviennent des événements d'origine `import` : lignes des tableaux Date | Événement, puces datées « - 13/10/2026 — … », cases cochées datées « - [x] Envoyée le : 13/10/2026 ». Les cases non cochées (à faire) ne sont pas reprises. Type deviné (message, entretien, test, proposition, décision ; `note` à défaut, listées dans le rapport), liens Markdown relatifs et chemins entre accents graves vers des fichiers existants. Idempotent : une empreinte par ligne ; une ligne disparue du dossier retire l'événement repris s'il n'a pas été modifié depuis. Un dossier qu'aucune candidature ne désigne est rattaché à la candidature sans dossier dont l'entreprise figure dans son nom (si elle est unique).
+Reprise (`import-history`) : les sections « Suivi » des dossiers actifs (`candidatures/*/dossier-candidature.md`, pas `_archives/`) deviennent des événements d'origine `import` : lignes des tableaux Date | Événement, puces datées « - 13/10/2026 — … », cases cochées datées « - [x] Envoyée le : 13/10/2026 ». Les cases non cochées (à faire) ne sont pas reprises. Type deviné (message, entretien, test, proposition, décision ; `score` à défaut, listées dans le rapport), liens Markdown relatifs et chemins entre accents graves vers des fichiers existants. Idempotent : une empreinte par ligne ; une ligne disparue du dossier retire l'événement repris s'il n'a pas été modifié depuis. Un dossier qu'aucune candidature ne désigne est rattaché à la candidature sans dossier dont l'entreprise figure dans son nom (si elle est unique).
 
 Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot noté ou le registre ne change plus de statut ; l'alerte laisse une trace au journal (« Revue le … », une par jour).
 
@@ -338,7 +338,7 @@ Arborescence :
 bin/vigie-emploi.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
 migrations/           schéma SQL versionné (PRAGMA user_version)
 src/core/             configuration, liens, normalisation, opérations sur les offres, requêtes,
-                      grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)
+                      grille de notation (rubric.ts : schéma et calcul purs ; rubric-storage.ts : fichier, versions, renotation)
 src/db/               ouverture de la base et migrations
 src/ingest/           lecture des .eml, JSON-LD, ingestion
 src/import/           reprise d'un historique Markdown / JSON (dont les journaux des dossiers)
@@ -350,9 +350,9 @@ src/init/             création d'un espace de travail
 src/i18n/             mécanisme de traduction et textes de la CLI, de l'API et du suivi
 src/export/           génération du suivi des candidatures (Markdown)
 ui/                   interface React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query (textes dans ui/src/i18n/)
-modele/, modele-en/   modèle d'espace de travail copié par init (consignes de l'IA, démarrage, exemple de CV)
-gabarits/cv/          gabarits de CV (« sobre », « moderne », « compact »)
-exemples/             grilles de notation d'exemple (française et anglaise)
+scaffold/, scaffold-en/   modèle d'espace de travail copié par init (consignes de l'IA, démarrage, exemple de CV)
+templates/cv/          gabarits de CV (`plain`, `modern`, `compact`)
+examples/             grilles de notation d'exemple (française et anglaise)
 mcpb/, scripts/       extension Claude Desktop (manifeste, construction)
 docs/adr/             décisions d'architecture
 ```

@@ -2,7 +2,20 @@
 // les deux) : on comprend qu'on peut faire glisser le tableau, surtout sur téléphone où la barre de défilement est cachée.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-export function DefilementHorizontal({ className, children }: { className?: string; children: ReactNode }) {
+/**
+ * `data-gauche` (« true » quand du contenu est caché à gauche) est posé sur le conteneur qui défile, nommé
+ * `group/defilement` : une colonne collée à gauche peut s'en servir pour afficher sa propre ombre
+ * (`group-data-[gauche=true]/defilement:…`) ; `ombreGauche={false}` retire alors l'ombre du bord gauche.
+ */
+export function DefilementHorizontal({
+  className,
+  ombreGauche = true,
+  children,
+}: {
+  className?: string;
+  ombreGauche?: boolean;
+  children: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [bords, setBords] = useState({ gauche: false, droite: false });
   useEffect(() => {
@@ -29,13 +42,15 @@ export function DefilementHorizontal({ className, children }: { className?: stri
   const ombre = 'pointer-events-none absolute inset-y-px w-8 transition-opacity duration-200';
   return (
     <div className="relative">
-      <div ref={ref} className={className}>
+      <div ref={ref} className={`group/defilement ${className ?? ''}`} data-gauche={bords.gauche}>
         {children}
       </div>
-      <div
-        aria-hidden="true"
-        className={`${ombre} left-px rounded-l-lg bg-linear-to-r from-slate-900/20 to-transparent dark:from-black/70 ${bords.gauche ? 'opacity-100' : 'opacity-0'}`}
-      />
+      {ombreGauche && (
+        <div
+          aria-hidden="true"
+          className={`${ombre} left-px rounded-l-lg bg-linear-to-r from-slate-900/20 to-transparent dark:from-black/70 ${bords.gauche ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
       <div
         aria-hidden="true"
         className={`${ombre} right-px rounded-r-lg bg-linear-to-l from-slate-900/20 to-transparent dark:from-black/70 ${bords.droite ? 'opacity-100' : 'opacity-0'}`}

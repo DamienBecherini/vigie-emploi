@@ -117,6 +117,13 @@ function BoutonRafraichir() {
 
 /** Écran étroit (téléphone, moins de 768 px) : les filtres passent dans un tiroir au lieu d'une colonne. */
 const ECRAN_ETROIT = '(max-width: 767px)';
+
+/**
+ * Colonne Intitulé collée au bord gauche quand le tableau défile horizontalement ; ombre à sa droite seulement quand
+ * des colonnes sont cachées dessous (data-gauche du conteneur, voir DefilementHorizontal).
+ */
+const COLLEE =
+  'sticky left-0 z-[1] group-data-[gauche=true]/defilement:shadow-[6px_0_8px_-6px_rgba(0,0,0,0.35)] dark:group-data-[gauche=true]/defilement:shadow-[6px_0_8px_-4px_rgba(0,0,0,0.9)]';
 function useEcranEtroit(): boolean {
   const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
   useEffect(() => {
@@ -500,7 +507,7 @@ export function App() {
             </p>
           )}
 
-          <DefilementHorizontal className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <DefilementHorizontal ombreGauche={false} className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">
                 {t('liste.legende', {
@@ -521,7 +528,7 @@ export function App() {
                           key={h.id}
                           scope="col"
                           aria-sort={sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
-                          className="px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:text-slate-200"
+                          className={`px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:text-slate-200 ${h.column.id === 'titre' ? `${COLLEE} bg-slate-100 dark:bg-slate-800` : ''}`}
                         >
                           {triable ? (
                             <button
@@ -569,11 +576,12 @@ export function App() {
                         }
                       }}
                       className={`cursor-pointer border-t border-slate-200 align-top hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
-                        choisie ? 'bg-blue-100 dark:bg-blue-950' : ''
+                        choisie ? 'bg-blue-100 dark:bg-blue-950' : 'bg-white dark:bg-slate-900'
                       }`}
                     >
                       {r.getVisibleCells().map((c) => (
-                        <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'titre' ? 'min-w-64' : ''}`}>
+                        // Intitulé collé : fond hérité de la ligne (survol, sélection) pour masquer les colonnes qui passent dessous.
+                        <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'titre' ? `min-w-64 max-md:min-w-44 ${COLLEE} bg-inherit` : ''}`}>
                           {flexRender(c.column.columnDef.cell, c.getContext())}
                         </td>
                       ))}

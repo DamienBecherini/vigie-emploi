@@ -46,6 +46,7 @@ import {
   Palette as PaletteIcone,
   SlidersHorizontal,
   Sun,
+  X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -111,6 +112,19 @@ function BoutonRafraichir() {
       <RefreshCw className={`size-4 ${enCours ? 'animate-spin' : ''}`} aria-hidden="true" />
     </button>
   );
+}
+
+/** Écran étroit (téléphone, moins de 768 px) : les filtres passent dans un tiroir au lieu d'une colonne. */
+const ECRAN_ETROIT = '(max-width: 767px)';
+function useEcranEtroit(): boolean {
+  const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
+  useEffect(() => {
+    const media = window.matchMedia(ECRAN_ETROIT);
+    const maj = () => setEtroit(media.matches);
+    media.addEventListener('change', maj);
+    return () => media.removeEventListener('change', maj);
+  }, []);
+  return etroit;
 }
 
 function useSombreSysteme(): boolean {
@@ -249,7 +263,26 @@ function ChoixColonnes({ table }: { table: ReturnType<typeof useReactTable<Ligne
 export function App() {
   const [params, modifier] = useParametres();
   const [visibilite, setVisibilite] = usePreference<VisibilityState>('colonnes', VISIBILITE_DEFAUT);
-  const [filtresOuverts, setFiltresOuverts] = usePreference<boolean>('filtres-ouverts', true);
+  // Colonne des filtres sur grand écran (préférence retenue) ; tiroir fermé par défaut sur téléphone.
+  const [colonneFiltres, setColonneFiltres] = usePreference<boolean>('filtres-ouverts', true);
+  const [tiroirFiltres, setTiroirFiltres] = useState(false);
+  const etroit = useEcranEtroit();
+  const filtresOuverts = etroit ? tiroirFiltres : colonneFiltres;
+  const setFiltresOuverts = etroit ? setTiroirFiltres : setColonneFiltres;
+  useEffect(() => {
+    if (!etroit || !tiroirFiltres) return;
+    const clavier = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTiroirFiltres(false);
+    };
+    document.addEventListener('keydown', clavier);
+    // La page derrière le tiroir ne défile pas.
+    const debordement = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', clavier);
+      document.body.style.overflow = debordement;
+    };
+  }, [etroit, tiroirFiltres]);
   const [annonce, setAnnonce] = useState('');
   const [reglages, setReglages] = useState(false);
   const grille = useQuery({ queryKey: ['grille'], queryFn: api.grille });
@@ -396,15 +429,41 @@ export function App() {
         </div>
       </header>
 
-      <div className="flex flex-1 gap-4 p-4">
-        {filtresOuverts && (
+      <div className="flex flex-1 gap-4 p-2 sm:p-4">
+        {filtresOuverts && !etroit && (
           <aside aria-label={t('liste.filtres')} className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <ActionsAgent className="mb-3 border-b border-slate-200 pb-3 dark:border-slate-800" />
             <Filtres params={params} modifier={modifier} meta={meta.data} />
           </aside>
         )}
+        {filtresOuverts && etroit && (
+          <div className="fixed inset-0 z-40">
+            <div className="absolute inset-0 bg-slate-900/50" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
+            <aside
+              aria-label={t('liste.filtres')}
+              className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+                <h2 className="font-semibold">{t('liste.filtres')}</h2>
+                <button
+                  type="button"
+                  className="bouton"
+                  autoFocus
+                  onClick={() => setTiroirFiltres(false)}
+                  aria-label={t('liste.masquerFiltres')}
+                  title={t('liste.masquerFiltres')}
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <Filtres params={params} modifier={modifier} meta={meta.data} />
+              </div>
+            </aside>
+          </div>
+        )}
         <main className="min-w-0 flex-1" id="tableau" tabIndex={-1}>
-          {!filtresOuverts && <ActionsAgent className="mb-3 max-w-xs" />}
+          {(etroit || !filtresOuverts) && <ActionsAgent className="mb-3 max-w-xs" />}
           <AVenir choisir={(id) => modifier({ offre: String(id) })} />
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>

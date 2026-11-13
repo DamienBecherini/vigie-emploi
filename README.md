@@ -61,12 +61,23 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 
 ## Ce qu'il faut
 
-- **Node.js 24** ou plus.
+- **Node.js 24** ou plus, sauf avec l'extension Claude Desktop (elle utilise le Node intégré à l'application).
 - **Chrome, Edge ou Chromium** (pour les CV en PDF).
-- **Un agent IA** qui travaille dans un dossier : Claude Code de préférence (serveur MCP et skills fournis) ; Cursor, Codex ou un autre agent lisent les mêmes consignes (`AGENTS.md`) et utilisent la CLI.
+- **Une IA** : Claude Desktop (extension en un clic, rien d'autre à installer), ou un agent qui travaille dans un dossier : Claude Code de préférence (serveur MCP et skills fournis) ; Cursor, Codex ou un autre agent lisent les mêmes consignes (`AGENTS.md`) et utilisent la CLI.
 - Facultatif : un **navigateur piloté par l'IA** avec vos sessions (par exemple Claude in Chrome), pour lire les offres LinkedIn, Indeed ou Glassdoor. Sans lui, vous collez le texte des offres quand l'IA le demande.
 
 ## Démarrer
+
+### Installation en un clic (Claude Desktop)
+
+1. Téléchargez le fichier `postuler-juste-<version>.mcpb` (page [Releases](https://github.com/DamienBecherini/postuler-juste/releases) du dépôt).
+2. Double-cliquez dessus (ou glissez-le dans la fenêtre de Claude Desktop, ou **Paramètres → Extensions → Paramètres avancés → Installer une extension…**), puis cliquez sur **Installer**.
+3. Choisissez le **dossier de l'espace** (par défaut `ma-recherche` dans votre dossier personnel ; il n'a pas besoin d'exister) et la **langue** (`fr` ou `en`).
+4. Dans une nouvelle conversation, demandez « crée mon espace postuler-juste », ou bouton **+** → postuler-juste → prompt **`demarrage`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
+
+Pas de terminal ni de Node à installer : l'extension contient l'application et utilise le Node intégré à Claude Desktop. Pour parcourir vos offres dans le tableau de bord, demandez à Claude de l'ouvrir (outil `ouvrir_tableau_de_bord`). Détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+
+### Avec Claude Code ou un autre agent
 
 ```sh
 npx postuler-juste init ~/ma-recherche
@@ -147,7 +158,7 @@ npm link           # rend la commande `postuler-juste` disponible partout (facul
 
 Sans `npm link`, remplacez `postuler-juste` par `node <chemin>/bin/postuler-juste.js`. Dans le dépôt, `bin/postuler-juste.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
 
-Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi`, les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
+Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi` n'existe plus (utilisez `postuler-juste`) ; les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
 
 ### Créer son espace de travail
 
@@ -161,7 +172,9 @@ Pour essayer sans toucher à une installation existante : un autre dossier, un a
 
 ### Avec Claude Desktop ou un autre client MCP
 
-Le serveur MCP (`postuler-juste mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA. Déclarez le serveur dans `claude_desktop_config.json` avec le dossier de votre espace dans `POSTULER_JUSTE_DATA` (par défaut `~/ma-recherche`), redémarrez Claude Desktop, puis choisissez le prompt `demarrage`. Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+Le serveur MCP (`postuler-juste mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`ouvrir_tableau_de_bord`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `POSTULER_JUSTE_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+
+Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/postuler-juste/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/postuler-juste-<version>.mcpb` (environ 5 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
 
 ### CV en PDF
 
@@ -277,7 +290,9 @@ Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée 
 
 ### Tableau de bord
 
-`postuler-juste serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement).
+`postuler-juste serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement). `--inactivite <minutes>` l'arrête après une période sans activité.
+
+Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L'outil MCP `ouvrir_tableau_de_bord` le démarre en arrière-plan s'il ne tourne pas déjà (processus séparé qui survit au redémarrage du serveur MCP et s'arrête après 60 minutes sans activité), sur le port de l'espace ou le suivant libre, et renvoie l'adresse à cliquer ; `ouvrir: true` l'ouvre dans le navigateur par défaut. Il lui faut un `node` (24 ou plus) installé ; sinon il tourne dans le processus du serveur MCP, tant que Claude Desktop reste ouvert.
 
 - Tableau paginé côté serveur (25 à 500 lignes par page), tri par colonne à la Thunderbird (le dernier en-tête cliqué devient le tri principal, le précédent passe en secondaire : cliquer Note puis Reçue le trie par date, puis par note à date égale ; l'adresse garde les niveaux), colonnes masquables.
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
@@ -316,6 +331,7 @@ Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot 
 npm test            # Vitest (fixtures fictives dans tests/fixtures)
 npm run typecheck   # TypeScript (serveur + interface)
 npm run build       # typecheck + compilation de l'interface
+npm run mcpb        # extension Claude Desktop : build/postuler-juste-<version>.mcpb
 ```
 
 Arborescence :

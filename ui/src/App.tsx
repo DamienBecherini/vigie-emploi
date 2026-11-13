@@ -125,6 +125,52 @@ const ECRAN_ETROIT = '(max-width: 767px)';
  */
 const COLLEE =
   'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[collee=true]/defilement:after:opacity-100';
+/**
+ * En-tête du tableau qui reste visible sous l'en-tête collé de l'application pendant le défilement de la page.
+ * `position: sticky` n'y suffit pas : le conteneur à défilement horizontal du tableau capte le collage vertical.
+ * On décale donc le <thead> (translateY) à chaque défilement : il reste dans le tableau (largeurs de colonnes et
+ * défilement horizontal intacts) et s'arrête au-dessus de la dernière ligne. `data-flottant` affiche son ombre.
+ */
+function useEnteteFlottant(
+  tableRef: React.RefObject<HTMLTableElement | null>,
+  theadRef: React.RefObject<HTMLTableSectionElement | null>,
+  enteteRef: React.RefObject<HTMLElement | null>,
+) {
+  useEffect(() => {
+    let image = 0;
+    const placer = () => {
+      image = 0;
+      const table = tableRef.current;
+      const thead = theadRef.current;
+      if (!table || !thead) return;
+      const haut = enteteRef.current?.getBoundingClientRect().bottom ?? 0;
+      const r = table.getBoundingClientRect();
+      const lignes = table.tBodies[0]?.rows;
+      const derniere = lignes?.length ? lignes[lignes.length - 1].offsetHeight : 0;
+      const max = Math.max(0, r.height - thead.offsetHeight - derniere);
+      const decalage = Math.min(Math.max(0, haut - r.top), max);
+      thead.style.transform = decalage > 0 ? `translateY(${decalage}px)` : '';
+      thead.dataset.flottant = String(decalage > 0);
+    };
+    const demander = () => {
+      if (!image) image = requestAnimationFrame(placer);
+    };
+    placer();
+    window.addEventListener('scroll', demander, { passive: true });
+    window.addEventListener('resize', demander);
+    // Hauteur du tableau (page, données, colonnes) ou de l'en-tête de l'application qui change.
+    const obs = new ResizeObserver(demander);
+    if (tableRef.current) obs.observe(tableRef.current);
+    if (enteteRef.current) obs.observe(enteteRef.current);
+    return () => {
+      window.removeEventListener('scroll', demander);
+      window.removeEventListener('resize', demander);
+      obs.disconnect();
+      if (image) cancelAnimationFrame(image);
+    };
+  }, [tableRef, theadRef, enteteRef]);
+}
+
 function useEcranEtroit(): boolean {
   const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
   useEffect(() => {
@@ -312,6 +358,9 @@ export function App() {
   // on remonte jusqu'à elle, sous l'en-tête collé de l'application, pour revoir l'en-tête du tableau.
   const enteteRef = useRef<HTMLElement>(null);
   const barreRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  useEnteteFlottant(tableRef, theadRef, enteteRef);
   const pagePrecedente = useRef(page);
   useEffect(() => {
     if (pagePrecedente.current === page) return;
@@ -526,7 +575,7 @@ export function App() {
           )}
 
           <DefilementHorizontal ombreGauche={false} className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <table className="w-full border-collapse text-sm">
+            <table ref={tableRef} className="w-full border-collapse text-sm">
               <caption className="sr-only">
                 {t('liste.legende', {
                   niveaux: niveaux
@@ -534,7 +583,8 @@ export function App() {
                     .join(t('liste.puis')),
                 })}
               </caption>
-              <thead className="bg-slate-100 text-left dark:bg-slate-800">
+              {/* En-tête flottant : décalé par useEnteteFlottant pour rester sous l'en-tête de l'application. */}
+              <thead ref={theadRef} className="group/entete relative z-[2] bg-slate-100 text-left dark:bg-slate-800">
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
                     {hg.headers.map((h) => {
@@ -547,7 +597,7 @@ export function App() {
                           scope="col"
                           data-colonne-collee={h.column.id === 'titre' ? '' : undefined}
                           aria-sort={sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
-                          className={`px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:text-slate-200 ${h.column.id === 'titre' ? `${COLLEE} bg-slate-100 dark:bg-slate-800` : ''}`}
+                          className={`bg-slate-100 px-2 py-2 font-semibold whitespace-nowrap text-slate-700 group-data-[flottant=true]/entete:shadow-[0_3px_4px_-2px_rgba(0,0,0,0.25)] dark:bg-slate-800 dark:text-slate-200 dark:group-data-[flottant=true]/entete:shadow-[0_3px_4px_-2px_rgba(0,0,0,0.8)] ${h.column.id === 'titre' ? COLLEE : ''}`}
                         >
                           {triable ? (
                             <button

@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { chargerConfig, ErreurConfig, RACINE_APP, type Config, type OptionsConfig } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
 import { definirLangue } from '../i18n/index.ts';
-import { bi } from './textes.ts';
+import { tm } from './textes.ts';
 
 /** Dossier de données quand rien n'est configuré (ni --data, ni VIGIE_EMPLOI_DATA, ni fichier de config). */
 export function dossierParDefaut(): string {
@@ -52,19 +52,9 @@ export function ouvrirEtat(options: OptionsConfig = {}): EtatMcp {
 export function messageNonInitialise(etat: EtatMcp): string {
   const d = oblique(etat.config.dossierDonnees);
   if (estApplication(etat.config.dossierDonnees)) {
-    return bi({
-      fr: `Le dossier ${d} est celui de l'application, pas un espace de travail : appelez initialiser_espace avec un autre dossier.`,
-      en: `The folder ${d} is the application's own folder, not a workspace: call initialiser_espace with another folder.`,
-    });
+    return tm('etat.messageNonInitialise', { d: String(d) });
   }
-  return bi({
-    fr:
-      `Espace non initialisé : ${d} n'existe pas ou est vide. Appelez initialiser_espace (dossier ${d} par défaut, ` +
-      "ou celui que l'utilisateur choisit), puis reprenez.",
-    en:
-      `Workspace not initialised: ${d} does not exist or is empty. Call initialiser_espace (folder ${d} by default, ` +
-      'or the one the user chooses), then carry on.',
-  });
+  return tm('etat.messageNonInitialise_2', { d: String(d) });
 }
 
 /** Bascule le serveur sur un espace (après initialiser_espace) : relit sa configuration et ouvre sa base. */

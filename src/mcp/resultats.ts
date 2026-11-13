@@ -1,6 +1,6 @@
 // Mise en forme des résultats d'outils MCP : JSON lisible, erreurs rendues à l'IA sans arrêter le serveur.
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { bi } from './textes.ts';
+import { tm } from './textes.ts';
 
 /** Au-delà, le JSON est rendu sans indentation (l'indentation coûte jusqu'à un tiers de la taille). */
 const INDENTATION_MAX = 8_000;
@@ -11,7 +11,7 @@ export function resultat(x: unknown): CallToolResult {
 }
 
 export function echec(e: unknown): CallToolResult {
-  return { isError: true, content: [{ type: 'text', text: bi({ fr: `Erreur : ${(e as Error).message}`, en: `Error: ${(e as Error).message}` }) }] };
+  return { isError: true, content: [{ type: 'text', text: tm('resultats.echec.content.text', { message: String((e as Error).message) }) }] };
 }
 
 /** Exécute l'outil et transforme toute exception en résultat d'erreur lisible par l'IA. */

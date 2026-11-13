@@ -15,7 +15,7 @@ import { ouvrirBase } from '../db/base.ts';
 import { BINAIRE } from '../init/init.ts';
 import { messageNonInitialise, type EtatMcp } from './etat.ts';
 import { sur } from './resultats.ts';
-import { bi } from './textes.ts';
+import { tm } from './textes.ts';
 
 /** Arrêt automatique du tableau de bord lancé par l'IA, en minutes sans activité. */
 export const INACTIVITE_MIN = 60;
@@ -123,24 +123,14 @@ export async function ouvrirTableauDeBord(
       mode,
       arret_auto_min: arret,
       navigateur_ouvert: Boolean(options.ouvrir),
-      a_dire: bi({
-        fr:
-          (deja ? `Le tableau de bord tourne déjà : ${url}` : `Tableau de bord démarré : ${url}`) +
-          (options.ouvrir ? ' (ouvert dans le navigateur par défaut).' : ' (lien à cliquer, ou proposer de l’ouvrir : ouvrir: true).') +
-          (mode === 'heberge'
-            ? ` Il reste disponible tant que l'application de l'IA garde le serveur ouvert, et s'arrête après ${INACTIVITE_MIN} minutes sans activité.`
-            : mode === 'detache'
-              ? ` Il s'arrête seul après ${INACTIVITE_MIN} minutes sans activité ; rappeler cet outil le relance.`
-              : ''),
-        en:
-          (deja ? `The dashboard is already running: ${url}` : `Dashboard started: ${url}`) +
-          (options.ouvrir ? ' (opened in the default browser).' : ' (link to click, or offer to open it: ouvrir: true).') +
-          (mode === 'heberge'
-            ? ` It stays available as long as the AI application keeps the server open, and stops after ${INACTIVITE_MIN} minutes without activity.`
-            : mode === 'detache'
-              ? ` It stops by itself after ${INACTIVITE_MIN} minutes without activity; calling this tool again restarts it.`
-              : ''),
-      }),
+      a_dire:
+        tm(deja ? 'tableau_de_bord.aDire.dejaLance' : 'tableau_de_bord.aDire.demarre', { url }) +
+        tm(options.ouvrir ? 'tableau_de_bord.aDire.ouvert' : 'tableau_de_bord.aDire.lien') +
+        (mode === 'heberge'
+          ? tm('tableau_de_bord.aDire.heberge', { minutes: INACTIVITE_MIN })
+          : mode === 'detache'
+            ? tm('tableau_de_bord.aDire.detache', { minutes: INACTIVITE_MIN })
+            : ''),
     };
   };
 
@@ -153,10 +143,7 @@ export async function ouvrirTableauDeBord(
   }
   if (libre === null) {
     throw new Error(
-      bi({
-        fr: `Ports ${config.port} à ${config.port + PORTS_ESSAYES - 1} tous occupés : changer « port » dans vigie-emploi.config.json de l'espace.`,
-        en: `Ports ${config.port} to ${config.port + PORTS_ESSAYES - 1} are all in use: change "port" in the workspace's vigie-emploi.config.json.`,
-      }),
+      tm('tableau_de_bord.ouvrirTableauDeBord', { port: String(config.port), p2: String(config.port + PORTS_ESSAYES - 1) }),
     );
   }
 
@@ -172,14 +159,7 @@ export async function ouvrirTableauDeBord(
     if (s?.service === 'vigie-emploi' && s.dossier && memeDossier(s.dossier, dossier)) return fin(libre, false, 'detache');
   }
   throw new Error(
-    bi({
-      fr:
-        `Le tableau de bord ne répond pas sur le port ${libre} après ${ATTENTE_DEMARRAGE_MS / 1000} s (node : ${oblique(node)}). ` +
-        `L'utilisateur peut le lancer lui-même dans un terminal : vigie-emploi serve --data "${oblique(dossier)}".`,
-      en:
-        `The dashboard does not respond on port ${libre} after ${ATTENTE_DEMARRAGE_MS / 1000} s (node: ${oblique(node)}). ` +
-        `The user can start it themselves in a terminal: vigie-emploi serve --data "${oblique(dossier)}".`,
-    }),
+    tm('tableau_de_bord.ouvrirTableauDeBord_2', { libre: String(libre), p2: String(ATTENTE_DEMARRAGE_MS / 1000), p3: String(oblique(node)), p4: String(oblique(dossier)) }),
   );
 }
 
@@ -187,24 +167,13 @@ export function enregistrerOutilTableauDeBord(serveur: McpServer, etat: EtatMcp)
   serveur.registerTool(
     'ouvrir_tableau_de_bord',
     {
-      title: bi({ fr: 'Ouvrir le tableau de bord', en: 'Open the dashboard' }),
-      description: bi({
-        fr:
-          "Démarre le tableau de bord web de l'espace (liste des offres, filtres, détail, réglage de la grille à la souris) s'il ne tourne " +
-          `pas déjà, en arrière-plan, et renvoie son adresse locale (http://localhost:…). Il s'arrête seul après ${INACTIVITE_MIN} minutes ` +
-          "sans activité. À proposer quand l'utilisateur veut parcourir ses offres ou régler sa grille lui-même, au lieu d'une commande " +
-          "« serve » à taper. ouvrir: true l'ouvre aussi dans son navigateur par défaut (seulement s'il le demande ou l'accepte).",
-        en:
-          "Starts the workspace's web dashboard (job ad list, filters, details, tuning the grid with the mouse) in the background if it is " +
-          `not already running, and returns its local address (http://localhost:…). It stops by itself after ${INACTIVITE_MIN} minutes ` +
-          'without activity. Offer it when the user wants to browse their job ads or tune their grid themselves, instead of a "serve" ' +
-          'command to type. ouvrir: true also opens it in their default browser (only if they ask for it or agree).',
-      }),
+      title: tm('tableau_de_bord.ouvrir_tableau_de_bord.title'),
+      description: tm('tableau_de_bord.ouvrir_tableau_de_bord.description', { INACTIVITE_MIN: String(INACTIVITE_MIN) }),
       inputSchema: {
         ouvrir: z
           .boolean()
           .optional()
-          .describe(bi({ fr: "true : ouvrir aussi l'adresse dans le navigateur par défaut", en: 'true: also open the address in the default browser' })),
+          .describe(tm('tableau_de_bord.ouvrir_tableau_de_bord.inputSchema.ouvrir')),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },

@@ -4,7 +4,7 @@ import type { Impact } from '../core/grille-stockage.ts';
 import type { DetailOffre } from '../core/offres.ts';
 import type { LigneListe } from '../core/requetes.ts';
 import type { ResumeIngest } from '../ingest/ingest.ts';
-import { bi } from './textes.ts';
+import { tm } from './textes.ts';
 
 /** Taille visée d'une réponse d'outil, en caractères. */
 export const REPONSE_MAX = 25_000;
@@ -48,10 +48,7 @@ export function detailPlafonne(d: DetailOffre, o: { complet?: boolean } = {}): R
     description: tronquee ? `${description!.slice(0, DESCRIPTION_MAX)}…` : description,
     ...(tronquee
       ? {
-          description_tronquee: bi({
-            fr: `description de ${description!.length} caractères coupée à ${DESCRIPTION_MAX} : complet: true pour la suite`,
-            en: `description of ${description!.length} characters cut at ${DESCRIPTION_MAX}: complet: true for the rest`,
-          }),
+          description_tronquee: tm('presentation.detailPlafonne.description_tronquee', { length: String(description!.length), DESCRIPTION_MAX: String(DESCRIPTION_MAX) }),
         }
       : {}),
     notes: d.notes.slice(0, NOTES_MAX),
@@ -83,45 +80,26 @@ export function presenterIngestion(r: ResumeIngest, o: { garder?: boolean } = {}
   const lus = r.fichiers - r.sans_offre.length;
   if (r.fichiers_supprimes > 0) {
     aDire.push(
-      bi({
-        fr: `Les ${r.fichiers_supprimes} fichier(s) .eml traité(s) ont été supprimés de emails/ (leurs offres sont en base).`,
-        en: `The ${r.fichiers_supprimes} processed .eml file(s) have been deleted from emails/ (their job ads are in the database).`,
-      }),
+      tm('presentation.presenterIngestion', { fichiers_supprimes: String(r.fichiers_supprimes) }),
     );
   } else if (o.garder && lus > 0) {
     aDire.push(
-      bi({
-        fr: `Les ${lus} fichier(s) .eml traité(s) sont conservés dans emails/ (garder: true).`,
-        en: `The ${lus} processed .eml file(s) are kept in emails/ (garder: true).`,
-      }),
+      tm('presentation.presenterIngestion_2', { lus: String(lus) }),
     );
   }
   if (r.sans_offre.length) {
     aDire.push(
-      bi({
-        fr: `${r.sans_offre.length} e-mail(s) sans offre reconnue, laissé(s) dans emails/ (format inconnu) : ${r.sans_offre.join(', ')}.`,
-        en: `${r.sans_offre.length} e-mail(s) with no recognised job ad, left in emails/ (unknown format): ${r.sans_offre.join(', ')}.`,
-      }),
+      tm('presentation.presenterIngestion_3', { length: String(r.sans_offre.length), p2: String(r.sans_offre.join(', ')) }),
     );
   }
   if (r.erreurs.length) {
     aDire.push(
-      bi({
-        fr:
-          `${r.erreurs.length} erreur(s) d'ingestion, à signaler à l'utilisateur (voir erreurs) : ` +
-          'une description non lue ne bloque pas l’offre, qui est en base et se lit dans le navigateur.',
-        en:
-          `${r.erreurs.length} ingestion error(s), to report to the user (see erreurs): ` +
-          'a description that could not be read does not block the job ad, which is in the database and can be read in the browser.',
-      }),
+      tm('presentation.presenterIngestion_4', { length: String(r.erreurs.length) }),
     );
   }
   if (r.confirmations.length) {
     aDire.push(
-      bi({
-        fr: `${r.confirmations.length} accusé(s) de réception de candidature : vérifier que ces candidatures sont enregistrées comme envoyées.`,
-        en: `${r.confirmations.length} application acknowledgement(s): check that these applications are recorded as sent.`,
-      }),
+      tm('presentation.presenterIngestion_5', { length: String(r.confirmations.length) }),
     );
   }
   const nouvelles = premieres(r.detail.nouvelles, DETAIL_INGESTION_MAX);
@@ -152,6 +130,6 @@ export function presenterIngestion(r: ResumeIngest, o: { garder?: boolean } = {}
       doublons: doublons.liste.map((x) => sansVides({ id: x.id, titre: x.titre, statut: x.statut })),
       ...(doublons.reste ? { doublons_non_affiches: doublons.reste } : {}),
     },
-    suite: bi({ fr: 'offres_a_lire (résumé paginé), puis lire_offre pour chaque offre à noter.', en: 'offres_a_lire (paged summary), then lire_offre for each job ad to score.' }),
+    suite: tm('presentation.presenterIngestion.suite'),
   };
 }

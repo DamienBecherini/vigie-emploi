@@ -22,9 +22,11 @@ La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom appara�
 |---|---|
 | `src/i18n/es.ts` (copie de `en.ts`), à ajouter dans `DICTIONNAIRES` de `src/i18n/index.ts` | CLI, API, suivi généré, initialisation |
 | `ui/src/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_UI` de `ui/src/i18n/index.ts` | Tableau de bord |
+| `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_MCP` de `src/mcp/textes.ts` | Instructions, outils, paramètres, résultats et erreurs du serveur MCP |
 | `src/i18n/libelles.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
 | `ui/src/theme.ts` | Noms des couleurs (`LIBELLES_NEUTRES`, `LIBELLES_ACCENTS`) |
-| `src/mcp/*.ts` (textes `{ fr: …, en: … }`) | Instructions, outils, paramètres et messages du serveur MCP |
+
+Soit trois dictionnaires (environ 1 100 textes en tout, à partir des fichiers anglais) et cinq petites tables. Le compilateur ne signale rien d'autre : le reste du code ne connaît aucune langue en particulier.
 
 Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `{ one, other }`, complété au besoin par `zero`, `two`, `few` ou `many` pour les langues qui les distinguent (catégories de `Intl.PluralRules`).
 

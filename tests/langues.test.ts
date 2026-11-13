@@ -1,5 +1,5 @@
 // Ajout d'une langue (docs/ajouter-une-langue.md) : chaque langue déclarée dans LANGUES doit avoir toutes ses
-// ressources. Les dictionnaires et les textes du serveur MCP sont vérifiés par le compilateur ; ce test couvre les
+// ressources. Les clés des dictionnaires (CLI, interface, serveur MCP) sont vérifiées par le compilateur ; ce test couvre les
 // fichiers (modèle d'espace, consignes, grille d'exemple, README) et les textes vides ou restés en français.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { LANGUE_DEFAUT, LANGUES, LOCALES, NOMS_LANGUES, traduire } from '../src/i18n/outil.ts';
 import { DICTIONNAIRES } from '../src/i18n/index.ts';
 import { DICTIONNAIRES_UI } from '../ui/src/i18n/index.ts';
+import { DICTIONNAIRES_MCP } from '../src/mcp/textes.ts';
 import { normaliserLangue } from '../src/core/config.ts';
 import { RACINE_APP } from '../src/core/config.ts';
 
@@ -52,6 +53,7 @@ describe('langues déclarées', () => {
     for (const [nom, jeu] of [
       ['src', DICTIONNAIRES],
       ['ui', DICTIONNAIRES_UI],
+      ['mcp', DICTIONNAIRES_MCP],
     ] as const) {
       const base = jeu[LANGUE_DEFAUT] as Record<string, unknown>;
       const cible = jeu[l] as Record<string, unknown>;

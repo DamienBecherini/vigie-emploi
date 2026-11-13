@@ -586,7 +586,7 @@ export const schemaChangement = z.strictObject({
       }),
     )
     .optional(),
-  retirer_regles: z.array(z.string()).optional(),
+  retirer_regles: z.array(z.string()).optional().describe('Identifiants des règles à retirer ; les règles non citées dans « regles » restent telles quelles'),
   /** Critères : modification des champs donnés (libellé, description, poids). */
   criteres: z
     .array(z.strictObject({ id: z.string(), libelle: z.string().optional(), description: z.string().optional(), poids: z.number().min(0).max(100).optional() }))

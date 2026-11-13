@@ -516,7 +516,8 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         fr:
           "Changement partiel de la grille, à la demande de l'utilisateur seulement : poids ({ technique: 40 }), seuil, barèmes " +
           '(teletravail.jours_sur_site, remuneration.salaire / tjm : plancher, cible_basse, cible_haute, plancher_full_remote), règles ' +
-          '(ajout ou modification par id : libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif ; retirer_regles), critères (libellé, description), ' +
+          '(ajout ou modification par id : libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif ; n’envoyer que les règles qui changent, les autres restent telles quelles ; ' +
+          'une règle ne disparaît que par retirer_regles [id]), critères (libellé, description), ' +
           'inventaire (ajouter [{ techno, niveau }], retirer [techno]), exemples de référence (ajouter [exemple complet, au format de ' +
           'grille.exemples : remplace celui de même titre et entreprise], retirer [titre]) : inutile de réécrire profil/grille.json. ' +
           "essai: true renvoie l'aperçu sans enregistrer : impact sur les offres notées et exemples_calcules (note de chaque exemple " +
@@ -526,7 +527,8 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
         en:
           "Partial change to the grid, only when the user asks: weights ({ technique: 40 }), threshold (seuil), scales " +
           '(teletravail.jours_sur_site, remuneration.salaire / tjm (day rate): plancher (floor), cible_basse, cible_haute, plancher_full_remote), rules ' +
-          '(add or change by id: libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif; retirer_regles), criteria (libelle, description), ' +
+          '(add or change by id: libelle, effet zero | plafond | plafond_critere, valeur, critere, seuil, actif; send only the rules that change, the others stay as they are; ' +
+          'a rule is only removed through retirer_regles [id]), criteria (libelle, description), ' +
           'inventory (ajouter [{ techno, niveau }], retirer [techno]), reference examples (ajouter [full example, in the format of ' +
           'grille.exemples: replaces the one with the same title and company], retirer [titre]): no need to rewrite profil/grille.json. ' +
           'essai: true returns a preview without saving: impact on the scored job ads and exemples_calcules (score of each reference ' +

@@ -2,12 +2,25 @@
 // PDF par unpdf (pdf.js sans dépendance, chargé à la demande), Word (.docx) par lecture directe de l'archive.
 import { inflateRawSync } from 'node:zlib';
 
-/** Texte d'un PDF, page par page (tableau vide si le PDF n'a pas de couche texte : scan, image). */
-export async function textePdf(donnees: Uint8Array): Promise<{ pages: number; texte: string[] }> {
+/**
+ * Texte d'un PDF, page par page (tableau vide si le PDF n'a pas de couche texte : scan, image), et les adresses des liens
+ * de chaque page : dans un CV, l'URL du profil GitHub ou LinkedIn se cache souvent derrière un simple mot (« GitHub »).
+ */
+export async function textePdf(donnees: Uint8Array): Promise<{ pages: number; texte: string[]; liens: string[][] }> {
   const { extractText, getDocumentProxy } = await import('unpdf');
   const pdf = await getDocumentProxy(new Uint8Array(donnees));
   const r = await extractText(pdf, { mergePages: false });
-  return { pages: r.totalPages, texte: (r.text as string[]).map((t) => t.replace(/[ \t]+\n/g, '\n').trim()) };
+  const liens: string[][] = [];
+  for (let i = 1; i <= r.totalPages; i += 1) {
+    try {
+      const annotations = (await (await pdf.getPage(i)).getAnnotations()) as { subtype?: string; url?: string; unsafeUrl?: string }[];
+      const urls = annotations.filter((a) => a.subtype === 'Link').map((a) => a.url ?? a.unsafeUrl).filter((u): u is string => Boolean(u));
+      liens.push([...new Set(urls)]);
+    } catch {
+      liens.push([]);
+    }
+  }
+  return { pages: r.totalPages, texte: (r.text as string[]).map((t) => t.replace(/[ \t]+\n/g, '\n').trim()), liens };
 }
 
 /** Fichier d'une archive ZIP (méthodes « stocké » et « deflate »), ou null s'il n'y est pas. */

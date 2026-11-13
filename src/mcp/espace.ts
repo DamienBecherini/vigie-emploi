@@ -230,12 +230,14 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
           "Crée l'espace de travail de l'utilisateur (consignes, contexte à remplir, a-deposer/, cv/, candidatures/, grille d'exemple, base) " +
           `dans un dossier neuf ou vide, puis s'y installe. Dossier par défaut : celui du serveur (${oblique(etat.config.dossierDonnees)}). ` +
           "Demander à l'utilisateur de confirmer le dossier avant l'appel. Ensuite : lui dire de déposer son CV et l'export PDF de son " +
-          'profil LinkedIn dans a-deposer/, puis suivre le prompt « demarrage » (ou lire AGENTS.md et DEMARRAGE.md avec lire_fichier).',
+          'profil LinkedIn dans a-deposer/, puis suivre le prompt « demarrage » (ou lire AGENTS.md et DEMARRAGE.md avec lire_fichier). ' +
+          "Annoncer le déroulé exact : session 1 = lecture des documents, questions, contexte ; session 2 (nouvelle conversation) = grille, premier CV, alertes.",
         en:
           "Creates the user's workspace (instructions, context to fill in, a-deposer/ drop folder, cv/, candidatures/, sample grid, database) " +
           `in a new or empty folder, then switches to it. Default folder: the server's (${oblique(etat.config.dossierDonnees)}). ` +
           'Ask the user to confirm the folder before the call. Then: tell them to drop their CV and the PDF export of their ' +
-          'LinkedIn profile into a-deposer/, then follow the "demarrage" prompt (or read AGENTS.md and DEMARRAGE.md with lire_fichier).',
+          'LinkedIn profile into a-deposer/, then follow the "demarrage" prompt (or read AGENTS.md and DEMARRAGE.md with lire_fichier). ' +
+          'Announce the exact sequence: session 1 = reading the documents, questions, context; session 2 (new conversation) = grid, first CV, alerts.',
       }),
       inputSchema: {
         dossier: z
@@ -411,9 +413,12 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
       };
       if (l.genre === 'texte') return morceau(l.texte);
       if (l.extension === '.pdf') {
-        const { pages, texte } = await textePdf(l.donnees);
+        const { pages, texte, liens } = await textePdf(l.donnees);
         if (texte.join('').trim().length > 20) {
-          const corps = texte.map((t, i) => `----- page ${i + 1} / ${pages} -----\n${t}`).join('\n\n');
+          const titreLiens = bi({ fr: 'Liens de la page', en: 'Links on the page' });
+          const corps = texte
+            .map((t, i) => `----- page ${i + 1} / ${pages} -----\n${t}${liens[i]?.length ? `\n\n${titreLiens} : ${liens[i].join(' · ')}` : ''}`)
+            .join('\n\n');
           return morceau(bi({ fr: `${l.chemin} (PDF, ${pages} page(s), texte extrait) :\n\n${corps}`, en: `${l.chemin} (PDF, ${pages} page(s), extracted text):\n\n${corps}` }));
         }
         return {

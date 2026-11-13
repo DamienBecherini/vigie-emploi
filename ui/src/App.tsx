@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   flexRender,
@@ -307,6 +307,23 @@ export function App() {
 
   const page = Number(params.get('page') ?? 1);
   const taille = Number(params.get('taille') ?? 50);
+
+  // Changement de page : si la barre au-dessus du tableau (filtres, nombre d'offres, colonnes) est sortie de l'écran,
+  // on remonte jusqu'à elle, sous l'en-tête collé de l'application, pour revoir l'en-tête du tableau.
+  const enteteRef = useRef<HTMLElement>(null);
+  const barreRef = useRef<HTMLDivElement>(null);
+  const pagePrecedente = useRef(page);
+  useEffect(() => {
+    if (pagePrecedente.current === page) return;
+    pagePrecedente.current = page;
+    const barre = barreRef.current;
+    if (!barre) return;
+    const sousEntete = (enteteRef.current?.getBoundingClientRect().bottom ?? 0) + 8;
+    const haut = barre.getBoundingClientRect().top;
+    if (haut >= sousEntete) return;
+    const doux = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: window.scrollY + haut - sousEntete, behavior: doux ? 'smooth' : 'auto' });
+  }, [page]);
   // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
   const ordreDefaut = params.get('ordre') === 'asc' ? 'asc' : 'desc';
   const niveaux = useMemo(() => lireNiveaux(params.get('tri'), ordreDefaut), [params, ordreDefaut]);
@@ -392,7 +409,7 @@ export function App() {
       <a href="#tableau" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
         {t('entete.allerTableau')}
       </a>
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+      <header ref={enteteRef} className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-lg font-extrabold tracking-tight">
             vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
@@ -475,7 +492,7 @@ export function App() {
         <main className="min-w-0 flex-1" id="tableau" tabIndex={-1}>
           {(etroit || !filtresOuverts) && <ActionsAgent className="mb-3 max-w-xs" />}
           <AVenir choisir={(id) => modifier({ offre: String(id) })} />
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div ref={barreRef} className="mb-2 flex flex-wrap items-center gap-2">
             <button type="button" className="bouton" aria-expanded={filtresOuverts} onClick={() => setFiltresOuverts(!filtresOuverts)}>
               <Funnel className="size-4" aria-hidden="true" /> {filtresOuverts ? t('liste.masquerFiltres') : t('liste.afficherFiltres')}
             </button>

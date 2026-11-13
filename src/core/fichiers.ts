@@ -48,6 +48,22 @@ export function fichierSur(dossierDonnees: string, chemin: string): { absolu: st
   return { absolu: reel, relatif: rel };
 }
 
+/**
+ * Chemin absolu d'un dossier relatif au dossier de données, s'il existe et y reste une fois les liens symboliques
+ * résolus (ni data/ ni emails/). Lève une erreur sinon. Sert à l'ouvrir dans l'explorateur de fichiers.
+ */
+export function dossierSur(dossierDonnees: string, dossier: string): string {
+  const rel = cheminRelatif(dossier);
+  if (DOSSIERS_INTERDITS.has(rel.split('/')[0].toLowerCase())) throw new Error(t('core.accesRefuse', { chemin: dossier }));
+  const racine = realpathSync(resolve(dossierDonnees));
+  const cible = resolve(racine, ...rel.split('/'));
+  if (!existsSync(cible)) throw new Error(t('core.fichierIntrouvable', { chemin: rel }));
+  const reel = realpathSync(cible);
+  if (!reel.startsWith(racine + sep)) throw new Error(t('core.accesRefuse', { chemin: dossier }));
+  if (!statSync(reel).isDirectory()) throw new Error(t('core.pasUnDossier', { chemin: rel }));
+  return reel;
+}
+
 /** Fichiers (récursivement, sans les fichiers et dossiers cachés) d'un dossier relatif au dossier de données. */
 export function listerFichiers(dossierDonnees: string, dossier: string): { existe: boolean; fichiers: FichierDossier[]; tronque: boolean } {
   const rel = cheminRelatif(dossier);

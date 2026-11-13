@@ -157,6 +157,7 @@ export const en: Record<CleUi, Texte> = {
   'detail.candidature': 'Application',
   'detail.dossier': 'Folder',
   'detail.cv': 'Résumé',
+  'detail.ouvrirDossier': 'Open the folder in the file manager',
   'detail.conditions': 'Conditions',
   'detail.journal': 'Journal',
   'detail.enRetard': '{n} overdue',

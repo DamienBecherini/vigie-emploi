@@ -1,4 +1,4 @@
-import { ExternalLink, Send, X } from 'lucide-react';
+import { ExternalLink, FolderOpen, Send, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STATUTS, type Statut } from '../../../src/core/statuts.ts';
@@ -42,11 +42,33 @@ function LienDossier({ offreId, dossier }: { offreId: number; dossier: string })
   const q = useQuery({ queryKey: ['fichiers', offreId], queryFn: () => api.fichiers(offreId) });
   const md = q.data?.fichiers ?? [];
   const fiche = md.find((f) => f.nom === 'dossier-candidature.md') ?? md.find((f) => f.nom.toLowerCase().endsWith('.md'));
-  if (!fiche) return <>{dossier}</>;
+  // Bouton « ouvrir dans l'explorateur » : seulement sur la machine du serveur (le serveur le vérifie aussi).
+  const sante = useQuery({ queryKey: ['sante'], queryFn: api.sante, staleTime: Infinity });
+  const ouvrir = useMutation({ mutationFn: () => api.ouvrirDossier(offreId) });
+  const nom = dossier.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? dossier;
   return (
-    <a className="break-all text-blue-700 underline dark:text-blue-300" href={urlFichier(fiche.chemin)} target="_blank" rel="noreferrer noopener" title={fiche.chemin}>
-      {dossier.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? dossier}
-    </a>
+    <span className="inline-flex flex-wrap items-center gap-2">
+      {fiche ? (
+        <a className="break-all text-blue-700 underline dark:text-blue-300" href={urlFichier(fiche.chemin)} target="_blank" rel="noreferrer noopener" title={fiche.chemin}>
+          {nom}
+        </a>
+      ) : (
+        <span className="break-all">{dossier}</span>
+      )}
+      {sante.data?.poste_local && q.data?.existe && (
+        <button
+          type="button"
+          className="rounded p-0.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+          onClick={() => ouvrir.mutate()}
+          disabled={ouvrir.isPending}
+          aria-label={t('detail.ouvrirDossier')}
+          title={t('detail.ouvrirDossier')}
+        >
+          <FolderOpen className="size-4" aria-hidden="true" />
+        </button>
+      )}
+      {ouvrir.isError && <span className="text-xs text-rose-700 dark:text-rose-300">{(ouvrir.error as Error).message}</span>}
+    </span>
   );
 }
 

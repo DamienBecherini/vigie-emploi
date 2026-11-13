@@ -165,6 +165,7 @@ export const fr = {
   'detail.candidature': 'Candidature',
   'detail.dossier': 'Dossier',
   'detail.cv': 'CV',
+  'detail.ouvrirDossier': 'Ouvrir le dossier dans l’explorateur de fichiers',
   'detail.conditions': 'Conditions',
   'detail.journal': 'Journal',
   'detail.enRetard': '{n} en retard',

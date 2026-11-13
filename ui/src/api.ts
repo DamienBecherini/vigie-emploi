@@ -286,4 +286,7 @@ export const api = {
     appel<{ commande: string; offre: DetailOffre }>(`/api/offres/${id}/candidater`, { method: 'POST' }),
   travail: () => appel<EtatTravail>('/api/travail'),
   lancerAgent: (action: ActionAgent) => appel<{ ok: true }>(`/api/travail/${action}`, { method: 'POST', body: '{}' }),
+  /** poste_local : la page est ouverte sur la machine du serveur (ouvrir un dossier dans l'explorateur est alors possible). */
+  sante: () => appel<{ poste_local?: boolean }>('/api/sante'),
+  ouvrirDossier: (id: number) => appel<{ ok: true }>(`/api/offres/${id}/ouvrir-dossier`, { method: 'POST', body: '{}' }),
 };

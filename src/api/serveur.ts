@@ -1,7 +1,7 @@
 // API JSON locale et service de l'interface compilée (dist/ui).
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { serve } from '@hono/node-server';
 import type { Config } from '../core/config.ts';
@@ -43,7 +43,7 @@ import {
   supprimerEvenement,
   type SaisieEvenement,
 } from '../core/evenements.ts';
-import { fichierSur, fichiersDossier } from '../core/fichiers.ts';
+import { dossierSur, fichierSur, fichiersDossier } from '../core/fichiers.ts';
 import { statistiques } from '../core/statistiques.ts';
 import { pageFichier } from './fichier.ts';
 import { LANGUE_DEFAUT, tl, type CleServeur } from '../i18n/index.ts';
@@ -52,6 +52,7 @@ import type { Params } from '../i18n/outil.ts';
 import { Veille } from './veille.ts';
 import { Diffusion, surveiller } from './diffusion.ts';
 import { estActionAgent, etatTravail, lanceurTerminal, type Lanceur } from './travail.ts';
+import { ouvreurSysteme, programmeOuverture, requeteLocale, type OuvreurDossier } from './ouvrir.ts';
 
 /** Champs de candidature modifiables depuis l'interface. */
 const CHAMPS_EDITABLES = CHAMPS_CANDIDATURE.filter((k) => k !== 'etat' && k !== 'libelle');
@@ -114,6 +115,10 @@ export interface OptionsApp {
   diffusion?: Diffusion;
   /** Ouverture du terminal de l'agent (par défaut : selon la configuration et la plateforme). */
   lanceur?: Lanceur;
+  /** Ouverture d'un dossier dans l'explorateur de fichiers (par défaut : celui du système). */
+  ouvreur?: OuvreurDossier;
+  /** La requête vient-elle de la machine du serveur ? (par défaut : adresse de la connexion). */
+  estLocale?: (c: Context) => boolean;
 }
 
 /** Une requête qui vient d'une autre origine (page web tierce, formulaire) ? */
@@ -136,6 +141,8 @@ export function creerApp(
   const app = new Hono();
   const diffusion = options.diffusion ?? new Diffusion();
   const lanceur = options.lanceur ?? lanceurTerminal(config.terminal, process.platform, config.langue ?? LANGUE_DEFAUT);
+  const ouvreur = options.ouvreur ?? ouvreurSysteme();
+  const estLocale = options.estLocale ?? requeteLocale;
   const emails = config.emails ?? join(config.dossierDonnees, 'emails');
   // Langue des messages renvoyés à l'interface (celle-ci peut afficher une autre langue : sélecteur de l'en-tête).
   const langue = config.langue ?? LANGUE_DEFAUT;
@@ -205,6 +212,8 @@ export function creerApp(
       occupe: false,
       activite: '',
       inactivite: { delai_s: veille.delaiS, restant_s: veille.restantS() },
+      // Requête venue de la machine du serveur : l'interface propose alors « ouvrir le dossier dans l'explorateur ».
+      poste_local: estLocale(c),
     }),
   );
   app.get('/api/meta', (c) => c.json({ ...meta(db), statutsPossibles: STATUTS }));
@@ -371,6 +380,31 @@ export function creerApp(
     const id = Number(c.req.param('id'));
     if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
     return c.json(fichiersDossier(db, config.dossierDonnees, id));
+  });
+
+  // Ouvrir le dossier de candidature dans l'explorateur de fichiers : seulement depuis la machine du serveur.
+  app.post('/api/offres/:id/ouvrir-dossier', async (c) => {
+    if (!estLocale(c)) return c.json({ ok: false, erreur: m('api.posteDistant') }, 403);
+    if (!(c.req.header('content-type') ?? '').includes('application/json')) {
+      return c.json({ ok: false, erreur: m('api.jsonAttendu') }, 415);
+    }
+    const id = Number(c.req.param('id'));
+    if (!offreParId(db, id)) return c.json({ ok: false, erreur: m('api.offreIntrouvable') }, 404);
+    const dossier = fichiersDossier(db, config.dossierDonnees, id).dossier;
+    if (!dossier) return c.json({ ok: false, erreur: m('api.sansDossier') }, 404);
+    let absolu: string;
+    try {
+      absolu = dossierSur(config.dossierDonnees, dossier);
+    } catch (e) {
+      return c.json({ ok: false, erreur: (e as Error).message }, 404);
+    }
+    try {
+      await ouvreur(absolu);
+    } catch (e) {
+      const programme = (e as { programme?: string }).programme ?? programmeOuverture();
+      return c.json({ ok: false, erreur: m('api.ouvertureImpossible', { programme, message: (e as Error).message }) }, 500);
+    }
+    return c.json({ ok: true, dossier });
   });
 
   app.get('/api/fichier/*', (c) => {

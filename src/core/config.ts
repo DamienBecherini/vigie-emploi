@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { estLangue, LANGUE_DEFAUT, LANGUES, type Langue } from '../i18n/outil.ts';
+import { estLangue, LANGUE_DEFAUT, LANGUES, NOMS_LANGUES, type Langue } from '../i18n/outil.ts';
 import { tl } from '../i18n/index.ts';
 
 export interface Config {
@@ -66,13 +66,18 @@ export function variable(env: NodeJS.ProcessEnv, nom: string): string | undefine
   return undefined;
 }
 
-/** Noms de langue saisis à la main (réglage de l'extension Claude Desktop) ramenés au code : « English » → en. */
-const ALIAS_LANGUE: Record<string, string> = { francais: 'fr', français: 'fr', french: 'fr', anglais: 'en', english: 'en' };
+/**
+ * Noms de langue saisis à la main (réglage de l'extension Claude Desktop, --langue) ramenés au code : « English » → en.
+ * Le nom de chaque langue dans sa propre langue (NOMS_LANGUES) est reconnu d'office, sans accent compris.
+ */
+const ALIAS_LANGUE: Record<string, string> = { french: 'fr', anglais: 'en' };
+const sansAccent = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '');
 
-/** Code de langue d'une valeur saisie (casse et alias tolérés) ; la valeur en minuscules si elle n'est pas reconnue. */
+/** Code de langue d'une valeur saisie (casse, accents et alias tolérés) ; la valeur en minuscules si elle n'est pas reconnue. */
 export function normaliserLangue(v: string): string {
-  const b = v.trim().toLowerCase();
-  return ALIAS_LANGUE[b] ?? b;
+  const b = sansAccent(v.trim().toLowerCase());
+  const parNom = LANGUES.find((l) => sansAccent(NOMS_LANGUES[l].toLowerCase()) === b);
+  return parNom ?? ALIAS_LANGUE[b] ?? b;
 }
 
 /** Le fichier de config de ce dossier, sous son nom actuel ou l'ancien. */

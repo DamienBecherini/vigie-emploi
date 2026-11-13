@@ -3,7 +3,7 @@
 // des options et des statuts restent en français, et les sorties --json ne changent pas avec la langue.
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { chargerConfig, langueConfiguree, type Config } from '../core/config.ts';
+import { chargerConfig, langueConfiguree, normaliserLangue, type Config } from '../core/config.ts';
 import { ouvrirBase, type Base } from '../db/base.ts';
 import { ingererSelonConfig } from '../ingest/ingest.ts';
 import { importerHistorique } from '../import/historique.ts';
@@ -104,7 +104,7 @@ function tableau(entetes: string[], lignes: string[][]): string {
 function dateEvenement(le: string): string {
   const m = le.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!m) return le;
-  const heure = m[4] ? (langueCourante() === 'fr' ? ` ${m[4]} h ${m[5]}` : ` ${m[4]}:${m[5]}`) : '';
+  const heure = m[4] ? ` ${t('suivi.heure', { h: m[4], m: m[5] })}` : '';
   return `${m[3]}/${m[2]}/${m[1]}${heure}`;
 }
 
@@ -772,7 +772,8 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
   init(args) {
     const { v, pos } = analyser(args, { port: { type: 'string' }, 'nom-mcp': { type: 'string' }, gabarit: { type: 'string' }, langue: { type: 'string' } });
     if (pos.length !== 1) erreur(t('cli.init.usage'));
-    if (v.langue !== undefined && !estLangue(v.langue)) {
+    const langue = typeof v.langue === 'string' ? normaliserLangue(v.langue) : undefined;
+    if (langue !== undefined && !estLangue(langue)) {
       erreur(t('cli.invalide', { nom: '--langue', valeur: `${String(v.langue)} (${LANGUES.join(', ')})` }));
     }
     const r = initialiserEspace({
@@ -780,7 +781,7 @@ const commandes: Record<string, (args: string[]) => Promise<void> | void> = {
       port: v.port ? entier(v.port, 'port') : undefined,
       nomMcp: v['nom-mcp'] as string | undefined,
       gabarit: v.gabarit as string | undefined,
-      langue: v.langue as 'fr' | 'en' | undefined,
+      langue,
     });
     if (v.json) return json(r);
     console.log(t('cli.init.cree', { dossier: r.dossier }));
@@ -879,7 +880,8 @@ function optionBrute(argv: string[], nom: string): string | undefined {
  * VIGIE_EMPLOI_LANGUE, fichier), sinon le français.
  */
 function langueDesMessages(cmd: string | undefined, args: string[]) {
-  const demandee = cmd === 'init' ? optionBrute(args, 'langue') : undefined;
+  const brute = cmd === 'init' ? optionBrute(args, 'langue') : undefined;
+  const demandee = brute === undefined ? undefined : normaliserLangue(brute);
   if (estLangue(demandee)) return demandee;
   return langueConfiguree({ dossierDonnees: optionBrute(args, 'data'), fichierConfig: optionBrute(args, 'config') });
 }

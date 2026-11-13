@@ -28,10 +28,9 @@ export function t(cle: CleServeur, params?: Params): string {
   return tl(courante, cle, params);
 }
 
-/** Nombre avec la virgule (français) ou le point (anglais), sans séparateur de milliers, arrondi à `d` décimales. */
+/** Nombre avec le séparateur décimal de la langue (« 6,5 », « 6.5 »), sans séparateur de milliers, arrondi à `d` décimales. */
 export function decimal(n: number, langue: Langue = courante, d = 2): string {
-  const s = String(Math.round(n * 10 ** d) / 10 ** d);
-  return langue === 'fr' ? s.replace('.', ',') : s;
+  return n.toLocaleString(LOCALES[langue], { maximumFractionDigits: d, useGrouping: false });
 }
 
 /** Date et heure de Paris au format de la langue (« 02/11/2026 », « 10:30 »). */

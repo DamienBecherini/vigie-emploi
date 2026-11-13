@@ -6,7 +6,7 @@
 // 3. valide le manifeste et emballe le dossier avec l'outil officiel (@anthropic-ai/mcpb : validate, pack).
 // Usage : npm run mcpb [-- --sans-build]
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,22 +17,23 @@ const etage = join(sortie, 'mcpb', 'vigie-emploi');
 const paquet = join(sortie, `vigie-emploi-${pkg.version}.mcpb`);
 const cliMcpb = join(racine, 'node_modules', '@anthropic-ai', 'mcpb', 'dist', 'cli', 'cli.js');
 
+/** Versions traduites présentes à la racine : modele-<langue>/, AGENTS.<langue>.md, README.<langue>.md. */
+const TRADUCTIONS = readdirSync(racine).filter((n) => /^modele-[a-z]{2,3}$|^(AGENTS|README)\.[a-z]{2,3}\.md$/.test(n));
+
 /** Ce que l'application lit à l'exécution (comme le champ files de package.json), sans le dossier docs/ entier. */
 const A_COPIER = [
   'bin/vigie-emploi.js',
   'dist',
   'migrations',
   'modele',
-  'modele-en',
   'gabarits',
   'exemples',
   'AGENTS.md',
-  'AGENTS.en.md',
   'docs/utiliser-avec-une-ia.md',
   'vigie-emploi.config.example.json',
   'LICENSE',
   'README.md',
-  'README.en.md',
+  ...TRADUCTIONS,
 ];
 
 function lancer(commande, args, options = {}) {

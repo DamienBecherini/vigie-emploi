@@ -11,7 +11,7 @@ import { en } from './en.ts';
 import { fr, type CleUi } from './fr.ts';
 
 export type { CleUi, Langue };
-export { LANGUES } from '../../../src/i18n/outil.ts';
+export { LANGUES, NOMS_LANGUES } from '../../../src/i18n/outil.ts';
 
 export const DICTIONNAIRES_UI = { fr, en };
 

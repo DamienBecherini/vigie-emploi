@@ -326,6 +326,11 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.dateFormat': 'Date invalide : « {texte} » (JJ/MM/AAAA, JJ/MM/AAAA HH:MM ou AAAA-MM-JJ attendu)',
   'core.dateInvalide': 'Date invalide : « {texte} »',
   'core.heureInvalide': 'Heure invalide : « {texte} »',
+  // Drapeaux de note : le message enregistré est en français (grille.ts) ; ces textes servent aux autres langues.
+  'drapeau.teletravailInconnu': 'Télétravail inconnu (valeur neutre) : à vérifier',
+  'drapeau.remunerationInconnue': 'Rémunération inconnue (valeur neutre) : à demander',
+  'drapeau.sousPlancher': 'Rémunération sous le plancher{valeur} : à signaler',
+  'drapeau.critereManquant': '{libelle} : pas de sous-note (valeur neutre 5)',
   'core.texteAttendu': '{nom} : texte attendu',
   'core.nombreAttendu': '{nom} : nombre attendu ({valeur})',
   'core.cheminVide': 'Chemin de fichier vide',

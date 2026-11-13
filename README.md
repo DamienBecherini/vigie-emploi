@@ -212,7 +212,7 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 | `titresExclus` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `employeursRefuses` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{dossier}` et `{invite}` y sont remplacés | Windows : `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]` ; ailleurs : aucune |
-| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur | `fr` |
+| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
 
 Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_BASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUE`.
 

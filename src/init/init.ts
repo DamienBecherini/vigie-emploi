@@ -15,7 +15,7 @@ export const MODELE = join(RACINE_APP, 'modele');
  * à venir pour l'anglais), sinon modele/ (français).
  */
 export function modeleDeLangue(langue: Langue, racine: string = RACINE_APP): string {
-  if (langue === 'fr') return join(racine, 'modele');
+  if (langue === LANGUE_DEFAUT) return join(racine, 'modele');
   const traduit = join(racine, `modele-${langue}`);
   return existsSync(traduit) ? traduit : join(racine, 'modele');
 }
@@ -25,7 +25,7 @@ export const CONSIGNES_APP = join(RACINE_APP, 'AGENTS.md');
 
 /** Nom des consignes de l'application dans une langue : AGENTS.<langue>.md s'il existe, sinon AGENTS.md (français). */
 export function nomConsignesApp(langue: Langue, racine: string = RACINE_APP): string {
-  if (langue === 'fr') return 'AGENTS.md';
+  if (langue === LANGUE_DEFAUT) return 'AGENTS.md';
   return existsSync(join(racine, `AGENTS.${langue}.md`)) ? `AGENTS.${langue}.md` : 'AGENTS.md';
 }
 const DEPOT_PUBLIC = 'https://github.com/DamienBecherini/vigie-emploi/blob/main/';
@@ -176,7 +176,7 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
-  if (langue !== 'fr' && modele === MODELE) avertissements.push(m('init.modeleFrancais'));
+  if (langue !== LANGUE_DEFAUT && modele === MODELE) avertissements.push(m('init.modeleFrancais'));
   if (lance.mode === 'npx') avertissements.push(m('init.npx', { commande }));
   if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) avertissements.push(m('init.nonCompile', { app }));
   const navigateur = trouverNavigateur(o.env);

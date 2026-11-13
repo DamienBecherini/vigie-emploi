@@ -26,7 +26,7 @@
         var z = Number(localStorage.getItem('vigie-emploi:zoom'));
         if (z >= 75 && z <= 175) document.documentElement.style.fontSize = z + '%';
         var l = localStorage.getItem('vigie-emploi:langue');
-        if (l === 'fr' || l === 'en') document.documentElement.lang = l;
+        if (l && /^[a-z]{2,3}(-[A-Za-z0-9]+)?$/.test(l)) document.documentElement.lang = l;
       } catch (e) {}
     </script>
   </head>

@@ -33,11 +33,11 @@
     "dist",
     "migrations",
     "modele",
-    "modele-en",
+    "modele-*",
     "gabarits",
     "exemples",
     "AGENTS.md",
-    "AGENTS.en.md",
+    "AGENTS.*.md",
     "docs/utiliser-avec-une-ia.md",
     "vigie-emploi.config.example.json"
   ],

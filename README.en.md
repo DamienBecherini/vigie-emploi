@@ -214,7 +214,7 @@ To designate it, in order of precedence:
 | `titresExclus` | Regular expressions (case-insensitive): titles discarded without reading | `[]` |
 | `employeursRefuses` | Regular expressions: refused employers (title, company, start of description) | `[]` |
 | `terminal` | Command opening a terminal with the agent (dashboard buttons); `{dossier}` and `{invite}` are substituted | Windows: `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]`; elsewhere: none |
-| `langue` | Language of the dashboard, the CLI messages, the MCP server and the generated tracking file: `fr` or `en` (written by `init --langue`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser | `fr` |
+| `langue` | Language of the dashboard, the CLI messages, the MCP server and the generated tracking file: `fr` or `en` (written by `init --langue`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser. Another language can be added without touching the logic: [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) (in French) | `fr` |
 
 Environment variables also recognised: `VIGIE_EMPLOI_CONFIG` (config file), `VIGIE_EMPLOI_BASE` (database), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUE`.
 

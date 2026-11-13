@@ -25,18 +25,18 @@ function escape(s: string): string {
 }
 
 const STYLE = `
-:root { color-scheme: light dark; --fond: #fff; --texte: #0f172a; --doux: #475569; --bord: #cbd5e1; --lien: #1d4ed8; --code: #f1f5f9; }
-@media (prefers-color-scheme: dark) { :root { --fond: #020617; --texte: #f1f5f9; --doux: #94a3b8; --bord: #334155; --lien: #93c5fd; --code: #1e293b; } }
-body { background: var(--fond); color: var(--texte); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+:root { color-scheme: light dark; --bg: #fff; --text: #0f172a; --muted: #475569; --border: #cbd5e1; --link: #1d4ed8; --code: #f1f5f9; }
+@media (prefers-color-scheme: dark) { :root { --bg: #020617; --text: #f1f5f9; --muted: #94a3b8; --border: #334155; --link: #93c5fd; --code: #1e293b; } }
+body { background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; margin: 0; }
 main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
-header { color: var(--doux); font-size: .85rem; border-bottom: 1px solid var(--bord); padding-bottom: .5rem; margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-a { color: var(--lien); }
+header { color: var(--muted); font-size: .85rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+a { color: var(--link); }
 table { border-collapse: collapse; display: block; overflow-x: auto; margin: 1rem 0; font-size: .92rem; }
-th, td { border: 1px solid var(--bord); padding: .3rem .5rem; vertical-align: top; text-align: left; }
+th, td { border: 1px solid var(--border); padding: .3rem .5rem; vertical-align: top; text-align: left; }
 code, pre { background: var(--code); border-radius: 4px; font-size: .9em; }
 code { padding: 0 .25rem; }
 pre { padding: .75rem; overflow-x: auto; white-space: pre-wrap; }
-blockquote { border-left: 3px solid var(--bord); margin: 0; padding-left: 1rem; color: var(--doux); }
+blockquote { border-left: 3px solid var(--border); margin: 0; padding-left: 1rem; color: var(--muted); }
 img { max-width: 100%; }
 `;
 

@@ -16,6 +16,7 @@ import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FIL
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
 import { DefilementHorizontal } from './composants/DefilementHorizontal.tsx';
+import { EnteteColle } from './composants/EnteteColle.tsx';
 import { Detail } from './composants/Detail.tsx';
 import { AVenir } from './composants/AVenir.tsx';
 import { ActionsAgent, useNotifications } from './composants/ActionsAgent.tsx';
@@ -125,51 +126,6 @@ const ECRAN_ETROIT = '(max-width: 767px)';
  */
 const COLLEE =
   'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[collee=true]/defilement:after:opacity-100';
-/**
- * En-tête du tableau qui reste visible sous l'en-tête collé de l'application pendant le défilement de la page.
- * `position: sticky` n'y suffit pas : le conteneur à défilement horizontal du tableau capte le collage vertical.
- * On décale donc le <thead> (translateY) à chaque défilement : il reste dans le tableau (largeurs de colonnes et
- * défilement horizontal intacts) et s'arrête au-dessus de la dernière ligne. `data-flottant` affiche son ombre.
- */
-function useEnteteFlottant(
-  tableRef: React.RefObject<HTMLTableElement | null>,
-  theadRef: React.RefObject<HTMLTableSectionElement | null>,
-  enteteRef: React.RefObject<HTMLElement | null>,
-) {
-  useEffect(() => {
-    let image = 0;
-    const placer = () => {
-      image = 0;
-      const table = tableRef.current;
-      const thead = theadRef.current;
-      if (!table || !thead) return;
-      const haut = enteteRef.current?.getBoundingClientRect().bottom ?? 0;
-      const r = table.getBoundingClientRect();
-      const lignes = table.tBodies[0]?.rows;
-      const derniere = lignes?.length ? lignes[lignes.length - 1].offsetHeight : 0;
-      const max = Math.max(0, r.height - thead.offsetHeight - derniere);
-      const decalage = Math.min(Math.max(0, haut - r.top), max);
-      thead.style.transform = decalage > 0 ? `translateY(${decalage}px)` : '';
-      thead.dataset.flottant = String(decalage > 0);
-    };
-    const demander = () => {
-      if (!image) image = requestAnimationFrame(placer);
-    };
-    placer();
-    window.addEventListener('scroll', demander, { passive: true });
-    window.addEventListener('resize', demander);
-    // Hauteur du tableau (page, données, colonnes) ou de l'en-tête de l'application qui change.
-    const obs = new ResizeObserver(demander);
-    if (tableRef.current) obs.observe(tableRef.current);
-    if (enteteRef.current) obs.observe(enteteRef.current);
-    return () => {
-      window.removeEventListener('scroll', demander);
-      window.removeEventListener('resize', demander);
-      obs.disconnect();
-      if (image) cancelAnimationFrame(image);
-    };
-  }, [tableRef, theadRef, enteteRef]);
-}
 
 function useEcranEtroit(): boolean {
   const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
@@ -357,22 +313,40 @@ export function App() {
   // Changement de page : si la barre au-dessus du tableau (filtres, nombre d'offres, colonnes) est sortie de l'écran,
   // on remonte jusqu'à elle, sous l'en-tête collé de l'application, pour revoir l'en-tête du tableau.
   const enteteRef = useRef<HTMLElement>(null);
+  const ligneRef = useRef<HTMLDivElement>(null);
   const barreRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const theadRef = useRef<HTMLTableSectionElement>(null);
-  useEnteteFlottant(tableRef, theadRef, enteteRef);
+  const defilementRef = useRef<HTMLDivElement>(null);
+  /** Partie collée de l'en-tête : tout l'en-tête sur grand écran, la rangée de recherche en fenêtre étroite. */
+  const partieCollee = useCallback(() => {
+    const entete = enteteRef.current;
+    return entete && getComputedStyle(entete).display !== 'contents' ? entete : ligneRef.current;
+  }, []);
+  const basEntete = useCallback(() => partieCollee()?.getBoundingClientRect().bottom ?? 0, [partieCollee]);
+  // Hauteur de la partie collée dans --haut-entete : la copie collée de l'en-tête du tableau se place dessous (CSS).
+  useEffect(() => {
+    const maj = () => document.documentElement.style.setProperty('--haut-entete', `${partieCollee()?.offsetHeight ?? 0}px`);
+    maj();
+    const obs = new ResizeObserver(maj);
+    for (const el of [enteteRef.current, ligneRef.current]) if (el) obs.observe(el);
+    window.addEventListener('resize', maj);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener('resize', maj);
+    };
+  }, [partieCollee]);
   const pagePrecedente = useRef(page);
   useEffect(() => {
     if (pagePrecedente.current === page) return;
     pagePrecedente.current = page;
     const barre = barreRef.current;
     if (!barre) return;
-    const sousEntete = (enteteRef.current?.getBoundingClientRect().bottom ?? 0) + 8;
+    const sousEntete = basEntete() + 8;
     const haut = barre.getBoundingClientRect().top;
     if (haut >= sousEntete) return;
     const doux = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: window.scrollY + haut - sousEntete, behavior: doux ? 'smooth' : 'auto' });
-  }, [page]);
+  }, [page, basEntete]);
   // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
   const ordreDefaut = params.get('ordre') === 'asc' ? 'asc' : 'desc';
   const niveaux = useMemo(() => lireNiveaux(params.get('tri'), ordreDefaut), [params, ordreDefaut]);
@@ -453,13 +427,69 @@ export function App() {
   const total = liste.data?.total ?? 0;
   const pages = liste.data?.pages ?? 1;
 
+  /** Lignes de l'en-tête du tableau ; `copie` : celles de la copie collée (EnteteColle), hors de l'ordre de tabulation. */
+  const lignesEntete = (copie: boolean) =>
+    table.getHeaderGroups().map((hg) => (
+      <tr key={hg.id}>
+        {hg.headers.map((h) => {
+          const triable = h.column.getCanSort();
+          const sens = h.column.getIsSorted();
+          const rang = niveaux.findIndex((n) => n.colonne === h.column.id);
+          return (
+            <th
+              key={h.id}
+              scope="col"
+              data-colonne-collee={!copie && h.column.id === 'titre' ? '' : undefined}
+              aria-sort={copie ? undefined : sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
+              className={`bg-slate-100 px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:bg-slate-800 dark:text-slate-200 ${h.column.id === 'titre' ? COLLEE : ''}`}
+            >
+              {triable ? (
+                <button
+                  type="button"
+                  tabIndex={copie ? -1 : undefined}
+                  className="inline-flex items-center gap-1 rounded hover:underline"
+                  title={t('liste.titreTri')}
+                  onClick={() => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id)), ordre: null, page: null })}
+                >
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                  {sens === 'asc' ? (
+                    <ArrowUp className="size-3.5" aria-hidden="true" />
+                  ) : sens === 'desc' ? (
+                    <ArrowDown className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+                  )}
+                  {niveaux.length > 1 && rang >= 0 && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('liste.niveauTri', { n: rang + 1 })}>
+                      {rang + 1}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                flexRender(h.column.columnDef.header, h.getContext())
+              )}
+            </th>
+          );
+        })}
+      </tr>
+    ));
+
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#tableau" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
         {t('entete.allerTableau')}
       </a>
-      <header ref={enteteRef} className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Grand écran : tout l'en-tête reste collé en haut, sur une ligne. Fenêtre étroite : seule la rangée logo +
+          recherche reste collée ; vues et boutons défilent avec la page (l'en-tête et son bloc deviennent « contents »). */}
+      <header
+        ref={enteteRef}
+        className="max-md:contents md:sticky md:top-0 md:z-10 md:border-b md:border-slate-200 md:bg-white/95 md:px-4 md:py-2 md:backdrop-blur md:dark:border-slate-800 md:dark:bg-slate-900/95"
+      >
+        <div className="max-md:contents md:flex md:flex-wrap md:items-center md:gap-3">
+          <div
+            ref={ligneRef}
+            className="flex items-center gap-3 max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-slate-200 max-md:bg-white/95 max-md:px-4 max-md:py-2 max-md:backdrop-blur md:contents dark:max-md:border-slate-800 dark:max-md:bg-slate-900/95"
+          >
           <h1 className="text-lg font-extrabold tracking-tight">
             vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
           </h1>
@@ -476,6 +506,8 @@ export function App() {
               onChange={(e) => setRecherche(e.target.value)}
             />
           </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 max-md:border-b max-md:border-slate-200 max-md:px-4 max-md:py-2 md:contents dark:max-md:border-slate-800">
           <nav aria-label={t('entete.vues')} className="flex flex-wrap gap-1">
             {(
               [
@@ -501,6 +533,7 @@ export function App() {
           </button>
           <BoutonRafraichir />
           <Preferences />
+          </div>
         </div>
       </header>
 
@@ -574,7 +607,14 @@ export function App() {
             </p>
           )}
 
-          <DefilementHorizontal ombreGauche={false} className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          {/* Bloc du tableau : la copie collée de l'en-tête (EnteteColle) ne dépasse pas sa fin. */}
+          <div>
+          <EnteteColle tableRef={tableRef} defilementRef={defilementRef} lignes={lignesEntete(true)} />
+          <DefilementHorizontal
+            refConteneur={defilementRef}
+            ombreGauche={false}
+            className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          >
             <table ref={tableRef} className="w-full border-collapse text-sm">
               <caption className="sr-only">
                 {t('liste.legende', {
@@ -583,52 +623,7 @@ export function App() {
                     .join(t('liste.puis')),
                 })}
               </caption>
-              {/* En-tête flottant : décalé par useEnteteFlottant pour rester sous l'en-tête de l'application. */}
-              <thead ref={theadRef} className="group/entete relative z-[2] bg-slate-100 text-left dark:bg-slate-800">
-                {table.getHeaderGroups().map((hg) => (
-                  <tr key={hg.id}>
-                    {hg.headers.map((h) => {
-                      const triable = h.column.getCanSort();
-                      const sens = h.column.getIsSorted();
-                      const rang = niveaux.findIndex((n) => n.colonne === h.column.id);
-                      return (
-                        <th
-                          key={h.id}
-                          scope="col"
-                          data-colonne-collee={h.column.id === 'titre' ? '' : undefined}
-                          aria-sort={sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
-                          className={`bg-slate-100 px-2 py-2 font-semibold whitespace-nowrap text-slate-700 group-data-[flottant=true]/entete:shadow-[0_3px_4px_-2px_rgba(0,0,0,0.25)] dark:bg-slate-800 dark:text-slate-200 dark:group-data-[flottant=true]/entete:shadow-[0_3px_4px_-2px_rgba(0,0,0,0.8)] ${h.column.id === 'titre' ? COLLEE : ''}`}
-                        >
-                          {triable ? (
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-1 rounded hover:underline"
-                              title={t('liste.titreTri')}
-                              onClick={() => modifier({ tri: ecrireNiveaux(basculerNiveau(niveaux, h.column.id)), ordre: null, page: null })}
-                            >
-                              {flexRender(h.column.columnDef.header, h.getContext())}
-                              {sens === 'asc' ? (
-                                <ArrowUp className="size-3.5" aria-hidden="true" />
-                              ) : sens === 'desc' ? (
-                                <ArrowDown className="size-3.5" aria-hidden="true" />
-                              ) : (
-                                <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
-                              )}
-                              {niveaux.length > 1 && rang >= 0 && (
-                                <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('liste.niveauTri', { n: rang + 1 })}>
-                                  {rang + 1}
-                                </span>
-                              )}
-                            </button>
-                          ) : (
-                            flexRender(h.column.columnDef.header, h.getContext())
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
+              <thead className="bg-slate-100 text-left dark:bg-slate-800">{lignesEntete(false)}</thead>
               <tbody>
                 {table.getRowModel().rows.map((r) => {
                   const choisie = r.original.id === offreChoisie;
@@ -667,6 +662,7 @@ export function App() {
               </tbody>
             </table>
           </DefilementHorizontal>
+          </div>
 
           <nav aria-label={t('liste.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: null })}>

@@ -1,6 +1,6 @@
 // Conteneur à défilement horizontal qui montre une ombre sur le bord où il reste du contenu caché (gauche, droite, ou
 // les deux) : on comprend qu'on peut faire glisser le tableau, surtout sur téléphone où la barre de défilement est cachée.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 
 /**
  * Le conteneur qui défile, nommé `group/defilement`, porte `data-gauche` (« true » quand du contenu est caché à gauche)
@@ -11,13 +11,17 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 export function DefilementHorizontal({
   className,
   ombreGauche = true,
+  refConteneur,
   children,
 }: {
   className?: string;
   ombreGauche?: boolean;
+  /** Référence au conteneur qui défile, pour le suivre de l'extérieur (copie collée de l'en-tête). */
+  refConteneur?: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const interne = useRef<HTMLDivElement>(null);
+  const ref = refConteneur ?? interne;
   const [bords, setBords] = useState({ gauche: false, droite: false, collee: false });
   useEffect(() => {
     const el = ref.current;

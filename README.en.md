@@ -22,9 +22,9 @@ vigie-emploi is a local kit to look for a permanent job or freelance assignments
 
 > Everything is available in English with `init --langue en`: the AI instructions and workspace templates (your agent works and writes in English: résumés, messages, application files), the sample scoring grid, the MCP server, the dashboard and the CLI messages. The language selector in the dashboard header switches the dashboard only. Command names, statuses and the workspace's file names stay in French: they are identifiers.
 
-The name means "job lookout" (*vigie*, the sailor watching from the crow's nest). Two promises:
+The name means "job lookout" (*vigie*, the sailor in the crow's nest who spots what matters and calls it out). Two promises:
 
-- **it keeps watch for you**: your job alerts are read and triaged, a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time, and no follow-up is forgotten;
+- **it sorts for you**: the alerts your mail client drops off are read in a single pass when you start the triage, a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time, and every follow-up has its date;
 - **it never makes you lie**: the AI relies on an inventory of what you can and cannot claim, built with you during onboarding. It only writes in a résumé what you can defend in an interview. Application after application, you refine with it what makes your value and the message you want to convey, until the result truly sounds like you.
 
 ## How it works
@@ -160,7 +160,7 @@ npm link           # makes the `vigie-emploi` command available everywhere (opti
 
 Without `npm link`, replace `vigie-emploi` with `node <path>/bin/vigie-emploi.js`. In the repository, `bin/vigie-emploi.js` runs the TypeScript in `src/` directly; without `src/` (npm package), it loads the compiled JavaScript from `dist/`, because Node refuses to run TypeScript located under `node_modules`. `npm pack` and `npm publish` rebuild everything (`prepack`).
 
-Former names: the application used to be called **cap-emploi**. The `cap-emploi` command no longer exists (use `vigie-emploi`); the `CAP_EMPLOI_*` variables, the `cap-emploi.config.json` file and the `data/cap-emploi.sqlite` database are still recognised; the new names take precedence.
+Working names from before publication (`postuler-juste`, `cap-emploi`): their `POSTULER_JUSTE_*` / `CAP_EMPLOI_*` variables, `*.config.json` files and `data/*.sqlite` databases are still recognised, after the vigie-emploi ones.
 
 ### Creating your workspace
 
@@ -305,19 +305,17 @@ Without a terminal (Claude Desktop): ask the AI to open the dashboard. The `ouvr
 - **À venir** (upcoming) banner above the table: overdue deadlines and those in the next 7 days, each opening its offer; **Statistiques** button (applications by stage, reply delay).
 - Details panel: description, link to the offer (editable), **score breakdown** (criterion by criterion: sub-score, weight, contribution, justification, origin; rules applied; flags; exact value and grid version), "ancienne grille" badge for an overall score, **sub-score correction** (AI criteria, days on site, salary, rules; the score is recomputed and added to the history), old-style overall score, **application** (next action, sending date, channel), **journal** (deadlines first, overdue in red; add, edit, delete an event, mark a deadline as done; link a file from the folder chosen from a list), **folder files** (links that open them), status history, editable tags, status change, **Candidater** button (copies `candidater <id>` to the clipboard and moves the offer to `go`).
 - Files: served read-only through `/api/fichier/<path>`, only inside the data folder (no `..`, no hidden files, neither `data/` nor `emails/`, symbolic links resolved); Markdown rendered as simple HTML without scripts (CSP), `?brut=1` for raw text, PDFs and images as they are. The server rejects requests whose host is not `localhost` / `127.0.0.1`, and writes coming from another origin (non-local `Origin` header or `Sec-Fetch-Site: cross-site`).
-- Light / dark / system theme, adjustable text size (remembered in the browser), keyboard navigation (Enter opens an offer, Escape closes the panel).
+- Language (header selector), light / dark / system theme and palettes, text size (remembered in the browser), keyboard navigation (Enter opens an offer, Escape closes the panel). On a phone, the filters open in a drawer.
 
 Interface development: `vigie-emploi serve` on one side, `npm run dev:ui` on the other (Vite on http://localhost:5173, the API is proxied to port 4410; `VIGIE_EMPLOI_API` to change it).
 
 ### Generated application tracking
 
-`vigie-emploi generer-suivi` writes the tracking table in the format of the former `_SUIVI.md`: sections **En cours** (in progress: to send first, then from the latest sending to the oldest), **Envoyées sans suite** (sent without follow-up: status "no news" or "no reply"), **Closes** (refused, abandoned, closed), columns Offer, Type, Channel, Sent, Status, Next action, Folder, links to the folders. At the top: "Fichier généré par vigie-emploi le … : ne pas éditer à la main" (generated file, do not edit by hand).
+`vigie-emploi generer-suivi` writes the tracking table in Markdown (`candidatures/_SUIVI.md`), readable without the application, in the workspace language: sections **In progress** (to send first, then from the latest sending to the oldest), **Sent without reply** (status "no news" or "no reply"), **Closed** (refused, abandoned, closed), columns Offer, Type, Channel, Sent, Status, Next action, Folder, links to the folders. At the top: "File generated by vigie-emploi on …: do not edit by hand".
 
-Next action column: the next deadline in the journal ("**04/11** : Relancer", "(en retard)" if the date has passed), otherwise the `prochaine_action` field.
+Next action column: the next deadline in the journal ("**04/11**: Follow up", "(overdue)" if the date has passed), otherwise the `prochaine_action` field.
 
-As long as an application has not changed since the import, its cells are rewritten as they were; afterwards the Status column shows the comment of the latest status. The next action entered in the interface, the CLI or through MCP is never overwritten by a new import of the old `_SUIVI.md`.
-
-Switch-over: compare `_SUIVI.genere.md` with `_SUIVI.md`, then `vigie-emploi generer-suivi --remplacer`. After the switch-over, the database prevails.
+The database prevails: the file is regenerated, never read back. If you import an existing Markdown tracking file (`import-historique`), as long as an imported application has not changed, its cells are rewritten as they were; the next action entered in the interface, the CLI or through MCP is never overwritten by a new import. Before replacing an old `_SUIVI.md`, compare it with the `_SUIVI.genere.md` preview.
 
 ### Journal and deadlines
 
@@ -340,22 +338,28 @@ Layout:
 
 ```
 bin/vigie-emploi.js   command entry point (TypeScript from src/ in the repository, JavaScript from dist/ in the npm package)
-migrations/         versioned SQL schema (PRAGMA user_version)
-src/core/           configuration, links, normalisation, offer operations, queries,
-                    scoring grid (grille.ts: pure schema and computation; grille-stockage.ts: file, versions, re-scoring)
-exemples/           sample scoring grid (generic)
-src/db/             database opening and migrations
-src/ingest/         .eml reading, JSON-LD, ingestion
-src/import/         import of the Markdown / JSON history (including folder journals)
-src/cli/            commands
-src/api/            HTTP server (Hono): JSON API, data folder file reading, built interface
-src/mcp/            MCP server (stdio), tools wired to src/core
-src/export/         application tracking generation (Markdown)
-ui/                 React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query interface
-docs/adr/           architecture decisions (in French)
+migrations/           versioned SQL schema (PRAGMA user_version)
+src/core/             configuration, links, normalisation, offer operations, queries,
+                      scoring grid (grille.ts: pure schema and computation; grille-stockage.ts: file, versions, re-scoring)
+src/db/               database opening and migrations
+src/ingest/           .eml reading, JSON-LD, ingestion
+src/import/           import of a Markdown / JSON history (including folder journals)
+src/cli/              commands
+src/api/              HTTP server (Hono): JSON API, data folder file reading, built interface
+src/mcp/              MCP server (stdio), tools wired to src/core; texts in src/mcp/i18n/
+src/cv/               Markdown résumé → PDF (headless Chrome), templates, page count
+src/init/             workspace creation
+src/i18n/             translation mechanism and texts of the CLI, the API and the tracking file
+src/export/           application tracking generation (Markdown)
+ui/                   React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query interface (texts in ui/src/i18n/)
+modele/, modele-en/   workspace template copied by init (AI instructions, onboarding, sample résumé)
+gabarits/cv/          résumé templates ("sobre", "moderne", "compact")
+exemples/             sample scoring grids (French and English)
+mcpb/, scripts/       Claude Desktop extension (manifest, build)
+docs/adr/             architecture decisions (in French)
 ```
 
-See also [`AGENTS.en.md`](AGENTS.en.md) (driving by an AI; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server) and the architecture decisions in [`docs/adr/`](docs/adr/) (in French).
+See also [`AGENTS.en.md`](AGENTS.en.md) (driving by an AI; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server), [`docs/ajouter-une-langue.md`](docs/ajouter-une-langue.md) (adding a language) and the architecture decisions in [`docs/adr/`](docs/adr/) (all in French).
 
 ## License
 

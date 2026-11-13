@@ -26,7 +26,7 @@ La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom appara�
 | `src/i18n/libelles.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
 | `ui/src/theme.ts` | Noms des couleurs (`LIBELLES_NEUTRES`, `LIBELLES_ACCENTS`) |
 
-Soit trois dictionnaires (environ 1 100 textes en tout, à partir des fichiers anglais) et cinq petites tables. Le compilateur ne signale rien d'autre : le reste du code ne connaît aucune langue en particulier.
+Soit trois dictionnaires (environ un millier de textes en tout, à partir des fichiers anglais) et cinq petites tables. Le compilateur ne signale rien d'autre : le reste du code ne connaît aucune langue en particulier.
 
 Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `{ one, other }`, complété au besoin par `zero`, `two`, `few` ou `many` pour les langues qui les distinguent (catégories de `Intl.PluralRules`).
 

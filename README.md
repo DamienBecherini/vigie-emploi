@@ -20,9 +20,9 @@
 
 vigie-emploi est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **votre** grille, prépare les candidatures que vous validez (dossier, CV ciblé, message) et tient le suivi. Tout reste sur votre ordinateur.
 
-Une vigie, c'est le guetteur en haut du mât. Deux promesses :
+Une vigie, c'est le guetteur en haut du mât : il repère ce qui compte et le signale. Deux promesses :
 
-- **elle veille pour vous** : vos alertes sont lues et triées, une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup, et aucune relance n'est oubliée ;
+- **elle trie pour vous** : les alertes que votre messagerie dépose sont lues d'un seul passage quand vous lancez le tri, une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup, et chaque relance a sa date ;
 - **elle ne vous fait jamais mentir** : l'IA s'appuie sur un inventaire de ce que vous pouvez revendiquer ou non, construit avec vous au démarrage. Elle n'écrit dans un CV que ce que vous pouvez défendre en entretien. Au fil des candidatures, vous affinez avec elle ce qui fait votre valeur et le message que vous voulez faire passer, jusqu'à ce que le résultat vous ressemble vraiment.
 
 ## Comment ça marche
@@ -158,7 +158,7 @@ npm link           # rend la commande `vigie-emploi` disponible partout (faculta
 
 Sans `npm link`, remplacez `vigie-emploi` par `node <chemin>/bin/vigie-emploi.js`. Dans le dépôt, `bin/vigie-emploi.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
 
-Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi` n'existe plus (utilisez `vigie-emploi`) ; les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
+Noms de travail d'avant la publication (`postuler-juste`, `cap-emploi`) : leurs variables `POSTULER_JUSTE_*` / `CAP_EMPLOI_*`, fichiers `*.config.json` et bases `data/*.sqlite` restent reconnus, après ceux de vigie-emploi.
 
 ### Créer son espace de travail
 
@@ -303,19 +303,17 @@ Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L
 - Bandeau **À venir** au-dessus du tableau : échéances en retard et des 7 prochains jours, chacune ouvre son offre ; bouton **Statistiques** (candidatures par étape, délai de réponse).
 - Panneau de détail : description, lien vers l'offre (modifiable), **décomposition de la note** (critère par critère : sous-note, poids, apport, justification, origine ; règles appliquées ; drapeaux ; valeur exacte et version de la grille), badge « ancienne grille » pour une note globale, **correction des sous-notes** (critères IA, jours sur site, salaire, règles ; la note est recalculée et s'ajoute à l'historique), note globale à l'ancienne, **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `candidater <id>` dans le presse-papiers et passe l'offre en `go`).
 - Fichiers : servis en lecture par `/api/fichier/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?brut=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`, et les écritures venues d'une autre origine (en-tête `Origin` non local ou `Sec-Fetch-Site: cross-site`).
-- Thème clair / sombre / système, taille du texte réglable (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau).
+- Langue (sélecteur de l'en-tête), thème clair / sombre / système et palettes, taille du texte (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau). Sur téléphone, les filtres s'ouvrent dans un tiroir.
 
 Développement de l'interface : `vigie-emploi serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `VIGIE_EMPLOI_API` pour en changer).
 
 ### Suivi des candidatures généré
 
-`vigie-emploi generer-suivi` écrit le suivi au format de l'ancien `_SUIVI.md` : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par vigie-emploi le … : ne pas éditer à la main ».
+`vigie-emploi generer-suivi` écrit le suivi en Markdown (`candidatures/_SUIVI.md`), lisible sans l'application : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par vigie-emploi le … : ne pas éditer à la main ».
 
 Colonne Prochaine action : la prochaine échéance du journal (« **04/11** : Relancer », « (en retard) » si la date est passée), sinon le champ `prochaine_action`.
 
-Tant qu'une candidature n'a pas bougé depuis la reprise, ses cellules sont réécrites telles quelles ; ensuite la colonne Statut reprend le commentaire du dernier statut. La prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise de l'ancien `_SUIVI.md`.
-
-Bascule : comparer `_SUIVI.genere.md` à `_SUIVI.md`, puis `vigie-emploi generer-suivi --remplacer`. Après la bascule, la base fait foi.
+La base fait foi : le fichier est régénéré, jamais relu. Si vous reprenez un suivi Markdown existant (`import-historique`), tant qu'une candidature reprise n'a pas bougé, ses cellules sont réécrites telles quelles ; la prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise. Avant de remplacer un ancien `_SUIVI.md`, comparez-le à l'aperçu `_SUIVI.genere.md`.
 
 ### Journal et échéances
 
@@ -338,22 +336,28 @@ Arborescence :
 
 ```
 bin/vigie-emploi.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
-migrations/         schéma SQL versionné (PRAGMA user_version)
-src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes,
-                    grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)
-exemples/           grille de notation d'exemple (générique)
-src/db/             ouverture de la base et migrations
-src/ingest/         lecture des .eml, JSON-LD, ingestion
-src/import/         reprise de l'historique Markdown / JSON (dont les journaux des dossiers)
-src/cli/            commandes
-src/api/            serveur HTTP (Hono) : API JSON, lecture des fichiers du dossier, interface compilée
-src/mcp/            serveur MCP (stdio), outils branchés sur src/core
-src/export/         génération du suivi des candidatures (Markdown)
-ui/                 interface React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query
-docs/adr/           décisions d'architecture
+migrations/           schéma SQL versionné (PRAGMA user_version)
+src/core/             configuration, liens, normalisation, opérations sur les offres, requêtes,
+                      grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)
+src/db/               ouverture de la base et migrations
+src/ingest/           lecture des .eml, JSON-LD, ingestion
+src/import/           reprise d'un historique Markdown / JSON (dont les journaux des dossiers)
+src/cli/              commandes
+src/api/              serveur HTTP (Hono) : API JSON, lecture des fichiers du dossier, interface compilée
+src/mcp/              serveur MCP (stdio), outils branchés sur src/core ; textes dans src/mcp/i18n/
+src/cv/               CV Markdown → PDF (Chrome sans interface), gabarits, comptage des pages
+src/init/             création d'un espace de travail
+src/i18n/             mécanisme de traduction et textes de la CLI, de l'API et du suivi
+src/export/           génération du suivi des candidatures (Markdown)
+ui/                   interface React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query (textes dans ui/src/i18n/)
+modele/, modele-en/   modèle d'espace de travail copié par init (consignes de l'IA, démarrage, exemple de CV)
+gabarits/cv/          gabarits de CV (« sobre », « moderne », « compact »)
+exemples/             grilles de notation d'exemple (française et anglaise)
+mcpb/, scripts/       extension Claude Desktop (manifeste, construction)
+docs/adr/             décisions d'architecture
 ```
 
-Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/adr/0001-choix-techniques.md`](docs/adr/0001-choix-techniques.md), [`docs/adr/0002-mcp-et-suivi.md`](docs/adr/0002-mcp-et-suivi.md) [`docs/adr/0003-journal-et-echeances.md`](docs/adr/0003-journal-et-echeances.md) et [`docs/adr/0004-grille-de-notation.md`](docs/adr/0004-grille-de-notation.md).
+Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (brancher le serveur MCP), [`docs/ajouter-une-langue.md`](docs/ajouter-une-langue.md) et les décisions d'architecture : [0001](docs/adr/0001-choix-techniques.md) (choix techniques), [0002](docs/adr/0002-mcp-et-suivi.md) (MCP et suivi), [0003](docs/adr/0003-journal-et-echeances.md) (journal et échéances), [0004](docs/adr/0004-grille-de-notation.md) (grille de notation), [0005](docs/adr/0005-boutons-agent-et-notifications.md) (boutons de l'agent et notifications).
 
 ## Licence
 

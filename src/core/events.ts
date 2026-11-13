@@ -1,7 +1,7 @@
-// Journal d'une candidature : événements datés (messages, entretiens, tests, propositions, décisions, notes)
-// et échéances (événement daté dans le futur, ou passé mais pas encore fait).
-// La base garde ce qui s'est passé et quand ; les documents restent dans le dossier de candidature
-// (un événement n'en garde que le chemin, relatif au dossier de données).
+// Journal of an application: dated events (messages, interviews, tests, proposals, decisions, notes)
+// and deadlines (event dated in the future, or past but not done yet).
+// The database keeps what happened and when; documents stay in the application folder
+// (an event only keeps its path, relative to the data folder).
 import type { Database } from '../db/database.ts';
 import { now } from './text.ts';
 import { TYPES_EVENT, type OriginEvent, type Direction, type TypeEvent } from './statuses.ts';
@@ -15,7 +15,7 @@ export interface JournalEvent {
   offer_id: number;
   type: TypeEvent;
   direction: Direction | null;
-  /** AAAA-MM-JJ ou AAAA-MM-JJTHH:MM (heure locale). */
+  /** YYYY-MM-DD or YYYY-MM-DDTHH:MM (local time). */
   at: string;
   done: boolean;
   summary: string;
@@ -25,7 +25,7 @@ export interface JournalEvent {
   amount: number | null;
   unit: string | null;
   days: number | null;
-  /** Chemins relatifs au dossier de données. */
+  /** Paths relative to the data folder. */
   files: string[];
   origin: OriginEvent;
   import_key: string | null;
@@ -33,11 +33,11 @@ export interface JournalEvent {
   updated_at: string | null;
 }
 
-/** Événement du journal, avec son état d'échéance calculé à la date du jour. */
+/** Journal event, with its deadline state computed at today's date. */
 export interface EventJournal extends JournalEvent {
-  /** Pas encore fait (à venir ou en retard). */
+  /** Not done yet (upcoming or overdue). */
   deadline: boolean;
-  /** Pas fait et daté d'avant aujourd'hui. */
+  /** Not done and dated before today. */
   overdue: boolean;
 }
 
@@ -47,7 +47,7 @@ export interface DeadlineOffer extends EventJournal {
   status: string;
 }
 
-/** Saisie d'un événement. Champs facultatifs : absent = inchangé (modification), null ou '' = effacé. */
+/** Input of an event. Optional fields: absent = unchanged (update), null or '' = cleared. */
 export interface EventInput {
   type?: string;
   direction?: string | null;
@@ -64,12 +64,12 @@ export interface EventInput {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Dates (heure locale de la machine : celle de l'utilisateur)
+// Dates (local time of the machine: the user's)
 // ---------------------------------------------------------------------------------------------
 
 const two = (n: number) => String(n).padStart(2, '0');
 
-/** AAAA-MM-JJ du jour (heure locale), décalé de `jours`. */
+/** YYYY-MM-DD of today (local time), shifted by `days`. */
 export function dayLocal(d: Date = new Date(), days = 0): string {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
   return `${x.getFullYear()}-${two(x.getMonth() + 1)}-${two(x.getDate())}`;
@@ -86,8 +86,8 @@ function dateValid(a: number, m: number, j: number): boolean {
 }
 
 /**
- * Lit une date d'événement : « 05/11/2026 », « 05/11/2026 14:30 », « 05/11/2026 à 14 h 30 », « 2026-11-05 »,
- * « 2026-11-05T14:30 », « aujourd'hui », « demain », « +3 » (dans 3 jours). Rend AAAA-MM-JJ ou AAAA-MM-JJTHH:MM.
+ * Reads an event date: "05/11/2026", "05/11/2026 14:30", "05/11/2026 à 14 h 30", "2026-11-05",
+ * "2026-11-05T14:30", "aujourd'hui", "demain", "today", "tomorrow", "+3" (in 3 days). Returns YYYY-MM-DD or YYYY-MM-DDTHH:MM.
  */
 export function readDateEvent(text: string, nowAt: Date = new Date()): string {
   const t = text.trim().toLowerCase();
@@ -117,12 +117,12 @@ export function readDateEvent(text: string, nowAt: Date = new Date()): string {
   return `${day}T${two(Number(h[1]))}:${h[2] ?? '00'}`;
 }
 
-/** L'événement est-il dans le futur ? (une date seule d'aujourd'hui ne l'est pas). */
+/** Is the event in the future? (a date alone of today is not). */
 export function isFuture(at: string, nowAt: Date = new Date()): boolean {
   return at.length > 10 ? at > instantLocal(nowAt) : at > dayLocal(nowAt);
 }
 
-/** « 05/11/2026 » ou « 05/11/2026 14 h 30 ». */
+/** "05/11/2026" or "05/11/2026 14 h 30". */
 export function dateEventFr(at: string): string {
   const m = at.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!m) return at;
@@ -148,8 +148,8 @@ function numberOrNull(v: unknown, name: string): number | null {
 }
 
 /**
- * Chemin de fichier relatif au dossier de données, en barres obliques : refuse les chemins absolus,
- * « .. », les segments cachés (« .git ») et les caractères de contrôle.
+ * File path relative to the data folder, with forward slashes: refuses absolute paths,
+ * "..", hidden segments (".git") and control characters.
  */
 export function pathRelative(v: string): string {
   const t = v.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
@@ -217,8 +217,8 @@ export function eventOrError(db: Database, id: number): JournalEvent {
 }
 
 /**
- * Journal d'une offre : échéances (pas faites) d'abord, de la plus proche à la plus lointaine (les retards
- * en tête), puis les événements faits, du plus récent au plus ancien.
+ * Journal of an offer: deadlines (not done) first, from the closest to the farthest (overdue ones
+ * on top), then the done events, from the most recent to the oldest.
  */
 export function journal(db: Database, offerId: number, nowAt: Date = new Date()): EventJournal[] {
   const today = dayLocal(nowAt);
@@ -241,7 +241,7 @@ export interface Deadlines {
   upcoming: DeadlineOffer[];
 }
 
-/** Échéances : en retard (date passée, pas faites) et à venir sur `jours` jours (aujourd'hui compris). */
+/** Deadlines: overdue (past date, not done) and upcoming over `days` days (today included). */
 export function deadlines(db: Database, o: { days?: number; now?: Date } = {}): Deadlines {
   const days = o.days ?? 7;
   if (!Number.isInteger(days) || days < 0 || days > 3660) throw new Error(tr('core.daysInvalid', { days }));
@@ -263,7 +263,7 @@ export function deadlines(db: Database, o: { days?: number; now?: Date } = {}): 
   };
 }
 
-/** Prochaine échéance d'une offre (la plus ancienne pas faite : un retard passe avant le reste). */
+/** Next deadline of an offer (the oldest not done: an overdue one comes before the rest). */
 export function nextDeadline(db: Database, offerId: number): JournalEvent | null {
   const l = db
     .prepare('SELECT * FROM events WHERE offer_id = ? AND done = 0 ORDER BY at ASC, id ASC LIMIT 1')
@@ -272,7 +272,7 @@ export function nextDeadline(db: Database, offerId: number): JournalEvent | null
 }
 
 // ---------------------------------------------------------------------------------------------
-// Écriture
+// Write
 // ---------------------------------------------------------------------------------------------
 
 function touchOffer(db: Database, offerId: number): void {
@@ -280,8 +280,8 @@ function touchOffer(db: Database, offerId: number): void {
 }
 
 /**
- * Ajoute un événement au journal d'une offre. `fait` vaut par défaut false pour une date future
- * (c'est une échéance) et true sinon. `le` vaut par défaut maintenant.
+ * Adds an event to the journal of an offer. `done` defaults to false for a future date
+ * (it is a deadline) and to true otherwise. `at` defaults to now.
  */
 export function addEvent(
   db: Database,
@@ -325,7 +325,7 @@ export function addEvent(
   return eventById(db, Number(info.lastInsertRowid))!;
 }
 
-/** Modifie un événement : champ absent = inchangé ; null ou '' = effacé (sauf type, date et résumé). */
+/** Updates an event: absent field = unchanged; null or '' = cleared (except type, date and summary). */
 export function updateEvent(db: Database, id: number, s: EventInput, opts: { now?: Date } = {}): JournalEvent {
   const e = eventOrError(db, id);
   const updated: string[] = [];
@@ -364,7 +364,7 @@ export function deleteEvent(db: Database, id: number): JournalEvent {
   return e;
 }
 
-/** Texte court d'une échéance pour le suivi : « 04/11 : Relancer » (« en retard » si la date est passée). */
+/** Short text of a deadline for the tracker: "04/11: Relancer" ("overdue" if the date has passed). */
 export function textDeadline(e: JournalEvent, nowAt: Date = new Date()): string {
   const m = e.at.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   const when = m ? `${m[3]}/${m[2]}${m[1] !== String(nowAt.getFullYear()) ? `/${m[1]}` : ''}${m[4] ? ` ${m[4]} h ${m[5]}` : ''}` : e.at;

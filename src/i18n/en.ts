@@ -1,4 +1,4 @@
-// Textes anglais de la CLI, de l'API, du suivi généré et de l'initialisation (mêmes clés que fr.ts).
+// English texts of the CLI, the API, the generated tracker and the initialization (same keys as fr.ts).
 import type { KeyServer } from './fr.ts';
 import type { Plural, MessageText } from './tool.ts';
 

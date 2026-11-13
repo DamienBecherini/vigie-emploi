@@ -1,15 +1,15 @@
-// Petites fonctions de normalisation : rémunération, dates, valeurs « NC ».
+// Small normalization functions: compensation, dates, "NC" values.
 
 export interface Compensation {
   min: number | null;
   max: number | null;
-  /** 'an' (salaire annuel brut), 'mois', 'jour' (TJM) ou 'heure'. */
+  /** 'year' (gross annual salary), 'month', 'day' (daily rate) or 'hour'. */
   unit: 'year' | 'month' | 'day' | 'hour' | null;
 }
 
 const EMPTY: Compensation = { min: null, max: null, unit: null };
 
-/** Valeur absente : null, chaîne vide, « NC », « — », « - », « N/A ». */
+/** Missing value: null, empty string, "NC", "—", "-", "N/A". */
 export function isEmpty(v: unknown): boolean {
   if (v === null || v === undefined) return true;
   if (typeof v !== 'string') return false;
@@ -34,8 +34,8 @@ const RE_RANGE = new RegExp(
 const RE_AMOUNT = new RegExp(String.raw`(?:${COUNT})\s*${CURRENCY}[^,;·(]*`, 'i');
 
 /**
- * Isole la rémunération dans un texte libre (« CDI Paris, 100 % télétravail, 50-60 K€ » → « 50-60 K€ ») :
- * un montant ou une fourchette suivi d'une devise. Ignore « 100 % », « Paris 5e », « 3 j/sem »…
+ * Isolates the compensation in a free text ("CDI Paris, 100 % télétravail, 50-60 K€" → "50-60 K€"):
+ * an amount or a range followed by a currency. Ignores "100 %", "Paris 5e", "3 j/sem"…
  */
 export function findCompensation(text: string | null | undefined): string | null {
   if (!text) return null;
@@ -45,8 +45,8 @@ export function findCompensation(text: string | null | undefined): string | null
 }
 
 /**
- * Lit une fourchette de rémunération libre : « 40-48 K€ », « 55 K€ », « 400 €/j », « 450 à 500 € / jour »,
- * « 3 000 € brut / mois », « 45000-55000 EUR YEAR » (JSON-LD). Retourne des montants en euros.
+ * Reads a free compensation range: "40-48 K€", "55 K€", "400 €/j", "450 à 500 € / jour",
+ * "3 000 € brut / mois", "45000-55000 EUR YEAR" (JSON-LD). Returns amounts in euros.
  */
 export function readCompensation(text: string | null | undefined): Compensation {
   if (!text || isEmpty(text)) return EMPTY;
@@ -76,7 +76,7 @@ export function readCompensation(text: string | null | undefined): Compensation 
   return { min: Math.min(a, b ?? a), max: Math.max(a, b ?? a), unit };
 }
 
-/** Date JJ/MM/AAAA (ou JJ/MM/AA, ou MM/AAAA) trouvée dans un texte, au format ISO. */
+/** Date DD/MM/YYYY (or DD/MM/YY, or MM/YYYY) found in a text, in ISO format. */
 export function dateFr(text: string | null | undefined): string | null {
   if (!text) return null;
   let m = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
@@ -90,7 +90,7 @@ export function dateFr(text: string | null | undefined): string | null {
   return m ? m[1] : null;
 }
 
-/** Date ISO (AAAA-MM-JJ) d'une valeur Date ou d'une chaîne lisible par Date. */
+/** ISO date (YYYY-MM-DD) of a Date value or of a string readable by Date. */
 export function dateIso(v: Date | string | null | undefined): string | null {
   if (!v) return null;
   const d = v instanceof Date ? v : new Date(v);
@@ -102,7 +102,7 @@ export function now(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-/** Retire la mise en forme Markdown d'une cellule (gras, liens, italique). */
+/** Removes the Markdown formatting of a cell (bold, links, italics). */
 export function withoutMarkdown(text: string): string {
   return text
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
@@ -113,7 +113,7 @@ export function withoutMarkdown(text: string): string {
     .trim();
 }
 
-/** Identifiant court et stable d'un texte (FNV-1a 32 bits, en hexadécimal). */
+/** Short and stable identifier of a text (32-bit FNV-1a, in hexadecimal). */
 export function fingerprint(text: string): string {
   let h = 0x811c9dc5;
   for (const c of text.normalize('NFC').toLowerCase()) {

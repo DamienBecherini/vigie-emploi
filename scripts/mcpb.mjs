@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Construit l'extension Claude Desktop (MCP Bundle) : build/vigie-emploi-<version>.mcpb.
-// 1. compile l'application (npm run build : dist/ et dist/ui), sauf avec --sans-build ;
-// 2. prépare build/mcpb/vigie-emploi/ : JavaScript compilé, ressources lues à l'exécution, manifeste (version de
-//    package.json), icône, et node_modules de production seulement (npm ci --omit=dev) ;
-// 3. valide le manifeste et emballe le dossier avec l'outil officiel (@anthropic-ai/mcpb : validate, pack).
-// Usage : npm run mcpb [-- --sans-build]
+// 1. builds the application (npm run build: dist/ and dist/ui), unless --without-build;
+// 2. prepares build/mcpb/vigie-emploi/: compiled JavaScript, resources read at run time, manifest (version from
+//    package.json), icon, and production node_modules only (npm ci --omit=dev);
+// 3. validates the manifest and packs the folder with the official tool (@anthropic-ai/mcpb: validate, pack).
+// Usage: npm run mcpb [-- --without-build]
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -17,10 +17,10 @@ const stage = join(output, 'mcpb', 'vigie-emploi');
 const archive = join(output, `vigie-emploi-${pkg.version}.mcpb`);
 const cliMcpb = join(root, 'node_modules', '@anthropic-ai', 'mcpb', 'dist', 'cli', 'cli.js');
 
-/** Versions traduites présentes à la racine : modele-<langue>/, AGENTS.<langue>.md, README.<langue>.md. */
+/** Translated versions present at the root: scaffold-<language>/, AGENTS.<language>.md, README.<language>.md. */
 const TRANSLATIONS = readdirSync(root).filter((n) => /^scaffold-[a-z]{2,3}$|^(AGENTS|README)\.[a-z]{2,3}\.md$/.test(n));
 
-/** Ce que l'application lit à l'exécution (comme le champ files de package.json), sans le dossier docs/ entier. */
+/** What the application reads at run time (like the files field of package.json), without the whole docs/ folder. */
 const TO_COPY = [
   'bin/vigie-emploi.js',
   'dist',
@@ -38,7 +38,7 @@ const TO_COPY = [
 
 function launch(command, args, options = {}) {
   console.log(`> ${command} ${args.join(' ')}`);
-  // npm est un script .cmd sous Windows : il passe par le shell, en une seule chaîne (arguments sans espaces ici).
+  // npm is a .cmd script on Windows: it goes through the shell, as a single string (arguments without spaces here).
   const byShell = command === 'npm' && process.platform === 'win32';
   const r = byShell
     ? spawnSync(`npm ${args.join(' ')}`, { stdio: 'inherit', shell: true, ...options })
@@ -65,17 +65,17 @@ for (const path of TO_COPY) {
   cpSync(join(root, path), join(stage, path), { recursive: true });
 }
 
-// Dépendances de production, versions exactes du package-lock.json.
+// Production dependencies, exact versions from package-lock.json.
 cpSync(join(root, 'package.json'), join(stage, 'package.json'));
 cpSync(join(root, 'package-lock.json'), join(stage, 'package-lock.json'));
 launch('npm', ['ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: stage });
 rmSync(join(stage, 'package-lock.json'));
 
-// package.json allégé : "type": "module" (indispensable aux .js de dist/), version, dépendances ; ni scripts ni devDependencies.
+// Slimmed-down package.json: "type": "module" (required by the .js files of dist/), version, dependencies; no scripts nor devDependencies.
 const keep = ['name', 'version', 'description', 'author', 'license', 'homepage', 'repository', 'type', 'bin', 'engines', 'dependencies'];
 writeFileSync(join(stage, 'package.json'), `${JSON.stringify(Object.fromEntries(keep.filter((c) => c in pkg).map((c) => [c, pkg[c]])), null, 2)}\n`);
 
-// Manifeste : version du paquet ; le $schema ne sert qu'à l'éditeur.
+// Manifest: package version; the $schema is only for the editor.
 const manifest = JSON.parse(readFileSync(join(root, 'mcpb', 'manifest.json'), 'utf8'));
 delete manifest.$schema;
 manifest.version = pkg.version;

@@ -9,13 +9,13 @@ const client = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: true, retry: 1 } },
 });
 
-/** Un changement de langue remonte l'application : tous les textes sont recalculés (les données restent en cache). */
+/** A language change remounts the application: all the texts are recomputed (the data stay in the cache). */
 function Root() {
   const language = useLanguage();
   return <App key={language} />;
 }
 
-// La langue est connue avant le premier rendu (pas de bascule visible du français vers l'anglais).
+// The language is known before the first render (no visible switch from French to English).
 void initializeLanguage().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

@@ -1,9 +1,9 @@
-// Grille de notation : schéma (Zod), calcul de la note (fonctions pures, sans accès disque ni base)
-// et modification partielle. Partagé par la CLI, l'API, le serveur MCP et l'interface.
+// Scoring rubric: schema (Zod), score computation (pure functions, without disk nor database access)
+// and partial change. Shared by the CLI, the API, the MCP server and the interface.
 //
-// Principe : l'IA (ou l'utilisateur) note quelques critères de 0 à 10 et signale les règles bloquantes
-// qui s'appliquent ; l'application calcule les critères à barème (télétravail, rémunération), la moyenne
-// pondérée, applique les règles (zéro, plafond) et arrondit au demi-point. L'IA ne donne jamais la note finale.
+// Principle: the AI (or the user) scores a few criteria from 0 to 10 and reports the blocking rules
+// that apply; the application computes the scale-based criteria (remote work, compensation), the weighted
+// average, applies the rules (zero, cap) and rounds to the half point. The AI never gives the final score.
 import { z } from 'zod';
 import { decimal, languageCurrent, t, t as tr } from '../i18n/index.ts';
 
@@ -11,14 +11,14 @@ export const LEVELS = ['strong', 'medium', 'light', 'zero'] as const;
 export type Level = (typeof LEVELS)[number];
 export const LABELS_LEVELS: Record<Level, string> = { strong: 'Fort', medium: 'Moyen', light: 'Léger', zero: 'Zéro' };
 
-/** Critères dont la sous-note est calculée par l'application à partir d'un barème. */
+/** Criteria whose sub-score is computed by the application from a scale. */
 export const COMPUTATIONS = ['remote', 'compensation'] as const;
 export type Computation = (typeof COMPUTATIONS)[number];
 
 export const UNITS = ['year', 'month', 'day', 'hour'] as const;
 export type Unit = (typeof UNITS)[number];
 
-/** Nombre de critères pondérés au plus (au-delà, la grille perd en lisibilité). */
+/** Maximum number of weighted criteria (beyond that, the rubric gets hard to read). */
 export const CRITERIA_MAX = 7;
 
 const identifier = z
@@ -33,12 +33,12 @@ export const schemaCriterion = z
   .strictObject({
     id: identifier,
     label: z.string().min(1),
-    /** Consigne pour l'IA (ce que mesure le critère, ce qui fait monter ou baisser la sous-note). */
+    /** Instruction for the AI (what the criterion measures, what raises or lowers the sub-score). */
     description: z.string().default(''),
-    /** ia : sous-note donnée par l'IA ; calcul : sous-note calculée depuis le barème « calcul ». */
+    /** ai: sub-score given by the AI; computation: sub-score computed from the "computation" scale. */
     source: z.enum(['ai', 'computation']),
     computation: z.enum(COMPUTATIONS).optional(),
-    /** Poids relatif (la somme est normalisée : 35 + 20 + 20 + 10 + 10 + 5 = 100 %). */
+    /** Relative weight (the sum is normalized: 35 + 20 + 20 + 10 + 10 + 5 = 100 %). */
     weight: z.number().min(0).max(100),
   })
   .superRefine((c, ctx) => {
@@ -50,12 +50,12 @@ export const schemaCriterion = z
     }
   });
 
-/** Barème de rémunération pour une unité : plancher → 5, cible haute et au-delà → 10, sous le plancher → 0. */
+/** Compensation scale for one unit: floor → 5, high target and beyond → 10, below the floor → 0. */
 const fieldsTier = {
   floor: z.number().positive(),
   target_low: z.number().positive(),
   target_high: z.number().positive(),
-  /** Plancher propre aux postes en full remote (facultatif). */
+  /** Floor specific to full remote jobs (optional). */
   floor_full_remote: z.number().positive().optional(),
 };
 export const schemaTier = z
@@ -71,18 +71,18 @@ export type Tier = z.infer<typeof schemaTier>;
 
 export const schemaScales = z.strictObject({
   remote: z.strictObject({
-    /** Sous-note selon le nombre de jours sur site par semaine : index 0 (full remote) à 5 (sur site). */
+    /** Sub-score by the number of days on site per week: index 0 (full remote) to 5 (on site). */
     onsite_days: z.array(score10).length(6, { error: () => t('core.rubric.sixValues') }),
-    /** Sous-note quand le rythme est inconnu (valeur neutre, avec un drapeau). */
+    /** Sub-score when the pace is unknown (neutral value, with a flag). */
     unknown: score10.default(5),
   }),
   compensation: z.strictObject({
-    /** Valeur comparée au barème quand l'offre donne une fourchette. */
+    /** Value compared with the scale when the offer gives a range. */
     reference: z.enum(['middle', 'min', 'max']).default('middle'),
     unknown: score10.default(5),
-    /** Salaire annuel brut, en K€ (un salaire mensuel est multiplié par 12). */
+    /** Gross annual salary, in K€ (a monthly salary is multiplied by 12). */
     salary: schemaTier,
-    /** Taux journalier, en € (un taux horaire est multiplié par 7). */
+    /** Daily rate, in € (an hourly rate is multiplied by 7). */
     daily_rate: schemaTier,
   }),
 });
@@ -92,19 +92,19 @@ export const schemaRule = z
   .strictObject({
     id: identifier,
     label: z.string().min(1),
-    /** Quand la signaler (consigne pour l'IA). */
+    /** When to report it (instruction for the AI). */
     description: z.string().default(''),
     /**
-     * zero / plafond : appliquées quand l'IA signale la règle dans « bloquants ».
-     * plafond_critere : appliquée automatiquement quand la sous-note de « critere » est sous « seuil » ;
-     * la note finale est alors plafonnée à cette sous-note.
+     * zero / cap: applied when the AI reports the rule in "blockers".
+     * criterion_cap: applied automatically when the sub-score of "criterion" is below "threshold";
+     * the final score is then capped at that sub-score.
      */
     effect: z.enum(['zero', 'cap', 'criterion_cap']),
-    /** Note maximale pour l'effet « plafond ». */
+    /** Maximum score for the "cap" effect. */
     value: score10.optional(),
-    /** Critère surveillé (effet « plafond_critere »). */
+    /** Watched criterion ("criterion_cap" effect). */
     criterion: z.string().optional(),
-    /** Seuil sous lequel la règle s'applique (effet « plafond_critere »). */
+    /** Threshold below which the rule applies ("criterion_cap" effect). */
     threshold: score10.optional(),
     active: z.boolean().default(true),
   })
@@ -125,7 +125,7 @@ export const schemaTechnology = z.strictObject({
 });
 export type Technology = z.infer<typeof schemaTechnology>;
 
-/** Données d'entrée des critères calculés, lues dans l'offre par l'IA (sinon déduites des champs de l'offre). */
+/** Inputs of the computed criteria, read in the offer by the AI (otherwise deduced from the offer's fields). */
 export const schemaInputs = z.strictObject({
   onsite_days: z.number().int().min(0).max(5).nullable().optional(),
   salary_min: z.number().positive().nullable().optional(),
@@ -144,11 +144,11 @@ const subScore = z.strictObject({
     return n;
   }),
   justification: z.string().optional(),
-  /** Qui l'a donnée : l'IA (par défaut) ou l'utilisateur dans l'interface. */
+  /** Who gave it: the AI (by default) or the user in the interface. */
   origin: z.enum(['ai', 'interface']).optional(),
 });
 
-/** Ce que l'IA (ou l'interface) fournit pour une note à critères. */
+/** What the AI (or the interface) provides for a criteria-based score. */
 export const schemaInput = z.strictObject({
   criteria: z.record(z.string(), subScore).default({}),
   inputs: schemaInputs.optional(),
@@ -160,7 +160,7 @@ export const schemaExample = z.strictObject({
   title: z.string().min(1),
   company: z.string().optional(),
   url: z.string().optional(),
-  /** Rappel des conditions de l'offre (lieu, contrat, rythme, salaire) pour situer l'exemple. */
+  /** Reminder of the offer's conditions (location, contract, pace, salary) to situate the example. */
   conditions: z.string().optional(),
   criteria: z.record(z.string(), z.strictObject({ score: score10, justification: z.string() })).default({}),
   inputs: schemaInputs.optional(),
@@ -172,9 +172,9 @@ export type Example = z.infer<typeof schemaExample>;
 export const schemaRubric = z
   .strictObject({
     name: z.string().default('Grille de notation'),
-    /** Seuil « à regarder » : vue rapide « Notées ≥ … ». */
+    /** "Worth a look" threshold: quick view "Scored ≥ …". */
     threshold: score10.default(4.5),
-    /** Consignes générales pour l'IA (cibles, bonus, ce qui compte), en plus des descriptions des critères. */
+    /** General instructions for the AI (targets, bonuses, what matters), in addition to the criteria descriptions. */
     instructions: z.array(z.string()).default([]),
     criteria: z.array(schemaCriterion).min(1).max(CRITERIA_MAX, { error: () => t('core.rubric.criteriaMax', { n: CRITERIA_MAX }) }),
     scales: schemaScales,
@@ -204,10 +204,10 @@ export const schemaRubric = z
 export type Rubric = z.infer<typeof schemaRubric>;
 export type CriterionRubric = Rubric['criteria'][number];
 
-/** Clés de métadonnées du fichier grille.json (hors contenu versionné). */
+/** Metadata keys of the grille.json file (outside the versioned content). */
 export const META_FILE = ['version', 'modified_at', 'summary', '$schema', '$comment'] as const;
 
-/** Message lisible d'une erreur Zod : « criteres.2.poids : … ; seuil : … ». */
+/** Readable message of a Zod error: "criteria.2.weight: …; threshold: …". */
 export function messageZod(e: z.ZodError, prefix = ''): string {
   return e.issues
     .map((i) => {
@@ -217,7 +217,7 @@ export function messageZod(e: z.ZodError, prefix = ''): string {
     .join(' ; ');
 }
 
-/** Valide une grille (objet JSON) ; lève une Error au message lisible. */
+/** Validates a rubric (JSON object); throws an Error with a readable message. */
 export function validateRubric(raw: unknown, origin = 'rubric'): Rubric {
   const r = schemaRubric.safeParse(raw);
   if (!r.success) throw new Error(t('core.rubric.invalid', { origin, message: messageZod(r.error) }));
@@ -227,7 +227,7 @@ export function validateRubric(raw: unknown, origin = 'rubric'): Rubric {
 // ---------------------------------------------------------------------------------------------
 // Calcul
 
-/** Champs de l'offre utiles aux critères calculés (quand l'IA n'a pas donné les entrées). */
+/** Fields of the offer used by the computed criteria (when the AI did not give the inputs). */
 export interface DataOffer {
   remote?: string | null;
   compensation_min?: number | null;
@@ -245,9 +245,9 @@ export interface LineCriterion {
   justification: string | null;
   origin: OriginSubScore;
   weight: number;
-  /** Poids ramené à 1 (somme des poids = 1). */
+  /** Weight scaled to 1 (sum of the weights = 1). */
   normalized_weight: number;
-  /** Points apportés à la moyenne : note × poids normalisé. */
+  /** Points brought to the average: score × normalized weight. */
   contribution: number;
 }
 
@@ -256,7 +256,7 @@ export interface AppliedRule {
   label: string;
   effect: 'zero' | 'cap' | 'criterion_cap';
   value: number | null;
-  /** La règle a fait baisser la note (un plafond au-dessus de la moyenne ne change rien). */
+  /** The rule lowered the score (a cap above the average changes nothing). */
   effective: boolean;
 }
 
@@ -277,20 +277,20 @@ export interface InputsUsed {
 export interface Breakdown {
   rubric_version: number | null;
   criteria: LineCriterion[];
-  /** Moyenne pondérée, avant les règles bloquantes. */
+  /** Weighted average, before the blocking rules. */
   average: number;
   rules: AppliedRule[];
-  /** Règles signalées mais inconnues ou désactivées dans cette version de la grille. */
+  /** Rules reported but unknown or disabled in this version of the rubric. */
   ignored_blockers: string[];
   flags: Flag[];
   inputs: InputsUsed;
-  /** Note après les règles, non arrondie (gardée en base). */
+  /** Score after the rules, not rounded (kept in the database). */
   exact_score: number;
-  /** Note affichée : arrondie au demi-point. */
+  /** Displayed score: rounded to the half point. */
   score: number;
 }
 
-/** Arrondi au demi-point le plus proche (4,25 → 4,5 ; 4,24 → 4). */
+/** Rounded to the nearest half point (4.25 → 4.5; 4.24 → 4). */
 export function roundedHalf(x: number): number {
   return Math.round(x * 2 + 1e-9) / 2;
 }
@@ -301,8 +301,8 @@ function rounded(x: number, decimals = 4): number {
 }
 
 /**
- * Interpolation du barème de rémunération : sous le plancher 0 ; au plancher 5 ; à la cible haute
- * et au-delà 10 ; linéaire entre les deux.
+ * Interpolation of the compensation scale: below the floor 0; at the floor 5; at the high target
+ * and beyond 10; linear in between.
  */
 export function interpolate(value: number, floor: number, targetHigh: number): number {
   if (value < floor) return 0;
@@ -311,9 +311,9 @@ export function interpolate(value: number, floor: number, targetHigh: number): n
 }
 
 /**
- * Jours sur site par semaine lus dans un texte libre de télétravail : « full remote » → 0,
- * « 3 j sur site » → 3, « 2 j de télétravail » → 3, « sur site » → 5 ; null si le texte ne permet pas de conclure
- * (« hybride », « télétravail partiel », « NC »).
+ * Days on site per week read in a free remote-work text: "full remote" → 0,
+ * "3 j sur site" → 3, "2 j de télétravail" → 3, "sur site" → 5; null if the text does not allow a conclusion
+ * ("hybride", "télétravail partiel", "NC").
  */
 export function onsiteDaysFromText(text: string | null | undefined): number | null {
   if (!text) return null;
@@ -331,7 +331,7 @@ export function onsiteDaysFromText(text: string | null | undefined): number | nu
   return null;
 }
 
-/** Montant ramené à l'unité du barème : K€/an pour un salaire, €/j pour un taux. */
+/** Amount brought to the unit of the scale: K€/year for a salary, €/day for a rate. */
 function toScale(v: number, unit: Unit): { value: number; type: 'salary' | 'daily_rate' } {
   switch (unit) {
     case 'year':
@@ -403,7 +403,7 @@ export function scoreCompensation(
   };
 }
 
-/** Entrées des critères calculés : celles de la saisie d'abord, sinon les champs de l'offre. */
+/** Inputs of the computed criteria: those of the input first, otherwise the offer's fields. */
 export function inputsUsed(input: Input, offer: DataOffer): InputsUsed {
   const e = input.inputs ?? {};
   const daysEntered = e.onsite_days ?? null;
@@ -422,10 +422,10 @@ export function inputsUsed(input: Input, offer: DataOffer): InputsUsed {
 }
 
 /**
- * Calcule la note d'une offre : sous-notes (IA ou barème), moyenne pondérée normalisée, règles bloquantes
- * (zéro, plafond), arrondi au demi-point. Tolérant : un critère IA absent vaut la valeur neutre 5 avec un
- * drapeau, une règle inconnue ou désactivée est ignorée (listée). Pour valider une nouvelle saisie,
- * voir verifierSaisie.
+ * Computes the score of an offer: sub-scores (AI or scale), normalized weighted average, blocking rules
+ * (zero, cap), rounding to the half point. Tolerant: a missing AI criterion gets the neutral value 5 with a
+ * flag, an unknown or disabled rule is ignored (listed). To validate a new input,
+ * see checkInput.
  */
 export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}, version: number | null = null): Breakdown {
   const inputs = inputsUsed(input, offer);
@@ -512,8 +512,8 @@ export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}
 }
 
 /**
- * Valide une nouvelle saisie contre la grille : critères connus et notés par l'IA, règles connues.
- * Lève une Error au message utile à l'IA (liste des identifiants attendus).
+ * Validates a new input against the rubric: criteria known and scored by the AI, known rules.
+ * Throws an Error with a message useful to the AI (list of the expected ids).
  */
 export function checkInput(rubric: Rubric, raw: unknown): Input {
   const r = schemaInput.safeParse(raw);
@@ -539,13 +539,13 @@ export function checkInput(rubric: Rubric, raw: unknown): Input {
   return s;
 }
 
-/** Libellé court des règles appliquées, pour la colonne « pénalités » des notes. */
+/** Short label of the applied rules, for the "penalties" column of the scores. */
 export function summaryRules(d: Breakdown): string | null {
   const t = d.rules.map((r) => `${r.effect === 'zero' ? '0' : `plafond ${formatNumber(r.value!)}`} : ${r.label}`);
   return t.length ? t.join(' ; ') : null;
 }
 
-/** Note d'un exemple de référence, calculée avec la grille (pour l'afficher et calibrer l'IA). */
+/** Score of a reference example, computed with the rubric (to display it and calibrate the AI). */
 export function scoreExample(rubric: Rubric, e: Example, version: number | null = null): Breakdown {
   return computeScore(rubric, { criteria: e.criteria, inputs: e.inputs, blockers: e.blockers }, {}, version);
 }
@@ -571,7 +571,7 @@ export const schemaChange = z.strictObject({
         .optional(),
     })
     .optional(),
-  /** Règles : ajout (id nouveau) ou modification des champs donnés (id existant). */
+  /** Rules: addition (new id) or update of the given fields (existing id). */
   rules: z
     .array(
       z.strictObject({
@@ -587,18 +587,18 @@ export const schemaChange = z.strictObject({
     )
     .optional(),
   remove_rules: z.array(z.string()).optional().describe('Identifiants des règles à retirer ; les règles non citées dans « regles » restent telles quelles'),
-  /** Critères : modification des champs donnés (libellé, description, poids). */
+  /** Criteria: update of the given fields (label, description, weight). */
   criteria: z
     .array(z.strictObject({ id: z.string(), label: z.string().optional(), description: z.string().optional(), weight: z.number().min(0).max(100).optional() }))
     .optional(),
   inventory: z
     .strictObject({
-      /** Ajoute ou remplace (même techno, sans casse). */
+      /** Adds or replaces (same technology, case-insensitive). */
       add: z.array(schemaTechnology).optional(),
       remove: z.array(z.string()).optional(),
     })
     .optional(),
-  /** Exemples de référence : ajout ou remplacement (même titre et même entreprise, sans casse), retrait par titre. */
+  /** Reference examples: addition or replacement (same title and same company, case-insensitive), removal by title. */
   examples: z
     .strictObject({
       add: z.array(schemaExample).optional(),
@@ -611,7 +611,7 @@ export const schemaChange = z.strictObject({
 });
 export type Change = z.infer<typeof schemaChange>;
 
-/** Applique un changement partiel à une grille et renvoie la nouvelle grille validée. */
+/** Applies a partial change to a rubric and returns the new validated rubric. */
 export function applyChange(rubric: Rubric, raw: unknown): Rubric {
   const r = schemaChange.safeParse(raw);
   if (!r.success) throw new Error(t('core.change.invalid', { message: messageZod(r.error) }));
@@ -664,8 +664,8 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
     for (const e of g.examples) e.blockers = e.blockers.filter((b) => b !== id);
   }
   const key = (s: string) => s.trim().toLowerCase();
-  // Retraits d'abord, ajouts ensuite : une techno retirée puis ajoutée dans le même changement
-  // est remplacée, jamais perdue (les ajouts d'un appel ne peuvent pas être effacés par ses retraits).
+  // Removals first, additions next: a technology removed then added in the same change
+  // is replaced, never lost (the additions of a call cannot be erased by its removals).
   for (const t of ch.inventory?.remove ?? []) {
     const before = g.inventory.length;
     g.inventory = g.inventory.filter((x) => key(x.technology) !== key(t));
@@ -676,7 +676,7 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
     if (i >= 0) g.inventory[i] = t;
     else g.inventory.push(t);
   }
-  // Exemples : même logique (retraits, puis ajouts ou remplacements).
+  // Examples: same logic (removals, then additions or replacements).
   const sameExample = (e: Example, title: string, company: string | undefined) =>
     key(e.title) === key(title) && (company === undefined || key(e.company ?? '') === key(company));
   for (const x of ch.examples?.remove ?? []) {
@@ -699,13 +699,13 @@ export interface ExampleComputed {
   company: string | null;
   score: number;
   average: number;
-  /** Note avec la grille d'avant le changement (null : exemple ajouté par le changement). */
+  /** Score with the rubric from before the change (null: example added by the change). */
   before?: number | null;
-  /** Moyenne pondérée avant le changement (la note, arrondie au demi-point, peut ne pas bouger). */
+  /** Weighted average before the change (the score, rounded to the half point, may not move). */
   average_before?: number | null;
 }
 
-/** Notes des exemples de référence avec une grille ; avec `avant`, la note de chaque exemple avec l'ancienne grille. */
+/** Scores of the reference examples with a rubric; with `before`, the score of each example with the old rubric. */
 export function computedExamples(g: Rubric, version: number | null, before?: { rubric: Rubric; version: number | null }): ExampleComputed[] {
   const keyEx = (e: Example) => `${e.title.trim().toLowerCase()}|${(e.company ?? '').trim().toLowerCase()}`;
   return g.examples.map((e) => {
@@ -722,9 +722,9 @@ export function computedExamples(g: Rubric, version: number | null, before?: { r
 }
 
 // ---------------------------------------------------------------------------------------------
-// Consignes pour l'IA (outil MCP « grille », commande « grille »)
+// Instructions for the AI (MCP tool "rubric", command "rubric")
 
-/** Consignes de notation générées depuis la grille : ce que l'IA doit fournir, et comment. */
+/** Scoring instructions generated from the rubric: what the AI must provide, and how. */
 export function instructionsAi(g: Rubric): string[] {
   const ai = g.criteria.filter((c) => c.source === 'ai');
   const calc = g.criteria.filter((c) => c.source === 'computation');

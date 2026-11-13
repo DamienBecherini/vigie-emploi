@@ -1,6 +1,6 @@
-// Libellés affichés des identifiants internes (statuts, types d'événement, niveaux d'inventaire), par langue.
-// Les identifiants (nouvelle, envoyee, ecartee…) ne changent jamais : seuls les libellés sont traduits.
-// Aucune dépendance Node : partagé avec l'interface.
+// Displayed labels of the internal ids (statuses, event types, inventory levels), by language.
+// The ids (new, sent, dismissed…) never change: only the labels are translated.
+// No Node dependency: shared with the interface.
 import { LABELS_STATUSES, LABELS_TYPES, type Status, type TypeEvent } from '../core/statuses.ts';
 import { LABELS_LEVELS, type Level } from '../core/rubric.ts';
 import { LANGUAGE_DEFAULT, type Language } from './tool.ts';
@@ -48,8 +48,8 @@ export function labelLevel(n: Level, language: Language): string {
 }
 
 /**
- * Message d'un drapeau de note (calculé et enregistré en français dans la décomposition) dans la langue voulue,
- * d'après son code ; un code inconnu garde le message d'origine.
+ * Message of a score flag (computed and saved in French in the breakdown) in the wanted language,
+ * from its code; an unknown code keeps the original message.
  */
 export function messageFlag(d: { code: string; message: string }, language: Language): string {
   if (language === LANGUAGE_DEFAULT) return d.message;

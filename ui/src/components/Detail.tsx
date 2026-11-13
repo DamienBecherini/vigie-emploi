@@ -19,8 +19,8 @@ function Line({ label, children }: { label: string; children: React.ReactNode })
 }
 
 /**
- * CV de la candidature : lien qui l'ouvre dans un nouvel onglet (servi par /api/fichier, seulement dans le dossier de
- * données). Un chemin absolu ou hors de l'espace n'est pas servi : il reste affiché en texte.
+ * CV of the application: link that opens it in a new tab (served by /api/file, only inside the data
+ * folder). An absolute path or one outside the workspace is not served: it stays displayed as text.
  */
 function LinkCv({ path }: { path: string }) {
   const relative = path.replace(/\\/g, '/');
@@ -34,11 +34,11 @@ function LinkCv({ path }: { path: string }) {
 }
 
 /**
- * Dossier de la candidature.
- * - Sur la machine du serveur (poste_local, vérifié aussi par le serveur) : icône + nom du dossier, qui l'ouvre dans
- *   l'explorateur de fichiers.
- * - Ailleurs (téléphone, autre poste) : lien vers sa fiche (dossier-candidature.md, sinon le premier .md du dossier),
- *   affichée mise en forme par /api/fichier ; sans fiche, le chemin en texte (les fichiers sont listés plus bas).
+ * Folder of the application.
+ * - On the server's machine (local_machine, also checked by the server): icon + folder name, which opens it in
+ *   the file explorer.
+ * - Elsewhere (phone, other computer): link to its sheet (dossier-candidature.md, otherwise the first .md of the folder),
+ *   displayed formatted by /api/file; without a sheet, the path as text (the files are listed below).
  */
 function LinkFolder({ offerId, folder }: { offerId: number; folder: string }) {
   const q = useQuery({ queryKey: ['files', offerId], queryFn: () => api.files(offerId) });
@@ -190,7 +190,7 @@ function EditorLink({ offer }: { offer: DetailOffer }) {
   );
 }
 
-/** « 6,5 » ou « 6.5 » → 6.5 ; vide → null ; texte invalide → NaN (refusé avant l'envoi). */
+/** "6,5" or "6.5" → 6.5; empty → null; invalid text → NaN (refused before sending). */
 function readNumber(s: string): number | null {
   const t = s.trim().replace(',', '.');
   return t === '' ? null : Number(t);
@@ -205,7 +205,7 @@ function useRefresh(id: number) {
   };
 }
 
-/** Saisie ou correction de la note : ajoute une entrée à l'historique (origine « interface »). */
+/** Entry or correction of the score: adds an entry to the history (origin "interface"). */
 function EditorScore({ offer }: { offer: DetailOffer }) {
   const n = offer.scores[0];
   const database = useId();
@@ -317,7 +317,7 @@ function trackerInitial(offer: DetailOffer): InputTracker {
   };
 }
 
-/** Suivi de la candidature : prochaine action, date d'envoi, canal. */
+/** Tracking of the application: next action, sending date, channel. */
 function EditorApplication({ offer }: { offer: DetailOffer }) {
   const database = useId();
   const refresh = useRefresh(offer.id);
@@ -328,7 +328,7 @@ function EditorApplication({ offer }: { offer: DetailOffer }) {
   useEffect(() => setS(JSON.parse(key) as InputTracker), [key]);
   const updated = useMutation({
     mutationFn: () => {
-      // Seulement ce qui a changé : une date d'envoi inchangée ne refait pas passer l'offre en « envoyée ».
+      // Only what changed: an unchanged sending date does not move the offer to "sent" again.
       const fields: Record<string, string | null> = {};
       for (const k of ['next_action', 'sent_at', 'channel'] as const) {
         if (s[k].trim() !== initial[k].trim()) fields[k] = s[k].trim() || null;
@@ -490,8 +490,8 @@ export function Detail({ id, close, announce: announce }: { id: number; close: (
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [close]);
-  // Un clic hors du panneau le ferme, sauf sur une ligne du tableau (qui ouvre une autre offre),
-  // dans un menu déroulant ou dans une fenêtre modale ouverte par-dessus (réglages).
+  // A click outside the panel closes it, except on a line of the table (which opens another offer),
+  // in a drop-down menu or in a modal window opened on top of it (settings).
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -624,7 +624,7 @@ export function Detail({ id, close, announce: announce }: { id: number; close: (
             </h3>
             {o.application && (
               <dl className="mb-2">
-                {/* Dossier et ses fichiers réunis : lien (ou ouverture dans l'explorateur), puis la liste des fichiers. */}
+                {/* Folder and its files together: link (or opening in the explorer), then the list of the files. */}
                 <Line label={t('detail.folder')}>
                   {o.application.folder && (
                     <div className="space-y-1.5">

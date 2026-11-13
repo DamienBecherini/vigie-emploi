@@ -1,4 +1,4 @@
-// Statuts d'une offre, partagés par la CLI, l'API et l'interface (aucune dépendance Node ici).
+// Statuses of an offer, shared by the CLI, the API and the interface (no Node dependency here).
 
 export const STATUSES = [
   'new',
@@ -30,20 +30,20 @@ export const LABELS_STATUSES: Record<Status, string> = {
   withdrawn: 'Abandonnée',
 };
 
-/** « Mes candidatures » : statuts envoyee et suivants. */
+/** "My applications": sent status and the following ones. */
 export const STATUSES_APPLICATION: Status[] = ['sent', 'followed-up', 'interview', 'rejected', 'closed'];
 
-/** Offres suivies (go et au-delà) : une alerte, un lot ou le registre ne changent plus leur statut. */
+/** Tracked offers (go and beyond): an alert, a batch or the register no longer change their status. */
 export const STATUSES_TRACKED: Status[] = ['go', 'sent', 'followed-up', 'interview', 'rejected', 'closed', 'withdrawn'];
 
-/** Offres à lire et noter. */
+/** Offers to read and score. */
 export const STATUSES_TO_PROCESS: Status[] = ['new', 'to-read'];
 
 export function isStatus(s: string): s is Status {
   return (STATUSES as readonly string[]).includes(s);
 }
 
-/** Colonnes triables de la liste des offres. */
+/** Sortable columns of the offer list. */
 export const COLUMNS_SORT = [
   'id',
   'score',
@@ -61,7 +61,7 @@ export const COLUMNS_SORT = [
 ] as const;
 export type ColumnSort = (typeof COLUMNS_SORT)[number];
 
-// Journal des candidatures (événements datés).
+// Application journal (dated events).
 export const TYPES_EVENT = ['message', 'interview', 'test', 'proposal', 'decision', 'note'] as const;
 export type TypeEvent = (typeof TYPES_EVENT)[number];
 export const DIRECTION_MESSAGE = ['sent', 'received'] as const;

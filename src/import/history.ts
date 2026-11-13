@@ -1,4 +1,4 @@
-// Reprise de l'historique Markdown / JSON d'un dossier de données (lecture seule sur ces fichiers) :
+// Import of the Markdown / JSON history of a data folder (read only on these files):
 // candidatures/_lots/*.json, candidatures/_ecartees.md, candidatures/_SUIVI.md.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
@@ -48,14 +48,14 @@ export interface ReportImport {
     lines: number;
     offers_created: number;
     applications: number;
-    /** Raison pour laquelle _SUIVI.md n'a pas été relu (fichier généré). */
+    /** Reason why _SUIVI.md was not read again (generated file). */
     ignore?: string;
     merges: { offer: number; duplicate: number; company: string }[];
     statuses_added: number;
     scores_added: number;
     unrecognized: LineNotRecognized[];
   };
-  /** Journaux des dossiers de candidature (sections « Suivi »). */
+  /** Journals of the application folders ("Suivi" sections). */
   journal: ReportJournal;
 }
 
@@ -79,7 +79,7 @@ function reportEmpty(): Omit<ReportImport, 'journal'> {
   };
 }
 
-/** Cellule d'une ligne par nom de colonne (début du libellé, sans casse ni accents). */
+/** Cell of a line by column name (start of the label, case and accents ignored). */
 function column(l: LineTable, ...names: string[]): string | undefined {
   const norm = (s: string) =>
     s
@@ -94,7 +94,7 @@ function column(l: LineTable, ...names: string[]): string | undefined {
   return undefined;
 }
 
-/** Notes d'une cellule « 6/10 », « 6 et 5,5/10 », « 7 · 6,5 · 4 » ; vide si ambiguë (« 4 à 7/10 », « ≤ 2,5 »). */
+/** Scores of a cell "6/10", "6 et 5,5/10", "7 · 6,5 · 4"; empty if ambiguous ("4 à 7/10", "≤ 2,5"). */
 export function scoresOfCell(cell: string): number[] {
   if (/[≤≥<>~≈]|(^|\s)à(\s|$)/.test(cell)) return [];
   return (cell.replace(/\/\s*10/g, '').match(/\d+(?:[.,]\d+)?/g) ?? [])
@@ -102,7 +102,7 @@ export function scoresOfCell(cell: string): number[] {
     .filter((n) => n >= 0 && n <= 10);
 }
 
-/** Contrat, rémunération et télétravail lus dans une cellule « Conditions » ou « Type ». */
+/** Contract, compensation and remote work read in a "Conditions" or "Type" cell. */
 export function readConditions(text: string): Pick<FieldsOffer, 'contract' | 'compensation' | 'remote'> {
   const t = withoutMarkdown(text);
   const contract = t.match(/\b(CDI|CDD|freelance|indépendant|portage|stage|alternance|intérim)\b/i)?.[1] ?? null;
@@ -116,13 +116,13 @@ export function readConditions(text: string): Pick<FieldsOffer, 'contract' | 'co
   };
 }
 
-/** Retire de la cellule les parenthèses qui ne contiennent que des liens « ([offre](…), [doublon](…)) ». */
+/** Removes from the cell the parentheses that only contain links "([offre](…), [doublon](…))". */
 function withoutListOfLinks(s: string): string {
   return s.replace(/\s*\(\s*(?:\[[^\]]*\]\([^)\s]*\)\s*,?\s*)+\)/g, '').replace(/\[[^\]]*\]\([^)\s]*\)/g, '');
 }
 
 // ---------------------------------------------------------------------------------------------
-// Lots notés (_lots/*.json)
+// Scored batches (_lots/*.json)
 // ---------------------------------------------------------------------------------------------
 
 function importBatches(db: Database, folder: string, report: ReportImport): void {
@@ -161,7 +161,7 @@ function importBatches(db: Database, folder: string, report: ReportImport): void
 }
 
 // ---------------------------------------------------------------------------------------------
-// Registre des offres écartées (_ecartees.md)
+// Register of the dismissed offers (_ecartees.md)
 // ---------------------------------------------------------------------------------------------
 
 interface OfferRegister {
@@ -175,8 +175,8 @@ interface OfferRegister {
 }
 
 /**
- * Entreprises d'une cellule groupée du registre : séparées par « · » ou « / », sinon une par bloc en gras
- * (« **A** (filiale), **B** »). `pieces` : une entrée par entreprise ; `parOffre` : « (×3) » compte trois fois.
+ * Companies of a grouped cell of the register: separated by "·" or "/", otherwise one per bold block
+ * ("**A** (filiale), **B**"). `parts`: one entry per company; `byOffer`: "(×3)" counts three times.
  */
 export function companiesOfCell(cell: string): { parts: string[]; byOffer: string[] } {
   let parts = split(cell, ' · ');
@@ -216,7 +216,7 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
   const segments = split(machine, ' · ');
   const isBatch = /^lot\b/i.test(withoutMarkdown(company));
   const { parts: companies, byOffer } = companiesOfCell(company);
-  // Sinon, une entreprise par lien d'offre (dans l'ordre) quand les nombres concordent ; à défaut, la cellule entière.
+  // Otherwise, one company per offer link (in order) when the numbers match; failing that, the whole cell.
   const linksJob = new Set(segments.flatMap((seg) => linksMarkdown(seg).map((x) => keyLink(x.url)).filter((x) => x !== null)));
   const bySegment = companies.length === segments.length;
   const byLink = !isBatch && !bySegment && byOffer.length > 1 && byOffer.length === linksJob.size;
@@ -250,7 +250,7 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
       offers.push({ source: id.source, siteId: id.siteId, url: id.url, title, company: entLink, conditions: cond, score });
     }
   });
-  // Liens placés dans les autres colonnes (entreprise, conditions).
+  // Links placed in the other columns (company, conditions).
   for (const link of linksMarkdown(`${company} ${conditions}`)) {
     const id = canonicalize(link.url);
     if (!id) {
@@ -271,7 +271,7 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
     });
   }
   if (!offers.length) {
-    // Ligne sans lien d'offre : une offre « registre » identifiée par son contenu, pour garder l'historique.
+    // Line without an offer link: a "register" offer identified by its content, to keep the history.
     const date = column(l, 'date') ?? '';
     offers.push({
       source: 'register',
@@ -320,7 +320,7 @@ function importRegister(db: Database, folder: string, report: ReportImport): voi
           'import-register',
         );
         if (created) R.offers_created++;
-        // Reprise d'une ancienne version : la cellule groupée entière avait été prise comme entreprise.
+        // Import from an older version: the whole grouped cell had been taken as the company.
         const cellWhole = [withoutMarkdown(company), withoutMarkdown(withoutListOfLinks(company))];
         if (!created && offer.company !== o.company && cellWhole.includes(offer.company ?? '')) {
           db.prepare('UPDATE offers SET company = ?, updated_at = ? WHERE id = ?').run(o.company, now(), offer.id);
@@ -340,7 +340,7 @@ function importRegister(db: Database, folder: string, report: ReportImport): voi
 }
 
 // ---------------------------------------------------------------------------------------------
-// Suivi des candidatures (_SUIVI.md)
+// Application tracker (_SUIVI.md)
 // ---------------------------------------------------------------------------------------------
 
 function statusInProgress(status: string, sent: string): Status {
@@ -357,7 +357,7 @@ function statusClosed(issue: string): Status {
   return 'closed';
 }
 
-/** Première offre identifiable dans le dossier de candidature (l'annonce), s'il existe. */
+/** First identifiable offer in the application folder (the job ad), if it exists. */
 function offerOfFolder(dataDir: string, pathRelative: string): ReturnType<typeof canonicalize> {
   const path = join(dataDir, pathRelative);
   if (!existsSync(path) || !statSync(path).isFile()) return null;
@@ -377,12 +377,12 @@ const normalize = (s: string | null | undefined) =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-/** Mots de 4 lettres ou plus (« cofondateur », « wordpress »…), pour comparer deux intitulés. */
+/** Words of 4 letters or more ("cofondateur", "wordpress"…), to compare two job titles. */
 const words = (s: string) => new Set(normalize(s).split(' ').filter((m) => m.length >= 4));
 
 /**
- * Offre sans lien du registre (source « registre ») de la même entreprise, dont l'intitulé partage au moins
- * un mot avec celui du suivi. Seulement si elle est unique : sinon, pas de rattachement.
+ * Offer without a link in the register (source "register") of the same company, whose title shares at least
+ * one word with the tracker's. Only if it is unique: otherwise, no attachment.
  */
 export function registerTwin(db: Database, company: string, title: string): Offer | null {
   const ent = normalize(company);
@@ -399,7 +399,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
   if (!existsSync(path)) return;
   const S = report.tracker;
   const text = readFileSync(path, 'utf8');
-  // Après la bascule, _SUIVI.md est produit par generer-suivi : la base fait foi, on ne le relit pas.
+  // After the switch, _SUIVI.md is produced by generate-tracker: the database is the reference, it is not read again.
   if (MARKER_TRACKER_GENERATED.test(text.slice(0, 600))) {
     S.ignore = 'fichier généré par vigie-emploi : la base fait foi';
     return;
@@ -432,8 +432,8 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
       let source = id?.source ?? 'tracker';
       let siteId = id?.siteId ?? `suivi-${folderRel ? posix.basename(folderRel) : fingerprint(textOffer)}`;
       if (!id) {
-        // Offre sans lien déjà présente dans le registre (« Seyos / ICDC ») : on la rattache à celle du registre,
-        // et un doublon créé par une reprise précédente y est fusionné.
+        // Offer without a link already present in the register ("Seyos / ICDC"): it is attached to the register's one,
+        // and a duplicate created by a previous import is merged into it.
         const twin = registerTwin(db, company, title);
         if (twin) {
           const old = findOffer(db, source, siteId);
@@ -470,7 +470,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
         comment = withoutMarkdown(statusText);
         at = status === 'sent' && sentAt && sentAt.length === 10 ? sentAt : now();
       }
-      // Les imports se rejouent : on n'ajoute la ligne que si elle n'existe pas déjà.
+      // Imports are replayed: the line is only added if it does not exist yet.
       if (addStatus(db, offer.id, status, { comment, origin: 'import-tracker', at, ifMissing: true })) S.statuses_added++;
 
       const scoreTracker = `${statusText} ${issue}`.match(/\((\d+(?:[.,]\d+)?)\s*\/\s*10\)/);
@@ -482,14 +482,14 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
       const channel = withoutMarkdown(column(l, 'canal') ?? '');
       const action = column(l, 'prochaine');
       const before = applicationOf(db, offer.id);
-      // La prochaine action saisie dans l'interface, la CLI ou par MCP n'est pas remplacée par la reprise.
+      // The next action entered in the interface, the CLI or through MCP is not replaced by the import.
       const actionFree = !before?.next_action_origin || before.next_action_origin === 'import-tracker';
       saveApplication(
         db,
         offer.id,
         {
           folder: folderRel ?? undefined,
-          // Date seule → AAAA-MM-JJ (ou AAAA-MM) ; « ≈ 25/08/2026 », « après le 20/08/2026 » gardés tels quels.
+          // Date alone → YYYY-MM-DD (or YYYY-MM); "≈ 25/08/2026", "après le 20/08/2026" kept as they are.
           sent_at: isEmpty(send) ? null : /^\d{1,2}\/\d{1,2}\/\d{4}$|^\d{1,2}\/\d{4}$/.test(send) ? dateFr(send) : send,
           channel: isEmpty(channel) ? null : channel,
           label: withoutListOfLinks(cellOffer).replace(/\s+/g, ' ').trim(),
@@ -504,7 +504,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
   });
 }
 
-/** Rejoue toute la reprise. Idempotent : relancer ne duplique ni offres, ni notes, ni statuts. */
+/** Replays the whole import. Idempotent: running it again duplicates neither offers, nor scores, nor statuses. */
 export function importHistory(db: Database, dataDir: string): ReportImport {
   const report = reportEmpty() as ReportImport;
   if (!existsSync(join(dataDir, 'candidatures'))) {
@@ -513,6 +513,6 @@ export function importHistory(db: Database, dataDir: string): ReportImport {
   importBatches(db, dataDir, report);
   importRegister(db, dataDir, report);
   importTracker(db, dataDir, report);
-  // Après le suivi : c'est lui qui relie les offres à leur dossier de candidature.
+  // After the tracker: it is the one that links the offers to their application folder.
   return { ...report, journal: importJournals(db, dataDir) };
 }

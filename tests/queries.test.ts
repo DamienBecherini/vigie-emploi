@@ -5,7 +5,7 @@ import { listOffers, meta, levelsSort, requestFts } from '../src/core/queries.ts
 import { scoreInput } from '../src/core/scoring.ts';
 import { createApp } from '../src/api/server.ts';
 
-describe('liste paginée', () => {
+describe('paginated list', () => {
   let db: Database;
   beforeAll(() => {
     db = openDatabase(':memory:');
@@ -33,7 +33,7 @@ describe('liste paginée', () => {
     });
   });
 
-  it('pagination et total', () => {
+  it('pagination and total', () => {
     const p1 = listOffers(db, { size: 50 });
     expect(p1.total).toBe(120);
     expect(p1.pages).toBe(3);
@@ -44,7 +44,7 @@ describe('liste paginée', () => {
     expect(ids.size).toBe(120);
   });
 
-  it('tri par note décroissante, sans note en dernier', () => {
+  it('sort by decreasing score, unscored last', () => {
     const r = listOffers(db, { sort: 'score', order: 'desc', size: 120 });
     const scores = r.offers.map((o) => o.score);
     expect(scores[0]).toBe(5);
@@ -53,7 +53,7 @@ describe('liste paginée', () => {
     expect(asc.offers[0].score).toBe(0);
   });
 
-  it('tri sur deux niveaux : date de réception, puis note à date égale', () => {
+  it('sort on two levels: reception date, then score for equal dates', () => {
     const r = listOffers(db, { sort: 'received_at:desc,score:desc', size: 120 });
     const lines = r.offers.map((o) => ({ date: o.received_at as string, score: o.score }));
     for (let k = 1; k < lines.length; k++) {
@@ -66,7 +66,7 @@ describe('liste paginée', () => {
     expect(asc.offers[0].received_at).toBe('2026-10-01');
   });
 
-  it('niveaux de tri : sens par défaut, colonnes inconnues et doublons ignorés', () => {
+  it('sort levels: default direction, unknown columns and duplicates ignored', () => {
     expect(levelsSort('received_at,score:asc', 'desc')).toEqual([
       { column: 'received_at', order: 'desc' },
       { column: 'score', order: 'asc' },
@@ -76,7 +76,7 @@ describe('liste paginée', () => {
     expect(levelsSort(undefined)).toEqual([{ column: 'received_at', order: 'desc' }]);
   });
 
-  it('filtres combinés', () => {
+  it('combined filters', () => {
     expect(listOffers(db, { sources: ['hellowork'] }).total).toBe(40);
     expect(listOffers(db, { statuses: ['dismissed'] }).total).toBe(23);
     expect(listOffers(db, { scoreMin: 4, scoreMax: 5 }).offers.every((o) => o.score! >= 4 && o.score! <= 5)).toBe(true);
@@ -87,7 +87,7 @@ describe('liste paginée', () => {
     expect(listOffers(db, { myApplications: true }).offers.map((o) => o.title)).toEqual(['Développeur WordPress 40']);
   });
 
-  it('recherche plein texte : accents ignorés, préfixes, guillemets neutralisés', () => {
+  it('full-text search: accents ignored, prefixes, quotes neutralized', () => {
     expect(listOffers(db, { q: 'developpeur wordpress' }).total).toBe(12);
     expect(listOffers(db, { q: 'accessibilite' }).offers.map((o) => o.id)).toHaveLength(1);
     expect(listOffers(db, { q: 'ingé' }).total).toBe(108);
@@ -95,13 +95,13 @@ describe('liste paginée', () => {
     expect(listOffers(db, { q: '" OR (' }).total).toBe(0);
   });
 
-  it('meta : comptes par statut, source et tag', () => {
+  it('meta: counts by status, source and tag', () => {
     const m = meta(db);
     expect(m.total).toBe(120);
     expect(m.tags).toEqual([{ value: 'php', n: 20 }]);
   });
 
-  it('noter (format des lots) : la dernière note fait foi', () => {
+  it('score (batch format): the last score is the reference', () => {
     const r1 = scoreInput(db, { url: 'https://www.linkedin.com/jobs/view/100001/', score: 4 });
     expect(r1).toMatchObject({ created: false, score: 4, status: 'scored' });
     const r2 = scoreInput(db, { id: r1.id, score: '6,5', raw_score: 7, penalties: '-0,5' });
@@ -111,14 +111,14 @@ describe('liste paginée', () => {
     expect(created.created).toBe(true);
   });
 
-  it('noter par id : les champs du lot complètent ceux qui manquent, sans écraser', () => {
+  it('score by id: the batch fields fill in the missing ones, without overwriting', () => {
     const { offer } = saveOffer(db, 'linkedin', '777001', { title: 'Développeur PHP', location: 'Paris' }, 'email');
     scoreInput(db, { id: offer.id, score: 5, company: 'Satelia', location: 'Lyon', contract: 'CDI' });
     const after = listOffers(db, { q: 'Satelia', size: 5 }).offers.find((o) => o.id === offer.id)!;
     expect(after).toMatchObject({ company: 'Satelia', contract: 'CDI', location: 'Paris', title: 'Développeur PHP' });
   });
 
-  it('API : liste, détail, statut, tags', async () => {
+  it('API: list, detail, status, tags', async () => {
     const app = createApp(db, { dataDir: '/tmp' });
     const list = (await (await app.request('/api/offers?source=hellowork&size=5&sort=score&order=desc')).json()) as { total: number; offers: { id: number }[] };
     expect(list.total).toBeGreaterThanOrEqual(40);
@@ -141,7 +141,7 @@ describe('liste paginée', () => {
     expect((await app.request('/api/offers/999999')).status).toBe(404);
   });
 
-  it('API : saisie de la note et de la candidature depuis l’interface', async () => {
+  it('API: entry of the score and of the application from the interface', async () => {
     const app = createApp(db, { dataDir: '/tmp' });
     const id = (db.prepare("SELECT id FROM offers WHERE source = 'hellowork' ORDER BY id LIMIT 1").get() as { id: number }).id;
     const send = (path: string, method: string, body: unknown) =>

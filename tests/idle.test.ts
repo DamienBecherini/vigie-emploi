@@ -9,7 +9,7 @@ function clock() {
 }
 
 describe('Veille', () => {
-  it('expire après le délai, une activité le repousse', () => {
+  it('expires after the timeout, an activity pushes it back', () => {
     const h = clock();
     const v = new Idle(3600, h.read);
     h.t = 3599;
@@ -21,7 +21,7 @@ describe('Veille', () => {
     expect(v.expired()).toBe(true);
   });
 
-  it('un délai de 0 désactive l’arrêt', () => {
+  it('a timeout of 0 disables the stop', () => {
     const h = clock();
     const v = new Idle(0, h.read);
     h.t = 1e9;
@@ -34,14 +34,14 @@ describe('GET /api/sante', () => {
   type Health = { version: string; idle: { timeout_s: number; remaining_s: number | null } };
   const health = async (app: ReturnType<typeof createApp>) => (await (await app.request('/api/health')).json()) as Health;
 
-  it('suit le contrat « service local » et garde les anciens champs', async () => {
+  it('follows the “local service” contract and keeps the extra fields', async () => {
     const d = await health(createApp({} as Database, { dataDir: '/d' }, new Idle(3600, () => 0)));
     expect(d).toMatchObject({ ok: true, folder: '/d', state: 'ready', contract: 2, service: 'vigie-emploi', busy: false, activity: '', remaining_work_s: null });
     expect(d.idle).toEqual({ timeout_s: 3600, remaining_s: 3600 });
     expect(typeof d.version).toBe('string');
   });
 
-  it('le contrôle de santé ne relance pas le délai, une autre requête si', async () => {
+  it('the health check does not restart the timeout, another request does', async () => {
     const h = clock();
     const app = createApp({} as Database, { dataDir: '/d' }, new Idle(3600, h.read));
     h.t = 600;
@@ -52,7 +52,7 @@ describe('GET /api/sante', () => {
     expect((await health(app)).idle.remaining_s).toBe(3600);
   });
 
-  it('sans arrêt automatique, pas de décompte', async () => {
+  it('without automatic stop, no countdown', async () => {
     const d = await health(createApp({} as Database, { dataDir: '/d' }));
     expect(d.idle).toEqual({ timeout_s: 0, remaining_s: null });
   });

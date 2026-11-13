@@ -1,8 +1,8 @@
-// Serveur MCP (transport stdio) : expose le noyau de vigie-emploi à une IA (Claude Code, Claude Desktop…).
-// Aucune logique propre ici : chaque outil appelle les mêmes fonctions que la CLI et l'API.
-// stdout est réservé au protocole : rien d'autre ne doit y être écrit.
-// Langue : celle de la configuration (clé « langue » ou VIGIE_EMPLOI_LANGUAGE), fixée à la création du serveur ;
-// les noms des outils, des paramètres et des statuts restent en français (identifiants).
+// MCP server (stdio transport): exposes the core of vigie-emploi to an AI (Claude Code, Claude Desktop…).
+// No logic of its own here: each tool calls the same functions as the CLI and the API.
+// stdout is reserved for the protocol: nothing else must be written to it.
+// Language: the configuration's ("language" key or VIGIE_EMPLOI_LANGUAGE), set when the server is created;
+// the names of the tools, parameters and statuses are English identifiers.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { readFileSync } from 'node:fs';
@@ -64,12 +64,12 @@ const ORIGIN = 'mcp';
 
 const INSTRUCTIONS = bt('server.INSTRUCTIONS');
 
-/** Schémas des paramètres, construits dans la langue courante (descriptions comprises). */
+/** Parameter schemas, built in the current language (descriptions included). */
 function buildSchemas() {
   const id = z.number().int().positive().describe(tm('server.id'));
   const numberScore = (d: string) => z.union([z.number().min(0).max(10), z.string()]).nullable().optional().describe(d);
 
-  /** Une note au format des lots (fichiers candidatures/_lots/*.json). */
+  /** A score in the batch format (candidatures/_lots/*.json files). */
   const fieldsScore = {
     criteria: z
       .record(
@@ -169,7 +169,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   const VERSION_APP = (JSON.parse(readFileSync(join(APP_ROOT, 'package.json'), 'utf8')) as { version: string }).version;
   const server = new McpServer({ name: 'vigie-emploi', version: VERSION_APP }, { instructions: bi(INSTRUCTIONS) });
   const reading = { readOnlyHint: true, openWorldHint: false };
-  /** Base de l'espace ; erreur claire tant que l'espace n'est pas initialisé. */
+  /** Database of the workspace; clear error as long as the workspace is not initialized. */
   const database = (): Database => {
     if (!state.db) throw new Error(messageNotInitialized(state));
     return state.db;
@@ -695,8 +695,8 @@ export function createServerMcp(state: StateMcp): McpServer {
 }
 
 /**
- * Comme ouvrirEtat, mais une langue inconnue dans l'environnement (réglage « Langue » de l'extension Claude Desktop mal
- * saisi) n'empêche pas le serveur de démarrer : elle est ignorée, avec un avertissement sur stderr.
+ * Like openState, but an unknown language in the environment ("Language" setting of the Claude Desktop extension
+ * mistyped) does not prevent the server from starting: it is ignored, with a warning on stderr.
  */
 export function openStateTolerant(options: OptionsConfig = {}): StateMcp {
   try {
@@ -712,9 +712,9 @@ export function openStateTolerant(options: OptionsConfig = {}): StateMcp {
 }
 
 /**
- * Lance le serveur sur stdio. Le dossier de données vient de --data, VIGIE_EMPLOI_DATA ou du fichier de config,
- * sinon du dossier par défaut (~/ma-recherche) ; s'il n'existe pas encore, le serveur démarre quand même
- * (outil initialiser_espace).
+ * Starts the server on stdio. The data folder comes from --data, VIGIE_EMPLOI_DATA or the config file,
+ * otherwise from the default folder (~/ma-recherche); if it does not exist yet, the server starts anyway
+ * (initialize_workspace tool).
  */
 export async function startMcp(options: OptionsConfig = {}): Promise<void> {
   const state = openStateTolerant(options);

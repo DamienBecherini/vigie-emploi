@@ -1,11 +1,11 @@
-// Copie de l'en-tête du tableau, collée sous l'en-tête de l'application pendant le défilement de la page.
+// Copy of the table header, stuck under the application header while the page scrolls.
 //
-// Pourquoi une copie : le tableau est dans un conteneur à défilement horizontal, qui empêche son propre <thead> de
-// se coller au haut de l'écran (position: sticky se rapporte alors à ce conteneur). Le déplacer par script tremble
-// sur téléphone (le défilement est géré hors du fil JavaScript). La copie est donc collée en pur CSS, dans une
-// bande de hauteur nulle placée avant le tableau : le navigateur la tient en place sans script, sans tremblement.
-// Le script ne fait que : afficher la copie quand l'en-tête réel est passé sous le haut de l'écran, recopier la
-// largeur des colonnes, et reporter le défilement horizontal du tableau (scrollLeft, la colonne collée suit).
+// Why a copy: the table is in a horizontal scroll container, which prevents its own <thead> from
+// sticking to the top of the screen (position: sticky then relates to that container). Moving it by script shakes
+// on a phone (scrolling is handled outside the JavaScript thread). So the copy is stuck in pure CSS, in a
+// zero-height strip placed before the table: the browser holds it in place without script, without shaking.
+// The script only: shows the copy when the real header has gone under the top of the screen, copies the
+// width of the columns, and carries over the horizontal scrolling of the table (scrollLeft, the stuck column follows).
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 
 export function StickyHeader({
@@ -15,14 +15,14 @@ export function StickyHeader({
 }: {
   tableRef: RefObject<HTMLTableElement | null>;
   scrollRef: RefObject<HTMLDivElement | null>;
-  /** Lignes de l'en-tête (les mêmes que celles du tableau, boutons hors de l'ordre de tabulation). */
+  /** Lines of the header (the same as the table's, buttons out of the tab order). */
   lines: ReactNode;
 }) {
   const clipRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [widths, setWidths] = useState<{ table: number; columns: number[] }>({ table: 0, columns: [] });
 
-  // Largeurs des colonnes de l'en-tête réel (données, colonnes affichées, fenêtre qui changent).
+  // Widths of the columns of the real header (data, displayed columns, window that change).
   useEffect(() => {
     const table = tableRef.current;
     if (!table) return;
@@ -40,7 +40,7 @@ export function StickyHeader({
     return () => obs.disconnect();
   }, [tableRef]);
 
-  // Affichage : seulement quand l'en-tête réel est caché sous le haut de l'écran et qu'il reste des lignes visibles.
+  // Display: only when the real header is hidden under the top of the screen and visible lines remain.
   useEffect(() => {
     let image = 0;
     const evaluate = () => {
@@ -66,7 +66,7 @@ export function StickyHeader({
     };
   }, [tableRef]);
 
-  // Défilement horizontal : la copie suit le tableau ; son conteneur reprend aussi data-collee (ombre de l'Intitulé).
+  // Horizontal scrolling: the copy follows the table; its container also takes data-stuck (shadow of the job title).
   useEffect(() => {
     const source = scrollRef.current;
     const clip = clipRef.current;
@@ -77,7 +77,7 @@ export function StickyHeader({
     };
     track();
     source.addEventListener('scroll', track, { passive: true });
-    // data-collee change après la mesure du conteneur source (rendu React) : on le relit aussi à ce moment-là.
+    // data-stuck changes after the measure of the source container (React render): it is read again at that moment too.
     const obs = new MutationObserver(track);
     obs.observe(source, { attributes: true, attributeFilter: ['data-stuck'] });
     return () => {

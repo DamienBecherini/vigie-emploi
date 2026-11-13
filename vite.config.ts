@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-// L'interface vit dans ui/ ; la compilation va dans dist/ui, servie par `vigie-emploi serve`.
+// The interface lives in ui/; the build goes into dist/ui, served by `vigie-emploi serve`.
 export default defineConfig({
   root: 'ui',
   plugins: [react(), tailwindcss()],

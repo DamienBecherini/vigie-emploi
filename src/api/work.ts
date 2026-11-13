@@ -1,13 +1,13 @@
-// Travail en attente pour l'agent (e-mails à trier, offres en « go » à préparer) et lancement de l'agent
-// dans un terminal. L'application n'appelle toujours aucun modèle : elle ouvre un terminal où l'utilisateur
-// dialogue avec son agent (Claude Code par défaut), exactement comme s'il avait tapé la commande lui-même.
+// Pending work for the agent (e-mails to sort, offers in "go" to prepare) and launch of the agent
+// in a terminal. The application still calls no model: it opens a terminal where the user
+// talks with their agent (Claude Code by default), exactly as if they had typed the command themselves.
 import { spawn } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from '../db/database.ts';
 import { LANGUAGE_DEFAULT, tl, type Language } from '../i18n/index.ts';
 
-/** Actions lançables depuis l'interface, et l'invite passée à l'agent (commande du dossier de données). */
+/** Actions that can be launched from the interface, and the prompt passed to the agent (command of the data folder). */
 export const ACTIONS_AGENT = {
   'process-emails': '/traiter-emails',
   'prepare-go': '/preparer-go',
@@ -19,7 +19,7 @@ export function isActionAgent(v: string): v is ActionAgent {
   return Object.hasOwn(ACTIONS_AGENT, v);
 }
 
-/** Nombre de .eml en attente dans la boîte de réception (0 si le dossier n'existe pas). */
+/** Number of .eml files waiting in the inbox (0 if the folder does not exist). */
 export function countEmails(folder: string): number {
   try {
     return readdirSync(folder).filter((f) => f.toLowerCase().endsWith('.eml')).length;
@@ -34,7 +34,7 @@ export interface OfferToPrepare {
   company: string | null;
 }
 
-/** Offres en « go » dont le dossier de candidature n'existe pas encore. */
+/** Offers in "go" whose application folder does not exist yet. */
 export function goToPrepare(db: Database, dataDir: string): OfferToPrepare[] {
   const lines = db
     .prepare(
@@ -58,12 +58,12 @@ export function stateWork(db: Database, o: { dataDir: string; emails: string }):
   return { emails: countEmails(o.emails), go_to_prepare: goToPrepare(db, o.dataDir) };
 }
 
-/** Lance l'agent pour une action ; se résout quand le terminal est ouvert. */
+/** Launches the agent for an action; resolves when the terminal is open. */
 export type Launcher = (action: ActionAgent, dataDir: string) => Promise<void>;
 
 /**
- * Commande du terminal : `{dossier}` et `{invite}` y sont remplacés. Par défaut sous Windows :
- * Windows Terminal ouvert dans le dossier de données, avec Claude Code et l'invite de l'action.
+ * Terminal command: `{folder}` and `{prompt}` are replaced in it. By default on Windows:
+ * Windows Terminal opened in the data folder, with Claude Code and the action's prompt.
  */
 export const TERMINAL_WINDOWS = ['wt.exe', '-d', '{folder}', 'claude', '{prompt}'];
 
@@ -72,9 +72,9 @@ export function commandTerminal(scaffold: string[], dataDir: string, action: Act
 }
 
 /**
- * Environnement du terminal lancé : celui du serveur, sans les marqueurs de session de Claude Code
- * (CLAUDECODE, CLAUDE_CODE_*). Si le serveur a été démarré, directement ou non, depuis une session Claude,
- * ces variables feraient croire au nouvel agent qu'il en est une sous-session (conversation non enregistrée).
+ * Environment of the launched terminal: the server's, without the session markers of Claude Code
+ * (CLAUDECODE, CLAUDE_CODE_*). If the server was started, directly or not, from a Claude session,
+ * these variables would make the new agent believe it is a sub-session of it (conversation not saved).
  */
 export function environmentClean(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   return Object.fromEntries(Object.entries(env).filter(([k]) => !/^CLAUDECODE$|^CLAUDE_CODE_/i.test(k)));

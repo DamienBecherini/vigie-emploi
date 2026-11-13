@@ -21,7 +21,7 @@ afterAll(() => {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Attend une notification du type voulu (ou échoue après delaiMs). */
+/** Waits for a notification of the wanted type (or fails after delayMs). */
 function next(broadcast: Broadcast, type: Notification['type'], timeoutMs = 3000): Promise<Notification> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -49,7 +49,7 @@ function data() {
 const POST_JSON = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' };
 
 describe('travail en attente', () => {
-  it('compte les .eml de la boîte de réception (0 si elle n’existe pas)', () => {
+  it('counts the .eml files of the inbox (0 if it does not exist)', () => {
     const { emails } = data();
     expect(countEmails(emails)).toBe(0);
     writeFileSync(join(emails, 'a.eml'), '');
@@ -59,7 +59,7 @@ describe('travail en attente', () => {
     expect(countEmails(join(emails, 'absent'))).toBe(0);
   });
 
-  it('liste les offres en go dont le dossier n’existe pas encore', () => {
+  it('lists the offers in go whose folder does not exist yet', () => {
     const { folder, emails, db, offer } = data();
     const withoutApplication = offer('1');
     const folderAbsent = offer('2');
@@ -77,26 +77,26 @@ describe('travail en attente', () => {
 });
 
 describe('lancement de l’agent', () => {
-  it('remplace {folder} et {prompt} dans la commande du terminal', () => {
+  it('replaces {folder} and {prompt} in the terminal command', () => {
     expect(commandTerminal(['wt.exe', '-d', '{folder}', 'claude', '{prompt}'], 'D:/data', 'process-emails')).toEqual([
       'wt.exe', '-d', 'D:/data', 'claude', '/traiter-emails',
     ]);
   });
 
-  it('le terminal ne reçoit pas les marqueurs de session de Claude Code', () => {
+  it('the terminal does not receive the session markers of Claude Code', () => {
     const env = environmentClean({ PATH: '/bin', CLAUDECODE: '1', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CONFIG_DIR: '/c' });
     expect(env).toEqual({ PATH: '/bin', CLAUDE_CONFIG_DIR: '/c' });
   });
 
-  it('sans terminal configuré hors Windows : erreur explicite', async () => {
+  it('without a configured terminal outside Windows: explicit error', async () => {
     await expect(launcherTerminal(null, 'linux')('prepare-go', '/d')).rejects.toThrow(/claude \/preparer-go/);
   });
 
-  it('un programme introuvable donne une erreur, pas un plantage', async () => {
+  it('a program not found gives an error, not a crash', async () => {
     await expect(launcherTerminal(['programme-introuvable-vigie-emploi'])('process-emails', tmpdir())).rejects.toThrow(/Impossible d'ouvrir le terminal/);
   });
 
-  it('POST /api/travail/:action lance l’action, et seulement une action connue en JSON', async () => {
+  it('POST /api/work/:action launches the action, and only a known action in JSON', async () => {
     const { folder, emails, db } = data();
     const launched: [ActionAgent, string][] = [];
     const app = createApp(db, { dataDir: folder, emails }, new Idle(0), {
@@ -109,7 +109,7 @@ describe('lancement de l’agent', () => {
     expect(launched).toHaveLength(1);
   });
 
-  it('une erreur du lanceur revient à l’interface', async () => {
+  it('an error of the launcher comes back to the interface', async () => {
     const { folder, db } = data();
     const app = createApp(db, { dataDir: folder }, new Idle(0), {
       launcher: () => Promise.reject(new Error('wt.exe absent')),
@@ -119,7 +119,7 @@ describe('lancement de l’agent', () => {
     expect(await r.json()).toMatchObject({ ok: false, error: 'wt.exe absent' });
   });
 
-  it('GET /api/travail : e-mails et go à préparer', async () => {
+  it('GET /api/work: e-mails and go to prepare', async () => {
     const { folder, emails, db, offer } = data();
     writeFileSync(join(emails, 'alerte.eml'), '');
     addStatus(db, offer('9'), 'go');
@@ -130,7 +130,7 @@ describe('lancement de l’agent', () => {
   });
 });
 
-describe('écritures venues d’une autre origine', () => {
+describe('writes coming from another origin', () => {
   const { folder, db, offer } = data();
   const id = offer('origin');
   const launched: string[] = [];
@@ -142,26 +142,26 @@ describe('écritures venues d’une autre origine', () => {
       body: JSON.stringify({ status: 'scored' }),
     });
 
-  it('refusées depuis une page tierce (Origin ou Sec-Fetch-Site)', async () => {
+  it('refused from a third-party page (Origin or Sec-Fetch-Site)', async () => {
     expect((await status({ Origin: 'https://example.com' })).status).toBe(403);
     expect((await status({ 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403);
     expect((await app.request('/api/work/process-emails', { ...POST_JSON, headers: { ...POST_JSON.headers, Origin: 'https://example.com' } })).status).toBe(403);
     expect(launched).toEqual([]);
   });
 
-  it('acceptées depuis l’interface locale ou sans navigateur (CLI, tests)', async () => {
+  it('accepted from the local interface or without a browser (CLI, tests)', async () => {
     expect((await status({ Origin: 'http://localhost:4410', 'Sec-Fetch-Site': 'same-origin' })).status).toBe(200);
     expect((await status({ Origin: 'http://127.0.0.1:5173' })).status).toBe(200);
     expect((await status({})).status).toBe(200);
   });
 
-  it('les lectures ne sont pas concernées', async () => {
+  it('reads are not concerned', async () => {
     expect((await app.request('/api/meta', { headers: { Origin: 'https://example.com' } })).status).toBe(200);
   });
 });
 
 describe('notifications', () => {
-  it('regrouper : une rafale d’appels donne un seul déclenchement', async () => {
+  it('group: a burst of calls gives a single trigger', async () => {
     let n = 0;
     const r = group(() => n++, 30);
     r.trigger();
@@ -175,7 +175,7 @@ describe('notifications', () => {
     expect(n).toBe(1);
   });
 
-  it('une écriture par l’API notifie « base » ; une lecture ou une erreur non', async () => {
+  it('a write through the API notifies “database”; a read or an error does not', async () => {
     const { folder, db, offer } = data();
     const id = offer('api');
     const broadcast = new Broadcast();
@@ -189,13 +189,13 @@ describe('notifications', () => {
     expect(received).toEqual([{ type: 'database' }]);
   });
 
-  it('une écriture d’un autre processus dans la base notifie « base » ; un e-mail déposé notifie « emails »', async () => {
+  it('a write of another process in the database notifies “database”; a dropped e-mail notifies “emails”', async () => {
     const folder = folderTemporary();
     const emails = join(folder, 'emails');
     mkdirSync(emails);
     const file = join(folder, 'data', 'vigie-emploi.sqlite');
     const server = openDatabase(file);
-    const other = openDatabase(file); // la CLI ou le serveur MCP de l'agent
+    const other = openDatabase(file); // the CLI or the agent's MCP server
     const broadcast = new Broadcast();
     const stop = watchChanges({ db: server, broadcast, database: file, emails, timeoutMs: 50 });
     try {
@@ -213,7 +213,7 @@ describe('notifications', () => {
     }
   });
 
-  it('GET /api/flux : flux d’événements, premier message « pret », puis les notifications', async () => {
+  it('GET /api/stream: event stream, first message “ready”, then the notifications', async () => {
     const { folder, db } = data();
     const broadcast = new Broadcast();
     const app = createApp(db, { dataDir: folder }, new Idle(0), { broadcast });
@@ -230,7 +230,7 @@ describe('notifications', () => {
     await reader.cancel();
   });
 
-  it('le flux ne compte pas comme activité (l’arrêt automatique reste possible)', async () => {
+  it('the stream does not count as activity (the automatic stop stays possible)', async () => {
     let t = 0;
     const idle = new Idle(60, () => t);
     const app = createApp(openDatabase(':memory:'), { dataDir: '/d' }, idle);

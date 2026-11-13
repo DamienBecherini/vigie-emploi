@@ -1,4 +1,4 @@
-// Ouverture de la base SQLite (node:sqlite, intégré à Node 24) et migrations versionnées.
+// Opening of the SQLite database (node:sqlite, built into Node 24) and versioned migrations.
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -15,7 +15,7 @@ export function migrations(): { version: number; file: string; sql: string }[] {
     .map((f) => ({ version: Number(f.slice(0, 4)), file: f, sql: readFileSync(join(FOLDER_MIGRATIONS, f), 'utf8') }));
 }
 
-/** Applique les migrations dont le numéro dépasse PRAGMA user_version, chacune dans une transaction. */
+/** Applies the migrations whose number is above PRAGMA user_version, each one in a transaction. */
 export function migrate(db: Database): number[] {
   const current = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
   const applied: number[] = [];
@@ -35,7 +35,7 @@ export function migrate(db: Database): number[] {
   return applied;
 }
 
-/** Ouvre (et crée au besoin) la base, puis la met à jour. ':memory:' pour les tests. */
+/** Opens (and creates if needed) the database, then updates it. ':memory:' for tests. */
 export function openDatabase(path: string): Database {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
@@ -45,7 +45,7 @@ export function openDatabase(path: string): Database {
   return db;
 }
 
-/** Exécute fn dans une transaction (BEGIN IMMEDIATE), annulée en cas d'erreur. */
+/** Runs fn in a transaction (BEGIN IMMEDIATE), rolled back on error. */
 export function transaction<T>(db: Database, fn: () => T): T {
   db.exec('BEGIN IMMEDIATE');
   try {

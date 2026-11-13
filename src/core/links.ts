@@ -1,10 +1,10 @@
-// Décodage des liens de suivi des e-mails d'alertes et identification des offres.
+// Decoding of the tracking links of alert e-mails and identification of the offers.
 import { gunzipSync } from 'node:zlib';
 import { decodeHTML } from 'entities';
 
 export type Source = 'linkedin' | 'indeed' | 'glassdoor' | 'hellowork' | 'free-work' | 'collective';
 export const SOURCES_KNOWN: Source[] = ['linkedin', 'indeed', 'glassdoor', 'hellowork', 'free-work', 'collective'];
-/** Sources dont la page publique est lue par l'application (JSON-LD ou données de page). Jamais LinkedIn, Indeed ni Glassdoor. */
+/** Sources whose public page is read by the application (JSON-LD or page data). Never LinkedIn, Indeed nor Glassdoor. */
 export const SOURCES_JSONLD: Source[] = ['hellowork', 'free-work', 'collective'];
 
 export interface OfferIdentified {
@@ -14,8 +14,8 @@ export interface OfferIdentified {
 }
 
 /**
- * Retourne l'URL de destination d'un lien de suivi (Mailjet, Hellowork en base64, Indeed en gzip),
- * ou le lien tel quel. Chaque segment de chemin assez long est essayé en base64 (url-safe).
+ * Returns the destination URL of a tracking link (Mailjet, Hellowork in base64, Indeed in gzip),
+ * or the link as it is. Each long enough path segment is tried as base64 (url-safe).
  */
 export function decodeLink(href: string): string {
   for (const seg of href.split('/')) {
@@ -32,7 +32,7 @@ export function decodeLink(href: string): string {
     const m = text.match(/https?:\/\/[^\s"\\\x00-\x1f]+/);
     if (m) return m[0];
   }
-  // Destination passée en paramètre (?url=https%3A%2F%2F…)
+  // Destination passed as a parameter (?url=https%3A%2F%2F…)
   const m = href.match(/[?&](?:url|u|redirect|dest|target)=(https?%3A[^&]+)/i);
   if (m) {
     try {
@@ -44,7 +44,7 @@ export function decodeLink(href: string): string {
   return href;
 }
 
-/** Source, identifiant sur le site et URL canonique d'une offre, ou null si le lien n'en est pas une. */
+/** Source, id on the site and canonical URL of an offer, or null if the link is not one. */
 export function canonicalize(url: string): OfferIdentified | null {
   let m: RegExpMatchArray | null;
   if ((m = url.match(/linkedin\.com\/(?:comm\/)?jobs\/view\/(?:[^/?#]*-)?(\d{6,})/))) {
@@ -75,19 +75,19 @@ export function canonicalize(url: string): OfferIdentified | null {
   return null;
 }
 
-/** Identifie une offre à partir d'un lien d'e-mail (direct ou de suivi). */
+/** Identifies an offer from an e-mail link (direct or tracking). */
 export function identifierLink(href: string): OfferIdentified | null {
   return canonicalize(href) ?? canonicalize(decodeLink(href));
 }
 
-/** Texte brut d'un fragment HTML (balises retirées, entités décodées, espaces réduits). */
+/** Plain text of an HTML fragment (tags removed, entities decoded, spaces collapsed). */
 export function textHtml(fragment: string): string {
   return decodeHTML(fragment.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** Texte HTML multi-ligne (paragraphes et listes conservés), pour les descriptions. */
+/** Multi-line HTML text (paragraphs and lists kept), for descriptions. */
 export function textHtmlLines(fragment: string): string {
   return decodeHTML(
     fragment

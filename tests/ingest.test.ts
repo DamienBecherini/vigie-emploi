@@ -12,8 +12,8 @@ const FIXTURES = join(import.meta.dirname, 'fixtures');
 const EMAILS = join(FIXTURES, 'emails');
 const read = (f: string) => readFileSync(join(EMAILS, f));
 
-describe('lecture des .eml', () => {
-  it('LinkedIn : quoted-printable, titres, doublons fusionnés, liens génériques ignorés', async () => {
+describe('reading of the .eml files', () => {
+  it('LinkedIn: quoted-printable, titles, duplicates merged, generic links ignored', async () => {
     const e = await readEmail(read('linkedin.eml'));
     expect(e.subject).toBe('Développeur PHP : 3 nouvelles offres');
     expect(e.date).toBe('2026-11-02');
@@ -23,19 +23,19 @@ describe('lecture des .eml', () => {
       ['4100000003', 'Développeur Java Spring'],
     ]);
   });
-  it('Indeed : corps en base64, jk lu dans la charge utile gzip', async () => {
+  it('Indeed: base64 body, jk read in the gzip payload', async () => {
     const e = await readEmail(read('indeed.eml'));
     expect(e.offers).toHaveLength(1);
     expect(e.offers[0]).toMatchObject({ source: 'indeed', siteId: '0a1b2c3d4e5f6789', title: 'Développeur·se web full stack' });
   });
-  it('Hellowork : multipart, iso-8859-1, entités, liens Mailjet', async () => {
+  it('Hellowork: multipart, iso-8859-1, entities, Mailjet links', async () => {
     const e = await readEmail(read('hellowork.eml'));
     expect(e.offers.map((o) => [o.source, o.siteId, o.title])).toEqual([
       ['hellowork', '70000001', 'Développeur WordPress H/F'],
       ['hellowork', '70000002', 'Stage développeur web H/F'],
     ]);
   });
-  it('texte brut : Free-Work et Glassdoor', async () => {
+  it('plain text: Free-Work and Glassdoor', async () => {
     const e = await readEmail(read('text-raw.eml'));
     expect(e.offers.map((o) => [o.source, o.siteId, o.title])).toEqual([
       ['free-work', 'developpeur-php-freelance-7', 'Développeur PHP freelance'],
@@ -45,7 +45,7 @@ describe('lecture des .eml', () => {
 });
 
 describe('JSON-LD', () => {
-  it('extrait titre, entreprise, salaire, télétravail, description sans la présentation répétée', () => {
+  it('extracts title, company, salary, remote work, description without the repeated presentation', () => {
     const d = extractJsonLd(readFileSync(join(FIXTURES, 'pages', 'hellowork-70000001.html'), 'utf8'));
     expect(d).toMatchObject({
       title: 'Développeur WordPress H/F',
@@ -83,7 +83,7 @@ describe('ingestion', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('un accusé de réception de candidature ne crée pas d’offre', async () => {
+  it('an application acknowledgment does not create an offer', async () => {
     const emails = join(folder, 'emails');
     const raw = readFileSync(join(emails, 'indeed.eml'), 'utf8').replace(/^Subject: .*$/m, 'Subject: Confirmation de votre candidature Developpeur web');
     rmSync(emails, { recursive: true, force: true });
@@ -96,7 +96,7 @@ describe('ingestion', () => {
     expect(readdirSync(emails)).toEqual([]);
   });
 
-  it('supprime aussi les e-mails aux noms à crochets et points de suspension (Windows)', async () => {
+  it('also deletes the e-mails whose names have brackets and ellipses (Windows)', async () => {
     const emails = join(folder, 'emails');
     renameSync(join(emails, 'linkedin.eml'), join(emails, '___Potentiel-SPAM___  [Prénom x Celad] Nouvelle opportunité ... - 2026-10-28 1330.eml'));
     const r = await ingest(db, { folderEmails: emails, downloader });
@@ -104,7 +104,7 @@ describe('ingestion', () => {
     expect(readdirSync(emails)).toEqual([]);
   });
 
-  it('ajoute, écarte, télécharge seulement Hellowork / Free-Work, puis supprime les .eml', async () => {
+  it('adds, dismisses, downloads only Hellowork / Free-Work, then deletes the .eml files', async () => {
     const r = await ingest(db, {
       folderEmails: join(folder, 'emails'),
       excludedTitles: [/\bjava\b(?!script)|spring/i, /\bstage\b/i],
@@ -127,7 +127,7 @@ describe('ingestion', () => {
     expect(detailOffer(db, java.id)!.statuses[0].comment).toBe('intitulé exclu : Java');
   });
 
-  it('garde un e-mail dont aucune offre n’est reconnue', async () => {
+  it('keeps an e-mail in which no offer is recognized', async () => {
     writeFileSync(
       join(folder, 'emails', 'unknown.eml'),
       'From: Plateforme <contact@exemple.test>\r\nTo: moi@exemple.test\r\nSubject: Nouvelle opportunite\r\nDate: Mon, 3 Nov 2026 10:00:00 +0100\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUne mission pourrait vous plaire.\r\n',
@@ -138,7 +138,7 @@ describe('ingestion', () => {
     expect(readdirSync(join(folder, 'emails'))).toEqual(['unknown.eml']);
   });
 
-  it('--keep garde les e-mails ; une deuxième passe ne trouve que des doublons', async () => {
+  it('--keep keeps the e-mails; a second pass only finds duplicates', async () => {
     const o = { folderEmails: join(folder, 'emails'), keep: true, download: false };
     const r1 = await ingest(db, o);
     expect(r1.added).toBe(8);

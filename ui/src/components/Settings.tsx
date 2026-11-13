@@ -1,5 +1,5 @@
-// Panneau « Réglages de la note » : poids, barèmes, règles bloquantes, inventaire, seuil, exemples de référence,
-// aperçu de l'impact avant d'enregistrer, historique des versions et restauration.
+// "Score settings" panel: weights, scales, blocking rules, inventory, threshold, reference examples,
+// preview of the impact before saving, history of the versions and restore.
 import { X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { BadgeScore, formatDate, formatScore } from './Badges.tsx';
 
 const comma = (n: number, d = 1) => number(n, d);
 
-/** Champ numérique : accepte la virgule ; une saisie vide ou invalide n'est pas reportée. */
+/** Numeric field: accepts the comma; an empty or invalid entry is not carried over. */
 function FieldNumber(props: {
   label: string;
   value: number | undefined;
@@ -544,7 +544,7 @@ export function Settings({ close, choose, announce: announce }: { close: () => v
   }, [reference]);
   useEffect(() => {
     header.current?.focus({ preventScroll: true });
-    // En capture : Échap ferme les réglages sans fermer aussi le détail d'offre ouvert dessous.
+    // In capture: Escape closes the settings without also closing the offer detail open below.
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopImmediatePropagation();

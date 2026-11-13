@@ -36,7 +36,7 @@ import { createApp } from '../src/api/server.ts';
 
 const example = (): Rubric => readFileRubric(EXAMPLE_RUBRIC)!.rubric;
 
-/** Grille simple : technique 50, télétravail 25, rémunération 25. */
+/** Simple rubric: technique 50, remote work 25, compensation 25. */
 function rubricTest(): Rubric {
   return validateRubric({
     threshold: 4.5,
@@ -62,8 +62,8 @@ function rubricTest(): Rubric {
   });
 }
 
-describe('barèmes et arrondi', () => {
-  it('arrondit au demi-point le plus proche', () => {
+describe('scales and rounding', () => {
+  it('rounds to the nearest half point', () => {
     expect(roundedHalf(4.24)).toBe(4);
     expect(roundedHalf(4.25)).toBe(4.5);
     expect(roundedHalf(4.74)).toBe(4.5);
@@ -73,7 +73,7 @@ describe('barèmes et arrondi', () => {
     expect(roundedHalf(10)).toBe(10);
   });
 
-  it('interpole la rémunération : 0 sous le plancher, 5 au plancher, 10 à la cible haute', () => {
+  it('interpolates the compensation: 0 below the floor, 5 at the floor, 10 at the high target', () => {
     expect(interpolate(43.9, 44, 70)).toBe(0);
     expect(interpolate(44, 44, 70)).toBe(5);
     expect(interpolate(57, 44, 70)).toBe(7.5);
@@ -81,7 +81,7 @@ describe('barèmes et arrondi', () => {
     expect(interpolate(90, 44, 70)).toBe(10);
   });
 
-  it('télétravail : barème par jours sur site, inconnu = neutre + drapeau', () => {
+  it('remote work: scale by days on site, unknown = neutral + flag', () => {
     const b = rubricTest().scales.remote;
     expect([0, 1, 2, 3, 4, 5].map((j) => scoreRemote(b, j).score)).toEqual([10, 8, 6, 3, 1, 1]);
     const unknown = scoreRemote(b, null);
@@ -89,14 +89,14 @@ describe('barèmes et arrondi', () => {
     expect(unknown.flag?.code).toBe('remote_unknown');
   });
 
-  it('rémunération : salaire en euros ou en K€, mensuel, TJM, horaire, plancher full remote', () => {
+  it('compensation: salary in euros or in K€, monthly, daily rate, hourly, full remote floor', () => {
     const b = rubricTest().scales.compensation;
     expect(scoreCompensation(b, { min: 55000, max: 65000, unit: 'year' }, 2).score).toBeCloseTo(5 + (5 * 16) / 26, 6); // milieu 60 K€
     expect(scoreCompensation(b, { min: 60, max: 60, unit: 'year' }, 2).score).toBeCloseTo(5 + (5 * 16) / 26, 6); // 60 lu en K€
     expect(scoreCompensation(b, { min: 5000, max: null, unit: 'month' }, 2).score).toBeCloseTo(5 + (5 * 16) / 26, 6); // 5 000 €/mois = 60 K€/an
     expect(scoreCompensation(b, { min: 500, max: 500, unit: 'day' }, 3).score).toBe(10);
     expect(scoreCompensation(b, { min: 400, max: 400, unit: 'day' }, 3).score).toBe(5);
-    // Full remote : plancher 420, donc 400 €/j est en dessous.
+    // Full remote: floor 420, so 400 €/day is below.
     const fr = scoreCompensation(b, { min: 400, max: 400, unit: 'day' }, 0);
     expect(fr.score).toBe(0);
     expect(fr.flag?.code).toBe('sub_floor');
@@ -105,7 +105,7 @@ describe('barèmes et arrondi', () => {
     expect(unknown).toMatchObject({ score: 5, flag: { code: 'compensation_unknown' } });
   });
 
-  it('rémunération : référence min / max / milieu', () => {
+  it('compensation: min / max / middle reference', () => {
     const b = { ...rubricTest().scales.compensation };
     const r = { min: 44000, max: 70000, unit: 'year' as const };
     expect(scoreCompensation({ ...b, reference: 'min' }, r, 2).score).toBe(5);
@@ -113,7 +113,7 @@ describe('barèmes et arrondi', () => {
     expect(scoreCompensation({ ...b, reference: 'middle' }, r, 2).score).toBe(7.5);
   });
 
-  it('lit les jours sur site dans un texte libre', () => {
+  it('reads the days on site in a free text', () => {
     expect(onsiteDaysFromText('full remote')).toBe(0);
     expect(onsiteDaysFromText('Full-Remote possible')).toBe(0);
     expect(onsiteDaysFromText('100 % télétravail')).toBe(0);
@@ -128,10 +128,10 @@ describe('barèmes et arrondi', () => {
   });
 });
 
-describe('calcul de la note', () => {
+describe('score computation', () => {
   const g = rubricTest();
 
-  it('moyenne pondérée normalisée, contributions, arrondi, valeur exacte', () => {
+  it('normalized weighted average, contributions, rounding, exact value', () => {
     const d = computeScore(g, { criteria: { technique: { score: 8, justification: 'PHP' } }, blockers: [] }, {
       remote: '3 j sur site',
       compensation_min: 57000,
@@ -151,13 +151,13 @@ describe('calcul de la note', () => {
     expect(d.flags).toEqual([]);
   });
 
-  it('les poids sont normalisés quelle que soit leur somme', () => {
+  it('the weights are normalized whatever their sum', () => {
     const double = applyChange(g, { weight: { technique: 100, remote: 50, compensation: 50 } });
     const s = { criteria: { technique: { score: 8 } }, inputs: { onsite_days: 3, salary_min: 57000, unit: 'year' as const }, blockers: [] };
     expect(computeScore(double, s).exact_score).toBe(computeScore(g, s).exact_score);
   });
 
-  it('les entrées de la saisie passent avant les champs de l’offre', () => {
+  it('the inputs of the entry come before the offer’s fields', () => {
     const d = computeScore(g, { criteria: { technique: { score: 8 } }, inputs: { onsite_days: 0, salary_min: 500, unit: 'day' }, blockers: [] }, {
       remote: 'sur site',
       compensation_min: 30000,
@@ -167,7 +167,7 @@ describe('calcul de la note', () => {
     expect(d.exact_score).toBe(9); // 8 × 0,5 + 10 × 0,25 + 10 × 0,25
   });
 
-  it('valeurs neutres et drapeaux quand une donnée manque', () => {
+  it('neutral values and flags when a piece of data is missing', () => {
     const d = computeScore(g, { criteria: {}, blockers: [] }, { remote: 'hybride' });
     expect(d.criteria.map((c) => [c.id, c.score, c.origin])).toEqual([
       ['technique', 5, 'neutral'],
@@ -178,7 +178,7 @@ describe('calcul de la note', () => {
     expect(d.score).toBe(5);
   });
 
-  it('règles bloquantes : zéro, plafond, désactivée ou inconnue ignorée', () => {
+  it('blocking rules: zero, cap, disabled or unknown ignored', () => {
     const s = (blockers: string[]) => ({ criteria: { technique: { score: 9 } }, inputs: { onsite_days: 0 }, blockers });
     const free = computeScore(g, s([]));
     expect(free.exact_score).toBe(8.25);
@@ -191,12 +191,12 @@ describe('calcul de la note', () => {
     const ignored = computeScore(g, s(['inactive', 'gone']));
     expect(ignored.exact_score).toBe(8.25);
     expect(ignored.ignored_blockers).toEqual(['inactive', 'gone']);
-    // Un plafond au-dessus de la moyenne ne change rien.
+    // A cap above the average changes nothing.
     const low = computeScore(g, { criteria: { technique: { score: 1 } }, inputs: { onsite_days: 5 }, blockers: ['far'] });
     expect(low.rules[0].effective).toBe(false);
   });
 
-  it('valide une saisie : critères calculés, critères et règles inconnus refusés', () => {
+  it('validates an input: computed criteria, unknown criteria and rules refused', () => {
     expect(() => checkInput(g, { criteria: { remote: { score: 3 } } })).toThrow(/calculé.*onsite_days/);
     expect(() => checkInput(g, { criteria: { unknown: { score: 3 } } })).toThrow(/Critère inconnu.*technique/);
     expect(() => checkInput(g, { blockers: ['armee'] })).toThrow(/Règle bloquante inconnue : armee.*stage, far/);
@@ -204,7 +204,7 @@ describe('calcul de la note', () => {
     expect(checkInput(g, { criteria: { technique: { score: '6,5' } } }).criteria.technique.score).toBe(6.5);
   });
 
-  it('valide une grille : identifiants, doublons, poids, barèmes, exemples', () => {
+  it('validates a rubric: ids, duplicates, weights, scales, examples', () => {
     const database = structuredClone(g) as unknown as Record<string, unknown>;
     expect(() => validateRubric({ ...database, criteria: [...g.criteria, g.criteria[0]] })).toThrow(/critère en double : technique/);
     expect(() => validateRubric({ ...database, criteria: g.criteria.map((c) => ({ ...c, weight: 0 })) })).toThrow(/au moins un critère/);
@@ -219,7 +219,7 @@ describe('calcul de la note', () => {
     expect(() => validateRubric({ ...database, rules: [{ id: 'p', label: 'P', effect: 'cap' }] })).toThrow(/valeur.*plafond/);
   });
 
-  it('modification partielle : poids, barèmes, règles, inventaire', () => {
+  it('partial change: weights, scales, rules, inventory', () => {
     const g2 = applyChange(example(), {
       weight: { technique: 50 },
       threshold: 5,
@@ -241,12 +241,12 @@ describe('calcul de la note', () => {
     expect(() => applyChange(example(), { weight: { unknown: 3 } })).toThrow(/Critère inconnu/);
     expect(() => applyChange(example(), { rules: [{ id: 'new' }] })).toThrow(/libelle.*effet/);
     expect(() => applyChange(example(), { inventory: { remove: ['Cobol'] } })).toThrow(/absente/);
-    // Retirer puis ajouter la même techno dans un appel la remplace (elle n'est jamais perdue).
+    // Removing then adding the same technology in one call replaces it (it is never lost).
     const g3 = applyChange(example(), { inventory: { remove: ['PHP'], add: [{ technology: 'php', level: 'medium' }] } });
     expect(g3.inventory.filter((t) => t.technology.toLowerCase() === 'php')).toEqual([{ technology: 'php', level: 'medium' }]);
   });
 
-  it('exemples de référence et consignes pour l’IA', () => {
+  it('reference examples and instructions for the AI', () => {
     const e = example();
     expect(e.examples.map((x) => scoreExample(e, x).score)).toEqual([8, 3.5, 0]);
     const c = instructionsAi(e).join('\n');
@@ -256,7 +256,7 @@ describe('calcul de la note', () => {
   });
 });
 
-describe('stockage, versions et renotation', () => {
+describe('storage, versions and rescoring', () => {
   let folder: string;
   let db: Database;
   let ids: number[];
@@ -276,7 +276,7 @@ describe('stockage, versions et renotation', () => {
     writeFileSync(pathRubric(folder), JSON.stringify(g), 'utf8');
   };
 
-  it('sans grille : la note à critères est refusée, la note globale reste possible', () => {
+  it('without a rubric: the criteria-based score is refused, the overall score is still possible', () => {
     expect(rubricCurrent(db, folder)).toBeNull();
     const load = () => rubricCurrent(db, folder);
     expect(() => scoreOffers(db, [{ id: ids[0], criteria: { technique: { score: 8 } } }], 'cli', { rubric: load })).toThrow(/sans grille/);
@@ -285,7 +285,7 @@ describe('stockage, versions et renotation', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('fichier → version 1, note calculée, champ note ignoré et signalé, ancienne note figée', () => {
+  it('file → version 1, computed score, score field ignored and reported, old score frozen', () => {
     initializeRubric(db, folder);
     const v = rubricCurrent(db, folder)!;
     expect(v).toMatchObject({ version: 1, author: 'file' });
@@ -308,13 +308,13 @@ describe('stockage, versions et renotation', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('aperçu, enregistrement, renotation instantanée, seuil, historique, restauration', () => {
+  it('preview, save, instant rescoring, threshold, history, restore', () => {
     initializeRubric(db, folder);
     const load = () => rubricCurrent(db, folder);
     const criteria = { technique: { score: 6 }, role: { score: 6 }, interet: { score: 6 }, risque: { score: 6 } };
     scoreOffers(db, ids.map((id) => ({ id, criteria })), 'cli', { rubric: load });
     const before = ids.map((id) => offerById(db, id)!.score);
-    // 0 : 6×.6 + 10×.2 + 10×.2 = 7,6 → 7,5 ; 1 : 3 j sur site, salaire NC → 6×.6 + 3×.2 + 5×.2 = 5,2 → 5 ;
+    // 0: 6×.6 + 10×.2 + 10×.2 = 7.6 → 7.5; 1: 3 days on site, salary NC → 6×.6 + 3×.2 + 5×.2 = 5.2 → 5;
     // 2 : hybride inconnu, 450 €/j ≥ cible 450 → 6×.6 + 5×.2 + 10×.2 = 6,6 → 6,5
     expect(before).toEqual([7.5, 5, 6.5]);
 
@@ -323,7 +323,7 @@ describe('stockage, versions et renotation', () => {
     const ap = previewRubric(db, moreRemote, g.threshold);
     expect(ap.offers_recalculated).toBe(3);
     expect(ap.changed).toBeGreaterThan(0);
-    expect(ids.map((id) => offerById(db, id)!.score)).toEqual(before); // l'aperçu n'écrit rien
+    expect(ids.map((id) => offerById(db, id)!.score)).toEqual(before); // the preview writes nothing
     expect(ap.falling.map((c) => c.id)).toContain(ids[1]);
 
     const r = saveRubric(db, folder, moreRemote, { author: 'interface', summary: 'Télétravail prioritaire' });
@@ -332,7 +332,7 @@ describe('stockage, versions et renotation', () => {
     const after = ids.map((id) => offerById(db, id)!.score);
     expect(after).not.toEqual(before);
     expect(scoresOffer(db, ids[0])[0]).toMatchObject({ rubric_version: '2' });
-    expect(scoresOffer(db, ids[0])).toHaveLength(1); // recalcul sur place, pas de nouvelle ligne
+    expect(scoresOffer(db, ids[0])).toHaveLength(1); // recomputed in place, no new line
     expect(JSON.parse(readFileSync(pathRubric(folder), 'utf8'))).toMatchObject({ version: 2, threshold: 6, summary: 'Télétravail prioritaire' });
 
     expect(() => saveRubric(db, folder, moreRemote, { author: 'cli', summary: 'nothing' })).toThrow(/Aucun changement/);
@@ -352,7 +352,7 @@ describe('stockage, versions et renotation', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('fichier modifié à la main → nouvelle version ; fichier supprimé → réécrit ; fichier invalide → erreur claire', () => {
+  it('file modified by hand → new version; file deleted → rewritten; invalid file → clear error', () => {
     initializeRubric(db, folder);
     scoreOffers(db, [{ id: ids[0], criteria: { technique: { score: 2 } }, blockers: ['stage'] }], 'cli', { rubric: () => rubricCurrent(db, folder) });
     expect(offerById(db, ids[0])!.score).toBe(0);
@@ -361,7 +361,7 @@ describe('stockage, versions et renotation', () => {
     writeRubric(raw);
     const v = rubricCurrent(db, folder)!;
     expect(v).toMatchObject({ version: 2, author: 'file', summary: 'Modifiée dans le fichier grille.json' });
-    expect(offerById(db, ids[0])!.score).toBeGreaterThan(0); // renotée : la règle stage est désactivée
+    expect(offerById(db, ids[0])!.score).toBeGreaterThan(0); // rescored: the stage rule is disabled
     expect(scoresOffer(db, ids[0])[0].breakdown!.ignored_blockers).toEqual(['stage']);
 
     rmSync(pathRubric(folder));
@@ -373,7 +373,7 @@ describe('stockage, versions et renotation', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('correction des sous-notes dans l’interface : nouvelle ligne d’historique, origines conservées', () => {
+  it('correction of the sub-scores in the interface: new history line, origins kept', () => {
     initializeRubric(db, folder);
     const v = rubricCurrent(db, folder)!;
     scoreOffers(db, [{ id: ids[1], criteria: { technique: { score: 8, justification: 'AI' }, role: { score: 6 } }, fit: 'API' }], 'mcp', { rubric: () => v });
@@ -389,7 +389,7 @@ describe('stockage, versions et renotation', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('API : grille, aperçu, enregistrement, historique, restauration, sous-notes', async () => {
+  it('API: rubric, preview, save, history, restore, sub-scores', async () => {
     initializeRubric(db, folder);
     const app = createApp(db, { dataDir: folder });
     const send = (path: string, method: string, body?: unknown) =>
@@ -422,26 +422,26 @@ describe('stockage, versions et renotation', () => {
   });
 });
 
-describe('règle « plafond si critère faible »', () => {
+describe('“cap if criterion is low” rule', () => {
   const g = validateRubric({
     ...rubricTest(),
     rules: [{ id: 'technique-faible', label: 'Technique insuffisante', effect: 'criterion_cap', criterion: 'technique', threshold: 4 }],
   });
 
-  it('plafonne la note à la sous-note technique quand elle est sous le seuil, sans signalement de l’IA', () => {
-    // technique 2 × 50 % + télétravail 10 × 25 % + rémunération 10 × 25 % = 6 → plafonnée à 2
+  it('caps the score at the technical sub-score when it is below the threshold, without the AI reporting it', () => {
+    // technique 2 × 50 % + remote 10 × 25 % + compensation 10 × 25 % = 6 → capped at 2
     const d = computeScore(g, { criteria: { technique: { score: 2 } }, inputs: { onsite_days: 0, salary_min: 70000, unit: 'year' }, blockers: [] });
     expect(d.average).toBe(6);
     expect(d.score).toBe(2);
     expect(d.rules).toEqual([expect.objectContaining({ id: 'technique-faible', effect: 'criterion_cap', value: 2, effective: true })]);
   });
 
-  it('ne s’applique ni au-dessus du seuil ni sur une sous-note neutre (critère manquant)', () => {
+  it('applies neither above the threshold nor on a neutral sub-score (missing criterion)', () => {
     expect(computeScore(g, { criteria: { technique: { score: 4 } }, blockers: [] }).rules).toEqual([]);
     expect(computeScore(g, { criteria: {}, blockers: [] }).rules).toEqual([]);
   });
 
-  it('refuse une règle sans critère ni seuil', () => {
+  it('refuses a rule without criterion nor threshold', () => {
     expect(() => validateRubric({ ...rubricTest(), rules: [{ id: 'x', label: 'X', effect: 'criterion_cap' }] })).toThrow();
   });
 });

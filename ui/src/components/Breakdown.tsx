@@ -1,4 +1,4 @@
-// Décomposition d'une note à critères (panneau de détail) et correction des sous-notes à la main.
+// Breakdown of a criteria-based score (detail panel) and correction of the sub-scores by hand.
 import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type DetailOffer, type Score, type InputSubScores } from '../api.ts';
@@ -20,7 +20,7 @@ export function BadgeOldRubric() {
   );
 }
 
-/** Tableau critère par critère : sous-note, poids, contribution, justification ; puis règles et drapeaux. */
+/** Table criterion by criterion: sub-score, weight, contribution, justification; then rules and flags. */
 export function BreakdownScore({ score }: { score: Score }) {
   const d = score.breakdown!;
   return (
@@ -106,7 +106,7 @@ export function BreakdownScore({ score }: { score: Score }) {
 
 type Line = { score: string; justification: string };
 
-/** Correction des sous-notes (critères IA), des entrées des critères calculés et des règles bloquantes. */
+/** Correction of the sub-scores (AI criteria), of the inputs of the computed criteria and of the blocking rules. */
 export function EditorSubScores({ offer }: { offer: DetailOffer }) {
   const client = useQueryClient();
   const base = useId();
@@ -146,7 +146,7 @@ export function EditorSubScores({ offer }: { offer: DetailOffer }) {
         criteria[id] = { score: v, justification: l.justification.trim() || null };
       }
       const count = (x: string) => (x.trim() ? Number(x.replace(/\s/g, '').replace(',', '.')) : null);
-      // Seules les sous-notes modifiées sont envoyées : les autres gardent leur origine (IA).
+      // Only the modified sub-scores are sent: the others keep their origin (AI).
       const changed: NonNullable<InputSubScores['criteria']> = {};
       const before = initial();
       for (const [id, v] of Object.entries(criteria)) {

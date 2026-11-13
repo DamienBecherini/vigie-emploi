@@ -1,8 +1,8 @@
-// Mise en forme des résultats d'outils MCP : JSON lisible, erreurs rendues à l'IA sans arrêter le serveur.
+// Formatting of the MCP tool results: readable JSON, errors returned to the AI without stopping the server.
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { tm } from './texts.ts';
 
-/** Au-delà, le JSON est rendu sans indentation (l'indentation coûte jusqu'à un tiers de la taille). */
+/** Beyond this, the JSON is returned without indentation (indentation costs up to a third of the size). */
 const INDENTATION_MAX = 8_000;
 
 export function result(x: unknown): CallToolResult {
@@ -14,7 +14,7 @@ export function failure(e: unknown): CallToolResult {
   return { isError: true, content: [{ type: 'text', text: tm('results.failure.content.text', { message: String((e as Error).message) }) }] };
 }
 
-/** Exécute l'outil et transforme toute exception en résultat d'erreur lisible par l'IA. */
+/** Runs the tool and turns any exception into an error result the AI can read. */
 export function on<A>(fn: (a: A) => unknown | Promise<unknown>) {
   return async (a: A): Promise<CallToolResult> => {
     try {
@@ -25,7 +25,7 @@ export function on<A>(fn: (a: A) => unknown | Promise<unknown>) {
   };
 }
 
-/** Comme sur, pour un outil qui compose lui-même son contenu (texte, images, ressources). */
+/** Like safe, for a tool that builds its content itself (text, images, resources). */
 export function onContent<A>(fn: (a: A) => CallToolResult | Promise<CallToolResult>) {
   return async (a: A): Promise<CallToolResult> => {
     try {

@@ -1,4 +1,4 @@
-// Fenêtre « Thème » : mode (système, clair, sombre) et palette de chaque mode, dont une palette personnalisée.
+// "Theme" window: mode (system, light, dark) and palette of each mode, including a personal palette.
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Monitor, Moon, Sun, X } from 'lucide-react';
@@ -112,7 +112,7 @@ export function ChoiceTheme(props: {
   const { close } = props;
   useEffect(() => {
     header.current?.focus({ preventScroll: true });
-    // En capture : Échap ferme cette fenêtre sans fermer aussi le détail d'offre ouvert dessous.
+    // In capture: Escape closes this window without also closing the offer detail open below.
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopImmediatePropagation();
@@ -126,7 +126,7 @@ export function ChoiceTheme(props: {
     ['light', t('theme.light'), Sun],
     ['dark', t('theme.dark'), Moon],
   ];
-  // Portail : l'en-tête (sticky, flou) piégerait une position fixe.
+  // Portal: the header (sticky, blurred) would trap a fixed position.
   return createPortal(
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4 sm:pt-16" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div

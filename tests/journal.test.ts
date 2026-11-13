@@ -27,15 +27,15 @@ import { createApp } from '../src/api/server.ts';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 const DATA = join(FIXTURES, 'data');
-/** « Maintenant » des tests : lundi 02/11/2026, 10 h (heure locale). */
+/** The tests' "now": Monday 02/11/2026, 10:00 (local time). */
 const NOW = new Date(2026, 10, 2, 10, 0);
 
 function offer(db: Database, siteId: string, company = 'Kappa'): number {
   return saveOffer(db, 'linkedin', siteId, { title: 'Développeur API', company }, 'manual').offer.id;
 }
 
-describe('dates des événements', () => {
-  it('formats acceptés, normalisés en AAAA-MM-JJ[THH:MM]', () => {
+describe('event dates', () => {
+  it('accepted formats, normalized to YYYY-MM-DD[THH:MM]', () => {
     expect(readDateEvent('05/11/2026', NOW)).toBe('2026-11-05');
     expect(readDateEvent('5/11/2026 14:30', NOW)).toBe('2026-11-05T14:30');
     expect(readDateEvent('05/11/2026 à 9 h 05', NOW)).toBe('2026-11-05T09:05');
@@ -45,12 +45,12 @@ describe('dates des événements', () => {
     expect(() => readDateEvent('31/02/2026', NOW)).toThrow(/invalide/);
     expect(() => readDateEvent('bientôt', NOW)).toThrow(/invalide/);
   });
-  it('futur : une date seule d’aujourd’hui ne l’est pas, une heure plus tard aujourd’hui oui', () => {
+  it('future: a date alone of today is not, an hour later today is', () => {
     expect(isFuture('2026-11-02', NOW)).toBe(false);
     expect(isFuture('2026-11-02T15:00', NOW)).toBe(true);
     expect(isFuture('2026-11-03', NOW)).toBe(true);
   });
-  it('chemins de fichiers : relatifs, sans traversée', () => {
+  it('file paths: relative, without traversal', () => {
     expect(pathRelative('candidatures\\x\\devis.md')).toBe('candidatures/x/devis.md');
     expect(() => pathRelative('../secret.txt')).toThrow(/refusé/);
     expect(() => pathRelative('candidatures/../../x')).toThrow(/refusé/);
@@ -60,7 +60,7 @@ describe('dates des événements', () => {
   });
 });
 
-describe('journal et échéances', () => {
+describe('journal and deadlines', () => {
   let db: Database;
   let id: number;
   beforeAll(() => {
@@ -68,7 +68,7 @@ describe('journal et échéances', () => {
     id = offer(db, '4300000001');
   });
 
-  it('un événement passé est fait, un futur est une échéance ; journal ordonné', () => {
+  it('a past event is done, a future one is a deadline; ordered journal', () => {
     const passed = addEvent(db, id, { type: 'message', direction: 'envoyé', at: '28/10/2026', summary: 'Candidature envoyée' }, 'cli', { now: NOW });
     expect(passed).toMatchObject({ done: true, direction: 'sent', at: '2026-10-28', files: [], origin: 'cli' });
     const overdue = addEvent(db, id, { type: 'message', at: '01/11/2026', summary: 'Relancer', done: false }, 'cli', { now: NOW });
@@ -90,7 +90,7 @@ describe('journal et échéances', () => {
     expect(j[2]).toMatchObject({ deadline: false, overdue: false });
   });
 
-  it('échéances sur N jours + retards ; marquer fait, modifier, supprimer', () => {
+  it('deadlines over N days + overdue; mark done, update, delete', () => {
     const other = offer(db, '4300000002', 'Lambda');
     addEvent(db, other, { type: 'note', at: '20/11/2026', summary: 'Loin', done: false }, 'cli', { now: NOW });
     const r = deadlines(db, { days: 7, now: NOW });
@@ -115,7 +115,7 @@ describe('journal et échéances', () => {
     expect(detailOffer(db, id)!.events.map((e) => e.summary)).not.toContain('Relance envoyée');
   });
 
-  it('suivi généré : la prochaine action vient de la prochaine échéance, sinon du champ', () => {
+  it('generated tracker: the next action comes from the next deadline, otherwise from the field', () => {
     addStatus(db, id, 'sent', { origin: 'cli' });
     saveApplication(db, id, { next_action: 'Attendre' });
     const line = () => generateTracker(db, DATA, NOW).markdown.split('\n').find((l) => l.includes('**Kappa**'))!;
@@ -125,11 +125,11 @@ describe('journal et échéances', () => {
     expect(line()).toContain('| Attendre |');
   });
 
-  it('statistiques : envoyées, réponses, entretiens, propositions, délai', () => {
+  it('statistics: sent, replies, interviews, proposals, delay', () => {
     const db2 = openDatabase(':memory:');
     const a = offer(db2, '4300000010', 'A');
     const b = offer(db2, '4300000011', 'B');
-    offer(db2, '4300000012', 'C'); // jamais envoyée
+    offer(db2, '4300000012', 'C'); // never sent
     saveApplication(db2, a, { sent_at: '2026-10-01' });
     saveApplication(db2, b, { sent_at: '2026-10-10' });
     addStatus(db2, a, 'sent');
@@ -148,7 +148,7 @@ describe('journal et échéances', () => {
   });
 });
 
-describe('reprise des journaux des dossiers', () => {
+describe('import of the folder journals', () => {
   let db: Database;
   let acme: number;
   beforeAll(() => {
@@ -157,8 +157,8 @@ describe('reprise des journaux des dossiers', () => {
     acme = findOffer(db, 'linkedin', '4200000099')!.id;
   });
 
-  it('lignes du tableau et cases cochées datées ; types devinés, fichiers liés', () => {
-    const r = importHistory(db, DATA).journal; // deuxième passe : rien de neuf
+  it('table lines and dated checked boxes; guessed types, linked files', () => {
+    const r = importHistory(db, DATA).journal; // second pass: nothing new
     expect(r).toMatchObject({ folders: 1, lines: 6, events_created: 0, events_existing: 6, events_removed: 0 });
     expect(r.untyped.map((n) => n.excerpt)).toEqual(['Fiche relue.']);
     expect(r.without_date.map((n) => n.excerpt)).toEqual(['Point fait sans date']);
@@ -178,7 +178,7 @@ describe('reprise des journaux des dossiers', () => {
     expect(j.find((e) => e.type === 'interview')!.files).toEqual(['candidatures/acme-developpeur-php/compte-rendu-appel.md']);
   });
 
-  it('formats de suivi : puces datées, cases non cochées ignorées, blocs de code ignorés', () => {
+  it('tracker formats: dated bullets, unchecked boxes ignored, code blocks ignored', () => {
     const { lines, withoutDate } = linesOfTracker(
       [
         '## 6. Suivi',
@@ -205,7 +205,7 @@ describe('reprise des journaux des dossiers', () => {
     expect(guessType("14/10/2026 : proposition d'offre du conseiller France Travail").type).not.toBe('proposal');
   });
 
-  it('fichiers du dossier : liste et accès limité au dossier de données', () => {
+  it('folder files: list and access limited to the data folder', () => {
     const f = filesFolder(db, DATA, acme);
     expect(f.folder).toBe('candidatures/acme-developpeur-php');
     expect(f.files.map((x) => x.name)[0]).toBe('dossier-candidature.md');
@@ -216,14 +216,14 @@ describe('reprise des journaux des dossiers', () => {
   });
 });
 
-describe('API : journal, échéances, fichiers', () => {
+describe('API: journal, deadlines, files', () => {
   const db = openDatabase(':memory:');
   importHistory(db, DATA);
   const app = createApp(db, { dataDir: DATA });
   const acme = findOffer(db, 'linkedin', '4200000099')!.id;
   const json = (body: unknown) => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-  it('ajouter, marquer fait, modifier, supprimer ; échéances', async () => {
+  it('add, mark done, update, delete; deadlines', async () => {
     const r = await app.request(`/api/offers/${acme}/events`, json({ type: 'message', at: '+2', summary: 'Relancer Julie', direction: 'sent' }));
     expect(r.status).toBe(200);
     const d = (await r.json()) as { events: { id: number; summary: string; done: boolean }[] };
@@ -243,7 +243,7 @@ describe('API : journal, échéances, fichiers', () => {
     expect((await app.request('/api/events/99999', { method: 'DELETE' })).status).toBe(400);
   });
 
-  it('fichiers : Markdown rendu sans script, texte brut, traversée refusée', async () => {
+  it('files: Markdown rendered without script, plain text, traversal refused', async () => {
     const list = (await (await app.request(`/api/offers/${acme}/files`)).json()) as { files: { path: string }[] };
     expect(list.files.length).toBe(3);
     const md = await app.request('/api/file/candidatures/acme-developpeur-php/compte-rendu-appel.md');
@@ -252,7 +252,7 @@ describe('API : journal, échéances, fichiers', () => {
     expect(md.headers.get('content-security-policy')).toMatch(/default-src 'none'/);
     const html = await md.text();
     expect(html).toContain('<h1>Compte rendu (fictif)</h1>');
-    expect(html).toContain('href="devis-2026-10-29.md"'); // lien relatif : reste dans le dossier
+    expect(html).toContain('href="devis-2026-10-29.md"'); // relative link: stays inside the folder
     const raw = await app.request('/api/file/candidatures/acme-developpeur-php/compte-rendu-appel.md?raw=1');
     expect(raw.headers.get('content-type')).toMatch(/text\/plain/);
     for (const path of ['applications%2F..%2F..%2Fjournal.test.ts', 'data%2Fx.sqlite', '.git%2Fconfig', 'C%3A%2FWindows%2Fwin.ini']) {
@@ -261,31 +261,31 @@ describe('API : journal, échéances, fichiers', () => {
     expect((await app.request('/api/file/candidatures/absent.md')).status).toBe(404);
   });
 
-  it('hôte étranger refusé (DNS rebinding)', async () => {
+  it('foreign host refused (DNS rebinding)', async () => {
     expect((await app.request('/api/health', { headers: { host: 'example.com' } })).status).toBe(403);
     expect((await app.request('/api/health', { headers: { host: 'localhost:4410' } })).status).toBe(200);
   });
 });
 
-describe('offre déjà suivie revue dans un lot, le registre ou une alerte : statut inchangé', () => {
-  it('lot et registre (imports) ne font pas reculer une candidature', () => {
+describe('already tracked offer seen again in a batch, the register or an alert: status unchanged', () => {
+  it('batch and register (imports) do not move an application back', () => {
     const db = openDatabase(':memory:');
     const id = offer(db, '4300000020');
     addStatus(db, id, 'sent', { origin: 'cli', at: '2026-10-20' });
-    // Revue plus tard dans un lot noté et dans le registre des écartées.
+    // Seen again later in a scored batch and in the register of dismissed offers.
     scoreInput(db, { id, score: 4 }, { origin: 'import-batch', at: '2026-11-02' });
     addStatus(db, id, 'dismissed', { origin: 'import-register', at: '2026-11-02', comment: 'Sans go' });
     addStatus(db, id, 'scored', { origin: 'import-batch', at: '2026-11-02' });
     expect(offerById(db, id)!.status).toBe('sent');
-    // Une décision de l'utilisateur, elle, fait foi.
+    // A decision of the user, on the other hand, is the reference.
     addStatus(db, id, 'dismissed', { origin: 'interface', at: '2026-11-03' });
     expect(offerById(db, id)!.status).toBe('dismissed');
   });
 
-  it('reprise complète : une offre du suivi revue dans un lot reste à son statut de candidature', () => {
+  it('full import: an offer of the tracker seen again in a batch keeps its application status', () => {
     const db = openDatabase(':memory:');
     importHistory(db, DATA);
-    // ACME (envoyée dans le suivi) : rejouer la reprise ne change rien.
+    // ACME (sent in the tracker): replaying the import changes nothing.
     const acme = findOffer(db, 'linkedin', '4200000099')!;
     expect(acme.status).toBe('sent');
   });
@@ -297,7 +297,7 @@ describe('offre déjà suivie revue dans un lot, le registre ou une alerte : sta
     });
     afterAll(() => rmSync(folder, { recursive: true, force: true }));
 
-    it('une alerte qui repropose une offre envoyée laisse son statut et ajoute une trace par jour', async () => {
+    it('an alert that offers a sent offer again leaves its status and adds one trace per day', async () => {
       const db = openDatabase(':memory:');
       cpSync(join(FIXTURES, 'emails'), folder, { recursive: true });
       await ingest(db, { folderEmails: folder, keep: true, download: false });
@@ -310,7 +310,7 @@ describe('offre déjà suivie revue dans un lot, le registre ou une alerte : sta
       const traces = journal(db, o.id).filter((e) => e.summary.startsWith('Revue le'));
       expect(traces).toHaveLength(1);
       expect(traces[0]).toMatchObject({ type: 'note', done: true, origin: 'import' });
-      // Une offre pas encore suivie n'a pas de trace.
+      // An offer not tracked yet has no trace.
       expect(journal(db, findOffer(db, 'linkedin', '4100000002')!.id)).toHaveLength(0);
     });
   });

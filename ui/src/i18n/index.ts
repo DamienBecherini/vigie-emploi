@@ -1,6 +1,6 @@
-// Langue de l'interface : celle choisie dans l'en-tête (mémorisée dans localStorage) l'emporte sur celle de la
-// configuration (renvoyée par /api/sante) ; français à défaut. Le changement de langue redessine toute l'application
-// (main.tsx la remonte) : les composants appellent simplement t().
+// Language of the interface: the one chosen in the header (remembered in localStorage) wins over the
+// configuration's (returned by /api/health); French otherwise. The language change redraws the whole application
+// (main.tsx remounts it): the components simply call t().
 import { useSyncExternalStore } from 'react';
 import { createTranslator, isLanguage, LANGUAGE_DEFAULT, LOCALES, type Language } from '../../../src/i18n/tool.ts';
 import { labelLevel, labelStatus, labelType, messageFlag } from '../../../src/i18n/labels.ts';
@@ -23,7 +23,7 @@ export function language(): Language {
   return current;
 }
 
-/** Locale Intl de la langue courante (dates, nombres). */
+/** Intl locale of the current language (dates, numbers). */
 export function locale(): string {
   return LOCALES[current];
 }
@@ -32,15 +32,15 @@ export const t = createTranslator<KeyUi>(DICTIONARIES_UI, language);
 
 function apply(l: Language) {
   current = l;
-  // Messages du noyau calculés dans le navigateur (validation de la grille, justifications des exemples).
+  // Core messages computed in the browser (rubric validation, justifications of the examples).
   defineLanguageCore(l);
-  // globalThis : ce module est aussi chargé par les tests (Node, sans DOM).
+  // globalThis: this module is also loaded by the tests (Node, without DOM).
   const doc = (globalThis as { document?: { documentElement: { lang: string } } }).document;
   if (doc) doc.documentElement.lang = l;
   listeners.forEach((f) => f());
 }
 
-/** Langue choisie dans l'en-tête, si elle a été mémorisée. */
+/** Language chosen in the header, if it was remembered. */
 function remembered(): Language | null {
   try {
     const v = localStorage.getItem(KEY);
@@ -50,7 +50,7 @@ function remembered(): Language | null {
   }
 }
 
-/** Choix de l'utilisateur (sélecteur de l'en-tête) : mémorisé, il l'emporte ensuite sur la configuration. */
+/** The user's choice (header selector): remembered, it then wins over the configuration. */
 export function chooseLanguage(l: Language): void {
   try {
     localStorage.setItem(KEY, l);
@@ -60,7 +60,7 @@ export function chooseLanguage(l: Language): void {
   apply(l);
 }
 
-/** Au chargement : langue mémorisée, sinon celle de la configuration (/api/sante), sinon le français. */
+/** On load: remembered language, otherwise the configuration's (/api/health), otherwise French. */
 export async function initializeLanguage(): Promise<void> {
   const chosen = remembered();
   if (chosen) return apply(chosen);
@@ -83,12 +83,12 @@ export function useLanguage(): Language {
   );
 }
 
-/** Nombre au format de la langue (« 6,5 » / « 6.5 »). */
+/** Number in the language's format ("6,5" / "6.5"). */
 export function number(n: number, decimals = 2): string {
   return n.toLocaleString(locale(), { maximumFractionDigits: decimals });
 }
 
-/** Date AAAA-MM-JJ (ou ISO) au format de la langue : JJ/MM/AAAA dans les deux cas. */
+/** YYYY-MM-DD (or ISO) date in the language's format: DD/MM/YYYY in both cases. */
 export function dateShort(d: Date): string {
   return d.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
@@ -98,7 +98,7 @@ export const typeShown = (x: TypeEvent) => labelType(x, current);
 export const levelShown = (n: Level) => labelLevel(n, current);
 export const flagShown = (d: { code: string; message: string }) => messageFlag(d, current);
 
-/** Pourcentage entier au format de la langue (« 35 % » en français, « 35% » en anglais). */
+/** Whole percentage in the language's format ("35 %" in French, "35%" in English). */
 export function percent(n: number): string {
   return (Math.round(n) / 100).toLocaleString(locale(), { style: 'percent', maximumFractionDigits: 0 });
 }

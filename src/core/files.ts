@@ -1,5 +1,5 @@
-// Fichiers du dossier de candidature : liste (nom, taille, date) et accès en lecture, strictement limité
-// au dossier de données (aucune traversée de chemin, pas de fichiers cachés, pas de base ni de boîte de réception).
+// Files of the application folder: list (name, size, date) and read access, strictly limited
+// to the data folder (no path traversal, no hidden files, neither the database nor the inbox).
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import type { Database } from '../db/database.ts';
@@ -8,9 +8,9 @@ import { pathRelative } from './events.ts';
 import { t } from '../i18n/index.ts';
 
 export interface FileFolder {
-  /** Chemin relatif au dossier de données (barres obliques) : celui à mettre dans un événement. */
+  /** Path relative to the data folder (forward slashes): the one to put in an event. */
   path: string;
-  /** Chemin relatif au dossier de candidature. */
+  /** Path relative to the application folder. */
   name: string;
   size: number;
   modified_at: string;
@@ -18,23 +18,23 @@ export interface FileFolder {
 
 export interface FilesFolder {
   offer_id: number;
-  /** Dossier de candidature (relatif au dossier de données), ou null si la candidature n'en a pas. */
+  /** Application folder (relative to the data folder), or null if the application has none. */
   folder: string | null;
   exists: boolean;
   files: FileFolder[];
-  /** true si la liste a été coupée (trop de fichiers). */
+  /** true if the list was cut (too many files). */
   truncated: boolean;
 }
 
-/** Dossiers de premier niveau jamais servis : la base et la boîte de réception. */
+/** First-level folders never served: the database and the inbox. */
 const FOLDERS_FORBIDDEN = new Set(['data', 'emails']);
 const DEPTH_MAX = 4;
 const FILES_MAX = 500;
 
 /**
- * Chemin absolu d'un fichier du dossier de données, après vérification : chemin relatif sans « .. » ni
- * segment caché, hors data/ et emails/, et qui reste dans le dossier une fois les liens symboliques résolus.
- * Lève une erreur sinon (ou si le fichier n'existe pas).
+ * Absolute path of a file of the data folder, after checking: relative path without ".." nor
+ * hidden segment, outside data/ and emails/, and which stays inside the folder once symbolic links are resolved.
+ * Throws an error otherwise (or if the file does not exist).
  */
 export function safeFile(dataDir: string, path: string): { absolute: string; relative: string } {
   const rel = pathRelative(path);
@@ -49,8 +49,8 @@ export function safeFile(dataDir: string, path: string): { absolute: string; rel
 }
 
 /**
- * Chemin absolu d'un dossier relatif au dossier de données, s'il existe et y reste une fois les liens symboliques
- * résolus (ni data/ ni emails/). Lève une erreur sinon. Sert à l'ouvrir dans l'explorateur de fichiers.
+ * Absolute path of a folder relative to the data folder, if it exists and stays inside once symbolic links
+ * are resolved (neither data/ nor emails/). Throws an error otherwise. Used to open it in the file explorer.
  */
 export function safeFolder(dataDir: string, folder: string): string {
   const rel = pathRelative(folder);
@@ -64,7 +64,7 @@ export function safeFolder(dataDir: string, folder: string): string {
   return real;
 }
 
-/** Fichiers (récursivement, sans les fichiers et dossiers cachés) d'un dossier relatif au dossier de données. */
+/** Files (recursively, without hidden files and folders) of a folder relative to the data folder. */
 export function listFiles(dataDir: string, folder: string): { exists: boolean; files: FileFolder[]; truncated: boolean } {
   const rel = pathRelative(folder);
   const root = realpathSync(resolve(dataDir));
@@ -97,14 +97,14 @@ export function listFiles(dataDir: string, folder: string): { exists: boolean; f
     }
   };
   walk(realDatabase, 1);
-  // La fiche du dossier d'abord, puis du plus récent au plus ancien.
+  // The folder's sheet first, then from the most recent to the oldest.
   files.sort((a, b) =>
     a.name === 'dossier-candidature.md' ? -1 : b.name === 'dossier-candidature.md' ? 1 : b.modified_at.localeCompare(a.modified_at) || a.name.localeCompare(b.name),
   );
   return { exists: true, files, truncated };
 }
 
-/** Fichiers du dossier de candidature d'une offre (liste vide si la candidature n'a pas de dossier). */
+/** Files of the application folder of an offer (empty list if the application has no folder). */
 export function filesFolder(db: Database, dataDir: string, offerId: number): FilesFolder {
   const folder = applicationOf(db, offerId)?.folder ?? null;
   if (!folder) return { offer_id: offerId, folder: null, exists: false, files: [], truncated: false };

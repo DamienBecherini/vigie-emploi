@@ -1,4 +1,4 @@
-// Paquet npm : ressources livrées et chemins résolus depuis le JavaScript compilé (dist/).
+// npm package: shipped resources and paths resolved from the compiled JavaScript (dist/).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -20,18 +20,18 @@ function files(folder: string): string[] {
 }
 
 describe('paquet npm', () => {
-  it('livre le code compilé et les ressources lues à l’exécution', () => {
+  it('ships the compiled code and the resources read at run time', () => {
     expect(pkg.private).toBeUndefined();
     for (const f of ['bin', 'dist', 'migrations', 'scaffold', 'templates', 'examples', 'AGENTS.md']) expect(pkg.files).toContain(f);
     expect(pkg.files).not.toContain('src');
   });
 
-  it('n’a pas de .gitignore dans le modèle (npm ne le livrerait pas)', () => {
+  it('has no .gitignore in the template (npm would not ship it)', () => {
     expect(files(join(root, 'scaffold')).filter((f) => /[\\/]\.gitignore$/.test(f))).toEqual([]);
     expect(existsSync(join(root, 'scaffold', 'gitignore'))).toBe(true);
   });
 
-  it('n’importe à l’exécution que des dépendances déclarées (l’interface est livrée compilée)', () => {
+  it('only imports declared dependencies at run time (the interface is shipped compiled)', () => {
     const imported = new Set<string>();
     for (const f of files(join(root, 'src'))) {
       for (const m of readFileSync(f, 'utf8').matchAll(/from '([^.'][^']*)'/g)) {
@@ -42,7 +42,7 @@ describe('paquet npm', () => {
     for (const name of imported) expect(Object.keys(pkg.dependencies), name).toContain(name);
   });
 
-  // Après « npm run build » (fait par prepack) : le JavaScript compilé retrouve la racine du paquet.
+  // After "npm run build" (done by prepack): the compiled JavaScript finds the package root again.
   it.skipIf(!existsSync(join(root, 'dist', 'core', 'config.js')))('résout les chemins de ressources depuis dist/', async () => {
     const config = await import(pathToFileURL(join(root, 'dist', 'core', 'config.js')).href);
     expect(resolve(config.APP_ROOT)).toBe(root);
@@ -66,7 +66,7 @@ describe('extension Claude Desktop (mcpb/manifest.json)', () => {
     compatibility: { runtimes: { node: string } };
   };
 
-  it('lance le binaire de la commande vigie-emploi avec le node de Claude Desktop', () => {
+  it('launches the binary of the vigie-emploi command with Claude Desktop’s node', () => {
     expect(m.name).toBe('vigie-emploi');
     expect(pkg.bin).toEqual({ 'vigie-emploi': 'bin/vigie-emploi.js' });
     expect(m.server.type).toBe('node');
@@ -75,13 +75,13 @@ describe('extension Claude Desktop (mcpb/manifest.json)', () => {
     expect(m.server.mcp_config.args).toEqual([`\${__dirname}/${m.server.entry_point}`, 'mcp']);
   });
 
-  it('transmet le dossier et la langue choisis à l’installation', () => {
+  it('passes the folder and the language chosen at install time', () => {
     expect(m.server.mcp_config.env).toEqual({ VIGIE_EMPLOI_DATA: '${user_config.folder}', VIGIE_EMPLOI_LANGUAGE: '${user_config.language}' });
     expect(m.user_config.folder).toMatchObject({ type: 'directory', default: '${HOME}/ma-recherche' });
     expect(m.user_config.language).toMatchObject({ type: 'string', default: 'fr' });
   });
 
-  it('exige le même Node que package.json (node:sqlite)', () => {
+  it('requires the same Node as package.json (node:sqlite)', () => {
     const engines = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { engines: { node: string } }).engines.node;
     expect(m.compatibility.runtimes.node).toBe(`${engines}.0.0`);
   });

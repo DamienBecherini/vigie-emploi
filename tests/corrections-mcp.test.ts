@@ -1,5 +1,5 @@
-// Corrections issues de la simulation « client MCP seul » : réponses plafonnées, exemples de la grille dans
-// modifier_grille, remplissage des pages du CV, e-mails supprimés et erreurs d'ingestion annoncés.
+// Fixes from the "MCP client only" simulation: capped responses, rubric examples in
+// update_rubric, fill of the CV pages, deleted e-mails and ingestion errors announced.
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,7 +18,7 @@ import { openState } from '../src/mcp/state.ts';
 import type { SummaryIngest } from '../src/ingest/ingest.ts';
 import { initializeWorkspace } from '../src/init/init.ts';
 
-const DESCRIPTION = 'Développement PHP et API REST, maintenance de sites WordPress, revue de code. '.repeat(40); // ≈ 3 000 caractères
+const DESCRIPTION = 'Développement PHP et API REST, maintenance de sites WordPress, revue de code. '.repeat(40); // ≈ 3,000 characters
 
 function fillDatabase(db: Database, n: number): void {
   transaction(db, () => {
@@ -41,14 +41,14 @@ function fillDatabase(db: Database, n: number): void {
   });
 }
 
-describe('offres à lire : résumé paginé', () => {
+describe('offers to read: paginated summary', () => {
   let db: Database;
   beforeAll(() => {
     db = openDatabase(':memory:');
     fillDatabase(db, 500);
   });
 
-  it('résumé sans description, page, restantes', () => {
+  it('summary without description, page, remaining', () => {
     const r = offersToRead(db, { limit: 25, descriptions: false });
     expect(r).toMatchObject({ total: 500, page: 1, pages: 20, remaining: 475 });
     expect(r.offers).toHaveLength(25);
@@ -60,14 +60,14 @@ describe('offres à lire : résumé paginé', () => {
     expect(last.offers.at(-1)!.id).toBe(500);
   });
 
-  it('descriptions tronquées à la longueur demandée ; CLI inchangée (descriptions par défaut)', () => {
+  it('descriptions truncated to the requested length; CLI unchanged (descriptions by default)', () => {
     const r = offersToRead(db, { limit: 2, length: 100 });
     expect(r.offers[0].description!.length).toBe(100);
     expect(offersToRead(db, { limit: 1 }).offers[0].description!.length).toBe(2500);
   });
 });
 
-describe('serveur MCP : réponses de taille raisonnable', () => {
+describe('MCP server: responses of reasonable size', () => {
   let folder: string;
   let client: Client;
   let db: Database;
@@ -97,7 +97,7 @@ describe('serveur MCP : réponses de taille raisonnable', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('offres_a_lire, lister_offres, lire_offre, grille restent sous le plafond', async () => {
+  it('offers_to_read, list_offers, read_offer, rubric stay under the cap', async () => {
     const toRead = await call('offers_to_read');
     const r = JSON.parse(toRead.text);
     expect(r).toMatchObject({ total: 500, remaining: 475 });
@@ -125,7 +125,7 @@ describe('serveur MCP : réponses de taille raisonnable', () => {
     expect((await call('list_offers', { size: 500 })).error).toBe(true);
   });
 
-  it('lire_offre coupe une description très longue, sauf complet', async () => {
+  it('read_offer cuts a very long description, unless full', async () => {
     const { offer } = saveOffer(db, 'manual', 'long', { title: 'Longue', description: 'x'.repeat(40_000) }, 'manual');
     const short = JSON.parse((await call('read_offer', { id: offer.id })).text);
     expect(short.description.length).toBeLessThan(16_000);
@@ -134,7 +134,7 @@ describe('serveur MCP : réponses de taille raisonnable', () => {
     expect(full.description.length).toBe(40_000);
   });
 
-  it('modifier_grille en essai renvoie les exemples recalculés, et accepte des exemples', async () => {
+  it('update_rubric in dry run returns the recomputed examples, and accepts examples', async () => {
     const dry_run = JSON.parse((await call('update_rubric', { dry_run: true, change: { weight: { technique: 90 } } })).text);
     expect(dry_run.saved).toBe(false);
     expect(dry_run.computed_examples.length).toBeGreaterThan(0);
@@ -154,10 +154,10 @@ describe('serveur MCP : réponses de taille raisonnable', () => {
   });
 });
 
-describe('grille : exemples dans le changement partiel', () => {
+describe('rubric: examples in the partial change', () => {
   const g = () => readFileRubric(EXAMPLE_RUBRIC)!.rubric;
 
-  it('ajoute, remplace (même titre et entreprise, sans casse) et retire', () => {
+  it('adds, replaces (same title and company, case-insensitive) and removes', () => {
     const database = g();
     const n = database.examples.length;
     const first = database.examples[0];
@@ -177,7 +177,7 @@ describe('grille : exemples dans le changement partiel', () => {
     expect(database.examples).toHaveLength(n); // grille d'origine intacte
   });
 
-  it('modifierGrille (CLI et MCP) : exemples recalculés en essai et après enregistrement, base vide', () => {
+  it('updateRubric (CLI and MCP): examples recomputed in dry run and after saving, empty database', () => {
     const folder = mkdtempSync(join(tmpdir(), 'vigie-emploi-exemples-'));
     const db = openDatabase(':memory:');
     initializeRubric(db, folder);
@@ -192,7 +192,7 @@ describe('grille : exemples dans le changement partiel', () => {
   });
 });
 
-describe('remplissage des pages du CV', () => {
+describe('fill of the CV pages', () => {
   const page = (high: number, low: number) => ({ height: 842, text: { high, low } });
 
   it('deux pages pleines : aucun avertissement', () => {
@@ -201,26 +201,26 @@ describe('remplissage des pages du CV', () => {
     expect(a.warnings).toEqual([]);
   });
 
-  it('page 1 à moitié vide avant la page 2 : saut de page mal placé', () => {
+  it('page 1 half empty before page 2: badly placed page break', () => {
     const a = fill([page(30, 520), page(30, 812)]);
     expect(a.pages[0].fill).toBeLessThan(THRESHOLD_PAGE_FULL);
     expect(a.warnings.join(' ')).toMatch(/Page 1 .*saut de page/);
   });
 
-  it('dernière page trop vide : avertissement ; à moitié : simple remarque', () => {
+  it('last page too empty: warning; half full: simple remark', () => {
     expect(fill([page(30, 812), page(30, 300)]).warnings.join(' ')).toMatch(/Dernière page \(2\).*beaucoup de vide/);
     const r = fill([page(30, 812), page(30, 500)]);
     expect(r.pages[1].fill).toBe(60);
     expect(r.warnings.join(' ')).toMatch(/^Remarque : dernière page \(2\) remplie à 60 %/);
   });
 
-  it('une seule page : pas d’avertissement de dernière page ; page sans texte : 0 %', () => {
+  it('a single page: no last-page warning; page without text: 0 %', () => {
     expect(fill([page(30, 400)]).warnings).toEqual([]);
     expect(fill([page(30, 812), { height: 842, text: null }]).pages[1].fill).toBe(0);
   });
 });
 
-describe('ingerer_emails : ce qu’il faut dire à l’utilisateur', () => {
+describe('ingest_emails: what to tell the user', () => {
   const summary = (x: Partial<SummaryIngest>): SummaryIngest => ({
     files: 3,
     files_deleted: 3,
@@ -244,7 +244,7 @@ describe('ingerer_emails : ce qu’il faut dire à l’utilisateur', () => {
     ...x,
   });
 
-  it('annonce les .eml supprimés et les erreurs, avec l’offre concernée', () => {
+  it('announces the deleted .eml files and the errors, with the offer concerned', () => {
     const r = presentIngestion(
       summary({ errors: [{ url: 'https://www.hellowork.com/fr-fr/emplois/1.html', message: 'JSON-LD JobPosting absent de la page' }] }),
     ) as { to_tell: string[]; errors: { offer: number }[] };
@@ -253,7 +253,7 @@ describe('ingerer_emails : ce qu’il faut dire à l’utilisateur', () => {
     expect(r.errors[0]).toMatchObject({ offer: 7, message: 'JSON-LD JobPosting absent de la page' });
   });
 
-  it('garder: true : e-mails conservés ; détail plafonné', () => {
+  it('keep: true: e-mails kept; capped detail', () => {
     const many = Array.from({ length: 200 }, (_, i) => ({ id: i, source: 'linkedin', url: `u${i}`, title: `T${i}`, company: null, status: 'new' }));
     const r = presentIngestion(summary({ files_deleted: 0, detail: { added: many, dismissed: [], duplicates: [] } }), { keep: true }) as {
       to_tell: string[];

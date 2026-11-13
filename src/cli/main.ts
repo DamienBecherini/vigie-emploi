@@ -1,6 +1,6 @@
-// Interface en ligne de commande de vigie-emploi (pensée pour être pilotée par une IA : sorties JSON stables).
-// Les messages suivent la langue configurée (clé « langue », français par défaut) ; les noms des commandes,
-// des options et des statuts restent en français, et les sorties --json ne changent pas avec la langue.
+// Command-line interface of vigie-emploi (designed to be driven by an AI: stable JSON outputs).
+// Messages follow the configured language ("language" key, French by default); command, option and
+// status names are English identifiers, and the --json outputs do not change with the language.
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { loadConfig, languageConfigured, normalizeLanguage, type Config } from '../core/config.ts';
@@ -100,7 +100,7 @@ function table(headers: string[], lines: string[][]): string {
   return [line(headers), widths.map((w) => '-'.repeat(w)).join('  '), ...lines.map(line)].join('\n');
 }
 
-/** Date d'un événement : « 05/11/2026 14 h 30 » (français) ou « 05/11/2026 14:30 » (anglais). */
+/** Date of an event: "05/11/2026 14 h 30" (French) or "05/11/2026 14:30" (English). */
 function dateEvent(at: string): string {
   const m = at.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!m) return at;
@@ -191,7 +191,7 @@ function comma(n: number, d = 2): string {
   return decimal(n, languageCurrent(), d);
 }
 
-/** Décomposition d'une note : un critère par ligne, puis règles et drapeaux. */
+/** Breakdown of a score: one criterion per line, then rules and flags. */
 function linesBreakdown(d: Breakdown): string[] {
   const l = d.criteria.map(
     (c) =>
@@ -556,7 +556,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   tag(args) {
-    // Analyse manuelle : « -retrait » ne doit pas être pris pour une option.
+    // Manual parsing: "-removal" must not be taken for an option.
     const opts: Values = {};
     const rest: string[] = [];
     for (let i = 0; i < args.length; i++) {
@@ -756,7 +756,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
 
   async mcp(args) {
     const { v } = analyze(args, {});
-    // Le serveur démarre même sans espace (dossier par défaut, outil initialiser_espace) : pas de contexte() ici.
+    // The server starts even without a workspace (default folder, initialize_workspace tool): no context() here.
     const { startMcp } = await import('../mcp/server.ts');
     await startMcp({ dataDir: v.data as string | undefined, fileConfig: v.config as string | undefined });
   },
@@ -853,7 +853,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
         ? ` (${t('cli.cv.fill', { rate: r.fill.map((x) => t('core.pages.percent', { pc: x })).join(', ') })})`
         : '';
       console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.exceeded') : ''}`);
-      // Lignes lues par les outils et l'IA (HTML, PDF, IMAGE, PAGES) : mêmes libellés dans les deux langues.
+      // Lines read by the tools and the AI (HTML, PDF, IMAGE, PAGES): same labels in both languages.
       if (results.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${rate}`);
       else if (rate) console.log(`    ${rate.trim()}`);
       for (const a of r.warnings) console.log(`    ! ${a}`);
@@ -865,7 +865,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 };
 
-/** Valeur d'une option (--nom valeur ou --nom=valeur) lue avant l'analyse complète. */
+/** Value of an option (--name value or --name=value) read before the full parsing. */
 function optionRaw(argv: string[], name: string): string | undefined {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === `--${name}`) return argv[i + 1];
@@ -875,8 +875,8 @@ function optionRaw(argv: string[], name: string): string | undefined {
 }
 
 /**
- * Langue des messages : --langue d'init (l'espace qu'on crée), sinon la configuration (--data, --config,
- * VIGIE_EMPLOI_LANGUAGE, fichier), sinon le français.
+ * Language of the messages: init's --language (the workspace being created), otherwise the configuration (--data, --config,
+ * VIGIE_EMPLOI_LANGUAGE, file), otherwise French.
  */
 function languageOfMessages(cmd: string | undefined, args: string[]) {
   const raw = cmd === 'init' ? optionRaw(args, 'language') : undefined;

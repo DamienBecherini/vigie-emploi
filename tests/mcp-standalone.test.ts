@@ -1,5 +1,5 @@
-// Serveur MCP autonome : un client sans accès aux fichiers ni au terminal (Claude Desktop…) fait tout le parcours
-// par le serveur : création de l'espace, consignes en prompts, fichiers confinés, CV en PDF, comptage.
+// Standalone MCP server: a client without access to files nor to a terminal (Claude Desktop…) does the whole journey
+// through the server: creation of the workspace, instructions as prompts, confined files, CV as PDF, counting.
 import { appendFileSync, copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -32,7 +32,7 @@ function textPrompt(p: { messages: { content: unknown }[] }): string {
   return p.messages.map((m) => (m.content as { text: string }).text).join('\n');
 }
 
-describe('serveur MCP autonome (en mémoire)', () => {
+describe('standalone MCP server (in memory)', () => {
   const workspace = join(root, 'ma-recherche');
   let state: StateMcp;
   let client: Client;
@@ -50,7 +50,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
     state.db?.close();
   });
 
-  it('démarre sans espace : outils en erreur claire, prompt de démarrage qui propose de le créer', async () => {
+  it('starts without a workspace: tools with a clear error, onboarding prompt that offers to create it', async () => {
     expect(state.db).toBeNull();
     expect(existsSync(workspace)).toBe(false);
     const stateWorkspace = json(await call('workspace_state'));
@@ -72,13 +72,13 @@ describe('serveur MCP autonome (en mémoire)', () => {
     expect(textPrompt(other)).toMatch(/prompt « demarrage »/);
   });
 
-  it('liste les prompts des consignes de l’espace', async () => {
+  it('lists the prompts of the workspace instructions', async () => {
     const { prompts } = await client.listPrompts();
     expect(prompts.map((p) => p.name).sort()).toEqual(['onboarding', 'prepare-go', 'process-emails', 'targeted-cv']);
     expect(prompts.find((p) => p.name === 'targeted-cv')!.arguments?.map((a) => a.name)).toEqual(['offer']);
   });
 
-  it('initialiser_espace crée l’espace et le serveur s’y installe', async () => {
+  it('initialize_workspace creates the workspace and the server settles in it', async () => {
     const inApp = (await call('initialize_workspace', { folder: join(ROOT, 'dry-run-workspace') })) as Result;
     expect(inApp.isError).toBe(true);
     expect(text(inApp)).toMatch(/dossier de l'application/);
@@ -97,12 +97,12 @@ describe('serveur MCP autonome (en mémoire)', () => {
     expect(text(again)).toMatch(/existe déjà/);
   });
 
-  it('les prompts lisent les consignes sur le disque à chaque appel', async () => {
+  it('the prompts read the instructions from the disk at each call', async () => {
     const p = textPrompt(await client.getPrompt({ name: 'onboarding' }));
     expect(p).toContain('AGENTS.md');
     expect(p).toContain("# Consignes pour l'IA");
     expect(p).toContain('# Démarrage — consignes pour l');
-    expect(p).toContain(workspace.replace(/\\/g, '/')); // marqueurs {{WORKSPACE}} remplacés par init
+    expect(p).toContain(workspace.replace(/\\/g, '/')); // {{WORKSPACE}} markers replaced by init
     expect(p).not.toMatch(/\{\{\w+\}\}/);
     expect(p).toMatch(/lire_fichier/);
 
@@ -124,7 +124,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
     expect((r.contents[0] as { text: string }).text).toContain('Règles non négociables');
   });
 
-  it('écrit puis relit, signale un remplacement, refuse les chemins hors espace et data/', async () => {
+  it('writes then reads back, reports a replacement, refuses paths outside the workspace and data/', async () => {
     const first = json(await call('write_file', { path: 'candidatures/acme/dossier-candidature.md', content: '# Acme\n' }));
     expect(first).toMatchObject({ existed: false });
     expect(text(await call('read_file', { path: 'candidatures/acme/dossier-candidature.md' }))).toBe('# Acme\n');
@@ -145,7 +145,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
     expect(json(await call('move_file', { source: 'candidatures/acme/dossier-candidature.md', destination: 'candidatures/acme-dev/dossier-candidature.md' }))).toMatchObject({ ok: true });
   });
 
-  it('lit le texte d’un PDF déposé et renvoie une image comme image', async () => {
+  it('reads the text of a dropped PDF and returns an image as an image', async () => {
     copyFileSync(join(ROOT, 'docs', 'exemples', 'CV-damien-becherini-sobre.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
     const pdf = text(await call('read_file', { path: 'a-deposer/CV.pdf' }));
     expect(pdf).toMatch(/PDF, 2 page\(s\), texte extrait/);
@@ -158,7 +158,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
     expect(img.content[1].mimeType).toBe('image/png');
   });
 
-  it('compte les caractères d’un texte ou d’un fichier, liste et choisit les gabarits', async () => {
+  it('counts the characters of a text or a file, lists and chooses the templates', async () => {
     expect(json(await call('count', { text: 'Bonjour à vous' }))).toMatchObject({ blocks: [{ characters: 14, words: 3 }] });
     const f = json(await call('count', { path: 'candidatures/acme-dev/dossier-candidature.md' }));
     expect(f).toMatchObject({ file: 'candidatures/acme-dev/dossier-candidature.md', blocks: [{ characters: 6 }] });
@@ -173,12 +173,12 @@ describe('serveur MCP autonome (en mémoire)', () => {
   });
 });
 
-/** Une capture PNG livrée dans docs/captures. */
+/** A PNG capture shipped in docs/captures. */
 function readdirPng(): string {
   return readdirSync(join(ROOT, 'docs', 'captures')).find((n) => n.endsWith('.png'))!;
 }
 
-describe('serveur MCP autonome (stdio, bout à bout)', () => {
+describe('standalone MCP server (stdio, end to end)', () => {
   const workspace = join(root, 'dry-run-stdio');
   let client: Client;
   const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args });
@@ -198,7 +198,7 @@ describe('serveur MCP autonome (stdio, bout à bout)', () => {
     await client?.close();
   });
 
-  it('initialize → prompts → initialiser_espace → écrire / lire → generer_cv avec capture', async () => {
+  it('initialize → prompts → initialize_workspace → write / read → generate_cv with capture', async () => {
     expect(client.getServerCapabilities()).toMatchObject({ tools: {}, prompts: {}, resources: {} });
     expect(client.getInstructions()).toMatch(/initialiser_espace/);
     const { prompts } = await client.listPrompts();
@@ -212,13 +212,13 @@ describe('serveur MCP autonome (stdio, bout à bout)', () => {
     expect(json(await call('write_file', { path: 'a-deposer/notes.md', content: 'Mes notes\n' }))).toMatchObject({ existed: false });
     expect(text(await call('read_file', { path: 'a-deposer/notes.md' }))).toBe('Mes notes\n');
 
-    if (!findBrowser()) return; // pas de Chrome / Edge : la génération du PDF ne peut pas être essayée ici
+    if (!findBrowser()) return; // no Chrome / Edge: the PDF generation cannot be tried here
     const r = (await call('generate_cv', { path: 'cv/_exemple-structure.md', capture: true })) as Result;
     expect(r.isError, text(r)).toBeFalsy();
     const info = JSON.parse(r.content[0].text!) as Record<string, unknown>;
     expect(info).toMatchObject({ ok: true, pdf: 'cv/_exemple-structure.pdf', pages: 2, exceeded_2_pages: false, pdf_existed: false, template: 'cv/gabarit' });
     expect(existsSync(join(workspace, 'cv', '_exemple-structure.pdf'))).toBe(true);
-    // Remplissage mesuré sur le PDF réel : une valeur en % par page.
+    // Fill measured on the real PDF: one value in % per page.
     expect(info.fill).toHaveLength(2);
     for (const p of info.fill as string[]) expect(p).toMatch(/^page \d : \d{1,3} %$/);
     expect(Array.isArray(info.warnings)).toBe(true);

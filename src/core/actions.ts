@@ -1,5 +1,5 @@
-// Opérations de haut niveau partagées par la CLI, l'API du tableau de bord et le serveur MCP.
-// Chaque fonction valide ses entrées et lève une Error au message lisible par l'utilisateur.
+// High-level operations shared by the CLI, the dashboard API and the MCP server.
+// Each function validates its inputs and throws an Error with a message the user can read.
 import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers } from './queries.ts';
@@ -21,7 +21,7 @@ import { STATUSES_TO_PROCESS, type Status } from './statuses.ts';
 import { dateFr } from './text.ts';
 import { t } from '../i18n/index.ts';
 
-/** Statuts d'avant l'envoi : une candidature envoyée ou « candidater » les font avancer. */
+/** Statuses before sending: a sent application or "apply" moves them forward. */
 export const STATUSES_BEFORE_GO: Status[] = ['new', 'to-read', 'scored', 'dismissed'];
 
 export function offerOrError(db: Database, id: number): Offer {
@@ -45,24 +45,24 @@ export interface OfferToRead {
   compensation: string | null;
   remote: string | null;
   received_at: string | null;
-  /** description : texte déjà en base ; navigateur : ouvrir l'URL ; humain : page protégée, demander le texte. */
+  /** description: text already in the database; browser: open the URL; human: protected page, ask for the text. */
   reading: 'description' | 'browser' | 'human';
-  /** Longueur de la description en base (0 si aucune). */
+  /** Length of the description in the database (0 if none). */
   length_description: number;
-  /** Absente en mode résumé (descriptions: false). */
+  /** Absent in summary mode (descriptions: false). */
   description?: string | null;
 }
 
 export interface OptionsToRead {
-  /** Offres par page (500 par défaut). */
+  /** Offers per page (500 by default). */
   limit?: number;
-  /** Page (1 par défaut). */
+  /** Page (1 by default). */
   page?: number;
-  /** false : résumé sans description (lire ensuite chaque offre avec son id). true par défaut. */
+  /** false: summary without description (then read each offer with its id). true by default. */
   descriptions?: boolean;
-  /** Descriptions entières (sinon tronquées à `longueur`). */
+  /** Whole descriptions (otherwise truncated to `length`). */
   full?: boolean;
-  /** Longueur maximale d'une description tronquée (2 500 par défaut). */
+  /** Maximum length of a truncated description (2,500 by default). */
   length?: number;
 }
 
@@ -70,12 +70,12 @@ export interface ResultToRead {
   total: number;
   page: number;
   pages: number;
-  /** Offres à lire après cette page. */
+  /** Offers to read after this page. */
   remaining: number;
   offers: OfferToRead[];
 }
 
-/** Offres à traiter (nouvelle, à lire) sans note, des plus anciennes aux plus récentes, par pages. */
+/** Offers to process (new, to read) without a score, from the oldest to the most recent, by pages. */
 export function offersToRead(db: Database, o: OptionsToRead = {}): ResultToRead {
   const r = listOffers(db, { statuses: STATUSES_TO_PROCESS, unscored: true, size: o.limit ?? 500, page: o.page, sort: 'id', order: 'asc' });
   const withDescriptions = o.descriptions !== false;
@@ -104,13 +104,13 @@ export function offersToRead(db: Database, o: OptionsToRead = {}): ResultToRead 
 }
 
 export interface OptionsScore {
-  /** Charge la grille courante (appelé seulement si une entrée a des critères). */
+  /** Loads the current rubric (called only if an input has criteria). */
   rubric?: () => VersionRubric | null;
-  /** Essai : calcule et renvoie les notes sans rien enregistrer. */
+  /** Dry run: computes and returns the scores without saving anything. */
   dry_run?: boolean;
 }
 
-/** Enregistre des notes au format des lots (dans une transaction : tout ou rien). */
+/** Saves scores in the batch format (in a transaction: all or nothing). */
 export function scoreOffers(db: Database, inputs: InputBatch[], origin: string, o: OptionsScore = {}): ResultScoring[] {
   if (!inputs.length) throw new Error(t('core.noneScore'));
   const rubric = inputs.some(isCriteriaScore) ? (o.rubric?.() ?? null) : null;
@@ -130,17 +130,17 @@ export function scoreOffers(db: Database, inputs: InputBatch[], origin: string, 
 }
 
 export interface InputSubScores {
-  /** Sous-notes modifiées (critères notés par l'IA) ; null retire la sous-note (valeur neutre). */
+  /** Modified sub-scores (criteria scored by the AI); null removes the sub-score (neutral value). */
   criteria?: Record<string, { score: number | string; justification?: string | null } | null>;
-  /** Données d'entrée des critères calculés ; null efface une valeur (retour à la déduction depuis l'offre). */
+  /** Inputs of the computed criteria; null clears a value (back to the deduction from the offer). */
   inputs?: { [K in keyof Inputs]?: Inputs[K] | null };
   blockers?: string[];
 }
 
 /**
- * Correction des sous-notes depuis l'interface : part de la dernière note (sous-notes, entrées, règles,
- * « colle », « ecarts »), applique les changements et ajoute une note à l'historique (origine interface).
- * Sur une note globale de l'ancienne grille, les critères non saisis valent la valeur neutre.
+ * Correction of the sub-scores from the interface: starts from the last score (sub-scores, inputs, rules,
+ * "fit", "gaps"), applies the changes and adds a score to the history (origin interface).
+ * On an overall score of the old rubric, the criteria not entered get the neutral value.
  */
 export function updateSubScores(db: Database, id: number, s: InputSubScores, origin: string, rubric: VersionRubric): ResultScoring {
   offerOrError(db, id);
@@ -195,12 +195,12 @@ export interface PreparationApplication {
   steps: string[];
 }
 
-/** Statuts de fin : « candidater » les rouvre (l'utilisateur reprend l'offre). */
+/** End statuses: "apply" reopens them (the user takes the offer up again). */
 const REOPENABLE_STATUSES: Status[] = ['withdrawn', 'rejected', 'closed'];
 
 /**
- * Passe l'offre en « go » et rassemble ce qu'il faut pour candidater. Une candidature en cours
- * (go, envoyee, relancee, entretien) garde son statut ; une offre abandonnée, refusée ou close est rouverte.
+ * Moves the offer to "go" and gathers what is needed to apply. An application in progress
+ * (go, sent, followed-up, interview) keeps its status; a withdrawn, rejected or closed offer is reopened.
  */
 export function prepareApplication(db: Database, dataDir: string, id: number, origin: string): PreparationApplication {
   const before = offerOrError(db, id);
@@ -223,8 +223,8 @@ export function prepareApplication(db: Database, dataDir: string, id: number, or
 }
 
 /**
- * Met à jour la candidature d'une offre. Avec une date d'envoi, une offre pas encore envoyée passe
- * en « envoyee » (commentaire : canal et date).
+ * Updates the application of an offer. With a sending date, an offer not sent yet moves
+ * to "sent" (comment: channel and date).
  */
 export function trackApplication(
   db: Database,
@@ -234,7 +234,7 @@ export function trackApplication(
 ): { offer: DetailOffer; status_added: Status | null } {
   const o = offerOrError(db, id);
   const send = fields.sent_at?.trim();
-  // « 02/11/2026 » est rangé en 2026-11-02 ; un texte libre (« ≈ 25/08/2026 ») est gardé tel quel.
+  // "02/11/2026" is stored as 2026-11-02; a free text ("≈ 25/08/2026") is kept as it is.
   const fieldsNorm: FieldsApplication = {
     ...fields,
     sent_at: send && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(send) ? dateFr(send) : fields.sent_at,

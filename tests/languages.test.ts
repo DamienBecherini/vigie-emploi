@@ -1,6 +1,6 @@
-// Ajout d'une langue (docs/ajouter-une-langue.md) : chaque langue déclarée dans LANGUES doit avoir toutes ses
-// ressources. Les clés des dictionnaires (CLI, interface, serveur MCP) sont vérifiées par le compilateur ; ce test couvre les
-// fichiers (modèle d'espace, consignes, grille d'exemple, README) et les textes vides ou restés en français.
+// Adding a language (docs/ajouter-une-langue.md): each language declared in LANGUAGES must have all its
+// resources. The keys of the dictionaries (CLI, interface, MCP server) are checked by the compiler; this test covers the
+// files (workspace template, instructions, sample rubric, README) and the texts left empty or still in French.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -26,8 +26,8 @@ function files(folder: string): string[] {
   return output.sort();
 }
 
-describe('langues déclarées', () => {
-  it('ont une locale valide et un nom, reconnu comme valeur de « langue »', () => {
+describe('declared languages', () => {
+  it('have a valid locale and a name, recognized as a value of “language”', () => {
     for (const l of LANGUAGES) {
       expect(() => new Intl.NumberFormat(LOCALES[l])).not.toThrow();
       expect(NAMES_LANGUAGES[l]).toBeTruthy();
@@ -60,8 +60,8 @@ describe('langues déclarées', () => {
       for (const key of Object.keys(database)) {
         const text = translate(target[key] as never, l, { n: 2 });
         if (!text.trim()) suspicious.push(`${name} ${key} : vide`);
-        // Un texte identique au français est suspect seulement s'il contient des lettres accentuées ou des mots
-        // français courants (les noms propres, sigles et commandes restent identiques à bon droit).
+        // A text identical to the French one is suspicious only if it contains accented letters or common French
+        // words (proper names, acronyms and commands rightly stay identical).
         const fr = translate(database[key] as never, LANGUAGE_DEFAULT, { n: 2 });
         if (text === fr && /[éèêàùç]|\b(le|la|les|des|une|est|pour|avec)\b/i.test(fr)) suspicious.push(`${name} ${key} : identique au français`);
       }

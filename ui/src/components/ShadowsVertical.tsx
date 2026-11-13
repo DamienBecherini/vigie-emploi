@@ -1,8 +1,8 @@
-// Ombres en haut et en bas d'une zone qui défile verticalement, visibles seulement quand il reste du contenu caché
-// de ce côté : on comprend qu'on peut faire défiler la zone. La zone et ces ombres sont dans un même parent relatif.
+// Shadows at the top and at the bottom of a vertically scrolling area, visible only when hidden content remains
+// on that side: one understands that the area can be scrolled. The area and these shadows are in the same relative parent.
 import { useEffect, useState, type RefObject } from 'react';
 
-/** Contenu caché en haut / en bas de la zone (suivi au défilement et aux changements de taille). */
+/** Content hidden at the top / bottom of the area (followed on scroll and on size changes). */
 export function useShadowsVertical(ref: RefObject<HTMLElement | null>, active = true) {
   const [shadows, setShadows] = useState({ high: false, low: false });
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useShadowsVertical(ref: RefObject<HTMLElement | null>, active = 
     el.addEventListener('scroll', measure, { passive: true });
     const obs = new ResizeObserver(measure);
     obs.observe(el);
-    // Contenu qui change sans changer la taille de la zone (liste plus longue, déjà à sa hauteur maximale).
+    // Content that changes without changing the size of the area (longer list, already at its maximum height).
     if (el.firstElementChild) obs.observe(el.firstElementChild);
     const mutations = new MutationObserver(measure);
     mutations.observe(el, { childList: true, subtree: true });
@@ -30,7 +30,7 @@ export function useShadowsVertical(ref: RefObject<HTMLElement | null>, active = 
   return shadows;
 }
 
-/** Les deux ombres, à placer après la zone qui défile, dans son parent `relative` (arrondi de la zone : rounded-md). */
+/** The two shadows, to place after the scrolling area, in its `relative` parent (rounding of the area: rounded-md). */
 export function ShadowsVertical({ high, low }: { high: boolean; low: boolean }) {
   const shadow =
     'pointer-events-none absolute inset-x-px h-4 from-slate-900/15 to-transparent transition-opacity duration-200 dark:from-black/60';

@@ -1,5 +1,5 @@
-// Outils, prompts et ressource du serveur MCP pour un client sans accès aux fichiers ni au terminal (Claude Desktop…) :
-// création de l'espace, consignes de l'espace en prompts, fichiers confinés au dossier de données, CV en PDF, comptage.
+// Tools, prompts and resource of the MCP server for a client without access to files nor to a terminal (Claude Desktop…):
+// creation of the workspace, workspace instructions as prompts, files confined to the data folder, CV as PDF, counting.
 import { pathToFileURL } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -21,13 +21,13 @@ import { LANGUAGES, type Language } from '../i18n/index.ts';
 
 const slash = (p: string) => p.replace(/\\/g, '/');
 
-/** Image transmise à l'IA : au-delà, la plupart des clients la refusent. */
+/** Image passed to the AI: beyond this, most clients refuse it. */
 const IMAGE_MAX = 5 * 1024 * 1024;
 
-/** Fichier texte lu par morceaux au-delà de cette taille (réponse lisible en entier par l'IA). */
+/** Text file read in chunks beyond this size (response the AI can read in full). */
 const CHUNK_TEXT = 24_000;
 
-/** Consignes de l'espace exposées en prompts : nom → fichiers lus sur le disque à chaque appel. */
+/** Workspace instructions exposed as prompts: name → files read from the disk at each call. */
 const PROMPTS: Record<string, { title: Bilingual; description: Bilingual; file: string; instruction: Bilingual }> = {
   onboarding: {
     title: bt('workspace.PROMPTS.onboarding.title'),
@@ -55,7 +55,7 @@ const PROMPTS: Record<string, { title: Bilingual; description: Bilingual; file: 
   },
 };
 
-/** Développe « ~ » et résout un dossier relatif depuis le dossier personnel (le dossier courant d'un client MCP est imprévisible). */
+/** Expands "~" and resolves a relative folder from the home folder (the current folder of an MCP client is unpredictable). */
 function folderChosen(d: string | undefined): string {
   if (!d?.trim()) return folderByDefault();
   const t = d.trim().replace(/^~(?=$|[\\/])/, homedir());
@@ -70,11 +70,11 @@ function readInstruction(folder: string, file: string): string {
 
 export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () => string): void {
   const reading = { readOnlyHint: true, openWorldHint: false };
-  /** Dossier qu'une prochaine session retrouvera sans rien changer à la configuration du client. */
+  /** Folder that a next session will find again without changing anything in the client's configuration. */
   const folderOfOnboarding = resolve(state.config.dataDir);
 
   // ---------------------------------------------------------------------------------------------
-  // Prompts et ressource : consignes de l'espace, relues sur le disque à chaque appel.
+  // Prompts and resource: workspace instructions, read again from the disk at each call.
 
   for (const [name, p] of Object.entries(PROMPTS)) {
     const argsSchema =
@@ -261,7 +261,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
     },
     onContent(async ({ path, start }): Promise<CallToolResult> => {
       const l = readWorkspace(data(), path);
-      /** Texte entier, ou le morceau demandé s'il est long. */
+      /** Whole text, or the requested chunk if it is long. */
       const chunk = (text: string): CallToolResult => {
         const d = start ?? 0;
         if (d === 0 && text.length <= CHUNK_TEXT) return { content: [{ type: 'text', text: text }] };
@@ -347,9 +347,9 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   );
 
   // ---------------------------------------------------------------------------------------------
-  // CV et texte
+  // CV and text
 
-  /** Lien cliquable vers un fichier local (file:///D:/… sous Windows, file:///home/… ailleurs), espaces et accents encodés. */
+  /** Clickable link to a local file (file:///D:/… on Windows, file:///home/… elsewhere), spaces and accents encoded. */
   const linkFile = (absolute: string) => pathToFileURL(absolute).href;
 
   server.registerTool(

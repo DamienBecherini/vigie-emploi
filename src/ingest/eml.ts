@@ -1,4 +1,4 @@
-// Lecture d'un e-mail d'alertes (.eml) : MIME, quoted-printable, base64, jeux de caractères (postal-mime).
+// Reading of an alert e-mail (.eml): MIME, quoted-printable, base64, character sets (postal-mime).
 import PostalMime from 'postal-mime';
 import { identifierLink, textHtml, decodeHTML, type Source } from '../core/links.ts';
 import { dateIso } from '../core/text.ts';
@@ -8,11 +8,11 @@ export interface OfferEmail {
   siteId: string;
   url: string;
   title: string;
-  /** Objet de l'e-mail d'où vient l'offre. */
+  /** Subject of the e-mail the offer comes from. */
   subject: string;
   /** Date de l'e-mail (AAAA-MM-JJ). */
   receivedAt: string | null;
-  /** Champs séparés du titre quand l'e-mail les colle ensemble (Glassdoor). */
+  /** Fields separated from the title when the e-mail glues them together (Glassdoor). */
   company?: string;
   location?: string;
   compensation?: string;
@@ -22,19 +22,19 @@ export interface EmailRead {
   subject: string;
   date: string | null;
   offers: OfferEmail[];
-  /** Accusé de réception d'une candidature déjà envoyée (pas une alerte) : ses liens ne sont pas de nouvelles offres. */
+  /** Acknowledgment of an application already sent (not an alert): its links are not new offers. */
   confirmation: boolean;
 }
 
-/** Objets des accusés de réception de candidature (LinkedIn, Free-Work, Indeed, Welcome to the Jungle, ATS…). */
+/** Subjects of application acknowledgments (LinkedIn, Free-Work, Indeed, Welcome to the Jungle, ATS…). */
 export const SUBJECT_CONFIRMATION =
   /confirmation de (votre |ta )?candidature|(votre|ta) candidature (a (bien )?été|est) (envoyée|transmise|reçue|enregistrée)|candidature (bien )?(envoyée|reçue|transmise)|nous avons (bien )?reçu (votre|ta) candidature|merci pour (votre|ta) candidature|application (was |has been )?(sent|submitted|received)|thank you for (your )?appl/i;
 
-/** Textes de liens qui ne sont pas des intitulés d'offres. */
+/** Link texts that are not job titles. */
 const LINKS_GENERIC =
   /^(voir l|voir plus|en savoir plus|postuler|candidater|ne correspond pas|afficher plus|voir toutes|offres? d.emploi similaires|emplois (de|chez|-)|chercher un autre|votre alerte|view job|apply|see all|see more|plus d.offres|modifier|se désabonner|désinscri)/i;
 
-/** Extrait les offres d'un message .eml (contenu brut). Les doublons internes au message sont fusionnés. */
+/** Extracts the offers of a .eml message (raw content). Duplicates inside the message are merged. */
 export async function readEmail(content: Buffer | string): Promise<EmailRead> {
   const msg = await PostalMime.parse(content);
   const subject = msg.subject ?? '';
@@ -58,7 +58,7 @@ export async function readEmail(content: Buffer | string): Promise<EmailRead> {
       keep(m[1], textHtml(m[2]));
     }
   } else if (msg.text) {
-    // Version texte : « Intitulé » sur la ligne qui précède l'URL, quand il y en a une.
+    // Text version: "Job title" on the line before the URL, when there is one.
     const lines = msg.text.split(/\r?\n/);
     lines.forEach((line, i) => {
       for (const m of line.matchAll(/https?:\/\/[^\s<>"]+/g)) {
@@ -67,7 +67,7 @@ export async function readEmail(content: Buffer | string): Promise<EmailRead> {
       }
     });
   }
-  // Collective : les liens disent « Voir l'offre » ; l'intitulé est dans le texte (« Offre : … Postuler »).
+  // Collective: the links say "Voir l'offre"; the job title is in the text ("Offre : … Postuler").
   const list = [...offers.values()];
   if (list.length === 1 && !list[0].title && msg.html) {
     const m = textHtml(msg.html).match(/Offre\s*:\s*(.+?)\s+Postuler\b/);
@@ -79,7 +79,7 @@ export async function readEmail(content: Buffer | string): Promise<EmailRead> {
   return { subject, date, offers: list, confirmation: SUBJECT_CONFIRMATION.test(subject) };
 }
 
-/** Champs tirés du bloc d'une offre Glassdoor, dont le lien contient tout à la suite. */
+/** Fields taken from the block of a Glassdoor offer, whose link contains everything in a row. */
 export interface BlockGlassdoor {
   title: string;
   company?: string;
@@ -87,12 +87,12 @@ export interface BlockGlassdoor {
   compensation?: string;
 }
 
-/** Mentions de genre qui terminent l'intitulé (le lieu suit). */
+/** Gender mentions that end the job title (the location follows). */
 const KIND = /^(.*?(?:\(?\b(?:H\s*\/\s*F|F\s*\/\s*H)(?:\s*\/\s*[NX])?\)?|\((?:m\s*\/\s*w\s*\/\s*d|w\s*\/\s*m\s*\/\s*d|f\s*\/\s*m\s*\/\s*d)\)))\s+(.+)$/i;
 
 /**
- * Glassdoor met dans le lien : « Entreprise 4.0 ★ Intitulé (H/F) Lieu 50 k € - 65 k € (Estimation de l'employeur) 17h
- * Candidature facile ». On sépare ce qui peut l'être sans risque ; le reste reste dans l'intitulé.
+ * Glassdoor puts in the link: "Entreprise 4.0 ★ Intitulé (H/F) Lieu 50 k € - 65 k € (Estimation de l'employeur) 17h
+ * Candidature facile". What can be split without risk is split; the rest stays in the job title.
  */
 export function splitGlassdoor(raw: string): BlockGlassdoor {
   let t = raw.replace(/\s+/g, ' ').trim();

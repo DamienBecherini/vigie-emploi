@@ -1,5 +1,5 @@
-// Lecture du JSON-LD JobPosting des pages publiques (Hellowork, Free-Work) et des données de page Collective.
-// L'application ne télécharge jamais LinkedIn, Indeed ni Glassdoor (CGU, protections anti-robots).
+// Reading of the JobPosting JSON-LD of the public pages (Hellowork, Free-Work) and of the Collective page data.
+// The application never downloads LinkedIn, Indeed nor Glassdoor (terms of use, anti-bot protections).
 import { textHtmlLines } from '../core/links.ts';
 import { dateIso } from '../core/text.ts';
 
@@ -55,7 +55,7 @@ const CONTRACTS: Record<string, string> = {
 const CONTRACTS_COLLECTIVE: Record<string, string> = { FREELANCE: 'Freelance', PERMANENT: 'CDI', FIXED_TERM: 'CDD', INTERNSHIP: 'Stage' };
 const MODES_COLLECTIVE: Record<string, string> = { REMOTE: 'full remote', HYBRID: 'hybride', ON_SITE: 'sur site', ONSITE: 'sur site' };
 
-/** Offre d'une page Collective (Next.js : props.pageProps.project du script __NEXT_DATA__). */
+/** Offer of a Collective page (Next.js: props.pageProps.project of the __NEXT_DATA__ script). */
 export function extractCollective(page: string): DetailJsonLd | null {
   const m = page.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (!m) return null;
@@ -74,7 +74,7 @@ export function extractCollective(page: string): DetailJsonLd | null {
     p.minSalary || p.maxSalary
       ? `${[p.minSalary, p.maxSalary].filter(Boolean).join('-')} ${String(p.salaryCurrency ?? '€')} ${String(p.salaryFrequency ?? '')}`.trim()
       : null;
-  // Budget libre (« 500 - 524€ », « 650€/jour », « CDI 51-55K / Freelance : 500-520 TJM ») : « /j » seulement s'il n'a pas d'unité.
+  // Free budget ("500 - 524€", "650€/jour", "CDI 51-55K / Freelance : 500-520 TJM"): "/j" only if it has no unit.
   const raw = typeof p.budgetBrief === 'string' ? p.budgetBrief.trim() : '';
   const budget = raw ? (/jour|\/j\b|tjm|k€|k\b|an\b|mois|mensuel|annuel/i.test(raw) ? raw : `${raw}/j`) : null;
   const contracts = ((p.contractTypes as string[] | undefined) ?? []).map((c) => CONTRACTS_COLLECTIVE[c] ?? c);
@@ -91,7 +91,7 @@ export function extractCollective(page: string): DetailJsonLd | null {
   };
 }
 
-/** Extrait l'offre d'une page HTML contenant un JSON-LD JobPosting (ou, à défaut, des données de page Collective). */
+/** Extracts the offer of an HTML page containing a JobPosting JSON-LD (or, failing that, Collective page data). */
 export function extractJsonLd(page: string): DetailJsonLd | null {
   for (const m of page.matchAll(/<script[^>]*ld(?:\+|&#x2B;)json[^>]*>([\s\S]*?)<\/script>/gi)) {
     let d: unknown;
@@ -103,7 +103,7 @@ export function extractJsonLd(page: string): DetailJsonLd | null {
     const jp = findJobPosting(d);
     if (!jp) continue;
     let description = textHtmlLines(String(jp.description ?? ''));
-    description = description.split(/\n?\s*Bienvenue chez /)[0].trim(); // Hellowork répète la présentation de l'entreprise
+    description = description.split(/\n?\s*Bienvenue chez /)[0].trim(); // Hellowork repeats the company presentation
     const locationRaw = jp.jobLocation as Json | Json[] | undefined;
     const location = (Array.isArray(locationRaw) ? locationRaw[0] : locationRaw) ?? {};
     const address = ((location as Json).address ?? {}) as Json;

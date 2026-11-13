@@ -7,7 +7,7 @@ import { ShadowsVertical, useShadowsVertical } from './ShadowsVertical.tsx';
 
 type Update = (updated: Partial<Record<KeyUrl, string | null>>) => void;
 
-/** Champ texte écrit dans l'URL après une courte pause de frappe. */
+/** Text field written into the URL after a short typing pause. */
 function FieldText(props: { key: KeyUrl; value: string; update: Update; label: string; type?: string; placeholder?: string; step?: string }) {
   const id = useId();
   const [local, setLocal] = useState(props.value);
@@ -57,8 +57,8 @@ function Cases(props: {
   return (
     <fieldset className="min-w-0">
       <legend className="label">{props.legend}</legend>
-      {/* Liste qui défile : encadrée pour qu'on en voie les bords, ombrée en haut / en bas quand des cases sont
-          cachées de ce côté ; sur téléphone, une bande libre à droite laisse le pouce faire défiler le tiroir. */}
+      {/* Scrolling list: framed so that its edges show, shaded at the top / bottom when boxes are
+          hidden on that side; on a phone, a free strip on the right lets the thumb scroll the drawer. */}
       <div className="relative max-md:mr-10">
       <div ref={list} className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-600">
         {props.options.map((o) => (
@@ -86,7 +86,7 @@ export function Filters({ params, update, meta }: { params: URLSearchParams; upd
   const nByStatus = new Map((meta?.statuses ?? []).map((s) => [s.value, s.n]));
   const active = KEYS_FILTERS.filter((k) => params.has(k)).length;
   return (
-    // Sur téléphone, plus d'espace entre les blocs : de quoi poser le pouce hors des listes qui défilent.
+    // On a phone, more space between the blocks: room to put the thumb outside the scrolling lists.
     <div className="flex flex-col gap-4 max-md:gap-7">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold">{t('filters.title')}{active ? ` (${active})` : ''}</h2>

@@ -1,7 +1,7 @@
-// Notifications poussées à l'interface (Server-Sent Events) : la base ou la boîte de réception a changé.
-// La base est modifiée par d'autres processus (CLI, serveur MCP de l'agent, git) : le serveur surveille
-// le fichier et ne prévient que si les données ont vraiment changé (PRAGMA data_version), sans interroger
-// la base à intervalle régulier. Ses propres écritures (API) sont signalées directement par le serveur.
+// Notifications pushed to the interface (Server-Sent Events): the database or the inbox has changed.
+// The database is modified by other processes (CLI, the agent's MCP server, git): the server watches
+// the file and only notifies when the data really changed (PRAGMA data_version), without polling
+// the database. Its own writes (API) are reported directly by the server.
 import { watch, type FSWatcher } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import type { Database } from '../db/database.ts';
@@ -32,12 +32,12 @@ export class Broadcast {
   }
 }
 
-/** Version des données vue par cette connexion : change quand une AUTRE connexion valide une écriture. */
+/** Data version seen by this connection: changes when ANOTHER connection commits a write. */
 export function versionData(db: Database): number {
   return (db.prepare('PRAGMA data_version').get() as { data_version: number }).data_version;
 }
 
-/** Appelle f au plus une fois par rafale d'appels espacés de moins de delaiMs. */
+/** Calls f at most once per burst of calls spaced less than delayMs apart. */
 export function group(f: () => void, timeoutMs: number): { trigger: () => void; stop: () => void } {
   let timer: NodeJS.Timeout | null = null;
   return {
@@ -58,14 +58,14 @@ export function group(f: () => void, timeoutMs: number): { trigger: () => void; 
 export interface OptionsWatcher {
   db: Database;
   broadcast: Broadcast;
-  /** Fichier SQLite (son dossier est surveillé : la base et son journal). */
+  /** SQLite file (its folder is watched: the database and its journal). */
   database: string;
-  /** Boîte de réception des .eml. */
+  /** Inbox of the .eml files. */
   emails: string;
   timeoutMs?: number;
 }
 
-/** Surveille la base et la boîte de réception ; renvoie la fonction d'arrêt. */
+/** Watches the database and the inbox; returns the stop function. */
 export function watchChanges(o: OptionsWatcher): () => void {
   const timeout = o.timeoutMs ?? 300;
   const observers: FSWatcher[] = [];

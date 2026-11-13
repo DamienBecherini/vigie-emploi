@@ -1,5 +1,5 @@
-// Multilingue (phase B) : modèle d'espace anglais (modele-en), grille d'exemple anglaise, consignes de l'application
-// en anglais, serveur MCP et messages du noyau dans la langue de la configuration.
+// Multilingual (phase B): English workspace template (scaffold-en), English sample rubric, application instructions
+// in English, MCP server and core messages in the configuration's language.
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -22,7 +22,7 @@ const root = mkdtempSync(join(tmpdir(), 'vigie-emploi-i18n-b-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 afterEach(() => defineLanguage('fr'));
 
-/** Fichiers d'un dossier (chemins relatifs, fichiers cachés compris), triés. */
+/** Files of a folder (relative paths, hidden files included), sorted. */
 function tree(folder: string): string[] {
   const files: string[] = [];
   const walk = (d: string) => {
@@ -37,11 +37,11 @@ function tree(folder: string): string[] {
 }
 
 describe('scaffold-en', () => {
-  it('a exactement la même arborescence que modele (un fichier ajouté d’un seul côté fait échouer)', () => {
+  it('has exactly the same tree as scaffold (a file added on one side only makes it fail)', () => {
     expect(tree(join(APP, 'scaffold-en'))).toEqual(tree(join(APP, 'scaffold')));
   });
 
-  it('garde les mêmes marqueurs {{…}} que le modèle français, fichier par fichier', () => {
+  it('keeps the same {{…}} markers as the French template, file by file', () => {
     const markers = (f: string) => [...new Set(readFileSync(f, 'utf8').match(/\{\{\w+\}\}/g) ?? [])].sort();
     for (const f of tree(join(APP, 'scaffold'))) {
       expect(markers(join(APP, 'scaffold-en', f)), f).toEqual(markers(join(APP, 'scaffold', f)));
@@ -53,7 +53,7 @@ describe('init --langue en', () => {
   const workspace = join(root, 'workspace-en');
   const r = initializeWorkspace({ folder: workspace, language: 'en', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
 
-  it('copie modele-en sans marqueur restant, avec le .gitignore', () => {
+  it('copies scaffold-en without a remaining marker, with the .gitignore', () => {
     for (const f of tree(workspace).filter((x) => /\.(md|txt)$/.test(x))) {
       expect(readFileSync(join(workspace, f), 'utf8'), f).not.toMatch(/\{\{\w+\}\}/);
     }
@@ -63,14 +63,14 @@ describe('init --langue en', () => {
     expect(r.warnings.join('\n')).not.toMatch(/French/);
   });
 
-  it('pointe les consignes de l’application vers AGENTS.en.md', () => {
+  it('points the application’s instructions to AGENTS.en.md', () => {
     expect(nameInstructionsApp('en')).toBe('AGENTS.en.md');
     expect(nameInstructionsApp('fr')).toBe('AGENTS.md');
     expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/its instructions: `[^`]+\/AGENTS\.en\.md`/);
     expect(readFileSync(join(workspace, 'procedures', 'traiter-emails.md'), 'utf8')).toContain('/AGENTS.en.md');
   });
 
-  it('installe la grille anglaise, valide', () => {
+  it('installs the English rubric, valid', () => {
     expect(readFileRubric(join(workspace, 'profil', 'grille.json'))?.rubric.name).toBe('Sample grid');
     const c = loadConfig({ cwd: workspace, env: {} });
     const db = openDatabase(c.database);
@@ -81,15 +81,15 @@ describe('init --langue en', () => {
   });
 });
 
-describe('messages du noyau', () => {
-  it('en anglais quand la langue est « en », en français par défaut', () => {
+describe('core messages', () => {
+  it('in English when the language is “en”, in French by default', () => {
     expect(() => readDateEvent('32/13/2026')).toThrow(/^Date invalide/);
     defineLanguage('en');
     expect(() => readDateEvent('pas une date')).toThrow(/^Invalid date: "pas une date" \(expected DD\/MM\/YYYY/);
     expect(readDateEvent('tomorrow', new Date(2026, 10, 12))).toBe('2026-11-13');
   });
 
-  it('erreur de configuration reconnue par son code, message dans la langue de la variable', () => {
+  it('configuration error recognized by its code, message in the variable’s language', () => {
     let e: unknown;
     try {
       loadConfig({ cwd: root, env: { VIGIE_EMPLOI_LANGUAGE: 'en' } });
@@ -101,7 +101,7 @@ describe('messages du noyau', () => {
     expect((e as Error).message).toMatch(/^Data folder not configured/);
   });
 
-  it('compter reconnaît les séparateurs anglais', () => {
+  it('count recognizes the English separators', () => {
     const blocks = countText('Remark\n──── start of message ────\nHello there\n──── end of message ────\nAfter');
     expect(blocks).toEqual([{ start: 'Hello there', characters: 11, words: 2 }]);
   });
@@ -126,7 +126,7 @@ describe('serveur MCP en anglais', () => {
     state.db?.close();
   });
 
-  it('instructions, outils et prompts en anglais', async () => {
+  it('instructions, tools and prompts in English', async () => {
     expect(instructions).toMatch(/^vigie-emploi helps the user/);
     expect(instructions).not.toMatch(/recherche d'emploi/);
     const { tools } = await client.listTools();
@@ -137,7 +137,7 @@ describe('serveur MCP en anglais', () => {
     expect(prompts.find((p) => p.name === 'onboarding')?.title).toBe('Guided onboarding');
   });
 
-  it('erreur d’espace non initialisé en anglais, puis création de l’espace en anglais', async () => {
+  it('workspace not initialized error in English, then creation of the workspace in English', async () => {
     defineLanguage('en');
     const r = (await client.callTool({ name: 'list_offers', arguments: {} })) as { isError?: boolean; content: { text: string }[] };
     expect(r.isError).toBe(true);

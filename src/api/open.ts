@@ -1,16 +1,16 @@
-// Ouverture d'un dossier de l'espace dans l'explorateur de fichiers du système, et détection du « poste local ».
+// Opening of a workspace folder in the system's file explorer, and detection of the "local machine".
 //
-// Une page web ne peut pas ouvrir un dossier local (les liens file:// sont bloqués depuis http://) : c'est donc le
-// serveur qui lance l'explorateur. Il ne le fait que pour une requête venue de la machine où il tourne : ailleurs
-// (téléphone, autre poste), l'explorateur s'ouvrirait sur l'écran de cette machine, pas sur celui de l'utilisateur.
+// A web page cannot open a local folder (file:// links are blocked from http://): so the server
+// launches the explorer. It only does so for a request coming from the machine it runs on: elsewhere
+// (phone, other computer), the explorer would open on that machine's screen, not on the user's.
 import { spawn } from 'node:child_process';
 import type { Context } from 'hono';
 import { getConnInfo } from '@hono/node-server/conninfo';
 
-/** Ouvre un dossier (chemin absolu, déjà vérifié) dans l'explorateur de fichiers. */
+/** Opens a folder (absolute path, already checked) in the file explorer. */
 export type OpenerFolder = (absolute: string) => Promise<void>;
 
-/** Programme qui ouvre un dossier dans l'explorateur, selon le système. */
+/** Program that opens a folder in the explorer, depending on the system. */
 export function programOpening(platform: NodeJS.Platform = process.platform): string {
   if (platform === 'win32') return 'explorer.exe';
   if (platform === 'darwin') return 'open';
@@ -21,7 +21,7 @@ export function openerSystem(platform: NodeJS.Platform = process.platform): Open
   const program = programOpening(platform);
   return (absolute) =>
     new Promise((resolve, reject) => {
-      // Détaché et sans attendre la fin : l'explorateur vit sa vie (explorer.exe rend d'ailleurs le code 1 même réussi).
+      // Detached and without waiting for the end: the explorer lives its own life (explorer.exe even returns code 1 on success).
       const p = spawn(program, [absolute], { detached: true, stdio: 'ignore', windowsHide: false });
       p.once('error', (e) => reject(Object.assign(new Error(e.message), { program })));
       p.once('spawn', () => {
@@ -34,10 +34,10 @@ export function openerSystem(platform: NodeJS.Platform = process.platform): Open
 const ADDRESSES_LOCALES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
 /**
- * La requête vient-elle de la machine où tourne le serveur ? D'après l'adresse de la connexion TCP (pas d'un en-tête,
- * qu'un client pourrait inventer). Faux si l'adresse est inconnue (requête de test sans connexion réelle).
+ * Does the request come from the machine the server runs on? Based on the address of the TCP connection (not on a header,
+ * which a client could make up). False if the address is unknown (test request without a real connection).
  */
-export function requestLocale(c: Context): boolean {
+export function isLocalRequest(c: Context): boolean {
   try {
     const address = getConnInfo(c).remote.address;
     return Boolean(address && (ADDRESSES_LOCALES.has(address) || address.startsWith('127.')));

@@ -1,10 +1,10 @@
-// Outil MCP ouvrir_tableau_de_bord : le tableau de bord web sans terminal (client MCP seul, comme Claude Desktop).
-// 1. Un tableau de bord répond déjà sur le port de l'espace (/api/sante, même dossier) : on renvoie son adresse.
-// 2. Sinon on le démarre dans un processus node séparé et détaché (`vigie-emploi serve --inactivite 60`) : il survit
-//    au redémarrage du serveur MCP et s'arrête seul après une heure sans activité.
-// 3. Faute de node utilisable (extension Claude Desktop dans le Node intégré, sans node installé), on le démarre dans le
-//    processus du serveur MCP : il vit alors tant que Claude Desktop garde le serveur ouvert.
-// Ports : celui de l'espace, puis les suivants s'ils sont pris par autre chose (autre espace, autre logiciel).
+// MCP tool open_dashboard: the web dashboard without a terminal (MCP client only, like Claude Desktop).
+// 1. A dashboard already answers on the workspace's port (/api/health, same folder): its address is returned.
+// 2. Otherwise it is started in a separate, detached node process (`vigie-emploi serve --idle 60`): it survives
+//    a restart of the MCP server and stops by itself after one hour without activity.
+// 3. For lack of a usable node (Claude Desktop extension in the built-in Node, without an installed node), it is started in the
+//    MCP server's process: it then lives as long as Claude Desktop keeps the server open.
+// Ports: the workspace's, then the next ones if they are taken by something else (other workspace, other software).
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -17,16 +17,16 @@ import { messageNotInitialized, type StateMcp } from './state.ts';
 import { on } from './results.ts';
 import { tm } from './texts.ts';
 
-/** Arrêt automatique du tableau de bord lancé par l'IA, en minutes sans activité. */
+/** Automatic stop of the dashboard launched by the AI, in minutes without activity. */
 export const IDLE_MIN = 60;
-/** Ports essayés après celui de l'espace. */
+/** Ports tried after the workspace's. */
 const PORTS_TRIED = 10;
 const PENDING_ONBOARDING_MS = 15_000;
 
 const slash = (p: string) => p.replace(/\\/g, '/');
 const sameFolder = (a: string, b: string) => resolve(a).toLowerCase() === resolve(b).toLowerCase();
 
-/** Réponse de /api/sante : null si rien ne répond ; { service: null } si autre chose qu'un tableau de bord occupe le port. */
+/** Response of /api/health: null if nothing answers; { service: null } if something other than a dashboard holds the port. */
 export type Health = { service: string | null; folder?: string } | null;
 
 export async function probe(port: number, timeoutMs = 1500): Promise<Health> {
@@ -35,7 +35,7 @@ export async function probe(port: number, timeoutMs = 1500): Promise<Health> {
     const j = (await r.json().catch(() => null)) as { service?: string; folder?: string } | null;
     return j?.service ? { service: j.service, folder: j.folder } : { service: null };
   } catch (e) {
-    // Connexion refusée : port libre. Délai dépassé ou réponse illisible : port occupé par autre chose.
+    // Connection refused: free port. Timeout or unreadable response: port taken by something else.
     const code = (e as { cause?: { code?: string } }).cause?.code;
     return code === 'ECONNREFUSED' ? null : { service: null };
   }
@@ -45,9 +45,9 @@ export type ModeLaunch = 'detached' | 'hosted';
 
 export interface Dependencies {
   probe: (port: number) => Promise<Health>;
-  /** Node pour un processus séparé, ou null (démarrage dans le processus du serveur MCP). */
+  /** Node for a separate process, or null (start in the MCP server's process). */
   node: () => string | null;
-  /** Lance le processus détaché ; renvoie son pid (tests). */
+  /** Launches the detached process; returns its pid (tests). */
   launchDetached: (node: string, config: Config, port: number) => number | undefined;
   launchHosted: (config: Config, port: number) => Promise<void>;
   wait: (ms: number) => Promise<void>;
@@ -67,14 +67,14 @@ export interface ResultTable {
 export function launchDetached(node: string, config: Config, port: number): number | undefined {
   const args = [BINARY, 'serve', '--data', config.dataDir, '--port', String(port), '--idle', String(IDLE_MIN)];
   const child = spawn(node, args, { cwd: config.dataDir, detached: true, stdio: 'ignore', windowsHide: true });
-  child.on('error', () => undefined); // l'échec se voit à l'attente de /api/sante
+  child.on('error', () => undefined); // the failure shows when waiting for /api/health
   child.unref();
   return child.pid;
 }
 
 async function launchHosted(config: Config, port: number): Promise<void> {
-  // Connexion à la base propre au tableau de bord : le serveur MCP peut fermer la sienne en changeant d'espace.
-  const { startServer } = await import('../api/server.ts'); // chargé seulement si besoin (Hono, interface)
+  // The dashboard's own database connection: the MCP server may close its own when changing workspace.
+  const { startServer } = await import('../api/server.ts'); // loaded only if needed (Hono, interface)
   const db = openDatabase(config.database);
   try {
     await startServer({ db, config, port, idleMin: IDLE_MIN, hosted: true });
@@ -84,7 +84,7 @@ async function launchHosted(config: Config, port: number): Promise<void> {
   }
 }
 
-/** Ouvre une adresse dans le navigateur par défaut, sans passer par un shell. */
+/** Opens an address in the default browser, without going through a shell. */
 export function openBrowser(url: string, platform: NodeJS.Platform = process.platform): void {
   const [command, args] =
     platform === 'win32'
@@ -134,7 +134,7 @@ export async function openDashboard(
     };
   };
 
-  // Premier port libre, ou celui où tourne déjà le tableau de bord de cet espace.
+  // First free port, or the one where this workspace's dashboard already runs.
   let free: number | null = null;
   for (let port = config.port; port < config.port + PORTS_TRIED; port++) {
     const s = await dep.probe(port);

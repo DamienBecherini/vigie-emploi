@@ -1,5 +1,5 @@
-// Grille de notation : fichier <données>/profil/grille.json (version courante), versions en base (table grilles),
-// renotation en masse et aperçu de l'impact d'un changement.
+// Scoring rubric: file <data>/profil/grille.json (current version), versions in the database (rubrics table),
+// bulk rescoring and preview of the impact of a change.
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Database } from '../db/database.ts';
@@ -38,7 +38,7 @@ export interface VersionRubric extends InfoVersion {
 
 export const EXAMPLE_RUBRIC = join(APP_ROOT, 'examples', 'rubric.json');
 
-/** Grille d'exemple de la langue : exemples/grille.<langue>.json s'il existe (anglais : phase de traduction à venir), sinon la française. */
+/** Sample rubric of the language: examples/rubric.<language>.json if it exists, otherwise the French one. */
 export function exampleRubric(language: Language = LANGUAGE_DEFAULT): string {
   if (language === LANGUAGE_DEFAULT) return EXAMPLE_RUBRIC;
   const translated = join(APP_ROOT, 'examples', `rubric.${language}.json`);
@@ -49,12 +49,12 @@ export function pathRubric(dataDir: string): string {
   return join(dataDir, 'profil', 'grille.json');
 }
 
-/** Forme canonique (pour comparer deux grilles sans tenir compte de la mise en page). */
+/** Canonical form (to compare two rubrics regardless of the layout). */
 function canonical(g: Rubric): string {
   return JSON.stringify(g);
 }
 
-/** Lit et valide grille.json ; null s'il n'existe pas. Les métadonnées (version, resume…) sont séparées. */
+/** Reads and validates grille.json; null if it does not exist. The metadata (version, summary…) are separated. */
 export function readFileRubric(path: string): { rubric: Rubric; summary: string | null; version: number | null } | null {
   if (!existsSync(path)) return null;
   let raw: Record<string, unknown>;
@@ -73,7 +73,7 @@ export function readFileRubric(path: string): { rubric: Rubric; summary: string 
   };
 }
 
-/** Écrit grille.json (version courante, avec ses métadonnées en tête), de façon atomique. */
+/** Writes grille.json (current version, with its metadata on top), atomically. */
 export function writeFileRubric(path: string, v: VersionRubric): void {
   mkdirSync(dirname(path), { recursive: true });
   const tmp = `${path}.tmp`;
@@ -105,7 +105,7 @@ export function versionRubric(db: Database, version: number): VersionRubric {
   return versionOfLine(l);
 }
 
-/** Historique des versions, de la plus récente à la plus ancienne. */
+/** History of the versions, from the most recent to the oldest. */
 export function historyRubric(db: Database): InfoVersion[] {
   return db.prepare('SELECT version, at, author, summary FROM rubrics ORDER BY version DESC').all() as unknown as InfoVersion[];
 }
@@ -126,11 +126,11 @@ function insertVersion(db: Database, rubric: Rubric, author: AuthorRubric, summa
 }
 
 /**
- * Grille courante, après synchronisation du fichier et de la base :
- * - fichier présent, base vide → version 1 (auteur « fichier ») ;
- * - fichier modifié à la main → nouvelle version (auteur « fichier »), notes recalculées ;
- * - fichier absent, base non vide → le fichier est réécrit depuis la dernière version.
- * null s'il n'y a de grille ni dans le fichier ni en base.
+ * Current rubric, after synchronizing the file and the database:
+ * - file present, empty database → version 1 (author "file");
+ * - file modified by hand → new version (author "file"), scores recomputed;
+ * - file missing, database not empty → the file is rewritten from the last version.
+ * null if there is a rubric neither in the file nor in the database.
  */
 export function rubricCurrent(db: Database, dataDir: string): VersionRubric | null {
   const path = pathRubric(dataDir);
@@ -154,7 +154,7 @@ export function rubricCurrent(db: Database, dataDir: string): VersionRubric | nu
   return v;
 }
 
-/** Comme grilleCourante, mais lève une erreur claire s'il n'y a pas de grille. */
+/** Like rubricCurrent, but throws a clear error if there is no rubric. */
 export function rubricRequired(db: Database, dataDir: string): VersionRubric {
   const g = rubricCurrent(db, dataDir);
   if (!g) {
@@ -163,7 +163,7 @@ export function rubricRequired(db: Database, dataDir: string): VersionRubric {
   return g;
 }
 
-/** Copie la grille d'exemple dans le dossier de données si aucune grille n'existe. */
+/** Copies the sample rubric into the data folder if no rubric exists. */
 export function initializeRubric(db: Database, dataDir: string, language: Language = LANGUAGE_DEFAULT): { created: boolean; path: string; version: VersionRubric } {
   const path = pathRubric(dataDir);
   const created = !existsSync(path) && !lastVersion(db);
@@ -175,7 +175,7 @@ export function initializeRubric(db: Database, dataDir: string, language: Langua
 }
 
 // ---------------------------------------------------------------------------------------------
-// Renotation et aperçu
+// Rescoring and preview
 
 interface ScoreToCompute {
   score_id: number;
@@ -190,7 +190,7 @@ interface ScoreToCompute {
   compensation_unit: string | null;
 }
 
-/** Dernière note de chaque offre, quand elle a des sous-notes (les notes globales restent figées). */
+/** Last score of each offer, when it has sub-scores (overall scores stay frozen). */
 function scoresToCompute(db: Database): ScoreToCompute[] {
   return db
     .prepare(
@@ -212,16 +212,16 @@ export interface ChangeScore {
 }
 
 export interface Impact {
-  /** Offres dont la dernière note a des sous-notes (celles qui sont recalculées). */
+  /** Offers whose last score has sub-scores (the ones that are recomputed). */
   offers_recalculated: number;
-  /** Offres dont la note affichée change. */
+  /** Offers whose displayed score changes. */
   changed: number;
   threshold_before: number | null;
   threshold_after: number;
-  /** Passent au-dessus du seuil (≥) / repassent en dessous. */
+  /** Go above the threshold (≥) / fall back below it. */
   rising: ChangeScore[];
   falling: ChangeScore[];
-  /** Les changements, du plus fort au plus faible (100 au plus). */
+  /** The changes, from the largest to the smallest (100 at most). */
   changes: ChangeScore[];
 }
 
@@ -258,13 +258,13 @@ function measure(lines: { n: ScoreToCompute; d: Breakdown }[], thresholdBefore: 
   };
 }
 
-/** Ce que changerait une grille, sans rien écrire. */
+/** What a rubric would change, without writing anything. */
 export function previewRubric(db: Database, rubric: Rubric, thresholdBefore: number | null): Impact {
   const lines = scoresToCompute(db).map((n) => ({ n, d: compute(n, { rubric, version: null }) }));
   return measure(lines, thresholdBefore, rubric.threshold);
 }
 
-/** Recalcule (sur place) la dernière note de chaque offre qui a des sous-notes. */
+/** Recomputes (in place) the last score of each offer that has sub-scores. */
 function rescoreWith(db: Database, v: VersionRubric, thresholdBefore: number | null = null): Impact {
   const lines = scoresToCompute(db).map((n) => ({ n, d: compute(n, v) }));
   const updated = db.prepare(
@@ -279,13 +279,13 @@ function rescoreWith(db: Database, v: VersionRubric, thresholdBefore: number | n
   return measure(lines, thresholdBefore ?? v.rubric.threshold, v.rubric.threshold);
 }
 
-/** Renotation en masse avec la grille courante. */
+/** Bulk rescoring with the current rubric. */
 export function rescore(db: Database, dataDir: string): { version: number; impact: Impact } {
   const v = rubricRequired(db, dataDir);
   return { version: v.version, impact: transaction(db, () => rescoreWith(db, v)) };
 }
 
-/** Enregistre une nouvelle version (fichier + base), puis recalcule les notes. */
+/** Saves a new version (file + database), then recomputes the scores. */
 export function saveRubric(
   db: Database,
   dataDir: string,
@@ -303,7 +303,7 @@ export function saveRubric(
   return r;
 }
 
-/** Changement partiel (outil MCP, CLI) : essai = aperçu seul, sinon enregistrement. */
+/** Partial change (MCP tool, CLI): dry run = preview only, otherwise save. */
 export function updateRubric(
   db: Database,
   dataDir: string,
@@ -319,7 +319,7 @@ export function updateRubric(
       version: current.version,
       rubric,
       impact: previewRubric(db, rubric, current.rubric.threshold),
-      // Exemples de référence recalculés avec la grille d'essai : utiles même sur une base encore vide.
+      // Reference examples recomputed with the trial rubric: useful even on a database still empty.
       computed_examples: computedExamples(rubric, null, before),
     };
   }
@@ -333,7 +333,7 @@ export function updateRubric(
   };
 }
 
-/** Retour à une version précédente : son contenu devient une nouvelle version. */
+/** Back to a previous version: its content becomes a new version. */
 export function restoreRubric(
   db: Database,
   dataDir: string,

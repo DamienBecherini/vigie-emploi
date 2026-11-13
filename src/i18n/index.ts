@@ -1,6 +1,6 @@
-// Textes de la CLI, de l'API, du suivi généré et de l'initialisation.
-// - t(clé, params) : dans la langue courante du processus (CLI : fixée au démarrage d'après la configuration) ;
-// - tl(langue, clé, params) : dans une langue donnée (API, suivi : langue de la configuration passée en paramètre).
+// Texts of the CLI, the API, the generated tracker and the initialization.
+// - t(key, params): in the current language of the process (CLI: set at startup from the configuration);
+// - tl(language, key, params): in a given language (API, tracker: language of the configuration passed as a parameter).
 import { en } from './en.ts';
 import { fr, type KeyServer } from './fr.ts';
 import { LANGUAGE_DEFAULT, LOCALES, translate, type Language, type Params, type MessageText } from './tool.ts';
@@ -28,12 +28,12 @@ export function t(key: KeyServer, params?: Params): string {
   return tl(current, key, params);
 }
 
-/** Nombre avec le séparateur décimal de la langue (« 6,5 », « 6.5 »), sans séparateur de milliers, arrondi à `d` décimales. */
+/** Number with the language's decimal separator ("6,5", "6.5"), without thousands separator, rounded to `d` decimals. */
 export function decimal(n: number, language: Language = current, d = 2): string {
   return n.toLocaleString(LOCALES[language], { maximumFractionDigits: d, useGrouping: false });
 }
 
-/** Date et heure de Paris au format de la langue (« 02/11/2026 », « 10:30 »). */
+/** Paris date and time in the language's format ("02/11/2026", "10:30"). */
 export function dateHour(at: Date, language: Language): { date: string; hour: string } {
   const locale = LOCALES[language];
   return {

@@ -1,4 +1,4 @@
-// Textes anglais de l'interface (mêmes clés que fr.ts : une clé manquante est une erreur de compilation).
+// English texts of the interface (same keys as fr.ts: a missing key is a compilation error).
 import type { Plural, MessageText } from '../../../src/i18n/tool.ts';
 import type { KeyUi } from './fr.ts';
 

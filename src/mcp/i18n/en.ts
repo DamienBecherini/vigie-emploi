@@ -1,4 +1,4 @@
-// Textes du serveur MCP en anglais. Mêmes clés que fr.ts (une clé manquante est une erreur de compilation).
+// Texts of the MCP server in English. Same keys as fr.ts (a missing key is a compilation error).
 import type { MessageText } from '../../i18n/tool.ts';
 import type { KeyMcp } from './fr.ts';
 

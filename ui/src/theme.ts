@@ -1,5 +1,5 @@
-// Palettes de couleurs : chaque palette remplace les gris (classes slate-*) et l'accent (classes blue-*)
-// par une famille de Tailwind. Les classes du code ne changent pas : seules les variables CSS changent.
+// Colour palettes: each palette replaces the greys (slate-* classes) and the accent (blue-* classes)
+// with a Tailwind family. The classes of the code do not change: only the CSS variables change.
 import colors from 'tailwindcss/colors';
 import type { Language } from '../../src/i18n/tool.ts';
 
@@ -11,12 +11,12 @@ export const ACCENTS = [
 export type Neutral = (typeof NEUTRAL)[number];
 export type Accent = (typeof ACCENTS)[number];
 
-/** Noms des familles de gris, par langue (une langue ajoutée doit les traduire : erreur de compilation sinon). */
+/** Names of the grey families, by language (an added language must translate them: compilation error otherwise). */
 export const LABELS_NEUTRAL: Record<Language, Record<Neutral, string>> = {
   fr: { slate: 'Ardoise (bleuté)', gray: 'Gris', zinc: 'Zinc', neutral: 'Neutre', stone: 'Pierre (chaud)' },
   en: { slate: 'Slate (bluish)', gray: 'Grey', zinc: 'Zinc', neutral: 'Neutral', stone: 'Stone (warm)' },
 };
-/** Noms des couleurs d'accent, par langue. */
+/** Names of the accent colours, by language. */
 export const LABELS_ACCENTS: Record<Language, Record<Accent, string>> = {
   fr: {
     blue: 'Bleu', sky: 'Ciel', cyan: 'Cyan', teal: 'Sarcelle', emerald: 'Émeraude', green: 'Vert', lime: 'Citron vert',
@@ -35,23 +35,23 @@ export interface Palette {
   accent: Accent;
 }
 export interface PaletteNamed extends Palette {
-  /** Nom et description dans les autres langues ; à défaut, le nom français. */
+  /** Name and description in the other languages; otherwise, the French name. */
   translations?: Partial<Record<Language, { name: string; description?: string }>>;
   id: string;
   name: string;
   description?: string;
 }
 
-/** Nom et description d'une palette livrée dans la langue voulue (le français à défaut de traduction). */
+/** Name and description of a shipped palette in the wanted language (French if there is no translation). */
 export function textsPalette(p: PaletteNamed, language: Language): { name: string; description?: string } {
   return p.translations?.[language] ?? { name: p.name, description: p.description };
 }
 
-/** Identifiant de la palette réglée par l'utilisateur (une par mode). */
+/** Id of the palette set by the user (one per mode). */
 export const PERSONAL = 'personal';
 
 export const PALETTES_LIGHT: PaletteNamed[] = [
-  // Sable en tête : palette par défaut, et repli d'une palette inconnue.
+  // Sand first: default palette, and fallback for an unknown palette.
   { id: 'sand', name: 'Sable', neutral: 'stone', accent: 'orange', description: 'Gris chauds, accent orange', translations: { en: { name: 'Sand', description: 'Warm greys, orange accent' } } },
   { id: 'blue', name: 'Ardoise bleue', neutral: 'slate', accent: 'blue', description: "La palette d'origine", translations: { en: { name: 'Blue slate', description: 'The original palette' } } },
   { id: 'sage', name: 'Sauge', neutral: 'neutral', accent: 'teal', translations: { en: { name: 'Sage' } } },
@@ -77,7 +77,7 @@ export function findPalette(list: PaletteNamed[], id: string, personal: Palette)
   return list.find((p) => p.id === id) ?? list[0];
 }
 
-/** Variables CSS d'une palette : --color-slate-* = gris choisi, --color-blue-* = accent choisi. */
+/** CSS variables of a palette: --color-slate-* = chosen grey, --color-blue-* = chosen accent. */
 export function variablesPalette(p: Palette): Record<string, string> {
   const v: Record<string, string> = {};
   const neutral = colors[p.neutral] as Record<string, string>;
@@ -89,7 +89,7 @@ export function variablesPalette(p: Palette): Record<string, string> {
   return v;
 }
 
-/** Couleur d'aperçu (pastilles de la fenêtre Thème). */
+/** Preview colour (dots of the Theme window). */
 export function hue(family: Neutral | Accent, shade: (typeof SHADES)[number]): string {
   return (colors[family] as Record<string, string>)[shade];
 }

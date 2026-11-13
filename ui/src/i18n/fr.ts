@@ -1,14 +1,14 @@
-// Textes français de l'interface (langue de référence). Toute clé ajoutée ici doit l'être aussi dans en.ts,
-// sinon la compilation échoue. Paramètres « {nom} » ; pluriels : { one, other } choisis d'après « n ».
+// French texts of the interface (reference language). Every key added here must also be added to en.ts,
+// otherwise the compilation fails. "{name}" parameters; plurals: { one, other } chosen from "n".
 import type { Plural, MessageText } from '../../../src/i18n/tool.ts';
 
 const p = (one: string, other: string): Plural => ({ one, other });
 
 export const fr = {
-  // Erreur HTTP sans message du serveur
+  // HTTP error without a message from the server
   'api.error': 'Erreur {status}',
 
-  // En-tête, préférences
+  // Header, preferences
   'header.goTable': 'Aller au tableau',
   'header.searchLabel': 'Rechercher dans les offres',
   'header.search': 'Rechercher (intitulé, entreprise, description, stack)…',
@@ -30,7 +30,7 @@ export const fr = {
   'zoom.back': 'Revenir à 100 %',
   'zoom.expand': 'Agrandir le texte',
 
-  // Tableau des offres
+  // Table of the offers
   'col.score': 'Note',
   'col.status': 'Statut',
   'col.title': 'Intitulé',
@@ -86,7 +86,7 @@ export const fr = {
   'filters.remoteExample': 'remote, hybride…',
   'filters.tags': 'Tags (tous requis)',
 
-  // Travail pour l'agent
+  // Work for the agent
   'agent.section': 'Travail pour l’agent',
   'agent.emailsLaunched': 'Terminal ouvert : l’agent trie les e-mails. Les offres apparaissent ici au fil de la notation.',
   'agent.goLaunched': 'Terminal ouvert : l’agent prépare les candidatures en « go ».',
@@ -96,7 +96,7 @@ export const fr = {
   'agent.goOffer': '{company} (n° {id})',
   'agent.go': p('Préparer {n} candidature', 'Préparer {n} candidatures'),
 
-  // À venir et statistiques
+  // Upcoming and statistics
   'upcoming.title': 'À venir',
   'upcoming.overdueCount': '{n} en retard · ',
   'upcoming.deadlines': p("{n} échéance d'ici 7 jours", "{n} échéances d'ici 7 jours"),
@@ -117,7 +117,7 @@ export const fr = {
     'Délai moyen avant la première réponse : {days} j ({n} candidatures).',
   ),
 
-  // Fenêtre Thème
+  // Theme window
   'theme.title': 'Thème',
   'theme.close': 'Fermer',
   'theme.closeEscape': 'Fermer (Échap)',
@@ -132,7 +132,7 @@ export const fr = {
   'theme.accent': 'Accent',
   'theme.help': "Chaque mode garde sa dernière palette ; le bouton soleil / lune de l'en-tête bascule le mode sans la changer.",
 
-  // Panneau de détail
+  // Detail panel
   'detail.loading': 'Chargement…',
   'detail.close': 'Fermer',
   'detail.closeEscape': 'Fermer le détail (Échap)',
@@ -205,7 +205,7 @@ export const fr = {
   'application.help': "Une date d'envoi fait passer une offre pas encore envoyée en « Envoyée ». Un champ vidé est effacé.",
   'application.save': 'Enregistrer la candidature',
 
-  // Décomposition de la note
+  // Breakdown of the score
   'breakdown.old': 'ancienne grille',
   'breakdown.oldTitle': "Note globale donnée avant la grille à critères : elle n'est pas recalculée quand la grille change",
   'breakdown.legend': 'Décomposition de la note',
@@ -249,7 +249,7 @@ export const fr = {
   'subScores.recompute': 'Recalculer et enregistrer',
   'subScores.help': "Une nouvelle note s'ajoute à l'historique (origine interface) ; la note finale reste calculée.",
 
-  // Journal de la candidature
+  // Journal of the application
   'journal.date': '{date} à {hour}',
   'journal.hour': '{h} h {m}',
   'journal.numberExpected': '{name} : nombre attendu',
@@ -309,7 +309,7 @@ export const fr = {
   'files.ko': '{n} Ko',
   'files.mo': '{n} Mo',
 
-  // Réglages de la note
+  // Score settings
   'settings.title': 'Réglages de la note',
   'settings.version': '{name} · version {version} du {date} ({author}) : {summary}',
   'settings.close': 'Fermer les réglages (Échap)',

@@ -1,4 +1,4 @@
-// Liste paginée des offres (côté serveur), partagée par la CLI et l'API.
+// Paginated list of offers (server side), shared by the CLI and the API.
 import type { Database } from '../db/database.ts';
 import { COLUMNS_SORT, STATUSES_APPLICATION, type ColumnSort } from './statuses.ts';
 import type { Offer } from './offers.ts';
@@ -9,7 +9,7 @@ export interface Filters {
   tags?: string[];
   scoreMin?: number;
   scoreMax?: number;
-  /** true : seulement les offres sans note ; false : seulement les notées. */
+  /** true: only offers without a score; false: only scored ones. */
   unscored?: boolean;
   contract?: string;
   remote?: string;
@@ -25,9 +25,9 @@ export interface Filters {
 export interface OptionsList extends Filters {
   page?: number;
   size?: number;
-  /** Une colonne, ou plusieurs niveaux séparés par des virgules : `recue_le:desc,note:desc`. */
+  /** One column, or several levels separated by commas: `received_at:desc,score:desc`. */
   sort?: string;
-  /** Sens des niveaux qui n'en précisent pas (desc par défaut). */
+  /** Direction of the levels that do not give one (desc by default). */
   order?: 'asc' | 'desc';
 }
 
@@ -37,8 +37,8 @@ export interface LevelSort {
 }
 
 /**
- * Lit les niveaux de tri : `note`, `recue_le:desc,note:asc`… Les colonnes inconnues et les doublons sont ignorés ;
- * un niveau sans sens prend `ordre`. Sans niveau valide : réception la plus récente d'abord.
+ * Reads the sort levels: `score`, `received_at:desc,score:asc`… Unknown columns and duplicates are ignored;
+ * a level without a direction takes `order`. Without a valid level: most recent reception first.
  */
 export function levelsSort(sort?: string, order?: 'asc' | 'desc'): LevelSort[] {
   const byDefault = order === 'asc' ? 'asc' : 'desc';
@@ -52,7 +52,7 @@ export function levelsSort(sort?: string, order?: 'asc' | 'desc'): LevelSort[] {
   return levels.length ? levels : [{ column: 'received_at', order: byDefault }];
 }
 
-/** Clause ORDER BY des niveaux (valeurs vides en dernier, départage par id décroissant). */
+/** ORDER BY clause of the levels (empty values last, ties broken by decreasing id). */
 function orderSql(levels: LevelSort[]): string {
   const parts = levels.map(({ column, order }) => {
     const collation = column === 'title' || column === 'company' ? 'COLLATE NOCASE ' : '';
@@ -77,7 +77,7 @@ export interface ResultList {
 
 export const SIZE_MAX = 500;
 
-/** Requête FTS5 sûre : chaque mot entre guillemets, avec recherche par préfixe. */
+/** Safe FTS5 query: each word in quotes, with prefix search. */
 export function requestFts(text: string): string | null {
   const words = text
     .split(/[\s"'’()*:^+\-,.;!?]+/u)
@@ -191,7 +191,7 @@ export interface Meta {
   contracts: { value: string; n: number }[];
 }
 
-/** Valeurs présentes en base, pour les listes de filtres. */
+/** Values present in the database, for the filter lists. */
 export function meta(db: Database): Meta {
   const count = (sql: string) => db.prepare(sql).all() as unknown as { value: string; n: number }[];
   return {

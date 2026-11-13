@@ -1,12 +1,12 @@
-// Tri de la liste sur plusieurs niveaux, tel qu'il s'écrit dans l'URL : « recue_le:desc,note:desc ».
-// Le serveur valide les colonnes (niveauxTri dans src/core/requetes.ts) ; ici on ne fait que lire et écrire la chaîne.
+// Sort of the list on several levels, as written in the URL: "received_at:desc,score:desc".
+// The server validates the columns (levelsSort in src/core/queries.ts); here the string is only read and written.
 
 export interface Level {
   column: string;
   order: 'asc' | 'desc';
 }
 
-/** Lit `?tri=` : un niveau sans sens prend `ordreDefaut` (ancien format `?tri=note&ordre=asc`). */
+/** Reads `?sort=`: a level without a direction takes `orderDefault` (old format `?sort=score&order=asc`). */
 export function readLevels(sort: string | null, orderDefault: 'asc' | 'desc' = 'desc'): Level[] {
   const levels: Level[] = [];
   for (const chunk of (sort ?? '').split(',')) {
@@ -21,12 +21,12 @@ export function writeLevels(levels: Level[]): string {
   return levels.map((n) => `${n.column}:${n.order}`).join(',');
 }
 
-/** Niveaux gardés : le tri principal et le précédent, comme Thunderbird. */
+/** Levels kept: the primary sort and the previous one, like Thunderbird. */
 export const LEVELS_MAX = 2;
 
 /**
- * Clic sur un en-tête, à la manière de Thunderbird. Sur le tri principal : il s'inverse, le secondaire reste.
- * Sur une autre colonne : elle devient le tri principal (décroissant) et l'ancien principal passe en secondaire.
+ * Click on a header, Thunderbird style. On the primary sort: it is reversed, the secondary stays.
+ * On another column: it becomes the primary sort (descending) and the old primary becomes secondary.
  */
 export function toggleLevel(levels: Level[], column: string): Level[] {
   const [principal] = levels;

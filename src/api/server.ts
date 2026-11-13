@@ -1,4 +1,4 @@
-// API JSON locale et service de l'interface compilée (dist/ui).
+// Local JSON API and serving of the compiled interface (dist/ui).
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import { Hono, type Context } from 'hono';
@@ -52,7 +52,7 @@ import type { Params } from '../i18n/tool.ts';
 import { Idle } from './idle.ts';
 import { Broadcast, watchChanges } from './broadcast.ts';
 import { isActionAgent, stateWork, launcherTerminal, type Launcher } from './work.ts';
-import { openerSystem, programOpening, requestLocale, type OpenerFolder } from './open.ts';
+import { openerSystem, programOpening, isLocalRequest, type OpenerFolder } from './open.ts';
 
 /** Champs de candidature modifiables depuis l'interface. */
 const FIELDS_EDITABLE = FIELDS_APPLICATION.filter((k) => k !== 'state' && k !== 'label');
@@ -81,7 +81,7 @@ function list(v: string | undefined): string[] | undefined {
   return v ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
 }
 
-/** Paramètres d'URL → options de liste (mêmes noms que dans l'interface). */
+/** URL parameters → list options (same names as in the interface). */
 export function optionsFromRequest(q: Record<string, string | undefined>): OptionsList {
   return {
     statuses: list(q.status),
@@ -107,21 +107,21 @@ export function optionsFromRequest(q: Record<string, string | undefined>): Optio
 
 const HOSTS_LOCAL = ['localhost', '127.0.0.1', '[::1]'];
 
-/** Routes qui ne comptent pas comme activité (contrôle de santé, flux de notifications laissé ouvert). */
+/** Routes that do not count as activity (health check, notification stream left open). */
 const ROUTES_PASSIVE = ['/api/health', '/api/stream'];
 
 export interface OptionsApp {
-  /** Notifications poussées à l'interface (une instance neuve par défaut). */
+  /** Notifications pushed to the interface (a new instance by default). */
   broadcast?: Broadcast;
-  /** Ouverture du terminal de l'agent (par défaut : selon la configuration et la plateforme). */
+  /** Opening of the agent's terminal (by default: depending on the configuration and the platform). */
   launcher?: Launcher;
-  /** Ouverture d'un dossier dans l'explorateur de fichiers (par défaut : celui du système). */
+  /** Opening of a folder in the file explorer (by default: the system's). */
   opener?: OpenerFolder;
-  /** La requête vient-elle de la machine du serveur ? (par défaut : adresse de la connexion). */
-  isLocale?: (c: Context) => boolean;
+  /** Does the request come from the server's machine? (by default: address of the connection). */
+  isLocal?: (c: Context) => boolean;
 }
 
-/** Une requête qui vient d'une autre origine (page web tierce, formulaire) ? */
+/** Does a request come from another origin (third-party web page, form)? */
 function originForeign(origin: string | undefined, site: string | undefined): boolean {
   if (site === 'cross-site') return true;
   if (!origin || origin === 'null') return Boolean(origin);
@@ -142,17 +142,17 @@ export function createApp(
   const broadcast = options.broadcast ?? new Broadcast();
   const launcher = options.launcher ?? launcherTerminal(config.terminal, process.platform, config.language ?? LANGUAGE_DEFAULT);
   const opener = options.opener ?? openerSystem();
-  const isLocale = options.isLocale ?? requestLocale;
+  const isLocal = options.isLocal ?? isLocalRequest;
   const emails = config.emails ?? join(config.dataDir, 'emails');
-  // Langue des messages renvoyés à l'interface (celle-ci peut afficher une autre langue : sélecteur de l'en-tête).
+  // Language of the messages sent back to the interface (which may display another language: header selector).
   const language = config.language ?? LANGUAGE_DEFAULT;
   const m = (key: KeyServer, params?: Params) => tl(language, key, params);
 
   app.onError((err, c) => c.json({ ok: false, error: err.message }, 400));
 
-  // Serveur local : seules les requêtes adressées à localhost / 127.0.0.1 sont servies (parade au
-  // « DNS rebinding » : une page web tierce ne peut pas lire l'API ni les fichiers du dossier).
-  // Les écritures venues d'une autre origine (formulaire d'une page tierce) sont refusées.
+  // Local server: only requests addressed to localhost / 127.0.0.1 are served (protection against
+  // "DNS rebinding": a third-party web page cannot read the API nor the folder's files).
+  // Writes coming from another origin (form of a third-party page) are refused.
   app.use('*', async (c, next) => {
     const host = (c.req.header('host') ?? '').replace(/:\d+$/, '').toLowerCase();
     if (host && !HOSTS_LOCAL.includes(host)) return c.text(m('api.hostRefused'), 403);
@@ -162,13 +162,13 @@ export function createApp(
     }
     if (!ROUTES_PASSIVE.includes(c.req.path)) idle.signal();
     await next();
-    // Les écritures de l'API ne changent pas PRAGMA data_version pour sa propre connexion : on les signale ici.
+    // The API's writes do not change PRAGMA data_version for its own connection: they are reported here.
     if (write && c.req.path.startsWith('/api/') && !c.req.path.startsWith('/api/work') && c.res.status < 400) {
       broadcast.emit({ type: 'database' });
     }
   });
 
-  // Notifications (Server-Sent Events) : « base » (données modifiées), « emails » (boîte de réception).
+  // Notifications (Server-Sent Events): "database" (data modified), "emails" (inbox).
   app.get('/api/stream', (c) =>
     streamSSE(c, async (stream) => {
       let finish = () => {};
@@ -178,15 +178,15 @@ export function createApp(
       });
       stream.onAbort(() => finish());
       await stream.writeSSE({ event: 'ready', data: '{}' });
-      // Commentaire régulier : garde la connexion ouverte à travers les proxys (ne compte pas comme activité).
-      const heartbeat = setInterval(() => stream.write(': battement\n\n').catch(() => finish()), 25_000);
+      // Regular comment: keeps the connection open through proxies (does not count as activity).
+      const heartbeat = setInterval(() => stream.write(': heartbeat\n\n').catch(() => finish()), 25_000);
       await finished;
       clearInterval(heartbeat);
       unsubscribe();
     }),
   );
 
-  // Travail en attente pour l'agent, et lancement de l'agent dans un terminal (boutons de l'interface).
+  // Pending work for the agent, and launch of the agent in a terminal (interface buttons).
   app.get('/api/work', (c) => c.json(stateWork(db, { dataDir: config.dataDir, emails })));
 
   app.post('/api/work/:action', async (c) => {
@@ -199,7 +199,7 @@ export function createApp(
     return c.json({ ok: true, action });
   });
 
-  // Contrat « service local » : état, occupation, temps avant l'arrêt automatique.
+  // "Local service" contract: state, busyness, time before the automatic stop.
   app.get('/api/health', (c) =>
     c.json({
       ok: true,
@@ -213,8 +213,8 @@ export function createApp(
       activity: '',
       remaining_work_s: null,
       idle: { timeout_s: idle.timeoutS, remaining_s: idle.remainingS() },
-      // Requête venue de la machine du serveur : l'interface propose alors « ouvrir le dossier dans l'explorateur ».
-      local_machine: isLocale(c),
+      // Request coming from the server's machine: the interface then offers "open the folder in the explorer".
+      local_machine: isLocal(c),
     }),
   );
   app.get('/api/meta', (c) => c.json({ ...meta(db), possibleStatuses: STATUSES }));
@@ -259,7 +259,7 @@ export function createApp(
     return c.json(detailOffer(db, id));
   });
 
-  /** Bouton « Candidater » : passe l'offre en go et renvoie la commande à copier. */
+  /** "Apply" button: moves the offer to go and returns the command to copy. */
   app.post('/api/offers/:id/apply', (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
@@ -267,7 +267,7 @@ export function createApp(
     return c.json({ ok: true, command: `apply ${id}`, offer: r.offer });
   });
 
-  /** Saisie ou correction d'une note depuis le panneau de détail (nouvelle entrée d'historique). */
+  /** Entry or correction of a score from the detail panel (new history entry). */
   app.post('/api/offers/:id/score', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
@@ -277,7 +277,7 @@ export function createApp(
     return c.json(detailOffer(db, id));
   });
 
-  /** Correction des sous-notes (et des entrées des critères calculés) : nouvelle note calculée avec la grille. */
+  /** Correction of the sub-scores (and of the inputs of computed criteria): new score computed with the rubric. */
   app.put('/api/offers/:id/sub-scores', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
@@ -286,7 +286,7 @@ export function createApp(
     return c.json(detailOffer(db, id));
   });
 
-  // Grille de notation : version courante (avec les exemples calculés), aperçu, enregistrement, versions.
+  // Scoring rubric: current version (with the computed examples), preview, save, versions.
   const replyRubric = (v: VersionRubric | null) =>
     v
       ? {
@@ -323,7 +323,7 @@ export function createApp(
     return c.json({ ok: true, ...replyRubric(r.version), impact: r.impact });
   });
 
-  /** Candidature : prochaine action, date d'envoi, canal… (null ou '' efface un champ, absent = inchangé). */
+  /** Application: next action, sending date, channel… (null or '' clears a field, absent = unchanged). */
   app.put('/api/offers/:id/application', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
@@ -338,7 +338,7 @@ export function createApp(
     return c.json(trackApplication(db, id, fields, 'interface').offer);
   });
 
-  // Journal de la candidature (événements et échéances).
+  // Application journal (events and deadlines).
   app.get('/api/offers/:id/events', (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
@@ -376,16 +376,16 @@ export function createApp(
 
   app.get('/api/statistics', (c) => c.json(statistics(db)));
 
-  // Fichiers du dossier de candidature : liste, puis lecture (dossier de données uniquement).
+  // Files of the application folder: list, then reading (data folder only).
   app.get('/api/offers/:id/files', (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
     return c.json(filesFolder(db, config.dataDir, id));
   });
 
-  // Ouvrir le dossier de candidature dans l'explorateur de fichiers : seulement depuis la machine du serveur.
+  // Open the application folder in the file explorer: only from the server's machine.
   app.post('/api/offers/:id/open-folder', async (c) => {
-    if (!isLocale(c)) return c.json({ ok: false, error: m('api.remoteMachine') }, 403);
+    if (!isLocal(c)) return c.json({ ok: false, error: m('api.remoteMachine') }, 403);
     if (!(c.req.header('content-type') ?? '').includes('application/json')) {
       return c.json({ ok: false, error: m('api.jsonExpected') }, 415);
     }
@@ -429,7 +429,7 @@ export function createApp(
 
   app.all('/api/*', (c) => c.json({ ok: false, error: m('api.routeUnknown') }, 404));
 
-  // Interface compilée : fichiers de dist/ui, sinon index.html (application d'une seule page).
+  // Compiled interface: files of dist/ui, otherwise index.html (single-page application).
   app.get('*', (c) => {
     if (!existsSync(join(FOLDER_UI, 'index.html'))) {
       return c.text(m('api.notCompiled'), 503);
@@ -452,12 +452,12 @@ export function startServer(o: {
   config: Config;
   port: number;
   host?: string;
-  /** Minutes sans activité avant l'arrêt (0 ou absent : jamais). */
+  /** Minutes without activity before the stop (0 or absent: never). */
   idleMin?: number;
   /**
-   * Serveur hébergé dans un autre processus (tableau de bord lancé par le serveur MCP faute de node séparé) :
-   * messages sur stderr (stdout appartient au protocole MCP), port occupé rendu en erreur, et à l'arrêt automatique
-   * seuls le serveur web et sa base se ferment, le processus continue.
+   * Server hosted in another process (dashboard launched by the MCP server for lack of a separate node):
+   * messages on stderr (stdout belongs to the MCP protocol), a busy port is returned as an error, and on the automatic stop
+   * only the web server and its database close, the process goes on.
    */
   hosted?: boolean;
 }): Promise<{ port: number }> {
@@ -493,7 +493,7 @@ export function startServer(o: {
         o.db.close();
         if (!o.hosted) process.exit(0);
       });
-      if ('closeAllConnections' in server) server.closeAllConnections();  // sinon les connexions keep-alive retardent l'arrêt
+      if ('closeAllConnections' in server) server.closeAllConnections();  // otherwise keep-alive connections delay the stop
     }, 1000);
     watcher.unref();
   });

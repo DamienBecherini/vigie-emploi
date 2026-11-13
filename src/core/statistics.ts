@@ -1,22 +1,22 @@
-// Statistiques minimales des candidatures : nombre par étape et délai avant la première réponse.
+// Minimal statistics of the applications: number per step and delay before the first reply.
 import type { Database } from '../db/database.ts';
 
 export interface Statistics {
-  /** Candidatures envoyées (date d'envoi, ou statut envoyée et suivants dans l'historique). */
+  /** Sent applications (sending date, or status sent and following ones in the history). */
   sent: number;
-  /** … dont une réponse est connue (message reçu, entretien, test, proposition, refus). */
+  /** … with a known reply (message received, interview, test, proposal, rejection). */
   replies: number;
-  /** … qui ont eu un entretien (événement « entretien » ou statut « entretien »). */
+  /** … that had an interview ("interview" event or "interview" status). */
   interviews: number;
-  /** … qui ont eu une proposition (événement « proposition », envoyée ou reçue). */
+  /** … that had a proposal ("proposal" event, sent or received). */
   proposals: number;
-  /** Délai moyen (jours) entre l'envoi et la première réponse arrivée après le jour de l'envoi. */
+  /** Average delay (days) between the sending and the first reply received after the sending day. */
   timeout_medium_reply_days: number | null;
-  /** Nombre de candidatures dans ce calcul. */
+  /** Number of applications in this computation. */
   timeout_database: number;
 }
 
-/** Calcule les statistiques à partir des candidatures, des statuts et du journal. */
+/** Computes the statistics from the applications, the statuses and the journal. */
 export function statistics(db: Database): Statistics {
   const lines = db
     .prepare(
@@ -49,8 +49,8 @@ export function statistics(db: Database): Statistics {
   }[];
   const delays: number[] = [];
   for (const l of lines) {
-    // Première réponse datée après le jour de l'envoi (un contact entrant suivi d'une réponse le même jour
-    // ne dit rien du délai de réponse).
+    // First reply dated after the sending day (an incoming contact followed by a reply on the same day
+    // says nothing about the reply delay).
     const send = l.sent_at && /^\d{4}-\d{2}-\d{2}$/.test(l.sent_at) ? l.sent_at : null;
     const after = (l.replies ?? '').split(',').filter((d) => send && d > send).sort()[0];
     if (send && after) delays.push((Date.parse(after) - Date.parse(send)) / 86_400_000);

@@ -1,6 +1,6 @@
-// CV en Markdown -> HTML -> PDF A4 (Chrome ou Edge sans interface).
-// Le gabarit est un dossier : gabarit.css, ses polices, et une photo facultative (portrait.webp|jpg|jpeg|png).
-// L'HTML intermédiaire est écrit dans <gabarit>/apercu/ (il pointe vers ../gabarit.css), le PDF à côté du .md. Le nombre de pages est l'indicateur à surveiller (cible : 2).
+// CV in Markdown -> HTML -> A4 PDF (headless Chrome or Edge).
+// The template is a folder: gabarit.css, its fonts, and an optional photo (portrait.webp|jpg|jpeg|png).
+// The intermediate HTML is written into <template>/apercu/ (it points to ../gabarit.css), the PDF next to the .md. The page count is the indicator to watch (target: 2).
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -9,29 +9,29 @@ import { APP_ROOT, variable } from '../core/config.ts';
 import { capturePages } from './pages.ts';
 import { LANGUAGE_DEFAULT, languageCurrent, t, type Language } from '../i18n/index.ts';
 
-/** Gabarit livré avec l'application. */
+/** Template shipped with the application. */
 export const TEMPLATE_DEFAULT = join(APP_ROOT, 'templates', 'cv', 'plain');
 
 /**
- * Sections rendues sur deux colonnes (listes courtes), reconnues à leur titre en français comme en anglais,
- * quelle que soit la langue configurée : Compétences (techniques), Formations, Certifications, Langues ;
+ * Sections rendered on two columns (short lists), recognized by their French or English title,
+ * whatever the configured language: Compétences (techniques), Formations, Certifications, Langues;
  * Skills, Technical Skills, Key Competencies, Education (& Certifications), Certifications, Languages.
- * Les autres sections (Résumé / Summary, Expérience / Experience…) restent sur une colonne.
+ * The other sections (Résumé / Summary, Expérience / Experience…) stay on one column.
  */
 export const SECTIONS_TWO_COLUMNS = /compétences|competences|competencies|formations|certifications|langues|skills|education|languages/i;
 
 /**
- * Titres de section usuels d'un CV dans les langues autres que celle par défaut : un CV qui en a au moins deux est déclaré
- * dans cette langue (attribut lang). Une langue absente de la table n'est simplement jamais détectée.
+ * Usual section titles of a CV in the languages other than the default one: a CV that has at least two of them is declared
+ * in that language (lang attribute). A language missing from the table is simply never detected.
  */
 const SECTIONS_BY_LANGUAGE: Partial<Record<Language, RegExp>> = {
   en: /^(summary|profile|professional summary|about me|(work |professional )?experience|employment history|(technical |key |core )?skills|(key |core )?competencies|education|education (&|and) certifications|certifications|languages|projects|interests)$/i,
 };
 
-/** Marqueurs de saut de page manuel : <!-- saut-de-page -->, son alias anglais <!-- page-break -->, ou un div break-after. */
+/** Manual page break markers: <!-- saut-de-page -->, its English alias <!-- page-break -->, or a break-after div. */
 const PAGE_BREAK = /saut-de-page|page-break|break-after/i;
 
-/** Langue d'un CV Markdown d'après ses titres de section : la première langue dont il a au moins deux titres usuels, sinon la langue par défaut. */
+/** Language of a Markdown CV from its section titles: the first language of which it has at least two usual titles, otherwise the default language. */
 export function languageOfCv(markdown: string): Language {
   const titles = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
   for (const [language, pattern] of Object.entries(SECTIONS_BY_LANGUAGE) as [Language, RegExp][]) {
@@ -53,7 +53,7 @@ const ICONS: Record<string, string> = {
     '<path d="M6.5 8A1.5 1.5 0 1 0 6.5 5a1.5 1.5 0 0 0 0 3ZM5 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8Zm6 9h1a1 1 0 0 0 1-1v-4.5c0-1.5 3-2.5 3-.5V18a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6c0-2-1.5-3-3.5-3S13 10.5 13 10.5V10a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm9-18a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h16Zm1 3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4Z"/>',
   github:
     '<path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7 0-.7 0-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.1 4 18.1 4.3 18.1 4.3c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z"/>',
-  // Chaîne (deux maillons) pour les autres profils (Malt, GitLab, portfolio de plateforme…).
+  // Chain (two links) for the other profiles (Malt, GitLab, platform portfolio…).
   link: '<path d="M3.7 12a5.1 5.1 0 0 1 5.1-5.1h3.4v2.2H8.8a2.9 2.9 0 0 0 0 5.8h3.4v2.2H8.8A5.1 5.1 0 0 1 3.7 12Zm6.2 1.1h4.2v-2.2H9.9v2.2Zm6.2-6.2h-3.4v2.2h3.4a2.9 2.9 0 1 1 0 5.8h-3.4v2.2h3.4a5.1 5.1 0 0 0 0-10.2Z"/>',
 };
 
@@ -65,7 +65,7 @@ function isProfile(text: string): boolean {
   return PROFILES.test(text.toLowerCase());
 }
 
-/** Adresse / lieu : tout ce qui n'est ni un moyen de contact ni un profil. */
+/** Address / location: everything that is neither a contact means nor a profile. */
 function isAddress(text: string): boolean {
   if (isProfile(text)) return false;
   const t = text.toLowerCase();
@@ -91,7 +91,7 @@ function icon(text: string): string {
 
 const inline = (text: string): string => marked.parseInline(text) as string;
 
-/** Intitulé d'une expérience : « 01/2019 – aujourd'hui · Lyon » ou « … | Lyon ». */
+/** Heading of an experience: "01/2019 – aujourd'hui · Lyon" or "… | Lyon". */
 function metaJob(title: string): string {
   const parts = title
     .split(/\s+[·|]\s+/)
@@ -117,17 +117,17 @@ function renderToken(t: Token): string {
 }
 
 export interface OptionsHtml {
-  /** Feuille de style, relative à l'HTML produit. */
+  /** Stylesheet, relative to the produced HTML. */
   css: string;
-  /** Photo, relative à l'HTML produit (absente : pas de photo). */
+  /** Photo, relative to the produced HTML (absent: no photo). */
   portrait?: string | null;
   language?: string;
 }
 
 /**
- * Structure attendue :
- * `# Prénom NOM`, titre en **gras**, sous-titre en *italique*, lignes de contact (séparées par « · »),
- * puis des sections `##` ; dans l'expérience, un poste = `### dates · lieu` suivi d'une ligne en gras (l'intitulé).
+ * Expected structure:
+ * `# First name LAST NAME`, title in **bold**, subtitle in *italics*, contact lines (separated by "·"),
+ * then `##` sections; in the experience, a job = `### dates · location` followed by a bold line (the job title).
  */
 export function cvToHtml(markdown: string, o: OptionsHtml): string {
   const tokens = marked.lexer(markdown);
@@ -168,7 +168,7 @@ export function cvToHtml(markdown: string, o: OptionsHtml): string {
   }
 
   const elements = contacts.map((raw) => {
-    // « **E-mail :** valeur » : la valeur reste, le libellé choisit l'icône.
+    // "**E-mail:** value": the value stays, the label chooses the icon.
     const label = raw.match(/^\*\*([^*]+?)\s*:\*\*\s*(.+)$/);
     const value = label ? label[2].trim() : raw;
     const index = label ? `${label[1]} ${value}` : value;
@@ -206,8 +206,8 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
 
   for (; i < tokens.length; i += 1) {
     const t = tokens[i];
-    // Saut de page manuel (<!-- saut-de-page -->, <!-- page-break --> ou un div break-after) : il ferme le poste et la section
-    // en cours, sinon il resterait enfermé dans le dernier poste, sans effet.
+    // Manual page break (<!-- saut-de-page -->, <!-- page-break --> or a break-after div): it closes the current job and section,
+    // otherwise it would stay locked in the last job, with no effect.
     if (t.type === 'html' && PAGE_BREAK.test(t.raw)) {
       closeJob();
       closeSection();
@@ -252,7 +252,7 @@ ${output.join('\n')}
 }
 
 // ---------------------------------------------------------------------------------------------
-// Navigateur et PDF
+// Browser and PDF
 
 const BROWSERS_WINDOWS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -277,7 +277,7 @@ const BROWSERS_LINUX = [
   '/snap/bin/chromium',
 ];
 
-/** Premier Chrome / Edge / Chromium trouvé (VIGIE_EMPLOI_BROWSER pour l'imposer), ou null. */
+/** First Chrome / Edge / Chromium found (VIGIE_EMPLOI_BROWSER to force one), or null. */
 export function findBrowser(env: NodeJS.ProcessEnv = process.env): string | null {
   const forced = variable(env, 'BROWSER');
   if (forced) return existsSync(forced) ? forced : null;
@@ -320,11 +320,11 @@ export interface ResultCv {
   html: string;
   pdf: string;
   pages: number;
-  /** Image PNG des pages réelles du PDF (option capture), pour un contrôle visuel sans visionneuse PDF. */
+  /** PNG image of the real pages of the PDF (capture option), for a visual check without a PDF viewer. */
   capture?: string;
 }
 
-/** Génère le PDF d'un CV Markdown avec le gabarit donné (dossier contenant gabarit.css). */
+/** Generates the PDF of a Markdown CV with the given template (folder containing gabarit.css). */
 export function generateCv(markdown: string, folderTemplate: string, browser: string, o: { capture?: boolean } = {}): ResultCv {
   const md = resolve(markdown);
   if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.notFound', { path: md })), { user: true });
@@ -357,7 +357,7 @@ export function generateCv(markdown: string, folderTemplate: string, browser: st
   const pages = countPages(pdf);
   const result: ResultCv = { markdown: md, html, pdf, pages };
   if (o.capture) {
-    // Vraies pages du PDF (rendues par pdf.js), et non le rendu HTML écran : les sauts de page sont ceux du PDF.
+    // Real pages of the PDF (rendered by pdf.js), and not the on-screen HTML rendering: the page breaks are those of the PDF.
     const png = join(preview, `${name}.png`);
     capturePages(pdf, png, browser, {
       pages,
@@ -369,11 +369,11 @@ export function generateCv(markdown: string, folderTemplate: string, browser: st
 }
 
 // ---------------------------------------------------------------------------------------------
-// Gabarits livrés et choix du gabarit de l'espace
+// Shipped templates and choice of the workspace's template
 
 export const FOLDER_TEMPLATES = join(APP_ROOT, 'templates', 'cv');
 
-/** Descriptions traduites des gabarits livrés, par langue (l'en-tête des feuilles, lu à défaut, est en français). */
+/** Translated descriptions of the shipped templates, by language (the header of the stylesheets, read as a fallback, is in French). */
 const DESCRIPTIONS_TEMPLATES: Partial<Record<Language, Record<string, string>>> = {
   en: {
     compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
@@ -383,7 +383,7 @@ const DESCRIPTIONS_TEMPLATES: Partial<Record<Language, Record<string, string>>> 
   },
 };
 
-/** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
+/** Templates shipped with the application: folder name and first sentence of the header of gabarit.css. */
 export function listTemplates(): { name: string; description: string }[] {
   return readdirSync(FOLDER_TEMPLATES)
     .filter((n) => existsSync(join(FOLDER_TEMPLATES, n, 'gabarit.css')))
@@ -391,15 +391,15 @@ export function listTemplates(): { name: string; description: string }[] {
       const css = readFileSync(join(FOLDER_TEMPLATES, name, 'gabarit.css'), 'utf8');
       const header = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
       const phrase = header.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
-      // La description vient de l'en-tête (français) de la feuille ; traduite pour les gabarits livrés connus.
+      // The description comes from the (French) header of the stylesheet; translated for the known shipped templates.
       const translated = DESCRIPTIONS_TEMPLATES[languageCurrent()]?.[name];
       return { name, description: translated ?? phrase };
     });
 }
 
 /**
- * Installe un gabarit livré dans <espace>/cv/gabarit. L'ancien est renommé cv/gabarit-<AAAAMMJJ-HHMMSS>
- * (rien n'est perdu) ; la photo (portrait.*) est reprise dans le nouveau.
+ * Installs a shipped template into <workspace>/cv/gabarit. The old one is renamed cv/gabarit-<YYYYMMDD-HHMMSS>
+ * (nothing is lost); the photo (portrait.*) is carried over into the new one.
  */
 export function chooseTemplate(workspace: string, name: string): { folder: string; old: string | null } {
   const source = join(FOLDER_TEMPLATES, name);

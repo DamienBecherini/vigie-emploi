@@ -1,4 +1,4 @@
-// Ingestion de la boîte de réception : .eml → offres en base, puis suppression des e-mails traités.
+// Ingestion of the inbox: .eml → offers in the database, then deletion of the processed e-mails.
 import { existsSync, readdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { Database } from '../db/database.ts';
@@ -15,14 +15,14 @@ import { t } from '../i18n/index.ts';
 
 export interface OptionsIngest {
   folderEmails: string;
-  /** Garder les .eml après traitement. */
+  /** Keep the .eml files after processing. */
   keep?: boolean;
-  /** Lire le JSON-LD des pages Hellowork / Free-Work. */
+  /** Read the JSON-LD of the Hellowork / Free-Work pages. */
   download?: boolean;
   excludedTitles?: RegExp[];
   rejectedEmployers?: RegExp[];
   downloader?: Downloader;
-  /** Pause entre deux téléchargements (ms). */
+  /** Pause between two downloads (ms). */
   pause?: number;
 }
 
@@ -44,16 +44,16 @@ export interface SummaryIngest {
   added: number;
   duplicates: number;
   dismissed: number;
-  /** Nouvelles offres sans description : à lire dans le navigateur. */
+  /** New offers without a description: to read in the browser. */
   to_read: number;
-  /** Nouvelles offres dont la description a été lue (JSON-LD). */
+  /** New offers whose description was read (JSON-LD). */
   with_description: number;
   errors: { file?: string; url?: string; message: string }[];
-  /** E-mails lus sans aucune offre reconnue : conservés (format inconnu, à signaler). */
+  /** E-mails read without any recognized offer: kept (unknown format, to report). */
   without_offer: string[];
   /**
-   * Accusés de réception de candidature : leurs liens ne deviennent pas des offres. `offres_connues` = offres
-   * de l'e-mail déjà en base (id, statut). À l'IA de vérifier que la candidature est enregistrée comme envoyée.
+   * Application acknowledgments: their links do not become offers. `known_offers` = offers
+   * of the e-mail already in the database (id, status). Up to the AI to check that the application is saved as sent.
    */
   confirmations: { file: string; subject: string; date: string | null; offers_known: { id: number; status: string; title: string }[] }[];
   detail: { added: OfferIngested[]; dismissed: OfferIngested[]; duplicates: OfferIngested[] };
@@ -98,7 +98,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
   }
   summary.files = files.length;
 
-  // 1. Lecture de tous les e-mails, fusion des offres (la première occurrence garde la date de réception).
+  // 1. Reading of all the e-mails, merge of the offers (the first occurrence keeps the reception date).
   const offers = new Map<string, OfferEmail>();
   const read: string[] = [];
   for (const f of files) {
@@ -119,7 +119,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
         if (!already) offers.set(off.url, off);
         else if (off.title.length > already.title.length) already.title = off.title;
       }
-      // Aucune offre reconnue : format inconnu, l'e-mail est gardé pour ne rien perdre.
+      // No offer recognized: unknown format, the e-mail is kept so that nothing is lost.
       if (email.offers.length === 0) summary.without_offer.push(f);
       else read.push(path);
     } catch (e) {
@@ -128,7 +128,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
   }
   summary.offers_found = offers.size;
 
-  // 2. Tri : doublons (déjà en base), exclusions sur l'intitulé, lecture JSON-LD.
+  // 2. Sorting: duplicates (already in the database), exclusions on the job title, JSON-LD reading.
   for (const off of offers.values()) {
     const existing = findOffer(db, off.source, off.siteId);
     if (existing) {
@@ -141,7 +141,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
         company: existing.company,
         status: existing.status,
       });
-      // Offre déjà suivie revue dans une alerte : son statut ne bouge pas, une trace au journal (une par jour).
+      // An already tracked offer seen again in an alert: its status does not move, a trace in the journal (one per day).
       if (STATUSES_TRACKED.includes(existing.status)) {
         const day = dayLocal();
         const key = `seen:${off.source}:${day}`;
@@ -225,10 +225,10 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
     'INSERT INTO ingestions (at, files, added, duplicates, dismissed, errors) VALUES (?, ?, ?, ?, ?, ?)',
   ).run(now(), summary.files, summary.added, summary.duplicates, summary.dismissed, summary.errors.length);
 
-  // 3. Suppression des e-mails lus sans erreur et dont les offres sont en base.
+  // 3. Deletion of the e-mails read without error and whose offers are in the database.
   if (!o.keep) {
-    // unlinkSync et non rmSync : sous Windows, rmSync ne supprimait rien, sans erreur, sur certains noms
-    // (crochets, « ... »), et l'e-mail revenait au lot suivant. Chaque suppression est vérifiée.
+    // unlinkSync and not rmSync: on Windows, rmSync deleted nothing, without an error, for some names
+    // (brackets, "..."), and the e-mail came back in the next batch. Each deletion is checked.
     for (const path of read) {
       try {
         unlinkSync(path);
@@ -242,7 +242,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
   return summary;
 }
 
-/** Ingestion avec les réglages de la configuration (CLI et MCP). */
+/** Ingestion with the settings of the configuration (CLI and MCP). */
 export function ingestPerConfig(
   db: Database,
   config: Pick<Config, 'emails' | 'fetchJsonLd' | 'excludedTitles' | 'rejectedEmployers'>,

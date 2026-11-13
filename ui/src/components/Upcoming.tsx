@@ -1,5 +1,5 @@
-// Bandeau « À venir » de l'écran principal : échéances en retard et des 7 prochains jours, et statistiques.
-// Au-delà de 10 échéances, la liste défile ; l'affichage des statistiques est retenu (localStorage).
+// "Upcoming" banner of the main screen: overdue deadlines and those of the next 7 days, and statistics.
+// Beyond 10 deadlines, the list scrolls; showing the statistics is remembered (localStorage).
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { BadgeType, dateEvent } from './Journal.tsx';
 import { ShadowsVertical, useShadowsVertical } from './ShadowsVertical.tsx';
 import { number, t } from '../i18n/index.ts';
 
-/** Nombre d'échéances visibles avant la barre de défilement. */
+/** Number of deadlines visible before the scroll bar. */
 const VISIBLE = 10;
 
 function Element({ e, choose }: { e: DeadlineOffer; choose: (id: number) => void }) {
@@ -25,7 +25,7 @@ function Element({ e, choose }: { e: DeadlineOffer; choose: (id: number) => void
         <span className="font-semibold whitespace-nowrap tabular-nums">{dateEvent(e.at)}</span>
         <BadgeType type={e.type} />
         <span className="font-semibold">{e.company ?? e.title}</span>
-        {/* Largeur minimale : sans place à côté de la date et de l'entreprise, le résumé passe à la ligne entier. */}
+        {/* Minimum width: without room next to the date and the company, the whole summary goes to the next line. */}
         <span className="min-w-[min(14rem,100%)] flex-1 break-words">{e.summary}</span>
       </button>
     </li>
@@ -68,7 +68,7 @@ function Statistics() {
   );
 }
 
-/** Hauteur maximale de la liste : celle des VISIBLES premières échéances (lignes de hauteur variable). */
+/** Maximum height of the list: that of the first VISIBLE deadlines (lines of variable height). */
 function useLimitedHeight(dependency: unknown) {
   const ref = useRef<HTMLDivElement>(null);
   const [max, setMax] = useState<number | null>(null);
@@ -122,8 +122,8 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
           {nothing && (
             <p className="px-1 text-sm text-slate-600 dark:text-slate-400">{t('upcoming.nothing')}</p>
           )}
-          {/* Liste qui défile : jamais plus de 40 % de l'écran, encadrée, ombrée en haut / en bas quand il reste des
-              échéances cachées de ce côté, et sur téléphone une bande libre à droite pour faire défiler la page au pouce. */}
+          {/* Scrolling list: never more than 40 % of the screen, framed, shaded at the top / bottom when hidden
+              deadlines remain on that side, and on a phone a free strip on the right to scroll the page with the thumb. */}
           <div className={max ? 'relative mt-1 max-md:mr-10' : ''}>
           <div
             ref={ref}
@@ -153,7 +153,7 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
           {max && <ShadowsVertical {...shadows} />}
           </div>
         </div>
-        {/* Statistiques sous l'en-tête (près de leur button) tant que la place manque ; à droite de la liste sur grand écran. */}
+        {/* Statistics under the header (near their button) as long as room is lacking; to the right of the list on a large screen. */}
         {stats && (
           <div className="order-first mt-1 w-full lg:order-none lg:w-80">
             <Statistics />

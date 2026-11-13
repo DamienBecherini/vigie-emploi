@@ -1,5 +1,5 @@
-// Création d'un espace de travail : copie du modèle (modele/), du gabarit de CV et de la grille d'exemple,
-// configuration de l'application et du serveur MCP, puis prompt de démarrage à donner à l'IA.
+// Creation of a workspace: copy of the template (scaffold/), of the CV template and of the sample rubric,
+// configuration of the application and of the MCP server, then onboarding prompt to give to the AI.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { NAME_FILE_CONFIG, APP_ROOT } from '../core/config.ts';
@@ -11,8 +11,8 @@ import { isLanguage, LANGUAGE_DEFAULT, LANGUAGES, tl, type Language } from '../i
 export const SCAFFOLD = join(APP_ROOT, 'scaffold');
 
 /**
- * Modèle de l'espace dans la langue voulue : modele-<langue>/ s'il existe (consignes de l'IA traduites,
- * à venir pour l'anglais), sinon modele/ (français).
+ * Workspace template in the wanted language: scaffold-<language>/ if it exists (translated AI instructions),
+ * otherwise scaffold/ (French).
  */
 export function scaffoldOfLanguage(language: Language, root: string = APP_ROOT): string {
   if (language === LANGUAGE_DEFAULT) return join(root, 'scaffold');
@@ -20,33 +20,33 @@ export function scaffoldOfLanguage(language: Language, root: string = APP_ROOT):
   return existsSync(translated) ? translated : join(root, 'scaffold');
 }
 export const BINARY = join(APP_ROOT, 'bin', 'vigie-emploi.js');
-/** Consignes de l'application pour l'agent (AGENTS.md à la racine de l'application). */
+/** The application's instructions for the agent (AGENTS.md at the application's root). */
 export const INSTRUCTIONS_APP = join(APP_ROOT, 'AGENTS.md');
 
-/** Nom des consignes de l'application dans une langue : AGENTS.<langue>.md s'il existe, sinon AGENTS.md (français). */
+/** Name of the application's instructions in a language: AGENTS.<language>.md if it exists, otherwise AGENTS.md (French). */
 export function nameInstructionsApp(language: Language, root: string = APP_ROOT): string {
   if (language === LANGUAGE_DEFAULT) return 'AGENTS.md';
   return existsSync(join(root, `AGENTS.${language}.md`)) ? `AGENTS.${language}.md` : 'AGENTS.md';
 }
 const DROP_PUBLIC = 'https://github.com/DamienBecherini/vigie-emploi/blob/main/';
-/** Où l'init copie les consignes de l'application quand celle-ci tourne depuis le cache de npx. */
+/** Where init copies the application's instructions when it runs from the npx cache. */
 export const COPY_INSTRUCTIONS = 'procedures/application.md';
 
 /**
- * Comment l'espace de travail relance l'application (consignes de l'IA et serveur MCP).
- * - Depuis le dépôt ou une installation durable (npm i -g, node_modules d'un projet, extension Claude Desktop) :
- *   `node <chemin>/bin/vigie-emploi.js` ; dans le Node intégré de Claude Desktop, la commande MCP est « node » (celui du système).
- * - Depuis le cache de npx (`npx vigie-emploi init …`) : ce cache peut être purgé, le chemin ne vaut rien.
- *   On écrit `npx -y vigie-emploi@<version>` (version figée : la base et ses migrations restent cohérentes) ;
- *   sous Windows, le client MCP lance npx via `cmd /c` (npx y est un script .cmd).
+ * How the workspace launches the application again (AI instructions and MCP server).
+ * - From the repository or a lasting installation (npm i -g, node_modules of a project, Claude Desktop extension):
+ *   `node <path>/bin/vigie-emploi.js`; in the Node built into Claude Desktop, the MCP command is "node" (the system's).
+ * - From the npx cache (`npx vigie-emploi init …`): this cache can be purged, the path is worthless.
+ *   `npx -y vigie-emploi@<version>` is written (frozen version: the database and its migrations stay consistent);
+ *   on Windows, the MCP client launches npx through `cmd /c` (npx is a .cmd script there).
  */
 export interface Launch {
   mode: 'path' | 'npx';
-  /** Commande à taper dans un terminal ({{CMD}} des consignes). */
+  /** Command to type in a terminal ({{CMD}} of the instructions). */
   command: string;
-  /** Application telle qu'affichée dans les consignes ({{APP}}). */
+  /** Application as displayed in the instructions ({{APP}}). */
   app: string;
-  /** Serveur MCP de .mcp.json (sans l'environnement). */
+  /** MCP server of .mcp.json (without the environment). */
   mcp: { command: string; args: string[] };
 }
 
@@ -77,11 +77,11 @@ function versionApp(root: string): string {
 export interface OptionsInit {
   folder: string;
   port?: number;
-  /** Nom du serveur MCP dans .mcp.json. */
+  /** Name of the MCP server in .mcp.json. */
   nameMcp?: string;
-  /** Gabarit de CV livré à installer (défaut : sobre). */
+  /** Shipped CV template to install (default: plain). */
   template?: string;
-  /** Langue de l'interface, de la CLI et du suivi, écrite dans la config (défaut : fr). */
+  /** Language of the interface, the CLI and the tracker, written into the config (default: fr). */
   language?: Language;
   env?: NodeJS.ProcessEnv;
 }
@@ -100,14 +100,14 @@ export interface ResultInit {
   prompt: string;
 }
 
-/** Chemin avec des barres obliques (accepté partout, y compris sous Windows). */
+/** Path with forward slashes (accepted everywhere, Windows included). */
 const slash = (p: string) => p.replace(/\\/g, '/');
 
 function errorUser(message: string): never {
   throw Object.assign(new Error(message), { user: true });
 }
 
-/** Remplace les marqueurs {{…}} des fichiers texte copiés depuis le modèle. */
+/** Replaces the {{…}} markers of the text files copied from the template. */
 function customize(folder: string, values: Record<string, string>): void {
   for (const name of readdirSync(folder)) {
     const path = join(folder, name);
@@ -121,7 +121,7 @@ function customize(folder: string, values: Record<string, string>): void {
   }
 }
 
-/** Prompt de démarrage à coller dans l'IA (en anglais, il lui demande aussi de parler anglais). */
+/** Onboarding prompt to paste into the AI (in English, it also asks it to speak English). */
 export function promptOnboarding(workspace: string, language: Language = LANGUAGE_DEFAULT): string {
   return tl(language, 'init.prompt', { workspace });
 }
@@ -148,13 +148,13 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
   const launched = launch();
   const { command, app } = launched;
 
-  // Modèle traduit (modele-en/…) s'il existe ; sinon le modèle français, signalé par un avertissement.
+  // Translated template (scaffold-en/…) if it exists; otherwise the French template, reported by a warning.
   const scaffold = scaffoldOfLanguage(language);
   cpSync(scaffold, folder, { recursive: true });
-  // npm ne livre pas les .gitignore d'un paquet : le modèle le garde sous le nom « gitignore ».
+  // npm does not ship the .gitignore files of a package: the template keeps it under the name "gitignore".
   if (existsSync(join(folder, 'gitignore'))) renameSync(join(folder, 'gitignore'), join(folder, '.gitignore'));
-  // Consignes de l'application : lues sur place, sauf depuis le cache de npx (purgeable) où on en copie une version.
-  // Version de la langue de l'espace (AGENTS.en.md…) s'il y en a une.
+  // The application's instructions: read in place, except from the npx cache (purgeable) where a copy is made.
+  // Version in the workspace's language (AGENTS.en.md…) if there is one.
   const instructions = nameInstructionsApp(language);
   let docApp = `${slash(APP_ROOT)}/${instructions}`;
   if (launched.mode === 'npx') {

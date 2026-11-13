@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { openDatabase } from '../src/db/database.ts';
 import { addStatus, saveOffer } from '../src/core/offers.ts';
 
-describe('passage en « envoyee »', () => {
-  it('pose la date d’envoi si elle manque, sans écraser une date existante', () => {
+describe('move to “sent”', () => {
+  it('sets the sending date if it is missing, without overwriting an existing date', () => {
     const db = openDatabase(':memory:');
     const a = saveOffer(db, 'linkedin', 'env-1', { title: 'Offre A' }, 'manual').offer.id;
     addStatus(db, a, 'sent', { at: '2026-11-10T09:00:00Z' });

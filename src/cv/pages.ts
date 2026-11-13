@@ -1,6 +1,6 @@
-// Contrôle de la mise en page d'un CV sur le PDF réel (et non sur le rendu HTML écran) :
-// - remplissage de chaque page, d'après la position verticale des éléments de texte (unpdf) ;
-// - capture des vraies pages, rendues par pdf.js (livré par unpdf) dans le navigateur headless.
+// Layout check of a CV on the real PDF (and not on the on-screen HTML rendering):
+// - fill of each page, from the vertical position of the text elements (unpdf);
+// - capture of the real pages, rendered by pdf.js (shipped with unpdf) in the headless browser.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -9,23 +9,23 @@ import { t } from '../i18n/index.ts';
 
 export interface PageFilled {
   page: number;
-  /** Part de la hauteur utile occupée, en % (du haut de la zone de contenu au bas du dernier texte). */
+  /** Share of the usable height that is filled, in % (from the top of the content area to the bottom of the last text). */
   fill: number;
 }
 
 export interface AnalysisPages {
   pages: PageFilled[];
-  /** Saut de page mal placé, dernière page presque vide… (vide si la mise en page est correcte). */
+  /** Badly placed page break, last page almost empty… (empty if the layout is correct). */
   warnings: string[];
 }
 
-/** Seuils : une page avant la dernière doit être pleine ; la dernière, au moins à moitié. */
+/** Thresholds: a page before the last one must be full; the last one, at least half. */
 export const THRESHOLD_PAGE_FULL = 80;
 export const THRESHOLD_LAST_PAGE = 50;
-/** En dessous, simple remarque sur la place restante en dernière page. */
+/** Below, a simple remark about the room left on the last page. */
 export const THRESHOLD_LAST_COMFORTABLE = 75;
 
-/** Bas d'une ligne de texte sous sa ligne de base (jambages), en part de la taille de police. */
+/** Bottom of a text line below its baseline (descenders), as a share of the font size. */
 const DESCENT = 0.25;
 
 interface Box {
@@ -34,9 +34,9 @@ interface Box {
 }
 
 /**
- * Remplissage des pages d'un PDF. La hauteur utile est la page moins les marges, estimées d'après le texte :
- * marge haute = plus petit écart entre le haut de page et le premier texte, toutes pages confondues ;
- * marge basse = la même (les gabarits ont des marges haute et basse voisines).
+ * Fill of the pages of a PDF. The usable height is the page minus the margins, estimated from the text:
+ * top margin = smallest gap between the top of the page and the first text, all pages together;
+ * bottom margin = the same (the templates have similar top and bottom margins).
  */
 export async function analyzePages(data: Uint8Array): Promise<AnalysisPages> {
   if (!data.length) throw new Error(t('core.pages.pdfEmpty'));
@@ -63,7 +63,7 @@ export async function analyzePages(data: Uint8Array): Promise<AnalysisPages> {
   return fill(boxes);
 }
 
-/** Calcul pur (testé à part) : boîtes de texte par page → remplissage et avertissements. */
+/** Pure computation (tested separately): text boxes per page → fill and warnings. */
 export function fill(boxes: { height: number; text: Box | null }[]): AnalysisPages {
   const margins = boxes.filter((b) => b.text).map((b) => Math.max(0, b.text!.high));
   const margin = margins.length ? Math.min(...margins) : 0;
@@ -94,19 +94,19 @@ export function fill(boxes: { height: number; text: Box | null }[]): AnalysisPag
   return { pages, warnings };
 }
 
-/** « 96 %, 58 % » pour l'affichage. */
+/** "96 %, 58 %" for display. */
 export function formatFill(a: AnalysisPages): string {
   return a.pages.map((p) => t('core.pages.percent', { pc: p.fill })).join(', ');
 }
 
 // ---------------------------------------------------------------------------------------------
-// Capture des vraies pages
+// Capture of the real pages
 
-/** Largeur de rendu d'une page A4 en pixels (hauteur au prorata). */
+/** Rendering width of an A4 page in pixels (height in proportion). */
 const WIDTH_PAGE = 794;
 const GAP = 16;
 
-/** Chemin du module pdf.js complet livré par unpdf (rendu sur canvas, sans worker séparé). */
+/** Path of the full pdf.js module shipped by unpdf (rendering on canvas, without a separate worker). */
 function pathPdfjs(): string {
   const require = createRequire(import.meta.url);
   return join(dirname(require.resolve('unpdf')), 'pdfjs.mjs');
@@ -118,9 +118,9 @@ function urlFile(path: string): string {
 }
 
 /**
- * Image PNG des pages réelles du PDF, l'une sous l'autre (fond gris, bord de page visible) : le PDF est rendu
- * par pdf.js dans le navigateur headless. Le PDF est embarqué dans la page HTML (base64) ; seul pdf.js est
- * chargé depuis le disque (d'où --allow-file-access-from-files).
+ * PNG image of the real pages of the PDF, one below the other (grey background, visible page edge): the PDF is rendered
+ * by pdf.js in the headless browser. The PDF is embedded in the HTML page (base64); only pdf.js is
+ * loaded from the disk (hence --allow-file-access-from-files).
  */
 export function capturePages(
   pdf: string,

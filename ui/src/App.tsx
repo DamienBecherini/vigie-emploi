@@ -55,7 +55,7 @@ import {
 
 const SIZES = [25, 50, 100, 200, 500];
 
-/** Colonnes du tableau (libellés dans la langue courante : l'application est remontée à chaque changement de langue). */
+/** Columns of the table (labels in the current language: the application is remounted at each language change). */
 const columnDefs = (): ColumnDef<LineOffer>[] => [
   { id: 'score', accessorKey: 'score', header: t('col.score'), cell: (c) => <BadgeScore score={c.row.original.score} /> },
   { id: 'status', accessorKey: 'status', header: t('col.status'), cell: (c) => <BadgeStatus status={c.row.original.status} /> },
@@ -98,7 +98,7 @@ const columnDefs = (): ColumnDef<LineOffer>[] => [
 
 const VISIBILITY_DEFAULT: VisibilityState = { location: true, contract: false, remote: true, published_at: false, id: false, tags: true };
 
-/** Recharge toutes les données depuis la base (modifications faites par la CLI ou une IA). */
+/** Reloads all the data from the database (changes made by the CLI or an AI). */
 function ButtonRefresh() {
   const client = useQueryClient();
   const inProgress = useIsFetching() > 0;
@@ -116,13 +116,13 @@ function ButtonRefresh() {
   );
 }
 
-/** Écran étroit (téléphone, moins de 768 px) : les filtres passent dans un tiroir au lieu d'une colonne. */
+/** Narrow screen (phone, less than 768 px): the filters move into a drawer instead of a column. */
 const NARROW_SCREEN = '(max-width: 767px)';
 
 /**
- * Colonne Intitulé collée au bord gauche quand le tableau défile horizontalement. Son ombre (un dégradé sur toute la
- * hauteur de chaque cellule, donc continu d'une ligne à l'autre) n'apparaît que lorsqu'elle est réellement collée et
- * que des colonnes passent dessous (data-collee du conteneur, voir DefilementHorizontal).
+ * Job title column stuck to the left edge when the table scrolls horizontally. Its shadow (a gradient over the whole
+ * height of each cell, so continuous from one line to the next) only appears when it is really stuck and
+ * columns pass under it (data-stuck of the container, see ScrollHorizontal).
  */
 const STUCK =
   'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[stuck=true]/scroll:after:opacity-100';
@@ -157,9 +157,9 @@ function save(key: string, value: unknown) {
   }
 }
 
-/** Langue de l'interface : le choix est mémorisé (localStorage) et l'emporte sur la configuration. */
+/** Language of the interface: the choice is remembered (localStorage) and wins over the configuration. */
 function ChoiceLanguage() {
-  // Codes courts dans l'en-tête (FR / EN), nom complet de la langue dans l'infobulle de chaque option.
+  // Short codes in the header (FR / EN), full name of the language in the tooltip of each option.
   return (
     <select
       className="field py-1 text-sm"
@@ -193,7 +193,7 @@ function Preferences() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     applyPalette(dark ? darkPalette : light);
-    // Variables reprises par le script de index.html au chargement suivant (pas de flash de couleurs).
+    // Variables read by the script of index.html at the next load (no colour flash).
     save('palette-vars-light', variablesPalette(light));
     save('palette-vars-dark', variablesPalette(darkPalette));
   }, [dark, light, darkPalette]);
@@ -274,7 +274,7 @@ function ChoiceColumns({ table }: { table: ReturnType<typeof useReactTable<LineO
 export function App() {
   const [params, update] = useParameters();
   const [visibility, setVisibility] = usePreference<VisibilityState>('columns', VISIBILITY_DEFAULT);
-  // Colonne des filtres sur grand écran (préférence retenue) ; tiroir fermé par défaut sur téléphone.
+  // Column of the filters on a large screen (remembered preference); drawer closed by default on a phone.
   const [columnFilters, setColumnFilters] = usePreference<boolean>('filters-open', true);
   const [drawerFilters, setDrawerFilters] = useState(false);
   const narrow = useNarrowScreen();
@@ -286,7 +286,7 @@ export function App() {
       if (e.key === 'Escape') setDrawerFilters(false);
     };
     document.addEventListener('keydown', onKey);
-    // La page derrière le tiroir ne défile pas.
+    // The page behind the drawer does not scroll.
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -310,20 +310,20 @@ export function App() {
   const page = Number(params.get('page') ?? 1);
   const size = Number(params.get('size') ?? 50);
 
-  // Repères de mise en page : en-tête de l'application (et sa rangée collée en fenêtre étroite), barre au-dessus du
-  // tableau (cible de la remontée au changement de page), tableau et son conteneur à défilement horizontal.
+  // Layout landmarks: header of the application (and its stuck row in a narrow window), bar above the
+  // table (target of the scroll-up on page change), table and its horizontal scroll container.
   const headerRef = useRef<HTMLElement>(null);
   const lineRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  /** Partie collée de l'en-tête : tout l'en-tête sur grand écran, la rangée de recherche en fenêtre étroite. */
+  /** Stuck part of the header: the whole header on a large screen, the search row in a narrow window. */
   const partStuck = useCallback(() => {
     const header = headerRef.current;
     return header && getComputedStyle(header).display !== 'contents' ? header : lineRef.current;
   }, []);
   const lowHeader = useCallback(() => partStuck()?.getBoundingClientRect().bottom ?? 0, [partStuck]);
-  // Hauteur de la partie collée dans --header-height : la copie collée de l'en-tête du tableau se place dessous (CSS).
+  // Height of the stuck part in --header-height: the stuck copy of the table header goes under it (CSS).
   useEffect(() => {
     const updated = () => document.documentElement.style.setProperty('--header-height', `${partStuck()?.offsetHeight ?? 0}px`);
     updated();
@@ -335,16 +335,16 @@ export function App() {
       window.removeEventListener('resize', updated);
     };
   }, [partStuck]);
-  // La remontée attend les lignes de la nouvelle page (effet plus bas, après la requête) : une page plus courte
-  // (souvent la dernière) réduit la hauteur du document à leur arrivée, ce qui recale le défilement et casserait
-  // une remontée lancée trop tôt.
+  // The scroll-up waits for the lines of the new page (effect below, after the query): a shorter page
+  // (often the last one) reduces the height of the document when they arrive, which readjusts the scrolling and would break
+  // a scroll-up started too early.
   const pagePrevious = useRef(page);
   const scrollUpPending = useRef(false);
   if (pagePrevious.current !== page) {
     pagePrevious.current = page;
     scrollUpPending.current = true;
   }
-  // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
+  // Sort on one or several levels: ?sort=received_at:desc,score:desc (old format: ?sort=score&order=asc).
   const orderDefault = params.get('order') === 'asc' ? 'asc' : 'desc';
   const levels = useMemo(() => readLevels(params.get('sort'), orderDefault), [params, orderDefault]);
   const sort = writeLevels(levels);
@@ -360,8 +360,8 @@ export function App() {
   const columns = useMemo(columnDefs, []);
   const list = useQuery({ queryKey: ['offers', key], queryFn: () => api.offers(request), placeholderData: keepPreviousData });
 
-  // Changement de page : une fois les lignes de la nouvelle page affichées (plus les données de l'ancienne gardées en
-  // attendant), si la barre au-dessus du tableau est sortie de l'écran, on remonte jusqu'à elle, sous l'en-tête collé.
+  // Page change: once the lines of the new page are displayed (no more data of the old one kept while
+  // waiting), if the bar above the table is out of the screen, scroll back up to it, under the stuck header.
   const pageReady = list.data !== undefined && !list.isPlaceholderData;
   useEffect(() => {
     if (!scrollUpPending.current || !pageReady) return;
@@ -371,8 +371,8 @@ export function App() {
     const subHeader = lowHeader() + 8;
     const high = bar.getBoundingClientRect().top;
     if (high >= subHeader) return;
-    // Saut immédiat (pas d'animation) : on veut voir tout de suite le haut de la nouvelle page, et une animation est
-    // interrompue par le navigateur quand la hauteur du contenu change encore (recalage du défilement).
+    // Immediate jump (no animation): the top of the new page should be visible at once, and an animation is
+    // interrupted by the browser when the content height still changes (scroll readjustment).
     window.scrollTo({ top: window.scrollY + high - subHeader, behavior: 'instant' });
   }, [pageReady, list.data, page, lowHeader]);
   const meta = useQuery({ queryKey: ['meta'], queryFn: api.meta });
@@ -395,7 +395,7 @@ export function App() {
     getRowId: (r) => String(r.id),
   });
 
-  // Menus déroulants (<details data-menu>) : un clic ailleurs ou Échap les referme.
+  // Drop-down menus (<details data-menu>): a click elsewhere or Escape closes them.
   useEffect(() => {
     const open = () => document.querySelectorAll<HTMLDetailsElement>('details[data-menu][open]');
     const onClick = (e: MouseEvent) => {
@@ -440,7 +440,7 @@ export function App() {
   const total = list.data?.total ?? 0;
   const pages = list.data?.pages ?? 1;
 
-  /** Lignes de l'en-tête du tableau ; `copie` : celles de la copie collée (EnteteColle), hors de l'ordre de tabulation. */
+  /** Lines of the table header; `copy`: those of the stuck copy (StickyHeader), out of the tab order. */
   const linesHeader = (copy: boolean) =>
     table.getHeaderGroups().map((hg) => (
       <tr key={hg.id}>
@@ -492,8 +492,8 @@ export function App() {
       <a href="#table" className="sr-only-focusable absolute top-2 left-2 z-50 rounded bg-blue-700 px-3 py-2 text-white">
         {t('header.goTable')}
       </a>
-      {/* Grand écran : tout l'en-tête reste collé en haut, sur une ligne. Fenêtre étroite : seule la rangée logo +
-          recherche reste collée ; vues et boutons défilent avec la page (l'en-tête et son bloc deviennent « contents »). */}
+      {/* Large screen: the whole header stays stuck at the top, on one line. Narrow window: only the logo +
+          search row stays stuck; views and buttons scroll with the page (the header and its block become "contents"). */}
       <header
         ref={headerRef}
         className="max-md:contents md:sticky md:top-0 md:z-10 md:border-b md:border-slate-200 md:bg-white/95 md:px-4 md:py-2 md:backdrop-blur md:dark:border-slate-800 md:dark:bg-slate-900/95"
@@ -559,7 +559,7 @@ export function App() {
         )}
         {filtersOpen && narrow && (
           <div className="fixed inset-0 z-40">
-            {/* Page derrière : assombrie et floutée, pour que le tiroir s'en détache aussi en thème sombre. */}
+            {/* Page behind: darkened and blurred, so that the drawer stands out from it in the dark theme too. */}
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] dark:bg-black/55" aria-hidden="true" onClick={() => setDrawerFilters(false)} />
             <aside
               aria-label={t('list.filters')}
@@ -620,7 +620,7 @@ export function App() {
             </p>
           )}
 
-          {/* Bloc du tableau : la copie collée de l'en-tête (EnteteColle) ne dépasse pas sa fin. */}
+          {/* Table block: the stuck copy of the header (StickyHeader) does not go beyond its end. */}
           <div>
           <StickyHeader tableRef={tableRef} scrollRef={scrollRef} lines={linesHeader(true)} />
           <ScrollHorizontal
@@ -657,7 +657,7 @@ export function App() {
                       }`}
                     >
                       {r.getVisibleCells().map((c) => (
-                        // Intitulé collé : fond hérité de la ligne (survol, sélection) pour masquer les colonnes qui passent dessous.
+                        // Stuck job title: background inherited from the line (hover, selection) to hide the columns passing under it.
                         <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'title' ? `min-w-64 max-md:min-w-44 ${STUCK} bg-inherit` : ''}`}>
                           {flexRender(c.column.columnDef.cell, c.getContext())}
                         </td>

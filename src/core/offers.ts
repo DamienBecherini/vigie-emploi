@@ -1,4 +1,4 @@
-// Opérations sur les offres : création / complément, statuts, notes, tags, candidatures, détail.
+// Operations on offers: creation / completion, statuses, scores, tags, applications, detail.
 import type { Database } from '../db/database.ts';
 import { isStatus, type Status } from './statuses.ts';
 import { readCompensation, now, sanitize } from './text.ts';
@@ -59,11 +59,11 @@ export interface Score {
   rubric_version: string | null;
   origin: string;
   scored_at: string;
-  /** Note à critères : valeur exacte (note = arrondi au demi-point). null pour une note globale. */
+  /** Criteria-based score: exact value (score = rounded to the half point). null for an overall score. */
   exact_score: number | null;
-  /** Sous-notes, entrées et règles signalées (ce qui a été saisi). null : note globale de l'ancienne grille. */
+  /** Sub-scores, inputs and reported rules (what was entered). null: overall score of the old rubric. */
   input: Input | null;
-  /** Décomposition calculée : sous-notes, poids, contributions, règles appliquées, drapeaux. */
+  /** Computed breakdown: sub-scores, weights, contributions, applied rules, flags. */
   breakdown: Breakdown | null;
   recalculated_at: string | null;
 }
@@ -93,7 +93,7 @@ export interface Application {
   updated_at: string | null;
 }
 
-/** Champs modifiables d'une candidature : absent = inchangé, null ou chaîne vide = effacé. */
+/** Editable fields of an application: absent = unchanged, null or empty string = cleared. */
 export type FieldsApplication = Partial<
   Pick<Application, 'folder' | 'cv' | 'sent_at' | 'channel' | 'message' | 'next_action' | 'label' | 'conditions' | 'state'>
 >;
@@ -115,7 +115,7 @@ export interface DetailOffer extends Offer {
   scores: Score[];
   statuses: LineStatus[];
   application: Application | null;
-  /** Journal : échéances d'abord, puis événements du plus récent au plus ancien. */
+  /** Journal: deadlines first, then events from the most recent to the oldest. */
   events: EventJournal[];
 }
 
@@ -145,7 +145,7 @@ export function offerByUrl(db: Database, url: string): Offer | undefined {
   return db.prepare('SELECT * FROM offers WHERE canonical_url = ?').get(url) as Offer | undefined;
 }
 
-/** Remplace le lien de l'offre (null pour l'effacer). Seules les adresses http(s) sont acceptées. */
+/** Replaces the offer's link (null to clear it). Only http(s) addresses are accepted. */
 export function updateLink(db: Database, id: number, url: string | null): void {
   const clean = url?.trim() || null;
   if (clean !== null && !/^https?:\/\/\S+$/i.test(clean)) {
@@ -164,8 +164,8 @@ function valuesCleaned(fields: FieldsOffer): Partial<Record<keyof FieldsOffer, s
 }
 
 /**
- * Crée l'offre (source, id_site) si elle n'existe pas ; sinon complète les champs vides
- * (ou les remplace tous si `ecraser`). Retourne l'offre et si elle vient d'être créée.
+ * Creates the offer (source, site_id) if it does not exist; otherwise fills in the empty fields
+ * (or replaces them all if `overwrite`). Returns the offer and whether it was just created.
  */
 export function saveOffer(
   db: Database,
@@ -233,10 +233,10 @@ export function saveOffer(
 }
 
 /**
- * Ordre de l'historique des statuts pour trouver le statut courant : le plus récent, sauf qu'une ligne
- * automatique d'avant le go (offre revue dans un lot, le registre ou une alerte) passe après les autres
- * dès que l'offre a été suivie (go et au-delà) : elle ne change pas le statut d'une candidature.
- * Même règle dans la migration 0003.
+ * Order of the status history used to find the current status: the most recent, except that an automatic
+ * line from before the go (offer seen again in a batch, the register or an alert) comes after the others
+ * as soon as the offer has been tracked (go and beyond): it does not change the status of an application.
+ * Same rule in migration 0003.
  */
 export const ORDER_STATUSES = `(s.origin IN ('ingest', 'import-batch', 'import-register')
     AND s.status IN ('new', 'to-read', 'scored', 'dismissed')
@@ -244,7 +244,7 @@ export const ORDER_STATUSES = `(s.origin IN ('ingest', 'import-batch', 'import-r
                 AND s2.status IN ('go', 'sent', 'followed-up', 'interview', 'rejected', 'closed', 'withdrawn'))),
   s.at DESC, s.id DESC`;
 
-/** Recalcule les colonnes dénormalisées statut / note à partir de l'historique (la dernière fait foi). */
+/** Recomputes the denormalized status / score columns from the history (the last one wins). */
 export function recompute(db: Database, offerId: number): void {
   db.prepare(
     `UPDATE offers SET
@@ -259,7 +259,7 @@ export interface OptionsStatus {
   comment?: string | null;
   origin?: string;
   at?: string;
-  /** Ne rien ajouter si une ligne identique (statut, commentaire, origine) existe déjà : imports idempotents. */
+  /** Add nothing if an identical line (status, comment, origin) already exists: idempotent imports. */
   ifMissing?: boolean;
 }
 
@@ -286,8 +286,8 @@ export function addStatus(db: Database, offerId: number, status: string, opts: O
 }
 
 /**
- * Passage en « envoyee » sans date d'envoi : la date du statut devient la date d'envoi (sinon le suivi
- * affiche « — » et le délai de réponse ne se calcule pas), et une prochaine action « Envoyer… » est effacée.
+ * Move to "sent" without a sending date: the status date becomes the sending date (otherwise the tracker
+ * shows "—" and the reply delay cannot be computed), and a next action "Envoyer…" is cleared.
  */
 function dateSendByDefault(db: Database, offerId: number, at?: string): void {
   const d = new Date();
@@ -371,7 +371,7 @@ export function normalizeTag(name: string): string {
   return name.trim().replace(/\s+/g, '-').toLowerCase();
 }
 
-/** Ajoute et retire des tags ; retourne la liste à jour. */
+/** Adds and removes tags; returns the updated list. */
 export function updateTags(db: Database, offerId: number, additions: string[], removals: string[]): string[] {
   for (const raw of additions) {
     const name = normalizeTag(raw);
@@ -396,9 +396,9 @@ export function applicationOf(db: Database, offerId: number): Application | null
 }
 
 /**
- * Crée ou met à jour la candidature d'une offre. Un champ absent (undefined) est conservé ; null ou ''
- * l'efface. `origine` est retenue pour la prochaine action (la reprise de _SUIVI.md ne remplace pas
- * un texte saisi dans l'interface, la CLI ou par MCP).
+ * Creates or updates the application of an offer. An absent field (undefined) is kept; null or ''
+ * clears it. `origin` is kept for the next action (importing _SUIVI.md does not replace
+ * a text entered in the interface, the CLI or through MCP).
  */
 export function saveApplication(
   db: Database,
@@ -431,7 +431,7 @@ export function saveApplication(
   return applicationOf(db, offerId)!;
 }
 
-/** Valeur d'un champ de candidature : texte nettoyé (espaces de bord retirés), null si vide. */
+/** Value of an application field: cleaned text (surrounding spaces removed), null if empty. */
 function sanitizeField(v: string | null | undefined): string | null {
   const t = (v ?? '').trim();
   return t === '' ? null : t;
@@ -439,7 +439,7 @@ function sanitizeField(v: string | null | undefined): string | null {
 
 type LineScore = Omit<Score, 'read' | 'input' | 'breakdown'> & { read: number; input: string | null; breakdown: string | null };
 
-/** Notes d'une offre, de la plus récente à la plus ancienne (sous-notes et décomposition lues). */
+/** Scores of an offer, from the most recent to the oldest (sub-scores and breakdown parsed). */
 export function scoresOffer(db: Database, offerId: number): Score[] {
   return (db.prepare('SELECT * FROM scores WHERE offer_id = ? ORDER BY scored_at DESC, id DESC').all(offerId) as unknown as LineScore[]).map(
     (n) => ({
@@ -461,7 +461,7 @@ export function detailOffer(db: Database, id: number): DetailOffer | undefined {
   return { ...offer, tags: tagsOffer(db, id), scores, statuses, application: applicationOf(db, id), events: journal(db, id) };
 }
 
-/** Nombre d'offres d'une entreprise déjà en base (comparaison sans casse). */
+/** Number of offers of a company already in the database (case-insensitive comparison). */
 export function offersOfCompany(db: Database, company: string, exceptId?: number): number {
   const r = db
     .prepare('SELECT COUNT(*) AS n FROM offers WHERE company = ? COLLATE NOCASE AND id IS NOT ?')
@@ -470,8 +470,8 @@ export function offersOfCompany(db: Database, company: string, exceptId?: number
 }
 
 /**
- * Fusionne l'offre `doublon` dans l'offre `cible` : notes, statuts, tags et candidature passent sur la cible,
- * les champs vides de la cible sont complétés, puis le doublon est supprimé.
+ * Merges the offer `duplicate` into the offer `target`: scores, statuses, tags and application move to the target,
+ * the empty fields of the target are filled in, then the duplicate is deleted.
  */
 export function mergeOffers(db: Database, target: number, duplicate: number): void {
   if (target === duplicate) return;

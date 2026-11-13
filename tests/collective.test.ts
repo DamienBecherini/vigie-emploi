@@ -3,7 +3,7 @@ import { readEmail } from '../src/ingest/eml.ts';
 import { extractJsonLd } from '../src/ingest/jsonld.ts';
 import { canonicalize } from '../src/core/links.ts';
 
-// Données fictives au format des e-mails et des pages Collective (collective.work).
+// Fictitious data in the format of the Collective e-mails and pages (collective.work).
 const EMAIL = [
   'From: Collective <ops@exemple.test>',
   'To: moi@exemple.test',
@@ -39,7 +39,7 @@ const data = {
 const PAGE = `<html><head></head><body><script id="__NEXT_DATA__" type="application/json">${JSON.stringify(data)}</script></body></html>`;
 
 describe('Collective', () => {
-  it('canonise les liens d’offres, pas ceux de l’application', () => {
+  it('canonicalizes offer links, not those of the application', () => {
     expect(canonicalize('https://www.collective.work/jobs/fr/developpeur-php-and-api-hf-x1y2')).toEqual({
       source: 'collective',
       siteId: 'developpeur-php-and-api-hf-x1y2',
@@ -48,7 +48,7 @@ describe('Collective', () => {
     expect(canonicalize('https://www.collective.work/company/collective/jobs')).toBeNull();
   });
 
-  it('lit l’offre et son intitulé dans l’e-mail', async () => {
+  it('reads the offer and its job title in the e-mail', async () => {
     const e = await readEmail(EMAIL);
     expect(e.offers).toHaveLength(1);
     expect(e.offers[0]).toMatchObject({
@@ -59,7 +59,7 @@ describe('Collective', () => {
     });
   });
 
-  it('extrait l’offre des données de page', () => {
+  it('extracts the offer from the page data', () => {
     expect(extractJsonLd(PAGE)).toEqual({
       title: 'Développeur PHP & API (H/F)',
       company: 'Anonyme',

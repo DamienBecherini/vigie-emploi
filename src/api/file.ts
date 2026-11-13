@@ -1,6 +1,6 @@
-// Lecture d'un fichier du dossier de données par le tableau de bord : Markdown rendu en HTML simple,
-// texte en texte brut, PDF et images tels quels, le reste en téléchargement. Une page HTML du dossier
-// n'est jamais servie comme HTML (texte brut), et le Markdown rendu ne peut exécuter aucun script (CSP).
+// Reading of a file of the data folder by the dashboard: Markdown rendered as simple HTML,
+// text as plain text, PDF and images as they are, the rest as a download. An HTML page of the folder
+// is never served as HTML (plain text), and the rendered Markdown cannot run any script (CSP).
 import { readFileSync } from 'node:fs';
 import { basename, extname } from 'node:path';
 import { Marked } from 'marked';
@@ -15,7 +15,7 @@ const BINARIES: Record<string, string> = {
   '.webp': 'image/webp',
 };
 
-/** Aucun script, aucune ressource externe : seulement les styles en ligne et les images du dossier. */
+/** No script, no external resource: only inline styles and the folder's images. */
 const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'";
 
 const marked = new Marked({ gfm: true, breaks: false });

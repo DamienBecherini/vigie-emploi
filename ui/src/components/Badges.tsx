@@ -7,7 +7,7 @@ const COLORS: Record<Status, string> = {
   scored: 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100',
   dismissed: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
   go: 'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
-  // Violet fixe : ne suit pas l'accent de la palette (sinon trop proche de « Go » avec un accent chaud).
+  // Fixed violet: does not follow the palette's accent (otherwise too close to "Go" with a warm accent).
   sent: 'bg-violet-100 text-violet-900 dark:bg-violet-900 dark:text-violet-100',
   'followed-up': 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100',
   interview: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100',

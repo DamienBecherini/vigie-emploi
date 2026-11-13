@@ -1,4 +1,4 @@
-// État de l'interface : filtres dans l'URL (partageables, conservés au rechargement), préférences dans localStorage.
+// State of the interface: filters in the URL (shareable, kept on reload), preferences in localStorage.
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 export const KEYS_FILTERS = [
@@ -30,7 +30,7 @@ function subscribe(f: () => void) {
   return () => listeners.delete(f);
 }
 
-/** Paramètres d'URL réactifs. */
+/** Reactive URL parameters. */
 export function useParameters(): [URLSearchParams, (updated: Partial<Record<KeyUrl, string | null>>, history?: boolean) => void] {
   const search = useSyncExternalStore(subscribe, () => window.location.search);
   const params = new URLSearchParams(search);
@@ -57,7 +57,7 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
-/** Préférence persistée (thème, zoom, colonnes visibles). */
+/** Persisted preference (theme, zoom, visible columns). */
 export function usePreference<T>(key: string, fallback: T): [T, (v: T) => void] {
   const [value, setValue] = useState<T>(() => read(key, fallback));
   useEffect(() => {
@@ -70,7 +70,7 @@ export function usePreference<T>(key: string, fallback: T): [T, (v: T) => void] 
   return [value, setValue];
 }
 
-/** localStorage stocke les chaînes telles quelles (lisibles par le script de index.html). */
+/** localStorage stores strings as they are (readable by the script of index.html). */
 export function usePreferenceText(key: string, fallback: string): [string, (v: string) => void] {
   const [value, setValue] = useState<string>(() => {
     try {

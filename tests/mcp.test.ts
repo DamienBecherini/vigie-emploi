@@ -1,4 +1,4 @@
-// Lance le vrai serveur MCP (node bin/vigie-emploi.js mcp, transport stdio) et appelle ses outils comme une IA.
+// Launches the real MCP server (node bin/vigie-emploi.js mcp, stdio transport) and calls its tools like an AI.
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,7 +25,7 @@ describe('serveur MCP (stdio)', () => {
     folder = mkdtempSync(join(tmpdir(), 'vigie-emploi-mcp-'));
     cpSync(join(FIXTURES, 'data'), folder, { recursive: true });
     cpSync(join(FIXTURES, 'emails'), join(folder, 'emails'), { recursive: true });
-    // cwd = dossier temporaire : la configuration personnelle éventuelle du dépôt n'est pas lue.
+    // cwd = temporary folder: the repository's possible personal configuration is not read.
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: [join(ROOT, 'bin', 'vigie-emploi.js'), 'mcp', '--data', folder],
@@ -42,7 +42,7 @@ describe('serveur MCP (stdio)', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('expose les outils attendus, décrits en français', async () => {
+  it('exposes the expected tools, described in French', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
@@ -68,7 +68,7 @@ describe('serveur MCP (stdio)', () => {
         'offers_to_read',
         'update_rubric',
         'rescore',
-        // Espace, fichiers et CV (client MCP sans accès aux fichiers)
+        // Workspace, files and CV (MCP client without access to files)
         'workspace_state',
         'initialize_workspace',
         'list_files',
@@ -87,10 +87,10 @@ describe('serveur MCP (stdio)', () => {
     expect(Object.keys(score.inputSchema.properties ?? {})).toEqual(expect.arrayContaining(['id', 'url', 'score', 'fit', 'gaps']));
   });
 
-  it('flux complet : ingérer → lire → noter → candidater → enregistrer → générer le suivi', async () => {
+  it('full flow: ingest → read → score → apply → save → generate the tracker', async () => {
     const ing = await call('ingest_emails', { keep: true, download: false });
     expect(ing.added).toBeGreaterThan(0);
-    expect(readdirSync(join(folder, 'emails')).length).toBe(4); // garder : e-mails conservés
+    expect(readdirSync(join(folder, 'emails')).length).toBe(4); // keep: e-mails kept
 
     const toRead = (await call('offers_to_read', { limit: 3 })) as unknown as { total: number; offers: { id: number; reading: string }[] };
     expect(toRead.offers.length).toBeGreaterThan(0);
@@ -123,7 +123,7 @@ describe('serveur MCP (stdio)', () => {
     const detail = (await call('read_offer', { id })) as unknown as { application: { next_action: string; sent_at: string } };
     expect(detail.application).toMatchObject({ next_action: 'Relancer le 09/11', sent_at: '2026-11-02' });
 
-    // Journal : l'appel raconté par l'utilisateur, puis la prochaine échéance.
+    // Journal: the call told by the user, then the next deadline.
     const ev = (await call('add_event', {
       id,
       type: 'interview',
@@ -154,7 +154,7 @@ describe('serveur MCP (stdio)', () => {
     expect(s.in_progress).toBe(1);
   }, 30_000);
 
-  it('grille : lire, noter à critères, modifier (essai puis enregistrement), renoter, historique', async () => {
+  it('rubric: read, criteria-based scoring, change (dry run then save), rescore, history', async () => {
     expect((await call('rubric')).error).toMatch(/Pas de grille/);
     cpSync(join(ROOT, 'examples', 'rubric.json'), join(folder, 'profil', 'grille.json'));
     const g = (await call('rubric')) as unknown as { version: number; instructions_ai: string[]; computed_examples: { score: number }[] };
@@ -201,7 +201,7 @@ describe('serveur MCP (stdio)', () => {
     ]);
   }, 30_000);
 
-  it('erreurs renvoyées à l’IA sans arrêter le serveur', async () => {
+  it('errors returned to the AI without stopping the server', async () => {
     expect((await call('read_offer', { id: 999999 })).error).toMatch(/introuvable/);
     expect((await call('score_offer', { score: 5 })).error).toMatch(/id.*url/);
     expect((await call('update_link', { id: 1, url: 'not-one-link' })).error).toMatch(/Lien invalide/);

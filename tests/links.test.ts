@@ -7,7 +7,7 @@ const b64url = (b: Buffer | string) =>
   Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 describe('canonicalize', () => {
-  it('LinkedIn (lien /comm/ et paramètres de suivi)', () => {
+  it('LinkedIn (/comm/ link and tracking parameters)', () => {
     expect(canonicalize('https://www.linkedin.com/comm/jobs/view/4100000001/?trackingId=abc')).toEqual({
       source: 'linkedin',
       siteId: '4100000001',
@@ -21,13 +21,13 @@ describe('canonicalize', () => {
       url: 'https://fr.indeed.com/viewjob?jk=0a1b2c3d4e5f6789',
     });
   });
-  it('Glassdoor : jobListingId ou jl', () => {
+  it('Glassdoor: jobListingId or jl', () => {
     expect(canonicalize('https://www.glassdoor.fr/partner/jobListing.htm?pos=1&jobListingId=1009&ao=1')?.siteId).toBe('1009');
     expect(canonicalize('https://www.glassdoor.fr/job-listing/?jl=1010273297796')?.url).toBe(
       'https://www.glassdoor.fr/job-listing/?jl=1010273297796',
     );
   });
-  it('Hellowork et Free-Work', () => {
+  it('Hellowork and Free-Work', () => {
     expect(canonicalize('https://www.hellowork.com/fr-fr/emplois/84908442.html?utm=x')?.url).toBe(
       'https://www.hellowork.com/fr-fr/emplois/84908442.html',
     );
@@ -38,7 +38,7 @@ describe('canonicalize', () => {
       url: 'https://www.free-work.com/fr/tech-it/job-mission/developpeur-php/lead-dev-paris-3',
     });
   });
-  it('liens qui ne sont pas des offres', () => {
+  it('links that are not offers', () => {
     expect(canonicalize('https://www.linkedin.com/comm/jobs/search/?keywords=php')).toBeNull();
     expect(canonicalize('https://www.welcometothejungle.com/fr/jobs/x')).toBeNull();
   });
@@ -56,17 +56,17 @@ describe('decodeLink', () => {
     const href = `https://cts.indeed.com/v3/${seg}/tracker`;
     expect(identifierLink(href)?.url).toBe('https://fr.indeed.com/viewjob?jk=abcdef0123456789');
   });
-  it('destination en paramètre encodé', () => {
+  it('destination in an encoded parameter', () => {
     const href = `https://tracker.test/c?url=${encodeURIComponent('https://www.linkedin.com/jobs/view/4100000009/')}`;
     expect(identifierLink(href)?.siteId).toBe('4100000009');
   });
-  it('lien direct laissé tel quel', () => {
+  it('direct link left as it is', () => {
     expect(decodeLink('https://example.test/a/b')).toBe('https://example.test/a/b');
   });
 });
 
 describe('text', () => {
-  it('texteHtml décode les entités et retire les balises', () => {
+  it('textHtml decodes the entities and removes the tags', () => {
     expect(textHtml('<b>D&eacute;veloppeur</b>&nbsp;PHP &amp; API')).toBe('Développeur PHP & API');
   });
   it('readCompensation', () => {
@@ -77,12 +77,12 @@ describe('text', () => {
     expect(readCompensation('26,6-54,6 K€')).toEqual({ min: 26600, max: 54600, unit: 'year' });
     expect(readCompensation('NC')).toEqual({ min: null, max: null, unit: null });
   });
-  it('trouverRemuneration ignore les pourcentages et les arrondissements', () => {
+  it('findCompensation ignores percentages and districts', () => {
     expect(findCompensation('100 % télétravail, Paris 5e, 50-60 K€')).toBe('50-60 K€');
     expect(findCompensation('Freelance full télétravail, 200-300 €/j')).toBe('200-300 €/j');
     expect(findCompensation('CDI Paris')).toBeNull();
   });
-  it('dateFr et sansMarkdown', () => {
+  it('dateFr and withoutMarkdown', () => {
     expect(dateFr('Envoyée le 2/11/2026')).toBe('2026-11-02');
     expect(dateFr('07/2026')).toBe('2026-07');
     expect(dateFr('—')).toBeNull();

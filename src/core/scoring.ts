@@ -1,6 +1,6 @@
-// Enregistrement d'une note au format des lots ({source, url, titre, …, note_brute, penalites, note, colle, ecarts, lu}).
-// Avec « criteres » (et / ou « entrees », « bloquants »), la note est calculée avec la grille de notation :
-// le champ « note » éventuellement fourni est alors ignoré (signalé dans « avertissements »).
+// Saving of a score in the batch format ({source, url, title, …, raw_score, penalties, score, fit, gaps, read}).
+// With "criteria" (and / or "inputs", "blockers"), the score is computed with the scoring rubric:
+// the "score" field possibly given is then ignored (reported in "warnings").
 import type { Database } from '../db/database.ts';
 import { canonicalize } from './links.ts';
 import { addScore, addStatus, saveOffer, offerById, type Origin } from './offers.ts';
@@ -31,15 +31,15 @@ export interface InputBatch {
   read?: boolean;
   rubric_version?: string;
   tags?: string[];
-  /** Sous-notes des critères notés par l'IA : { technique: { note: 8, justification: "…" }, … }. */
+  /** Sub-scores of the criteria scored by the AI: { technique: { score: 8, justification: "…" }, … }. */
   criteria?: Record<string, { score: number | string; justification?: string; origin?: 'ai' | 'interface' }>;
-  /** Données d'entrée des critères calculés (jours sur site, salaire), quand l'offre les donne. */
+  /** Inputs of the computed criteria (days on site, salary), when the offer gives them. */
   inputs?: Inputs;
-  /** Identifiants des règles bloquantes qui s'appliquent (stage, defense…). */
+  /** Ids of the blocking rules that apply (stage, defense…). */
   blockers?: string[];
 }
 
-/** L'entrée est une note à critères (nouvelle grille) plutôt qu'une note globale. */
+/** The input is a criteria-based score (new rubric) rather than an overall score. */
 export function isCriteriaScore(e: InputBatch): boolean {
   return e.criteria !== undefined || e.inputs !== undefined || e.blockers !== undefined;
 }
@@ -50,11 +50,11 @@ export interface ResultScoring {
   score_added: boolean;
   score: number | null;
   status: string;
-  /** Note à critères : version de la grille, valeur exacte, décomposition. */
+  /** Criteria-based score: rubric version, exact value, breakdown. */
   rubric_version?: number;
   exact_score?: number;
   breakdown?: Breakdown;
-  /** Champs ignorés, critères manquants… */
+  /** Ignored fields, missing criteria… */
   warnings?: string[];
 }
 
@@ -63,15 +63,15 @@ function datePublished(v: string | undefined): string | null {
   return dateFr(v) ?? dateIso(v);
 }
 
-/** Retrouve (ou crée) l'offre d'une entrée de lot : par id, sinon par URL canonique. */
+/** Finds (or creates) the offer of a batch input: by id, otherwise by canonical URL. */
 export function offerOfInput(
   db: Database,
   e: InputBatch,
   origin: Origin,
   opts: { create?: boolean; receivedAt?: string | null } = {},
 ): { id: number; created: boolean } | null {
-  // Champs de l'entrée : ils complètent ceux qui manquent en base (jamais d'écrasement), que l'offre soit
-  // désignée par son id ou par son URL.
+  // Fields of the input: they fill in those missing in the database (never overwriting), whether the offer
+  // is designated by its id or by its URL.
   const fields = {
     title: e.title,
     company: e.company,
@@ -108,8 +108,8 @@ export function offerOfInput(
 }
 
 /**
- * Note une offre : complète ses champs vides, ajoute la note (historique) et passe l'offre en « notee »
- * si elle était encore à traiter.
+ * Scores an offer: fills in its empty fields, adds the score (history) and moves the offer to "scored"
+ * if it was still to process.
  */
 export function scoreInput(
   db: Database,
@@ -120,7 +120,7 @@ export function scoreInput(
     at?: string;
     ifMissing?: boolean;
     receivedAt?: string | null;
-    /** Grille courante, obligatoire pour une note à critères. */
+    /** Current rubric, required for a criteria-based score. */
     rubric?: VersionRubric | null;
   } = {},
 ): ResultScoring {
@@ -192,7 +192,7 @@ export function scoreInput(
   return r;
 }
 
-/** Normalise le contenu d'un fichier de lot : tableau, objet seul ou { offres: [...] }. */
+/** Normalizes the content of a batch file: array, single object or { offers: [...] }. */
 export function inputsOfBatch(json: unknown): InputBatch[] {
   if (Array.isArray(json)) return json as InputBatch[];
   if (json && typeof json === 'object') {

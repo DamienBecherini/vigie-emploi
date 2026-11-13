@@ -1,15 +1,15 @@
-// Mise en forme des réponses volumineuses du serveur MCP : une IA sans outil de lecture de fichiers (Claude Desktop)
-// doit pouvoir lire chaque réponse en entier. Cible : moins de 25 000 caractères par réponse.
+// Formatting of the large responses of the MCP server: an AI without a file reading tool (Claude Desktop)
+// must be able to read each response in full. Target: less than 25,000 characters per response.
 import type { Impact } from '../core/rubric-storage.ts';
 import type { DetailOffer } from '../core/offers.ts';
 import type { LineList } from '../core/queries.ts';
 import type { SummaryIngest } from '../ingest/ingest.ts';
 import { tm } from './texts.ts';
 
-/** Taille visée d'une réponse d'outil, en caractères. */
+/** Target size of a tool response, in characters. */
 export const REPLY_MAX = 25_000;
 
-/** offres_a_lire : offres par page en résumé, et avec descriptions. */
+/** offers_to_read: offers per page in summary, and with descriptions. */
 export const TO_READ_DEFAULT = 25;
 export const TO_READ_MAX = 60;
 export const TO_READ_MAX_DESCRIPTIONS = 10;
@@ -19,27 +19,27 @@ export const LENGTH_DESCRIPTION_PAGE = 1_500;
 export const LIST_DEFAULT = 25;
 export const LIST_MAX = 60;
 
-/** lire_offre : description et notes. */
+/** read_offer: description and scores. */
 export const DESCRIPTION_MAX = 15_000;
 export const SCORES_MAX = 3;
 
-/** ingerer_emails : lignes de détail par catégorie. */
+/** ingest_emails: detail lines per category. */
 export const DETAIL_INGESTION_MAX = 30;
 
-/** Retire les champs null, indéfinis, chaînes vides et listes vides (réponses plus courtes, sans perte). */
+/** Removes the null, undefined fields, empty strings and empty lists (shorter responses, without loss). */
 export function withoutEmpty<T extends object>(o: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0)),
   ) as Partial<T>;
 }
 
-/** Ligne de lister_offres sans les champs techniques (id du site, horodatages, montants décomposés). */
+/** Line of list_offers without the technical fields (site id, timestamps, split amounts). */
 export function lineCompact(l: LineList): Partial<LineList> {
   const { site_id: _i, created_at: _c, updated_at: _m, origin: _o, compensation_min: _a, compensation_max: _b, compensation_unit: _u, ...rest } = l;
   return withoutEmpty(rest);
 }
 
-/** Détail d'une offre plafonné : description tronquée (sauf complet), seules les notes les plus récentes. */
+/** Capped detail of an offer: truncated description (unless full), only the most recent scores. */
 export function detailCapped(d: DetailOffer, o: { full?: boolean } = {}): Record<string, unknown> {
   const description = d.description ?? null;
   const truncated = Boolean(description && !o.full && description.length > DESCRIPTION_MAX);
@@ -56,7 +56,7 @@ export function detailCapped(d: DetailOffer, o: { full?: boolean } = {}): Record
   };
 }
 
-/** Impact d'un changement de grille : les 30 plus forts changements (montées et descentes de seuil comprises, 30 chacune). */
+/** Impact of a rubric change: the 30 largest changes (threshold crossings up and down included, 30 each). */
 export function impactCapped(i: Impact): Record<string, unknown> {
   const n = 30;
   return {
@@ -72,8 +72,8 @@ export function impactCapped(i: Impact): Record<string, unknown> {
 const first =<T>(l: T[], n: number) => ({ list: l.slice(0, n), rest: Math.max(0, l.length - n) });
 
 /**
- * Réponse de ingerer_emails : compteurs, puis ce qu'il faut dire à l'utilisateur (e-mails supprimés, erreurs à
- * signaler), et un détail plafonné (la liste complète des offres à lire est dans offres_a_lire).
+ * Response of ingest_emails: counters, then what to tell the user (deleted e-mails, errors to
+ * report), and a capped detail (the full list of the offers to read is in offers_to_read).
  */
 export function presentIngestion(r: SummaryIngest, o: { keep?: boolean } = {}): Record<string, unknown> {
   const toTell: string[] = [];

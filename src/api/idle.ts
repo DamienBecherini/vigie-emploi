@@ -1,6 +1,6 @@
-// Arrêt automatique du tableau de bord après une période sans activité (contrat « service local »).
-// Toutes les requêtes comptent, sauf le contrôle de santé : l'interface n'interroge pas le serveur à intervalle régulier.
-// L'API traite chaque requête d'un bloc : le service n'a pas de travail de fond, donc jamais « occupé ».
+// Automatic stop of the dashboard after a period without activity ("local service" contract).
+// Every request counts, except the health check: the interface does not poll the server.
+// The API handles each request in one go: the service has no background work, so it is never "busy".
 
 export class Idle {
   readonly timeoutS: number;
@@ -21,7 +21,7 @@ export class Idle {
     return this.timeoutS > 0 && this.clock() - this.last >= this.timeoutS;
   }
 
-  /** Secondes avant l'arrêt ; null si l'arrêt automatique est désactivé. */
+  /** Seconds before the stop; null if the automatic stop is disabled. */
   remainingS(): number | null {
     if (this.timeoutS <= 0) return null;
     return Math.max(0, Math.round((this.timeoutS - (this.clock() - this.last)) * 10) / 10);

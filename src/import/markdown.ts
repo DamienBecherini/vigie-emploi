@@ -1,4 +1,4 @@
-// Lecture des tableaux Markdown des registres (sections ## et lignes | … |).
+// Reading of the Markdown tables of the registers (## sections and | … | lines).
 
 export interface LineTable {
   section: string;
@@ -8,7 +8,7 @@ export interface LineTable {
   raw: string;
 }
 
-/** Découpe une ligne « | a | b | » en cellules (les \| échappés restent dans la cellule). */
+/** Splits a "| a | b |" line into cells (escaped \| stay in the cell). */
 export function cells(line: string): string[] {
   const t = line.trim().replace(/^\|/, '').replace(/\|$/, '');
   return t.split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, '|').trim());
@@ -16,7 +16,7 @@ export function cells(line: string): string[] {
 
 const SEPARATOR = /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
-/** Toutes les lignes de données des tableaux, avec la section ## et les en-têtes du tableau. */
+/** All the data lines of the tables, with the ## section and the headers of the table. */
 export function linesTables(text: string): LineTable[] {
   const lines = text.split(/\r?\n/);
   const r: LineTable[] = [];
@@ -36,7 +36,7 @@ export function linesTables(text: string): LineTable[] {
     }
     if (SEPARATOR.test(l.trim())) continue;
     if (!headers) {
-      // Première ligne du tableau = en-têtes, si la suivante est un séparateur.
+      // First line of the table = headers, if the next one is a separator.
       if (SEPARATOR.test((lines[i + 1] ?? '').trim())) {
         headers = cells(l);
         continue;
@@ -58,7 +58,7 @@ export function linksMarkdown(text: string): LinkMd[] {
   return [...text.matchAll(/\[([^\]]*)\]\(([^)\s]+)\)/g)].map((m) => ({ text: m[1], url: m[2], index: m.index! }));
 }
 
-/** Découpe un texte sur un séparateur, sans couper à l'intérieur d'un lien Markdown. */
+/** Splits a text on a separator, without cutting inside a Markdown link. */
 export function split(text: string, sep: string): string[] {
   const r: string[] = [];
   let current = '';

@@ -1,5 +1,5 @@
-// Accès confiné aux fichiers de l'espace (outils lister_fichiers, lire_fichier, ecrire_fichier, deplacer_fichier),
-// extraction de texte (Word) et comptage des caractères.
+// Confined access to the workspace files (list_files, read_file, write_file, move_file tools),
+// text extraction (Word) and character counting.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -21,7 +21,7 @@ writeFileSync(join(workspace, '.mcp.json'), '{}');
 writeFileSync(join(outside, 'secret.txt'), 'secret');
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-/** Crée un lien symbolique, ou renvoie false si le système le refuse (Windows sans mode développeur). */
+/** Creates a symbolic link, or returns false if the system refuses it (Windows without developer mode). */
 function link(target: string, path: string, type: 'file' | 'junction' | 'dir'): boolean {
   try {
     symlinkSync(target, path, type);
@@ -31,8 +31,8 @@ function link(target: string, path: string, type: 'file' | 'junction' | 'dir'): 
   }
 }
 
-describe('confinement des chemins', () => {
-  it('accepte un chemin relatif, ou absolu dans l’espace', () => {
+describe('path confinement', () => {
+  it('accepts a relative path, or an absolute one inside the workspace', () => {
     expect(pathInWorkspace(workspace, '_CONTEXTE.md').relative).toBe('_CONTEXTE.md');
     expect(pathInWorkspace(workspace, './cv/x.md').relative).toBe('cv/x.md');
     expect(pathInWorkspace(workspace, 'cv\\nouveau.md').relative).toBe('cv/nouveau.md');
@@ -60,7 +60,7 @@ describe('confinement des chemins', () => {
     expect(() => pathInWorkspace(workspace, path)).toThrow(error);
   });
 
-  it('refuse un lien symbolique qui sort de l’espace (sauté si le système interdit les liens)', (ctx) => {
+  it('refuses a symbolic link that leads out of the workspace (skipped if the system forbids links)', (ctx) => {
     const file = link(join(outside, 'secret.txt'), join(workspace, 'link-file.txt'), 'file');
     const folder = link(outside, join(workspace, 'link-folder'), 'junction');
     const toData = link(join(workspace, 'data'), join(workspace, 'link-data'), 'junction');
@@ -76,8 +76,8 @@ describe('confinement des chemins', () => {
   });
 });
 
-describe('lister, écrire, lire, déplacer', () => {
-  it('écrit puis relit un fichier, en créant les dossiers parents', () => {
+describe('list, write, read, move', () => {
+  it('writes then reads back a file, creating the parent folders', () => {
     const r = writeWorkspace(workspace, 'candidatures/acme-dev/dossier-candidature.md', '# Acme\n\nÉcarts : aucun.\n');
     expect(r).toMatchObject({ path: 'candidatures/acme-dev/dossier-candidature.md', existed: false, old_size: null });
     const l = readWorkspace(workspace, 'candidatures/acme-dev/dossier-candidature.md');
@@ -85,7 +85,7 @@ describe('lister, écrire, lire, déplacer', () => {
     expect(l.kind === 'text' && l.text).toBe('# Acme\n\nÉcarts : aucun.\n');
   });
 
-  it('signale un remplacement, et refuse d’écraser avec creer_seulement', () => {
+  it('reports a replacement, and refuses to overwrite with create_only', () => {
     const r = writeWorkspace(workspace, '_CONTEXTE.md', '# Contexte rempli\n');
     expect(r.existed).toBe(true);
     expect(r.old_size).toBe(11);
@@ -93,14 +93,14 @@ describe('lister, écrire, lire, déplacer', () => {
     expect(readFileSync(join(workspace, '_CONTEXTE.md'), 'utf8')).toBe('# Contexte rempli\n');
   });
 
-  it('n’écrit que du texte, jamais dans data/', () => {
+  it('only writes text, never into data/', () => {
     expect(() => writeWorkspace(workspace, 'cv/CV.pdf', 'x')).toThrow(/Extension non autorisée/);
     expect(() => writeWorkspace(workspace, 'tool.js', 'x')).toThrow(/Extension non autorisée/);
     expect(() => writeWorkspace(workspace, 'data/score.md', 'x')).toThrow(/data\//);
     expect(readFileSync(join(workspace, 'data', 'vigie-emploi.sqlite'), 'utf8')).toBe('database');
   });
 
-  it('liste sans data/ ni fichiers cachés, sur la profondeur demandée', () => {
+  it('lists without data/ nor hidden files, over the requested depth', () => {
     const one = listWorkspace(workspace).inputs.map((e) => e.path);
     expect(one).toEqual(expect.arrayContaining(['_CONTEXTE.md', 'cv/', 'candidatures/']));
     expect(one).not.toContain('data/');
@@ -112,7 +112,7 @@ describe('lister, écrire, lire, déplacer', () => {
     expect(() => listWorkspace(workspace, '..')).toThrow(/refusé/);
   });
 
-  it('déplace sans écraser', () => {
+  it('moves without overwriting', () => {
     writeWorkspace(workspace, 'a-deposer/notes.txt', 'scores');
     expect(moveWorkspace(workspace, 'a-deposer/notes.txt', 'candidatures/acme-dev/notes.txt')).toEqual({
       source: 'a-deposer/notes.txt',
@@ -132,7 +132,7 @@ describe('lister, écrire, lire, déplacer', () => {
   });
 });
 
-/** Archive ZIP minimale (un fichier compressé en deflate), comme un .docx. */
+/** Minimal ZIP archive (one file compressed with deflate), like a .docx. */
 function zip(name: string, content: string): Buffer {
   const data = Buffer.from(content, 'utf8');
   const compressed = deflateRawSync(data);
@@ -160,8 +160,8 @@ function zip(name: string, content: string): Buffer {
   return Buffer.concat([local, n, compressed, central, n, end]);
 }
 
-describe('extraction et comptage', () => {
-  it('extrait le texte d’un document Word', () => {
+describe('extraction and counting', () => {
+  it('extracts the text of a Word document', () => {
     const xml =
       '<w:document><w:body><w:p><w:r><w:t>Thomas RENAUD</w:t></w:r></w:p>' +
       '<w:p><w:r><w:t>Développeur PHP &amp; Python</w:t></w:r></w:p></w:body></w:document>';
@@ -169,7 +169,7 @@ describe('extraction et comptage', () => {
     expect(textDocx(Buffer.from('pas une archive'))).toBeNull();
   });
 
-  it('compte chaque bloc à copier-coller, sinon le texte entier', () => {
+  it('counts each block to copy and paste, otherwise the whole text', () => {
     const text =
       'Avant\n──────── début du message ────────\nBonjour 👋\nMerci.\n──────── fin du message ────────\n' +
       'Entre\n──── début du message 2 ────\nCourt\n──── fin ────\n';

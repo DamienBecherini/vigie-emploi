@@ -1,16 +1,16 @@
-// Accès aux fichiers de l'espace de travail pour une IA sans accès direct au disque (client MCP seul) :
-// lister, lire, écrire, déplacer, toujours à l'intérieur du dossier de données.
-// Sécurité : chemins relatifs (ou absolus mais dans l'espace), sans « .. » ni segment caché, jamais dans data/
-// (la base), et qui restent dans l'espace une fois les liens symboliques résolus. Aucune suppression.
+// Access to the workspace files for an AI without direct access to the disk (MCP client only):
+// list, read, write, move, always inside the data folder.
+// Security: relative paths (or absolute but inside the workspace), without ".." nor hidden segment, never in data/
+// (the database), and which stay inside the workspace once symbolic links are resolved. No deletion.
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { t } from '../i18n/index.ts';
 
-/** Premier segment interdit : la base SQLite et ses fichiers. */
+/** Forbidden first segment: the SQLite database and its files. */
 const FOLDERS_FORBIDDEN = new Set(['data']);
 /** Extensions qu'ecrire_fichier accepte (texte seulement). */
 export const EXTENSIONS_WRITE = ['.md', '.txt', '.json', '.csv', '.yml', '.yaml', '.css'];
-/** Fichiers lus comme du texte. */
+/** Files read as text. */
 const EXTENSIONS_TEXT = new Set([...EXTENSIONS_WRITE, '.eml', '.html', '.htm', '.xml', '.log', '.ini', '.toml']);
 export const SIZE_MAX_TEXT = 2 * 1024 * 1024;
 export const SIZE_MAX_BINARY = 15 * 1024 * 1024;
@@ -31,7 +31,7 @@ function isIn(root: string, path: string): boolean {
 function checkSegments(segments: string[], raw: string): void {
   for (const s of segments) {
     if (s === '..' || s.startsWith('.')) refuse(t('core.access.pathCache', { path: raw }));
-    // Windows ignore les points et espaces finaux (« data. » = « data ») ; « : » ouvrirait un flux alternatif.
+    // Windows ignores trailing dots and spaces ("data." = "data"); ":" would open an alternate stream.
     if (/[.\s]$/.test(s) || /[:*?"<>|]/.test(s)) refuse(t('core.pathInvalid', { path: raw }));
   }
   if (segments.length && FOLDERS_FORBIDDEN.has(segments[0].toLowerCase())) {
@@ -40,17 +40,17 @@ function checkSegments(segments: string[], raw: string): void {
 }
 
 export interface SafePath {
-  /** Chemin absolu (liens résolus quand le fichier existe). */
+  /** Absolute path (links resolved when the file exists). */
   absolute: string;
-  /** Chemin relatif à l'espace, avec des barres obliques ('' pour la racine). */
+  /** Path relative to the workspace, with forward slashes ('' for the root). */
   relative: string;
   exists: boolean;
 }
 
 /**
- * Résout un chemin donné par l'IA dans l'espace `racineEspace`, ou lève une erreur.
- * Accepte un chemin relatif, ou absolu s'il est dans l'espace. Le fichier peut ne pas exister (écriture) :
- * on vérifie alors le dossier existant le plus proche.
+ * Resolves a path given by the AI inside the workspace `workspaceRoot`, or throws an error.
+ * Accepts a relative path, or an absolute one if it is inside the workspace. The file may not exist (write):
+ * the closest existing folder is then checked.
  */
 export function pathInWorkspace(rootWorkspace: string, path: string): SafePath {
   const raw = String(path ?? '').trim();
@@ -70,7 +70,7 @@ export function pathInWorkspace(rootWorkspace: string, path: string): SafePath {
   checkSegments(segments, raw);
   const target = resolve(root, ...segments);
 
-  // Dossier existant le plus proche : une fois les liens résolus, il doit rester dans l'espace.
+  // Closest existing folder: once links are resolved, it must stay inside the workspace.
   let anchor = target;
   while (!existsSync(anchor)) anchor = dirname(anchor);
   const real = realpathSync(anchor);
@@ -88,7 +88,7 @@ export interface Input {
   modified_at: string;
 }
 
-/** Contenu d'un dossier de l'espace, sur `profondeur` niveaux (1 = le dossier seul, 4 au plus). */
+/** Content of a workspace folder, over `depth` levels (1 = the folder alone, 4 at most). */
 export function listWorkspace(rootWorkspace: string, folder = '.', depth = 1): { folder: string; inputs: Input[]; truncated: boolean } {
   const p = Math.min(Math.max(Math.trunc(depth) || 1, 1), 4);
   const c = pathInWorkspace(rootWorkspace, folder || '.');
@@ -132,7 +132,7 @@ export type Reading =
   | { kind: 'text'; path: string; text: string; size: number }
   | { kind: 'binary'; path: string; extension: string; data: Buffer; size: number };
 
-/** Lit un fichier de l'espace : texte (UTF-8) ou octets bruts pour le reste (PDF, images, Word…). */
+/** Reads a workspace file: text (UTF-8) or raw bytes for the rest (PDF, images, Word…). */
 export function readWorkspace(rootWorkspace: string, path: string): Reading {
   const c = pathInWorkspace(rootWorkspace, path);
   if (!c.exists) refuse(t('core.fileNotFound', { path: c.relative }));
@@ -149,13 +149,13 @@ export function readWorkspace(rootWorkspace: string, path: string): Reading {
 
 export interface ResultWrite {
   path: string;
-  /** true si un fichier existait déjà à cet endroit (il a été remplacé). */
+  /** true if a file already existed at that place (it was replaced). */
   existed: boolean;
   old_size: number | null;
   size: number;
 }
 
-/** Crée ou remplace un fichier texte de l'espace (dossiers parents créés). `creerSeulement` refuse d'écraser. */
+/** Creates or replaces a text file of the workspace (parent folders created). `createOnly` refuses to overwrite. */
 export function writeWorkspace(rootWorkspace: string, path: string, content: string, o: { createOnly?: boolean } = {}): ResultWrite {
   const c = pathInWorkspace(rootWorkspace, path);
   const ext = extname(c.absolute).toLowerCase();
@@ -176,7 +176,7 @@ export function writeWorkspace(rootWorkspace: string, path: string, content: str
   return { path: c.relative, existed: c.exists, old_size: old, size: statSync(c.absolute).size };
 }
 
-/** Déplace ou renomme un fichier dans l'espace ; refuse d'écraser une destination existante. */
+/** Moves or renames a file inside the workspace; refuses to overwrite an existing destination. */
 export function moveWorkspace(rootWorkspace: string, source: string, destination: string): { source: string; destination: string } {
   const s = pathInWorkspace(rootWorkspace, source);
   if (!s.exists) refuse(t('core.fileNotFound', { path: s.relative }));

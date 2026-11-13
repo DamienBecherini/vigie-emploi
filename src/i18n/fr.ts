@@ -1,12 +1,12 @@
-// Textes français de la CLI, de l'API, du suivi généré et de l'initialisation (langue de référence).
-// Toute clé ajoutée ici doit l'être aussi dans en.ts (sinon la compilation échoue).
+// French texts of the CLI, the API, the generated tracker and the initialization (reference language).
+// Every key added here must also be added to en.ts (otherwise the compilation fails).
 import type { Plural, MessageText } from './tool.ts';
 
 const p = (one: string, other: string): Plural => ({ one, other });
 
 export const fr = {
   // ---------------------------------------------------------------------------------------------
-  // CLI : aide (les noms des commandes et des options restent en français dans les deux langues)
+  // CLI: help (command and option names are English identifiers in both languages)
   'cli.help': `vigie-emploi — offres, notes et candidatures (base SQLite locale)
 
 Usage : vigie-emploi <commande> [options]
@@ -87,7 +87,7 @@ Options générales
 Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VIGIE_EMPLOI_LANGUAGE.
 `,
 
-  // CLI : messages généraux
+  // CLI: general messages
   'cli.error': 'Erreur : {message}',
   'cli.commandUnknown': 'Commande inconnue : {command}',
   'cli.invalid': '{name} invalide : {value}',
@@ -96,7 +96,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.statusExpected': 'Statut attendu parmi : {statuses}',
   'cli.none': 'aucun',
 
-  // CLI : détail d'une offre
+  // CLI: detail of an offer
   'cli.detail.status': 'Statut : {status} · Note : {score} · Source : {source} ({site_id})',
   'cli.detail.url': 'URL : {url}',
   'cli.detail.remote': 'télétravail : {value}',
@@ -115,7 +115,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.detail.history': 'Historique des statuts :',
   'cli.detail.description': 'Description :',
 
-  // CLI : décomposition d'une note et impact d'un changement de grille
+  // CLI: breakdown of a score and impact of a rubric change
   'cli.breakdown.neutral': '(neutre) ',
   'cli.breakdown.main': '(main) ',
   'cli.breakdown.average': 'Moyenne pondérée',
@@ -207,7 +207,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.nextAction.expected': 'prochaine-action : texte attendu ("" ou - pour effacer)',
   'cli.nextAction.none': '(aucune prochaine action)',
 
-  // CLI : événements et échéances
+  // CLI: events and deadlines
   'cli.event.typeExpected': 'evenement : --type attendu ({types})',
   'cli.event.summaryExpected': 'evenement : --resume "…" attendu',
   'cli.event.added': "Événement #{id} ajouté à l'offre #{offer} : {at} {type}{deadline} — {summary}",
@@ -281,7 +281,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'api.terminalImpossible': "Impossible d'ouvrir le terminal ({program}) : {message}",
 
   // ---------------------------------------------------------------------------------------------
-  // Suivi généré (_SUIVI.md)
+  // Generated tracker (_SUIVI.md)
   'tracker.title': '# Suivi des candidatures',
   'tracker.when': '{date} à {hour}',
   'tracker.warning1': '> **Fichier généré par vigie-emploi le {when} : ne pas éditer à la main.** Les changements se font dans la base',
@@ -319,7 +319,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'init.scaffoldFrench': "Les consignes de l'IA (modèle de l'espace) sont en français pour l'instant ; leur version anglaise viendra plus tard.",
 
   // ---------------------------------------------------------------------------------------------
-  // Noyau (src/core, ingestion, CV) : erreurs et messages renvoyés à la CLI, à l'API et au serveur MCP
+  // Core (src/core, ingestion, CV): errors and messages returned to the CLI, the API and the MCP server
   'core.or': ' ou ',
   'core.ni': ' ni ',
   'core.none': 'aucun',
@@ -329,7 +329,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.dateFormat': 'Date invalide : « {text} » (JJ/MM/AAAA, JJ/MM/AAAA HH:MM ou AAAA-MM-JJ attendu)',
   'core.dateInvalid': 'Date invalide : « {text} »',
   'core.hourInvalid': 'Heure invalide : « {text} »',
-  // Drapeaux de note : le message enregistré est en français (grille.ts) ; ces textes servent aux autres langues.
+  // Score flags: the saved message is in French (rubric.ts); these texts are used for the other languages.
   'flag.remoteUnknown': 'Télétravail inconnu (valeur neutre) : à vérifier',
   'flag.compensationUnknown': 'Rémunération inconnue (valeur neutre) : à demander',
   'flag.subFloor': 'Rémunération sous le plancher{value} : à signaler',
@@ -477,7 +477,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.config.notFound': 'Fichier de configuration introuvable : {path}',
   'core.config.language': 'Langue inconnue : {language} ({languages} ; VIGIE_EMPLOI_LANGUAGE ou "langue" de {file})',
 
-  // Exemple de pluriel (utilisé par les tests du mécanisme)
+  // Plural example (used by the tests of the mechanism)
   'common.offers': p('{n} offre', '{n} offres'),
 } satisfies Record<string, MessageText>;
 

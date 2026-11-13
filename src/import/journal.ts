@@ -1,6 +1,6 @@
-// Reprise des journaux de candidature : sections « Suivi » des candidatures/*/dossier-candidature.md
-// (dossiers actifs, pas _archives/) → événements (origine « import »). Lecture seule sur les dossiers ;
-// idempotent : chaque ligne reprise a une empreinte (cle_import) et n'est créée qu'une fois.
+// Import of the application journals: "Suivi" sections of candidatures/*/dossier-candidature.md
+// (active folders, not _archives/) → events (origin "import"). Read only on the folders;
+// idempotent: each imported line has a fingerprint (import_key) and is only created once.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import type { Database } from '../db/database.ts';
@@ -12,22 +12,22 @@ import { cells } from './markdown.ts';
 
 export interface ReportJournal {
   folders: number;
-  /** Dossiers sans offre en base (aucune candidature ne pointe vers eux). */
+  /** Folders without an offer in the database (no application points to them). */
   folders_without_offer: string[];
-  /** Dossiers rattachés à la candidature sans dossier de la même entreprise (nom du dossier). */
+  /** Folders attached to the folderless application of the same company (folder name). */
   folders_attached: { folder: string; offer_id: number }[];
-  /** Dossiers sans section « Suivi » exploitable. */
+  /** Folders without a usable "Suivi" section. */
   folders_without_tracker: string[];
   lines: number;
   events_created: number;
   events_existing: number;
-  /** Événements repris d'une ligne qui a disparu du dossier (jamais modifiés depuis) : supprimés. */
+  /** Events imported from a line that disappeared from the folder (never modified since): deleted. */
   events_removed: number;
   deadlines: number;
   by_type: Record<string, number>;
-  /** Lignes reprises en « note » faute de type reconnu. */
+  /** Lines imported as "note" for lack of a recognized type. */
   untyped: { folder: string; line: number; excerpt: string }[];
-  /** Lignes cochées ou de journal sans date : non reprises. */
+  /** Checked or journal lines without a date: not imported. */
   without_date: { folder: string; line: number; excerpt: string }[];
 }
 
@@ -44,7 +44,7 @@ const excerpt = (s: string) => {
 
 const two = (n: number | string) => String(n).padStart(2, '0');
 
-/** Première date du texte : JJ/MM/AAAA, sinon JJ/MM (année du contexte). */
+/** First date of the text: DD/MM/YYYY, otherwise DD/MM (year from the context). */
 function dateOfText(text: string, yearByDefault: number): string | null {
   const complete = text.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})\/(\d{4})(?![\d/])/);
   if (complete) return `${complete[3]}-${two(complete[2])}-${two(complete[1])}`;
@@ -54,9 +54,9 @@ function dateOfText(text: string, yearByDefault: number): string | null {
 }
 
 /**
- * Lignes datées de la ou des sections « Suivi » d'un dossier : tableaux Date | Événement, puces
- * « - 13/10/2026 — … » et cases cochées « - [x] Candidature envoyée le : 13/10/2026 (…) ». Les cases non
- * cochées (à faire) et les blocs de code sont ignorés.
+ * Dated lines of the "Suivi" section(s) of a folder: Date | Événement tables, bullets
+ * "- 13/10/2026 — …" and checked boxes "- [x] Candidature envoyée le : 13/10/2026 (…)". Unchecked
+ * boxes (to do) and code blocks are ignored.
  */
 export function linesOfTracker(text: string, yearByDefault = new Date().getFullYear()): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
   const lines = text.split(/\r?\n/);
@@ -110,9 +110,9 @@ export function linesOfTracker(text: string, yearByDefault = new Date().getFullY
     headers = null;
     const bullet = t.match(/^[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/);
     if (!bullet) continue;
-    if (bullet[1] === ' ') continue; // case non cochée : à faire, pas un événement
+    if (bullet[1] === ' ') continue; // unchecked box: to do, not an event
     const content = bullet[2];
-    // « 13/10/2026 — texte » : la date en tête est retirée du texte.
+    // "13/10/2026 — text": the leading date is removed from the text.
     const head = content.match(/^\**(\d{1,2}\/\d{1,2}(?:\/\d{4})?)\**\s*(?:—|–|-|:)\s*(.*)$/);
     if (head) keep(i + 1, dateOfText(head[1], year), head[2]);
     else keep(i + 1, dateOfText(content, year), content);
@@ -120,10 +120,10 @@ export function linesOfTracker(text: string, yearByDefault = new Date().getFullY
   return { lines: r, withoutDate, section };
 }
 
-/** Type et sens devinés d'une ligne de journal (meilleur effort ; « note » à défaut). */
+/** Type and direction guessed for a journal line (best effort; "note" otherwise). */
 export function guessType(text: string): { type: TypeEvent; direction: Direction | null; recognized: boolean } {
   const t = withoutMarkdown(text).toLowerCase();
-  // Sens : le premier indice qui apparaît (« Brief reçu par e-mail … réponse envoyée » → reçu).
+  // Direction: the first clue that appears ("Brief reçu par e-mail … réponse envoyée" → received).
   const withoutNegation = t.replace(/\b(non|pas|jamais) envoy\w*|avant (l')?envoi/g, ' ');
   const iSent = withoutNegation.search(/\b(envoy|relanc)/);
   const iReceived = withoutNegation.search(/reçue?\b|\bentrant|\be-?mail de\b|\bmessage de\b|\bréponse (client|de (?!\d)|du (?!\d)|d')|\bretour de\b/);
@@ -145,7 +145,7 @@ export function guessType(text: string): { type: TypeEvent; direction: Direction
   return { type, direction: ['message', 'proposal', 'test'].includes(type) ? direction : null, recognized: true };
 }
 
-/** Montant (« 3 000 € HT », « 450 €/j ») et jours (« 6 jours ») d'une proposition. */
+/** Amount ("3 000 € HT", "450 €/j") and days ("6 jours") of a proposal. */
 function amountAndDays(text: string): Pick<EventInput, 'amount' | 'unit' | 'days'> {
   const t = withoutMarkdown(text).replace(/ | /g, ' ');
   const m = t.match(/(\d{1,3}(?:[ .]\d{3})+|\d+(?:,\d+)?)\s*(€\s*HT|€\s*\/\s*j|K€\s*\/\s*an|K€|€)/i);
@@ -157,7 +157,7 @@ function amountAndDays(text: string): Pick<EventInput, 'amount' | 'unit' | 'days
   };
 }
 
-/** Liens Markdown relatifs et chemins entre accents graves qui désignent un fichier existant. */
+/** Relative Markdown links and paths between backticks that designate an existing file. */
 function filesCited(text: string, dataDir: string, folderRel: string): string[] {
   const found = new Set<string>();
   const attempt = (raw: string, base: string) => {
@@ -182,7 +182,7 @@ function filesCited(text: string, dataDir: string, folderRel: string): string[] 
   return [...found];
 }
 
-/** Résumé court : première phrase (ou 200 caractères) du texte sans Markdown. */
+/** Short summary: first sentence (or 200 characters) of the text without Markdown. */
 function summaryOf(text: string): string {
   const t = withoutMarkdown(text).replace(/\s*\(\s*\)/g, '');
   const phrase = t.match(/^(.{20,200}?[.!?])(\s|$)/)?.[1] ?? t;
@@ -198,8 +198,8 @@ const words = (s: string) =>
     .filter((m) => m.length >= 3);
 
 /**
- * Candidature sans dossier dont tous les mots de l'entreprise (3 lettres et plus) figurent dans le nom du
- * dossier (« Hippocrate Care » → hippocrate-care-cto-cofondateur), si elle est unique.
+ * Folderless application whose company words (3 letters or more) all appear in the folder
+ * name ("Hippocrate Care" → hippocrate-care-cto-cofondateur), if it is unique.
  */
 function applicationOfName(db: Database, name: string): number | null {
   const wordsFolder = new Set(words(name));
@@ -214,7 +214,7 @@ function applicationOfName(db: Database, name: string): number | null {
   return candidates.length === 1 ? candidates[0].offer_id : null;
 }
 
-/** Reprend les journaux des dossiers de candidature actifs. */
+/** Imports the journals of the active application folders. */
 export function importJournals(db: Database, dataDir: string): ReportJournal {
   const report: ReportJournal = {
     folders: 0,
@@ -295,7 +295,7 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
         report.events_created++;
         if (!e.done) report.deadlines++;
       }
-      // Ligne disparue ou réécrite dans le dossier : l'événement repris (jamais modifié depuis) est retiré.
+      // Line gone or rewritten in the folder: the imported event (never modified since) is removed.
       for (const [key, e] of already) {
         if (!keys.has(key) && !e.updated_at) {
           db.prepare('DELETE FROM events WHERE id = ?').run(e.id);

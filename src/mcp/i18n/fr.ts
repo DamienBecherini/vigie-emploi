@@ -1,5 +1,5 @@
-// Textes du serveur MCP en français (langue de référence) : instructions, outils, paramètres, résultats, erreurs.
-// Paramètres « {nom} » remplis par tm() / bt() (src/mcp/textes.ts). Une nouvelle langue : copier en.ts.
+// Texts of the MCP server in French (reference language): instructions, tools, parameters, results, errors.
+// "{name}" parameters filled by tm() / bt() (src/mcp/texts.ts). A new language: copy en.ts.
 import type { MessageText } from '../../i18n/tool.ts';
 
 export const fr = {

@@ -1,4 +1,4 @@
-// Client de l'API locale (mêmes types que le serveur, recopiés ici pour garder l'interface autonome).
+// Client of the local API (same types as the server, copied here to keep the interface standalone).
 import type { Direction, Status, TypeEvent } from '../../src/core/statuses.ts';
 import type { Breakdown, Inputs, Rubric, Input } from '../../src/core/rubric.ts';
 import { t } from './i18n/index.ts';
@@ -77,7 +77,7 @@ export interface JournalEvent {
   offer_id: number;
   type: TypeEvent;
   direction: Direction | null;
-  /** AAAA-MM-JJ ou AAAA-MM-JJTHH:MM (heure locale). */
+  /** YYYY-MM-DD or YYYY-MM-DDTHH:MM (local time). */
   at: string;
   done: boolean;
   summary: string;
@@ -132,7 +132,7 @@ export interface Statistics {
   timeout_database: number;
 }
 
-/** Saisie d'un événement : null efface un champ facultatif (modification). */
+/** Input of an event: null clears an optional field (update). */
 export interface EventInput {
   type: TypeEvent;
   direction: Direction | null;
@@ -148,7 +148,7 @@ export interface EventInput {
   files: string[];
 }
 
-/** URL de lecture d'un fichier du dossier de données (chaque segment encodé). */
+/** URL to read a file of the data folder (each segment encoded). */
 export function urlFile(path: string): string {
   return `/api/file/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
@@ -231,7 +231,7 @@ export interface OfferToPrepare {
   company: string | null;
 }
 
-/** Travail en attente pour l'agent : e-mails à trier, offres en « go » sans dossier. */
+/** Pending work for the agent: e-mails to sort, offers in "go" without a folder. */
 export interface StateWork {
   emails: number;
   go_to_prepare: OfferToPrepare[];
@@ -286,7 +286,7 @@ export const api = {
     call<{ command: string; offer: DetailOffer }>(`/api/offers/${id}/apply`, { method: 'POST' }),
   work: () => call<StateWork>('/api/work'),
   launchAgent: (action: ActionAgent) => call<{ ok: true }>(`/api/work/${action}`, { method: 'POST', body: '{}' }),
-  /** poste_local : la page est ouverte sur la machine du serveur (ouvrir un dossier dans l'explorateur est alors possible). */
+  /** local_machine: the page is open on the server's machine (opening a folder in the explorer is then possible). */
   health: () => call<{ local_machine?: boolean }>('/api/health'),
   openFolder: (id: number) => call<{ ok: true }>(`/api/offers/${id}/open-folder`, { method: 'POST', body: '{}' }),
 };

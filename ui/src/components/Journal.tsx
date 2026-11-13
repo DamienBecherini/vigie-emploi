@@ -1,4 +1,4 @@
-// Journal de la candidature (événements datés, échéances) et fichiers du dossier, dans le panneau de détail.
+// Journal of the application (dated events, deadlines) and files of the folder, in the detail panel.
 import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TYPES_EVENT, type Direction, type TypeEvent } from '../../../src/core/statuses.ts';
@@ -12,7 +12,7 @@ function today(): string {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
 }
 
-/** « 05/11/2026 » ou « 05/11/2026 à 14 h 30 » (anglais : « 05/11/2026 at 14:30 »). */
+/** "05/11/2026" or "05/11/2026 à 14 h 30" (English: "05/11/2026 at 14:30"). */
 export function dateEvent(at: string): string {
   const m = at.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
   if (!m) return at;
@@ -32,7 +32,7 @@ function size(o: number): string {
   return o < 1024 ? t('files.bytes', { n: o }) : o < 1024 * 1024 ? t('files.ko', { n: Math.ceil(o / 1024) }) : t('files.mo', { n: numberLocal(o / 1024 / 1024, 1) });
 }
 
-/** Nom court d'un fichier lié : relatif au dossier de candidature quand il y est. */
+/** Short name of a linked file: relative to the application folder when it is inside it. */
 function nameFile(path: string, folder: string | null): string {
   const d = folder?.replace(/\/+$/, '');
   return d && path.startsWith(`${d}/`) ? path.slice(d.length + 1) : path;
@@ -57,7 +57,7 @@ interface Input {
   direction: '' | Direction;
   date: string;
   hour: string;
-  /** null : automatique (fait si la date est passée). */
+  /** null: automatic (done if the date has passed). */
   done: boolean | null;
   summary: string;
   details: string;
@@ -450,8 +450,8 @@ export function Journal({ offer }: { offer: DetailOffer }) {
 }
 
 /**
- * Fichiers du dossier de candidature. `sansChemin` : affichés sous la ligne « Dossier » de la candidature, qui montre
- * déjà le dossier (ni chemin répété, ni message quand l'offre n'a pas de dossier).
+ * Files of the application folder. `withoutPath`: displayed under the "Folder" line of the application, which already
+ * shows the folder (neither a repeated path, nor a message when the offer has no folder).
  */
 export function FilesOfFolder({ offer, withoutPath = false }: { offer: DetailOffer; withoutPath?: boolean }) {
   const q = useFiles(offer.id);

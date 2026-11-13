@@ -1,4 +1,4 @@
-// Boutons « travail en attente pour l'agent » (au-dessus des filtres) et écoute des notifications du serveur.
+// "Pending work for the agent" buttons (above the filters) and listening to the server's notifications.
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FilePenLine, Mail } from 'lucide-react';
@@ -6,9 +6,9 @@ import { api, type ActionAgent } from '../api.ts';
 import { t, type KeyUi } from '../i18n/index.ts';
 
 /**
- * Écoute le flux du serveur (Server-Sent Events) : la base a changé (CLI, agent, autre onglet) → toutes les
- * données affichées sont rechargées ; la boîte de réception a changé → seul l'état du travail l'est.
- * Le navigateur rétablit seul la connexion si le serveur redémarre.
+ * Listens to the server's stream (Server-Sent Events): the database changed (CLI, agent, other tab) → all the
+ * displayed data are reloaded; the inbox changed → only the work state is.
+ * The browser restores the connection by itself if the server restarts.
  */
 export function useNotifications(): void {
   const client = useQueryClient();
@@ -17,7 +17,7 @@ export function useNotifications(): void {
     const stream = new EventSource('/api/stream');
     const onDatabase = () => void client.invalidateQueries();
     const emails = () => void client.invalidateQueries({ queryKey: ['work'] });
-    // Après une reconnexion (serveur redémarré), des modifications ont pu être manquées.
+    // After a reconnection (server restarted), changes may have been missed.
     let connected = false;
     const ready = () => {
       if (connected) onDatabase();
@@ -35,11 +35,11 @@ const ACTIONS: Record<ActionAgent, KeyUi> = {
   'prepare-go': 'agent.goLaunched',
 };
 
-/** N'affiche rien tant qu'il n'y a pas de travail en attente. */
+/** Displays nothing as long as there is no pending work. */
 export function ActionsAgent({ className = '' }: { className?: string }) {
   const work = useQuery({ queryKey: ['work'], queryFn: api.work });
   const [message, setMessage] = useState('');
-  // Évite d'ouvrir deux terminaux sur un double clic : button désactivé quelques secondes après le lancement.
+  // Avoids opening two terminals on a double click: button disabled for a few seconds after the launch.
   const [recent, setRecent] = useState<ActionAgent | null>(null);
   const launch = useMutation({
     mutationFn: api.launchAgent,

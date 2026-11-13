@@ -151,7 +151,7 @@ export interface ResultWrite {
   path: string;
   /** true if a file already existed at that place (it was replaced). */
   existed: boolean;
-  old_size: number | null;
+  previous_size: number | null;
   size: number;
 }
 
@@ -173,7 +173,7 @@ export function writeWorkspace(rootWorkspace: string, path: string, content: str
     mkdirSync(dirname(c.absolute), { recursive: true });
   }
   writeFileSync(c.absolute, content, 'utf8');
-  return { path: c.relative, existed: c.exists, old_size: old, size: statSync(c.absolute).size };
+  return { path: c.relative, existed: c.exists, previous_size: old, size: statSync(c.absolute).size };
 }
 
 /** Moves or renames a file inside the workspace; refuses to overwrite an existing destination. */

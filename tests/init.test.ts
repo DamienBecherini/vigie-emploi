@@ -21,7 +21,7 @@ function files(folder: string, prefix = ''): string[] {
 
 describe('init: creation of a workspace', () => {
   const workspace = join(root, 'mon-workspace');
-  const r = initializeWorkspace({ folder: workspace, port: 4411, nameMcp: 'vigie-emploi-test', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
+  const r = initializeWorkspace({ folder: workspace, port: 4411, mcpName: 'vigie-emploi-test', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
 
   it('copies the template, the CV template and the sample rubric', () => {
     const copies = files(workspace);
@@ -96,7 +96,7 @@ describe('init: creation of a workspace', () => {
   });
 });
 
-describe('cv : Markdown -> HTML', () => {
+describe('cv: Markdown -> HTML', () => {
   const md = readFileSync(join(SCAFFOLD, 'cv', '_exemple-structure.md'), 'utf8');
   const html = cvToHtml(md, { css: 'gabarit.css', portrait: null });
 
@@ -123,7 +123,7 @@ describe('cv : Markdown -> HTML', () => {
   });
 });
 
-describe('anciens noms (postuler-juste, cap-emploi) encore reconnus', () => {
+describe('former names (postuler-juste, cap-emploi) still recognized', () => {
   it('reads postuler-juste.config.json, POSTULER_JUSTE_DATA and data/postuler-juste.sqlite', () => {
     const old = join(root, 'old-pj');
     mkdirSync(join(old, 'data'), { recursive: true });
@@ -157,7 +157,7 @@ describe('anciens noms (postuler-juste, cap-emploi) encore reconnus', () => {
   });
 });
 
-describe('gabarits de CV', () => {
+describe('CV templates', () => {
   it('lists the shipped templates and installs one, keeping the old one and the photo', async () => {
     const { listTemplates, chooseTemplate } = await import('../src/cv/cv.ts');
     expect(listTemplates().map((g) => g.name)).toEqual(expect.arrayContaining(['plain', 'modern', 'compact']));

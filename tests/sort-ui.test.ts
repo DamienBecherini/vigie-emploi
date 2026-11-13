@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { toggleLevel, writeLevels, readLevels } from '../ui/src/sort.ts';
 
 describe('sort on several levels (dashboard)', () => {
-  it('lit l’URL, y compris l’ancien format tri + ordre', () => {
+  it('reads the URL, including the old sort + order format', () => {
     expect(readLevels('received_at:desc,score:asc')).toEqual([
       { column: 'received_at', order: 'desc' },
       { column: 'score', order: 'asc' },

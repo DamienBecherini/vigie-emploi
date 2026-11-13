@@ -40,7 +40,7 @@ describe('Node executable', () => {
     expect(nodeExecutable({ execPath: 'claude.exe', versions: electron, versionPath: () => null })).toBeNull();
   });
 
-  it('version minimale', () => {
+  it('minimum version', () => {
     expect(versionSufficient('v24.0.0')).toBe(true);
     expect(versionSufficient('25.1.0')).toBe(true);
     expect(versionSufficient('v22.13.0')).toBe(false);
@@ -92,13 +92,13 @@ function simulate(ports: Record<number, Health>, o: { node?: string | null; resp
   return { dep, launched, open };
 }
 
-describe('ouvrir_tableau_de_bord (logique)', () => {
+describe('open_dashboard (logic)', () => {
   const config = { dataDir: join(root, 'workspace'), port: 4410, language: 'fr' } as Config;
 
   it('dashboard already launched for this workspace: its address, without launching again', async () => {
     const { dep, launched, open } = simulate({ 4410: { service: 'vigie-emploi', folder: config.dataDir.toUpperCase() } });
     const r = await openDashboard(config, {}, dep);
-    expect(r).toMatchObject({ url: 'http://localhost:4410/', already_launched: true, mode: 'existing', browser_open: false });
+    expect(r).toMatchObject({ url: 'http://localhost:4410/', already_launched: true, mode: 'existing', browser_opened: false });
     expect(launched).toEqual([]);
     expect(open).toEqual([]);
   });
@@ -109,7 +109,7 @@ describe('ouvrir_tableau_de_bord (logique)', () => {
       4411: { service: null },
     });
     const r = await openDashboard(config, { open: true }, dep);
-    expect(r).toMatchObject({ url: 'http://localhost:4412/', already_launched: false, mode: 'detached', stop_auto_min: 60, browser_open: true });
+    expect(r).toMatchObject({ url: 'http://localhost:4412/', already_launched: false, mode: 'detached', auto_stop_min: 60, browser_opened: true });
     expect(launched).toEqual([{ mode: 'detached', port: 4412 }]);
     expect(open).toEqual(['http://localhost:4412/']);
   });
@@ -155,7 +155,7 @@ describe('open_dashboard (real)', () => {
     await Promise.all([server.connect(b), client.connect(a)]);
     const r = (await client.callTool({ name: 'open_dashboard', arguments: {} })) as { isError?: boolean; content: { text: string }[] };
     expect(r.isError).toBe(true);
-    expect(r.content[0].text).toMatch(/initialiser_espace/);
+    expect(r.content[0].text).toMatch(/initialize_workspace/);
     await client.close();
   });
 

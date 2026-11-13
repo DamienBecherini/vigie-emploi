@@ -364,7 +364,7 @@ export function createServerMcp(state: StateMcp): McpServer {
         author: v.author,
         summary: v.summary,
         instructions_ai: [...v.rubric.instructions, ...instructionsAi(v.rubric)],
-        weight_normalized: Object.fromEntries(v.rubric.criteria.map((c) => [c.id, Math.round((c.weight / sum) * 1000) / 1000])),
+        normalized_weight: Object.fromEntries(v.rubric.criteria.map((c) => [c.id, Math.round((c.weight / sum) * 1000) / 1000])),
         rubric: v.rubric,
         computed_examples: computedExamples(v.rubric, v.version),
         format_score: {

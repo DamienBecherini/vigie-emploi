@@ -128,8 +128,8 @@ export interface Statistics {
   replies: number;
   interviews: number;
   proposals: number;
-  timeout_medium_reply_days: number | null;
-  timeout_database: number;
+  average_reply_days: number | null;
+  reply_sample_size: number;
 }
 
 /** Input of an event: null clears an optional field (update). */

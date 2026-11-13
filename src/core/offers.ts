@@ -222,7 +222,7 @@ export function saveOffer(
     params.push(nv);
     if (k === 'compensation') {
       const r = readCompensation(nv);
-      updated.push('remuneration_min = ?', 'remuneration_max = ?', 'remuneration_unite = ?');
+      updated.push('compensation_min = ?', 'compensation_max = ?', 'compensation_unit = ?');
       params.push(r.min, r.max, r.unit);
     }
   }

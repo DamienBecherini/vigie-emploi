@@ -14,7 +14,7 @@ describe('canonicalize', () => {
       url: 'https://www.linkedin.com/jobs/view/4100000001/',
     });
   });
-  it('Indeed : jk en minuscules, URL viewjob', () => {
+  it('Indeed: jk in lower case, viewjob URL', () => {
     expect(canonicalize('https://fr.indeed.com/rc/clk?jk=0A1B2C3D4E5F6789&from=ja')).toEqual({
       source: 'indeed',
       siteId: '0a1b2c3d4e5f6789',
@@ -45,13 +45,13 @@ describe('canonicalize', () => {
 });
 
 describe('decodeLink', () => {
-  it('segment base64 url-safe (Mailjet / Hellowork)', () => {
+  it('url-safe base64 segment (Mailjet / Hellowork)', () => {
     const seg = b64url('https://www.hellowork.com/fr-fr/emplois/70000001.html?utm_source=alerte');
     expect(decodeLink(`https://r.mailjet.test/lnk/AbCd/${seg}/1/xyz`)).toBe(
       'https://www.hellowork.com/fr-fr/emplois/70000001.html?utm_source=alerte',
     );
   });
-  it('charge utile gzip (Indeed)', () => {
+  it('gzip payload (Indeed)', () => {
     const seg = b64url(gzipSync(JSON.stringify({ u: 'https://fr.indeed.com/rc/clk?jk=abcdef0123456789&from=ja' })));
     const href = `https://cts.indeed.com/v3/${seg}/tracker`;
     expect(identifierLink(href)?.url).toBe('https://fr.indeed.com/viewjob?jk=abcdef0123456789');

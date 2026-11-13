@@ -142,8 +142,8 @@ describe('journal and deadlines', () => {
       replies: 1,
       interviews: 1,
       proposals: 1,
-      timeout_medium_reply_days: 4,
-      timeout_database: 1,
+      average_reply_days: 4,
+      reply_sample_size: 1,
     });
   });
 });

@@ -109,7 +109,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
 
   server.registerResource(
     'instructions',
-    'vigie-emploi://espace/AGENTS.md',
+    'vigie-emploi://workspace/AGENTS.md',
     {
       title: tm('workspace.instructions.title'),
       description: tm('workspace.instructions.description'),
@@ -143,11 +143,11 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       return {
         folder: slash(folder),
         initialized,
-        folder_by_default: state.byDefault,
+        default_folder: state.byDefault,
         message: initialized ? null : messageNotInitialized(state),
         onboarding_done: initialized ? !/À COMPLÉTER|TO BE COMPLETED/.test(readInstruction(folder, '_CONTEXTE.md').split('\n')[0] ?? '') : false,
         browser_pdf: findBrowser(),
-        template_cv: initialized && existsSync(join(folder, 'cv', 'gabarit', 'gabarit.css')) ? 'cv/gabarit' : tm('workspace.workspace_state.template_cv'),
+        cv_template: initialized && existsSync(join(folder, 'cv', 'gabarit', 'gabarit.css')) ? 'cv/gabarit' : tm('workspace.workspace_state.cv_template'),
         language: state.config.language,
         prompts: Object.keys(PROMPTS),
       };

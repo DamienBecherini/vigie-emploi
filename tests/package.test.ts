@@ -19,7 +19,7 @@ function files(folder: string): string[] {
   });
 }
 
-describe('paquet npm', () => {
+describe('npm package', () => {
   it('ships the compiled code and the resources read at run time', () => {
     expect(pkg.private).toBeUndefined();
     for (const f of ['bin', 'dist', 'migrations', 'scaffold', 'templates', 'examples', 'AGENTS.md']) expect(pkg.files).toContain(f);
@@ -58,7 +58,7 @@ describe('paquet npm', () => {
   });
 });
 
-describe('extension Claude Desktop (mcpb/manifest.json)', () => {
+describe('Claude Desktop extension (mcpb/manifest.json)', () => {
   const m = JSON.parse(readFileSync(join(root, 'mcpb', 'manifest.json'), 'utf8')) as {
     name: string;
     server: { type: string; entry_point: string; mcp_config: { command: string; args: string[]; env: Record<string, string> } };

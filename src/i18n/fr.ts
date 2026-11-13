@@ -12,79 +12,79 @@ export const fr = {
 Usage : vigie-emploi <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--gabarit sobre|moderne|compact] [--langue fr|en]
+  init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--template sobre|moderne|compact] [--language fr|en]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
-                        et affiche le prompt de démarrage à donner à l'IA ; --langue : langue de l'interface,
+                        et affiche le prompt de démarrage à donner à l'IA ; --language : langue de l'interface,
                         de la CLI et du suivi (fr par défaut)
-  compter <fichier>     Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
+  count <fichier>       Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
                         « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
-  gabarits              Gabarits de CV livrés (sobre, moderne, compact…)
-  gabarit <nom>         Installe ce gabarit dans cv/gabarit de l'espace (l'ancien est gardé à côté)
-  cv <cv.md>… [--gabarit <dossier>] [--capture]
+  templates             Gabarits de CV livrés (sobre, moderne, compact…)
+  template <nom>        Installe ce gabarit dans cv/gabarit de l'espace (l'ancien est gardé à côté)
+  cv <cv.md>… [--template <dossier>] [--capture]
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
-                        Gabarit : --gabarit, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
+                        Gabarit : --template, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
                         --capture : image PNG du rendu dans <gabarit>/apercu/ (contrôle visuel)
   ingest [--keep] [--no-fetch] [--emails <dossier>]
                         Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
                         puis supprime les e-mails traités (sauf --keep)
-  import-historique     Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md s'ils existent (idempotent)
+  import-history        Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md s'ils existent (idempotent)
   list [filtres]        Liste paginée des offres
-      --statut a,b  --note-min N  --note-max N  --sans-note  --source s1,s2  --tag t
-      --depuis AAAA-MM-JJ  --jusqua AAAA-MM-JJ (date de réception)  --texte "mots"
-      --contrat CDI  --teletravail remote  --candidatures  --page N  --taille N
-      --tri note|recue_le|publiee_le|titre|entreprise|…  --ordre asc|desc
-      --tri recue_le:desc,note:desc  (plusieurs niveaux : date, puis note à date égale)
+      --status a,b  --score-min N  --score-max N  --unscored  --source s1,s2  --tag t
+      --from AAAA-MM-JJ  --until AAAA-MM-JJ (date de réception)  --text "mots"
+      --contract CDI  --remote remote  --applications  --page N  --size N
+      --sort score|received_at|published_at|title|company|…  --order asc|desc
+      --sort received_at:desc,score:desc  (plusieurs niveaux : date, puis note à date égale)
   show <id>             Détail d'une offre (notes, statuts, tags, candidature)
-  a-lire [--limite N] [--complet]
+  to-read [--limit N] [--full]
                         Offres à traiter sans note, avec l'URL à lire (ou la description déjà extraite)
-  noter <id> --json '{"criteres": {"technique": {"note": 8, "justification": "…"}, …}, "entrees": {…}, "bloquants": [], "colle": "…"}'
-  noter --fichier lot.json [--essai]
-                        Enregistre des notes (format des lots). Avec « criteres », la note est calculée avec la
-                        grille (voir « grille ») ; sans, c'est une note globale (ancienne grille).
-                        --essai : calcule et affiche sans rien enregistrer
-  grille [--consignes] [--json]
+  score <id> --json '{"criteria": {"technique": {"score": 8, "justification": "…"}, …}, "inputs": {…}, "blockers": [], "fit": "…"}'
+  score --file lot.json [--dry-run]
+                        Enregistre des notes (format des lots). Avec « criteria », la note est calculée avec la
+                        grille (voir « rubric ») ; sans, c'est une note globale (ancienne grille).
+                        --dry-run : calcule et affiche sans rien enregistrer
+  rubric [--instructions] [--json]
                         Grille de notation courante : critères, poids, barèmes, règles, inventaire, exemples
-  grille --historique | --version N | --restaurer N [--resume "…"] | --init
-  grille --modifier '{"poids": {"technique": 40}, …}' --resume "…" [--essai]
-                        Changement partiel (poids, seuil, baremes, regles, inventaire) ; recalcule les notes
-  renoter               Recalcule toutes les notes à critères avec la grille courante
-  statut <id> <statut> [--commentaire "…"]
+  rubric --history | --version N | --restore N [--summary "…"] | --init
+  rubric --update '{"weight": {"technique": 40}, …}' --summary "…" [--dry-run]
+                        Changement partiel (weight, threshold, scales, rules, inventory) ; recalcule les notes
+  rescore               Recalcule toutes les notes à critères avec la grille courante
+  status <id> <status> [--comment "…"]
                         Statuts : {statuses}
   tag <id> +ajout -retrait
-  lien <id> <url|->       Enregistre (ou efface avec -) le lien de l'offre
-  candidater <id>       Passe l'offre en « go » et affiche tout ce qu'il faut pour préparer la candidature
-  candidature <id> [--dossier d] [--cv f] [--canal c] [--envoyee-le JJ/MM/AAAA] [--message m]
-                   [--prochaine-action "…"]
+  link <id> <url|->     Enregistre (ou efface avec -) le lien de l'offre
+  apply <id>            Passe l'offre en « go » et affiche tout ce qu'il faut pour préparer la candidature
+  application <id> [--folder d] [--cv f] [--channel c] [--sent-at JJ/MM/AAAA] [--message m]
+                   [--next-action "…"]
                         Enregistre la candidature (option vide "" pour effacer un champ) ;
-                        avec --envoyee-le, l'offre passe en « envoyee »
-  prochaine-action <id> "texte"
+                        avec --sent-at, l'offre passe en « sent »
+  next-action <id> "texte"
                         Prochaine action de la candidature ("" ou - pour l'effacer)
-  evenement <id> --type {types} [--le "JJ/MM/AAAA HH:MM"] --resume "…"
-                   [--sens envoye|recu] [--canal c] [--interlocuteurs "…"] [--details "…"]
-                   [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier candidatures/x/devis.md]…
-                   [--fait | --no-fait]
+  event <id> --type {types} [--at "JJ/MM/AAAA HH:MM"] --summary "…"
+                   [--direction sent|received] [--channel c] [--contacts "…"] [--details "…"]
+                   [--amount 3000 --unit "€ HT"] [--days 6] [--file candidatures/x/devis.md]…
+                   [--done | --no-done]
                         Ajoute un événement au journal de la candidature ; daté dans le futur (et pas fait),
-                        c'est une échéance. --le par défaut : maintenant ; « demain », « +3 » acceptés
+                        c'est une échéance. --at par défaut : maintenant ; « demain », « +3 » acceptés
   journal <id>          Journal de la candidature (échéances d'abord, puis du plus récent au plus ancien)
-  echeances [--jours 7] Échéances en retard et à venir sur N jours
-  fait <evenement_id> [--no-fait]
-                        Marque une échéance comme faite (--no-fait : la rouvrir)
-  fichiers <id>         Fichiers du dossier de candidature (chemins à citer dans --fichier)
+  deadlines [--days 7]  Échéances en retard et à venir sur N jours
+  done <event_id> [--no-done]
+                        Marque une échéance comme faite (--no-done : la rouvrir)
+  files <id>            Fichiers du dossier de candidature (chemins à citer dans --file)
   stats                 Candidatures par étape (envoyée, réponse, entretien, proposition), délai de réponse
-  generer-suivi [--sortie <fichier>] [--remplacer]
+  generate-tracker [--output <fichier>] [--replace]
                         Génère le suivi des candidatures depuis la base : par défaut
-                        candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
-  serve [--port 4410] [--inactivite <minutes>]
-                        Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
+                        candidatures/_SUIVI.genere.md (aperçu) ; --replace écrit candidatures/_SUIVI.md
+  serve [--port 4410] [--idle <minutes>]
+                        Lance le tableau de bord (http://localhost:4410) ; --idle : s'arrête seul après ce temps sans visite
   mcp                   Serveur MCP (transport stdio) pour piloter vigie-emploi depuis une IA ; sans dossier
-                        configuré : ~/ma-recherche, créé au besoin par l'outil initialiser_espace
+                        configuré : ~/ma-recherche, créé au besoin par l'outil initialize_workspace
 
 Options générales
   --data <dossier>      Dossier de données (sinon VIGIE_EMPLOI_DATA ou vigie-emploi.config.json)
   --config <fichier>    Fichier de configuration
   --json                Sortie JSON (toutes les commandes)
 
-Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VIGIE_EMPLOI_LANGUAGE.
+Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable VIGIE_EMPLOI_LANGUAGE.
 `,
 
   // CLI: general messages
@@ -143,9 +143,9 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.ingest.withoutOffer': '  aucune offre reconnue, e-mail conservé : {file}',
   'cli.ingest.acknowledgment': '  accusé de candidature (pas une alerte) : {subject}{suite}',
   'cli.ingest.offerMissing': ' → offre absente de la base',
-  'cli.ingest.suite': 'Suite : vigie-emploi a-lire',
+  'cli.ingest.suite': 'Suite : vigie-emploi to-read',
 
-  // CLI : import-historique
+  // CLI : import-history
   'cli.import.batches': 'Lots : {files} fichier(s), {inputs} entrée(s), {offers} offre(s) créée(s), {scores} note(s).',
   'cli.import.register':
     'Registre : {lines} ligne(s), {offers} offre(s) dont {created} créée(s) ({withoutLink} sans lien), {statuses} statut(s), {scores} note(s), {corrected} entreprise(s) corrigée(s).',
@@ -162,7 +162,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.import.unrecognized': 'Lignes non reconnues ({n}) :',
   'cli.import.linksNotRecognized': 'Liens non reconnus ({n}) :',
 
-  // CLI : list, a-lire, noter
+  // CLI : list, to-read, score
   'cli.list.headers': 'id|note|statut|source|reçue|entreprise|titre',
   'cli.list.footer': 'Page {page}/{pages} · {total} offre(s)',
   'cli.toRead.none': 'Aucune offre à lire.',
@@ -170,16 +170,16 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.toRead.browser': 'à lire dans le navigateur',
   'cli.toRead.human': 'page protégée : demander le texte',
   'cli.toRead.withoutUrl': '(sans URL)',
-  'cli.toRead.total': '{n} offre(s) à traiter. Détail JSON (descriptions comprises) : vigie-emploi a-lire --json',
-  'cli.score.expected': "noter : --json '{...}' ou --fichier lot.json attendu",
-  'cli.score.oneSingle': 'noter <id> : une seule note attendue',
+  'cli.toRead.total': '{n} offre(s) à traiter. Détail JSON (descriptions comprises) : vigie-emploi to-read --json',
+  'cli.score.expected': "score : --json '{...}' ou --file lot.json attendu",
+  'cli.score.oneSingle': 'score <id> : une seule note attendue',
 
   // CLI : grille
   'cli.rubric.copied': "Grille d'exemple copiée dans {path} (version 1) : à adapter.",
   'cli.rubric.exists': 'Une grille existe déjà : {path}',
   'cli.rubric.version': 'Version {version} : {summary}',
-  'cli.rubric.summaryExpected': 'grille --modifier : --resume "…" attendu (ou --essai pour un aperçu)',
-  'cli.grille.jsonInvalide': 'grille --modifier : JSON invalide ({message})',
+  'cli.rubric.summaryExpected': 'rubric --update : --summary "…" attendu (ou --dry-run pour un aperçu)',
+  'cli.rubric.jsonInvalid': 'rubric --update : JSON invalide ({message})',
   'cli.rubric.saved': 'Version {version} enregistrée.',
   'cli.rubric.dry_run': 'Essai : rien n’est enregistré.',
   'cli.rubric.title': '{name} — version {version} du {at} ({author}) : {summary}',
@@ -203,13 +203,13 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.link.expected': 'lien : URL attendue (ou - pour effacer)',
   'cli.link.none': '(aucun lien)',
   'cli.apply.folder': 'Dossier suggéré : {folder}',
-  'cli.application.option': 'candidature : au moins une option attendue (--dossier, --canal…)',
-  'cli.nextAction.expected': 'prochaine-action : texte attendu ("" ou - pour effacer)',
+  'cli.application.option': 'application : au moins une option attendue (--folder, --channel…)',
+  'cli.nextAction.expected': 'next-action : texte attendu ("" ou - pour effacer)',
   'cli.nextAction.none': '(aucune prochaine action)',
 
   // CLI: events and deadlines
-  'cli.event.typeExpected': 'evenement : --type attendu ({types})',
-  'cli.event.summaryExpected': 'evenement : --resume "…" attendu',
+  'cli.event.typeExpected': 'event : --type attendu ({types})',
+  'cli.event.summaryExpected': 'event : --summary "…" attendu',
   'cli.event.added': "Événement #{id} ajouté à l'offre #{offer} : {at} {type}{deadline} — {summary}",
   'cli.event.deadline': ' (échéance)',
   'cli.deadlines.offer': 'offre #{id}',
@@ -219,7 +219,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.done.reopened': 'Événement #{id} rouvert (à faire) : {summary}',
 
   // CLI : fichiers, stats, suivi
-  'cli.files.withoutFolder': '#{id} : pas de dossier de candidature (vigie-emploi candidature {id} --dossier candidatures/…)',
+  'cli.files.withoutFolder': '#{id} : pas de dossier de candidature (vigie-emploi application {id} --folder candidatures/…)',
   'cli.files.absent': '#{id} : dossier {folder} absent du dossier de données',
   'cli.files.title': '{folder} ({n} fichier(s)) :',
   'cli.files.ko': 'Ko',
@@ -229,7 +229,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.tracker.summary': '{file} : {inProgress} en cours, {noFollowUp} envoyée(s) sans suite, {closes} close(s).',
 
   // CLI : init
-  'cli.init.usage': 'Usage : vigie-emploi init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--langue fr|en]',
+  'cli.init.usage': 'Usage : vigie-emploi init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]',
   'cli.init.created': 'Espace de travail créé : {folder}',
   'cli.init.config': '  configuration : {config} (port {port}, langue {language})',
   'cli.init.mcp': '  serveur MCP « {name} » : {mcp}',
@@ -241,14 +241,14 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'cli.init.step3': '  3. Colle-lui ce prompt :',
 
   // CLI : compter, gabarits, cv
-  'cli.count.usage': 'Usage : vigie-emploi compter <fichier>',
+  'cli.count.usage': 'Usage : vigie-emploi count <fichier>',
   'cli.count.line': '{characters} caractères  {words} mots  « {start}… »',
-  'cli.templates.choose': "Choisir : vigie-emploi gabarit <nom> (depuis l'espace de travail ; l'ancien gabarit est gardé à côté).",
-  'cli.template.usage': 'Usage : vigie-emploi gabarit <nom> (liste : vigie-emploi gabarits)',
+  'cli.templates.choose': "Choisir : vigie-emploi template <nom> (depuis l'espace de travail ; l'ancien gabarit est gardé à côté).",
+  'cli.template.usage': 'Usage : vigie-emploi template <nom> (liste : vigie-emploi templates)',
   'cli.template.installed': 'Gabarit « {name} » installé dans {folder}{old}.',
   'cli.template.old': ' (ancien gabarit gardé dans {folder})',
   'cli.template.regenerate': 'Régénérer les CV pour voir le résultat : vigie-emploi cv "cv/<nom>.md" --capture',
-  'cli.cv.usage': 'Usage : vigie-emploi cv <cv.md>… [--gabarit <dossier>] [--capture]',
+  'cli.cv.usage': 'Usage : vigie-emploi cv <cv.md>… [--template <dossier>] [--capture]',
   'cli.cv.withoutBrowser': 'Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans VIGIE_EMPLOI_BROWSER)',
   'cli.cv.pages': 'page(s)',
   'cli.cv.exceeded': '  <-- DÉPASSE 2 PAGES',
@@ -286,7 +286,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'tracker.when': '{date} à {hour}',
   'tracker.warning1': '> **Fichier généré par vigie-emploi le {when} : ne pas éditer à la main.** Les changements se font dans la base',
   'tracker.warning2':
-    '> (tableau de bord, CLI ou outils MCP), puis `vigie-emploi generer-suivi`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
+    '> (tableau de bord, CLI ou outils MCP), puis `vigie-emploi generate-tracker`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
   'tracker.inProgress': 'En cours',
   'tracker.noFollowUp': 'Envoyées sans suite',
   'tracker.closes': 'Closes',
@@ -294,7 +294,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'tracker.headersCloses': '| Offre | Issue |',
   'tracker.estimations': "Les dates « ≈ » sont des estimations, pas une trace d'envoi. Les corriger si tu retrouves la vraie date.",
   'tracker.footer':
-    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `vigie-emploi serve`, ou `vigie-emploi list --statut ecartee`).',
+    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `vigie-emploi serve`, ou `vigie-emploi list --status dismissed`).',
   'tracker.toSend': '**À envoyer** — GO',
   'tracker.remote': 'télétravail {value}',
   'tracker.folder': 'dossier',
@@ -340,7 +340,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.pathAbsolute': 'Chemin absolu refusé : {path} (chemin relatif au dossier de données attendu)',
   'core.pathInvalid': 'Chemin invalide : {path}',
   'core.pathRefused': 'Chemin refusé : {path}',
-  'core.filesList': 'fichiers : liste de chemins attendue',
+  'core.filesList': 'files : liste de chemins attendue',
   'core.typeEventUnknown': "Type d'événement inconnu : {type} ({types})",
   'core.directionUnknown': 'Sens inconnu : {direction} (envoye ou recu)',
   'core.eventNotFound': 'Événement {id} introuvable',
@@ -358,33 +358,33 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.mergeImpossible': 'Fusion impossible : offre {target} ou {duplicate} introuvable',
   'core.inputWithoutId': 'Entrée sans "id" ni "url"',
   'core.withoutRubric':
-    'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (vigie-emploi grille --init)',
-  'core.scoreIgnored': 'Champ « note » ({score}) ignoré : note calculée avec la grille v{version} = {calculee}',
-  'core.rawScoreIgnored': 'Champ « note_brute » ignoré : remplacé par la moyenne pondérée',
+    'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (vigie-emploi rubric --init)',
+  'core.scoreIgnored': 'Champ « score » ({score}) ignoré : note calculée avec la grille v{version} = {calculee}',
+  'core.rawScoreIgnored': 'Champ « raw_score » ignoré : remplacé par la moyenne pondérée',
   'core.batchUnreadable': 'Lot illisible : tableau JSON attendu',
   'core.noneScore': 'Aucune note à enregistrer',
   'core.step.reread': "Relire l'offre ({url}) et la note enregistrée",
   'core.step.instructions': 'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
   'core.step.folder': "Créer le dossier {folder} avec l'annonce, le fit, les écarts et les messages",
   'core.step.save':
-    'Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou vigie-emploi candidature {id} --dossier {folder}',
-  'core.step.send': "Après l'envoi : enregistrer la date d'envoi (envoyee_le), l'offre passe en « envoyee »",
+    'Enregistrer la candidature (dossier, CV, canal, prochaine action) : save_application ou vigie-emploi application {id} --folder {folder}',
+  'core.step.send': "Après l'envoi : enregistrer la date d'envoi (sent_at), l'offre passe en « sent »",
   'core.rubricUnreadable': 'Grille illisible ({path}) : {message}',
   'core.rubricObject': 'Grille illisible ({path}) : objet JSON attendu',
   'core.versionNotFound': 'Version {version} de la grille introuvable',
   'core.summaryChange': 'Résumé du changement attendu',
   'core.rubricModifiedFile': 'Modifiée dans le fichier grille.json',
   'core.rubricInitial': 'Version initiale (fichier grille.json)',
-  'core.notOfRubric': 'Pas de grille de notation : créer {path} (modèle : exemples/grille.json, ou « vigie-emploi grille --init »)',
+  'core.notOfRubric': 'Pas de grille de notation : créer {path} (modèle : examples/rubric.json, ou « vigie-emploi rubric --init »)',
   'core.noneChange': 'Aucun changement par rapport à la version courante',
   'core.backVersion': 'Retour à la version {version}',
-  'core.rubric.computationExpected': 'critère {id} : « calcul » attendu ({computations})',
-  'core.rubric.computationReserved': 'critère {id} : « calcul » réservé aux critères calculés',
+  'core.rubric.computationExpected': 'critère {id} : « computation » attendu ({computations})',
+  'core.rubric.computationReserved': 'critère {id} : « computation » réservé aux critères calculés',
   'core.rubric.targetHigh': 'la cible haute doit dépasser le plancher',
   'core.rubric.targetHighFullRemote': 'la cible haute doit dépasser le plancher full remote',
   'core.rubric.targetLow': 'la cible basse dépasse la cible haute',
-  'core.rubric.valueCap': 'règle {id} : « valeur » attendue pour un plafond',
-  'core.rubric.criterionThreshold': 'règle {id} : « critere » et « seuil » attendus',
+  'core.rubric.valueCap': 'règle {id} : « value » attendue pour un plafond',
+  'core.rubric.criterionThreshold': 'règle {id} : « criterion » et « threshold » attendus',
   'core.rubric.subScore': 'sous-note de 0 à 10 attendue : {value}',
   'core.rubric.criteriaMax': '{n} critères au plus',
   'core.rubric.criterionDouble': 'critère en double : {id}',
@@ -413,28 +413,28 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.change.invalid': 'Changement invalide : {message}',
   'core.change.criterionUnknownList': 'Critère inconnu : {id} (critères : {list})',
   'core.change.criterionUnknown': 'Critère inconnu : {id}',
-  'core.change.newRule': 'Nouvelle règle {id} : « libelle » et « effet » attendus',
+  'core.change.newRule': 'Nouvelle règle {id} : « label » et « effect » attendus',
   'core.change.ruleUnknown': 'Règle inconnue : {id}',
   'core.change.technologyMissing': "Technologie absente de l'inventaire : {technology}",
   'core.change.exampleAbsent': 'Exemple absent de la grille : {title} (exemples : {list})',
-  'core.change.examplesHomonyms': "Plusieurs exemples s'intitulent « {title} » : préciser { titre, entreprise }",
+  'core.change.examplesHomonyms': "Plusieurs exemples s'intitulent « {title} » : préciser { title, company }",
   'core.instructions.scoreFinale':
-    "Ne donne pas la note finale : l'application la calcule (moyenne pondérée, règles bloquantes, arrondi au demi-point). Un champ « note » fourni avec « criteres » est ignoré.",
-  'core.instructions.criteria': 'Note de 0 à 10, avec une justification courte, chacun de ces critères (champ « criteres ») : {list}.',
+    "Ne donne pas la note finale : l'application la calcule (moyenne pondérée, règles bloquantes, arrondi au demi-point). Un champ « score » fourni avec « criteria » est ignoré.",
+  'core.instructions.criteria': 'Note de 0 à 10, avec une justification courte, chacun de ces critères (champ « criteria ») : {list}.',
   'core.instructions.computed': p('Ne note pas {list} : il est calculé depuis le barème. ', 'Ne note pas {list} : ils sont calculés depuis le barème. '),
   'core.instructions.inputs':
-    'Remplis « entrees » quand l’offre les donne : jours_sur_site (0 = full remote, 5 = sur site), salaire_min / salaire_max en euros et unite (an, mois, jour, heure). ' +
+    'Remplis « inputs » quand l’offre les donne : onsite_days (0 = full remote, 5 = sur site), salary_min / salary_max en euros et unit (year, month, day, hour). ' +
     'Sinon l’application les déduit des champs télétravail et rémunération de l’offre ; inconnus, ils valent la valeur neutre avec un drapeau.',
-  'core.instructions.blockers': "Signale dans « bloquants » les identifiants des règles qui s'appliquent à l'offre (actives : {list}).",
+  'core.instructions.blockers': "Signale dans « blockers » les identifiants des règles qui s'appliquent à l'offre (actives : {list}).",
   'core.instructions.technique':
-    'Critère technique : compare les compétences demandées à l’inventaire (niveaux fort / moyen / léger / zéro) et liste les écarts dans la justification et dans « ecarts ».',
-  'core.instructions.examples': 'Cale tes sous-notes sur les exemples de référence de la grille. Remplis aussi « colle », « ecarts » et « lu ».',
+    'Critère technique : compare les compétences demandées à l’inventaire (niveaux strong / medium / light / zero) et liste les écarts dans la justification et dans « gaps ».',
+  'core.instructions.examples': 'Cale tes sous-notes sur les exemples de référence de la grille. Remplis aussi « fit », « gaps » et « read ».',
   'core.instructions.threshold': 'Seuil « à regarder » : {threshold}. Liste à l’utilisateur les offres notées au-dessus, avec la décomposition.',
   'core.rubric.identifier': 'identifiant attendu : minuscules, chiffres, « - » ou « _ », 40 caractères au plus',
   'core.rubric.score10': 'note de 0 à 10',
   'core.rubric.sixValues': 'six valeurs attendues : 0 à 5 jours sur site',
   'core.rubric.afterChange': 'après changement',
-  'core.penaltiesIgnored': 'Champ « penalites » ignoré : les règles bloquantes passent par « bloquants »',
+  'core.penaltiesIgnored': 'Champ « penalties » ignoré : les règles bloquantes passent par « blockers »',
   'core.import': 'apply (reprise après « {status} »)',
   'core.sentAt': 'envoyée le {date}',
   'core.ingest.box': 'Boîte de réception introuvable : {folder}',
@@ -452,13 +452,13 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.access.sort': "Accès refusé : {path} (sort de l'espace)",
   'core.access.folderNotFound': 'Dossier introuvable : {path}',
   'core.access.notOneFolder': 'Pas un dossier : {path}',
-  'core.access.isOneFolder': '{path} est un dossier : utiliser lister_fichiers',
+  'core.access.isOneFolder': '{path} est un dossier : utiliser list_files',
   'core.access.tooBigText': "Fichier trop gros pour être lu d'un coup : {path} ({size} octets)",
   'core.access.tooBig': 'Fichier trop gros : {path} ({size} octets)',
   'core.access.extension': 'Extension non autorisée en écriture : {ext} (autorisées : {list})',
   'core.access.withoutExtension': '(aucune)',
   'core.access.tooLong': 'Contenu trop long',
-  'core.access.exists': '{path} existe déjà (creer_seulement) : choisir un autre nom (suffixe « V2 ») ou remplacer en connaissance de cause',
+  'core.access.exists': '{path} existe déjà (create_only) : choisir un autre nom (suffixe « V2 ») ou remplacer en connaissance de cause',
   'core.access.moveFile': 'Seuls les fichiers se déplacent : {path}',
   'core.access.destination': "La destination existe déjà : {path} (rien n'est écrasé)",
   'core.cv.notFound': 'CV introuvable : {path}',
@@ -475,7 +475,7 @@ Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VI
   'core.config.notConfigure':
     'Dossier de données non configuré : définir VIGIE_EMPLOI_DATA, passer --data <dossier> ou créer {file} avec "dossierDonnees" (voir vigie-emploi.config.example.json).',
   'core.config.notFound': 'Fichier de configuration introuvable : {path}',
-  'core.config.language': 'Langue inconnue : {language} ({languages} ; VIGIE_EMPLOI_LANGUAGE ou "langue" de {file})',
+  'core.config.language': 'Langue inconnue : {language} ({languages} ; VIGIE_EMPLOI_LANGUAGE ou "language" de {file})',
 
   // Plural example (used by the tests of the mechanism)
   'common.offers': p('{n} offre', '{n} offres'),

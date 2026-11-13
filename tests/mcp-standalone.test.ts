@@ -63,13 +63,13 @@ describe('standalone MCP server (in memory)', () => {
     ] as const) {
       const r = (await call(tool, args)) as Result;
       expect(r.isError, tool).toBe(true);
-      expect(text(r)).toMatch(/Espace non initialisé.*initialiser_espace/);
+      expect(text(r)).toMatch(/Espace non initialisé.*initialize_workspace/);
     }
     expect(existsSync(workspace)).toBe(false);
     const p = await client.getPrompt({ name: 'onboarding' });
-    expect(textPrompt(p)).toMatch(/initialiser_espace/);
+    expect(textPrompt(p)).toMatch(/initialize_workspace/);
     const other = await client.getPrompt({ name: 'process-emails' });
-    expect(textPrompt(other)).toMatch(/prompt « demarrage »/);
+    expect(textPrompt(other)).toMatch(/prompt « onboarding »/);
   });
 
   it('lists the prompts of the workspace instructions', async () => {
@@ -117,10 +117,10 @@ describe('standalone MCP server (in memory)', () => {
     expect(textPrompt(await client.getPrompt({ name: 'prepare-go' }))).toContain('# Procédure : préparer les candidatures');
   });
 
-  it('expose AGENTS.md comme ressource', async () => {
+  it('exposes AGENTS.md as a resource', async () => {
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toContain('vigie-emploi://espace/AGENTS.md');
-    const r = await client.readResource({ uri: 'vigie-emploi://espace/AGENTS.md' });
+    expect(resources.map((r) => r.uri)).toContain('vigie-emploi://workspace/AGENTS.md');
+    const r = await client.readResource({ uri: 'vigie-emploi://workspace/AGENTS.md' });
     expect((r.contents[0] as { text: string }).text).toContain('Règles non négociables');
   });
 
@@ -130,7 +130,7 @@ describe('standalone MCP server (in memory)', () => {
     expect(text(await call('read_file', { path: 'candidatures/acme/dossier-candidature.md' }))).toBe('# Acme\n');
     const context = json(await call('write_file', { path: '_CONTEXTE.md', content: '# Contexte\n' }));
     expect(context.existed).toBe(true);
-    expect(context.old_size as number).toBeGreaterThan(100);
+    expect(context.previous_size as number).toBeGreaterThan(100);
 
     for (const path of ['../outside.md', 'data/x.md', join(root, 'outside.md'), '.mcp.json']) {
       const r = (await call('write_file', { path, content: 'x' })) as Result;
@@ -200,10 +200,10 @@ describe('standalone MCP server (stdio, end to end)', () => {
 
   it('initialize → prompts → initialize_workspace → write / read → generate_cv with capture', async () => {
     expect(client.getServerCapabilities()).toMatchObject({ tools: {}, prompts: {}, resources: {} });
-    expect(client.getInstructions()).toMatch(/initialiser_espace/);
+    expect(client.getInstructions()).toMatch(/initialize_workspace/);
     const { prompts } = await client.listPrompts();
     expect(prompts.map((p) => p.name)).toContain('onboarding');
-    expect(textPrompt(await client.getPrompt({ name: 'onboarding' }))).toMatch(/initialiser_espace/);
+    expect(textPrompt(await client.getPrompt({ name: 'onboarding' }))).toMatch(/initialize_workspace/);
     const { tools } = await client.listTools();
     expect(tools.length).toBe(33);
 

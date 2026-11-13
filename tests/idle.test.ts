@@ -8,7 +8,7 @@ function clock() {
   return h;
 }
 
-describe('Veille', () => {
+describe('Idle', () => {
   it('expires after the timeout, an activity pushes it back', () => {
     const h = clock();
     const v = new Idle(3600, h.read);
@@ -30,7 +30,7 @@ describe('Veille', () => {
   });
 });
 
-describe('GET /api/sante', () => {
+describe('GET /api/health', () => {
   type Health = { version: string; idle: { timeout_s: number; remaining_s: number | null } };
   const health = async (app: ReturnType<typeof createApp>) => (await (await app.request('/api/health')).json()) as Health;
 

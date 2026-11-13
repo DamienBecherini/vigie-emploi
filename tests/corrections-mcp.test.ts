@@ -129,7 +129,7 @@ describe('MCP server: responses of reasonable size', () => {
     const { offer } = saveOffer(db, 'manual', 'long', { title: 'Longue', description: 'x'.repeat(40_000) }, 'manual');
     const short = JSON.parse((await call('read_offer', { id: offer.id })).text);
     expect(short.description.length).toBeLessThan(16_000);
-    expect(short.description_truncated).toMatch(/complet: true/);
+    expect(short.description_truncated).toMatch(/full: true/);
     const full = JSON.parse((await call('read_offer', { id: offer.id, full: true })).text);
     expect(full.description.length).toBe(40_000);
   });
@@ -195,7 +195,7 @@ describe('rubric: examples in the partial change', () => {
 describe('fill of the CV pages', () => {
   const page = (high: number, low: number) => ({ height: 842, text: { high, low } });
 
-  it('deux pages pleines : aucun avertissement', () => {
+  it('two full pages: no warning', () => {
     const a = fill([page(30, 812), page(30, 790)]);
     expect(a.pages.map((p) => p.fill)).toEqual([100, 97]);
     expect(a.warnings).toEqual([]);

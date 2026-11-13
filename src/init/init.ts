@@ -78,7 +78,7 @@ export interface OptionsInit {
   folder: string;
   port?: number;
   /** Name of the MCP server in .mcp.json. */
-  nameMcp?: string;
+  mcpName?: string;
   /** Shipped CV template to install (default: plain). */
   template?: string;
   /** Language of the interface, the CLI and the tracker, written into the config (default: fr). */
@@ -92,7 +92,7 @@ export interface ResultInit {
   command: string;
   config: string;
   mcp: string;
-  name_mcp: string;
+  mcp_name: string;
   port: number;
   language: Language;
   browser: string | null;
@@ -137,8 +137,8 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
     if (readdirSync(folder).length) errorUser(m('init.notEmpty', { folder }));
   }
   const port = o.port ?? 4410;
-  const nameMcp = o.nameMcp ?? 'vigie-emploi';
-  if (!/^[\w-]+$/.test(nameMcp)) errorUser(m('init.nameMcpInvalid', { name: nameMcp }));
+  const mcpName = o.mcpName ?? 'vigie-emploi';
+  if (!/^[\w-]+$/.test(mcpName)) errorUser(m('init.nameMcpInvalid', { name: mcpName }));
 
   const template = o.template ? join(FOLDER_TEMPLATES, o.template) : TEMPLATE_DEFAULT;
   if (!existsSync(join(template, 'gabarit.css'))) {
@@ -173,7 +173,7 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
 
   const mcp = join(folder, '.mcp.json');
   const server = { ...launched.mcp, env: { VIGIE_EMPLOI_DATA: folder } };
-  writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nameMcp]: server } }, null, 2)}\n`, 'utf8');
+  writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [mcpName]: server } }, null, 2)}\n`, 'utf8');
 
   const warnings: string[] = [];
   if (language !== LANGUAGE_DEFAULT && scaffold === SCAFFOLD) warnings.push(m('init.scaffoldFrench'));
@@ -188,7 +188,7 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
     command,
     config: slash(config),
     mcp: slash(mcp),
-    name_mcp: nameMcp,
+    mcp_name: mcpName,
     port,
     language,
     browser,

@@ -260,7 +260,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     for (const e of r.errors) console.log(t('cli.ingest.error', { file: e.file ?? e.url, message: e.message }));
     for (const f of r.without_offer) console.log(t('cli.ingest.withoutOffer', { file: f }));
     for (const c of r.confirmations) {
-      const known = c.offers_known.map((x) => `#${x.id} (${x.status})`).join(', ');
+      const known = c.known_offers.map((x) => `#${x.id} (${x.status})`).join(', ');
       console.log(t('cli.ingest.acknowledgment', { subject: c.subject, more: known ? ` → ${known}` : t('cli.ingest.offerMissing') }));
     }
     if (r.added) console.log(t('cli.ingest.suite'));
@@ -466,7 +466,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
       try {
         change = JSON.parse(v.update as string);
       } catch (e) {
-        error(t('cli.grille.jsonInvalide', { message: (e as Error).message }));
+        error(t('cli.rubric.jsonInvalid', { message: (e as Error).message }));
       }
       const r = withoutError(() => updateRubric(db, folder, change, { author: 'cli', summary: (v.summary as string) ?? '', dry_run: Boolean(v.dry_run) }));
       if (v.json) return json({ ok: true, ...r });
@@ -740,9 +740,9 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     if (v.json) return json({ ok: true, ...s });
     console.log(t('cli.stats.steps', { sent: s.sent, replies: s.replies, interviews: s.interviews, proposals: s.proposals }));
     console.log(
-      s.timeout_medium_reply_days === null
+      s.average_reply_days === null
         ? t('cli.stats.notEnough')
-        : t('cli.stats.timeout', { days: comma(s.timeout_medium_reply_days, 1), n: s.timeout_database }),
+        : t('cli.stats.timeout', { days: comma(s.average_reply_days, 1), n: s.reply_sample_size }),
     );
   },
 
@@ -769,7 +769,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
   },
 
   init(args) {
-    const { v, pos } = analyze(args, { port: { type: 'string' }, 'name-mcp': { type: 'string' }, template: { type: 'string' }, language: { type: 'string' } });
+    const { v, pos } = analyze(args, { port: { type: 'string' }, 'mcp-name': { type: 'string' }, template: { type: 'string' }, language: { type: 'string' } });
     if (pos.length !== 1) error(t('cli.init.usage'));
     const language = typeof v.language === 'string' ? normalizeLanguage(v.language) : undefined;
     if (language !== undefined && !isLanguage(language)) {
@@ -778,14 +778,14 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const r = initializeWorkspace({
       folder: pos[0],
       port: v.port ? whole(v.port, 'port') : undefined,
-      nameMcp: v['name-mcp'] as string | undefined,
+      mcpName: v['mcp-name'] as string | undefined,
       template: v.template as string | undefined,
       language,
     });
     if (v.json) return json(r);
     console.log(t('cli.init.created', { folder: r.folder }));
     console.log(t('cli.init.config', { config: r.config, port: r.port, language: r.language }));
-    console.log(t('cli.init.mcp', { name: r.name_mcp, mcp: r.mcp }));
+    console.log(t('cli.init.mcp', { name: r.mcp_name, mcp: r.mcp }));
     console.log(t('cli.init.browser', { browser: r.browser ?? t('cli.none') }));
     for (const a of r.warnings) console.log(`  ⚠ ${a}`);
     console.log(`\n${t('cli.init.command', { command: r.command })}`);

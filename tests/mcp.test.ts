@@ -11,7 +11,7 @@ const FIXTURES = join(import.meta.dirname, 'fixtures');
 
 type Result = { isError?: boolean; content: { type: string; text: string }[] };
 
-describe('serveur MCP (stdio)', () => {
+describe('MCP server (stdio)', () => {
   let folder: string;
   let client: Client;
 
@@ -184,7 +184,7 @@ describe('serveur MCP (stdio)', () => {
     };
     expect(dry_run.saved).toBe(false);
     expect(dry_run.impact.rising.map((x) => x.id)).toEqual([b]);
-    expect((await call('update_rubric', { change: { threshold: 5 } })).error).toMatch(/resume/);
+    expect((await call('update_rubric', { change: { threshold: 5 } })).error).toMatch(/summary/);
     const m = (await call('update_rubric', { change: { rules: [{ id: 'stage', active: false }] }, summary: 'Stages acceptés' })) as unknown as {
       version: number;
     };

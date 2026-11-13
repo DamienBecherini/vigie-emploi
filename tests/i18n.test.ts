@@ -84,7 +84,7 @@ describe('configuration: “language” key', () => {
   });
 });
 
-describe('init --langue en', () => {
+describe('init --language en', () => {
   const workspace = join(root, 'workspace-en');
   const r = initializeWorkspace({ folder: workspace, language: 'en', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
 
@@ -109,7 +109,7 @@ describe('init --langue en', () => {
     expect(fr.warnings.join('\n')).not.toMatch(/in French for now/);
   });
 
-  it('copie modele-<langue>/ quand il existe', () => {
+  it('copies scaffold-<language>/ when it exists', () => {
     const app = join(root, 'app');
     mkdirSync(join(app, 'scaffold'), { recursive: true });
     expect(scaffoldOfLanguage('en', app)).toBe(join(app, 'scaffold'));
@@ -120,7 +120,7 @@ describe('init --langue en', () => {
   });
 });
 
-describe('CLI en anglais', () => {
+describe('CLI in English', () => {
   const output: string[] = [];
   afterEach(() => {
     vi.restoreAllMocks();
@@ -138,9 +138,9 @@ describe('CLI en anglais', () => {
     capture();
     expect(await main(['--help'])).toBe(0);
     const help = output.join('');
-    expect(help).toContain('Command and option names, statuses and event types stay in French');
+    expect(help).toContain('Command and option names, statuses and event types are the same in every language');
     expect(help).toContain('list [filters]');
-    expect(help).toContain('--langue fr|en');
+    expect(help).toContain('--language fr|en');
   });
 
   it('errors and messages in the configuration’s language', async () => {

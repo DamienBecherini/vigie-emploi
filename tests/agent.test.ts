@@ -48,7 +48,7 @@ function data() {
 
 const POST_JSON = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' };
 
-describe('travail en attente', () => {
+describe('pending work', () => {
   it('counts the .eml files of the inbox (0 if it does not exist)', () => {
     const { emails } = data();
     expect(countEmails(emails)).toBe(0);
@@ -76,7 +76,7 @@ describe('travail en attente', () => {
   });
 });
 
-describe('lancement de l’agent', () => {
+describe('launch of the agent', () => {
   it('replaces {folder} and {prompt} in the terminal command', () => {
     expect(commandTerminal(['wt.exe', '-d', '{folder}', 'claude', '{prompt}'], 'D:/data', 'process-emails')).toEqual([
       'wt.exe', '-d', 'D:/data', 'claude', '/traiter-emails',

@@ -8,7 +8,7 @@ import { fingerprint } from '../src/core/text.ts';
 
 const DATA = join(import.meta.dirname, 'fixtures', 'data');
 
-describe('outils Markdown', () => {
+describe('Markdown tools', () => {
   it('cells and splitting outside links', () => {
     expect(cells('| a | b \\| c | [x](u) |')).toEqual(['a', 'b | c', '[x](u)']);
     expect(split('A ([offre](u1)) · B ( ([offre](u2)) · C', ' · ')).toEqual(['A ([offre](u1))', 'B ( ([offre](u2))', 'C']);
@@ -23,7 +23,7 @@ describe('outils Markdown', () => {
   });
 });
 
-describe('reprise de l’historique', () => {
+describe('import of the history', () => {
   let db: Database;
   let r: ReportImport;
   beforeAll(() => {

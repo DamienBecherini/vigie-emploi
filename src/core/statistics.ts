@@ -11,9 +11,9 @@ export interface Statistics {
   /** … that had a proposal ("proposal" event, sent or received). */
   proposals: number;
   /** Average delay (days) between the sending and the first reply received after the sending day. */
-  timeout_medium_reply_days: number | null;
+  average_reply_days: number | null;
   /** Number of applications in this computation. */
-  timeout_database: number;
+  reply_sample_size: number;
 }
 
 /** Computes the statistics from the applications, the statuses and the journal. */
@@ -60,7 +60,7 @@ export function statistics(db: Database): Statistics {
     replies: lines.filter((l) => l.replies !== null).length,
     interviews: lines.filter((l) => Boolean(l.interview)).length,
     proposals: lines.filter((l) => Boolean(l.proposal)).length,
-    timeout_medium_reply_days: delays.length ? Math.round((delays.reduce((a, b) => a + b, 0) / delays.length) * 10) / 10 : null,
-    timeout_database: delays.length,
+    average_reply_days: delays.length ? Math.round((delays.reduce((a, b) => a + b, 0) / delays.length) * 10) / 10 : null,
+    reply_sample_size: delays.length,
   };
 }

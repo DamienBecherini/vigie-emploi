@@ -72,7 +72,7 @@ describe('tracker generated from the database', () => {
   });
 });
 
-describe('candidater : statut', () => {
+describe('apply: status', () => {
   it('reopens a withdrawn offer, does not move an application in progress back', () => {
     const db = openDatabase(':memory:');
     const { offer } = saveOffer(db, 'linkedin', '4277777777', { title: 'Dev', company: 'Upsilon' }, 'manual');

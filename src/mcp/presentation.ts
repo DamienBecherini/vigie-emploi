@@ -52,7 +52,7 @@ export function detailCapped(d: DetailOffer, o: { full?: boolean } = {}): Record
         }
       : {}),
     scores: d.scores.slice(0, SCORES_MAX),
-    ...(d.scores.length > SCORES_MAX ? { scores_old_not_shown: d.scores.length - SCORES_MAX } : {}),
+    ...(d.scores.length > SCORES_MAX ? { old_scores_not_shown: d.scores.length - SCORES_MAX } : {}),
   };
 }
 

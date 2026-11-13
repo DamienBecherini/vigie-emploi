@@ -59,8 +59,8 @@ export interface ResultTable {
   url: string;
   already_launched: boolean;
   mode: ModeLaunch | 'existing';
-  stop_auto_min: number | null;
-  browser_open: boolean;
+  auto_stop_min: number | null;
+  browser_opened: boolean;
   to_tell: string;
 }
 
@@ -121,8 +121,8 @@ export async function openDashboard(
       url,
       already_launched: already,
       mode,
-      stop_auto_min: stop,
-      browser_open: Boolean(options.open),
+      auto_stop_min: stop,
+      browser_opened: Boolean(options.open),
       to_tell:
         tm(already ? 'dashboard.toTell.alreadyLaunched' : 'dashboard.toTell.started', { url }) +
         tm(options.open ? 'dashboard.toTell.open' : 'dashboard.toTell.link') +

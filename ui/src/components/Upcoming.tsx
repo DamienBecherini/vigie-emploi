@@ -60,9 +60,9 @@ function Statistics() {
         ))}
       </ul>
       <p className="mt-2 text-slate-700 dark:text-slate-300">
-        {s.timeout_medium_reply_days === null
+        {s.average_reply_days === null
           ? t('stats.notEnough')
-          : t('stats.timeout', { days: number(s.timeout_medium_reply_days), n: s.timeout_database })}
+          : t('stats.timeout', { days: number(s.average_reply_days), n: s.reply_sample_size })}
       </p>
     </div>
   );

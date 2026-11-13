@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { splitGlassdoor } from '../src/ingest/eml.ts';
 
-describe('titres Glassdoor', () => {
+describe('Glassdoor titles', () => {
   it('separates company, job title, location and salary', () => {
     expect(splitGlassdoor("Sysgo 4.0 ★ Architecte Logiciel OS Embarqué (H/F/N) Saint-Germain 50 k € - 65 k € (Estimation de l'employeur) 17h")).toEqual({
       company: 'Sysgo',

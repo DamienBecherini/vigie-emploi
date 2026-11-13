@@ -49,7 +49,7 @@ describe('scaffold-en', () => {
   });
 });
 
-describe('init --langue en', () => {
+describe('init --language en', () => {
   const workspace = join(root, 'workspace-en');
   const r = initializeWorkspace({ folder: workspace, language: 'en', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
 
@@ -107,7 +107,7 @@ describe('core messages', () => {
   });
 });
 
-describe('serveur MCP en anglais', () => {
+describe('MCP server in English', () => {
   const workspace = join(root, 'mcp-en');
   let state: StateMcp;
   let client: Client;

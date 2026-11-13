@@ -79,7 +79,7 @@ describe('path confinement', () => {
 describe('list, write, read, move', () => {
   it('writes then reads back a file, creating the parent folders', () => {
     const r = writeWorkspace(workspace, 'candidatures/acme-dev/dossier-candidature.md', '# Acme\n\nÉcarts : aucun.\n');
-    expect(r).toMatchObject({ path: 'candidatures/acme-dev/dossier-candidature.md', existed: false, old_size: null });
+    expect(r).toMatchObject({ path: 'candidatures/acme-dev/dossier-candidature.md', existed: false, previous_size: null });
     const l = readWorkspace(workspace, 'candidatures/acme-dev/dossier-candidature.md');
     expect(l.kind).toBe('text');
     expect(l.kind === 'text' && l.text).toBe('# Acme\n\nÉcarts : aucun.\n');
@@ -88,7 +88,7 @@ describe('list, write, read, move', () => {
   it('reports a replacement, and refuses to overwrite with create_only', () => {
     const r = writeWorkspace(workspace, '_CONTEXTE.md', '# Contexte rempli\n');
     expect(r.existed).toBe(true);
-    expect(r.old_size).toBe(11);
+    expect(r.previous_size).toBe(11);
     expect(() => writeWorkspace(workspace, '_CONTEXTE.md', 'x', { createOnly: true })).toThrow(/existe déjà/);
     expect(readFileSync(join(workspace, '_CONTEXTE.md'), 'utf8')).toBe('# Contexte rempli\n');
   });
@@ -124,7 +124,7 @@ describe('list, write, read, move', () => {
     expect(() => moveWorkspace(workspace, 'data/vigie-emploi.sqlite', 'database.sqlite')).toThrow(/data\//);
   });
 
-  it('lit un fichier binaire en octets (PDF, image…)', () => {
+  it('reads a binary file as bytes (PDF, image…)', () => {
     writeFileSync(join(workspace, 'a-deposer', 'photo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     const l = readWorkspace(workspace, 'a-deposer/photo.png');
     expect(l.kind).toBe('binary');

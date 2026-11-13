@@ -55,7 +55,7 @@ export interface SummaryIngest {
    * Application acknowledgments: their links do not become offers. `known_offers` = offers
    * of the e-mail already in the database (id, status). Up to the AI to check that the application is saved as sent.
    */
-  confirmations: { file: string; subject: string; date: string | null; offers_known: { id: number; status: string; title: string }[] }[];
+  confirmations: { file: string; subject: string; date: string | null; known_offers: { id: number; status: string; title: string }[] }[];
   detail: { added: OfferIngested[]; dismissed: OfferIngested[]; duplicates: OfferIngested[] };
 }
 
@@ -110,7 +110,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
           .map((off) => findOffer(db, off.source, off.siteId))
           .filter((x): x is NonNullable<typeof x> => Boolean(x))
           .map((x) => ({ id: x.id, status: x.status, title: x.title }));
-        summary.confirmations.push({ file: f, subject: email.subject, date: email.date, offers_known: known });
+        summary.confirmations.push({ file: f, subject: email.subject, date: email.date, known_offers: known });
         read.push(path);
         continue;
       }

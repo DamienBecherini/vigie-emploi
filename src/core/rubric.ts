@@ -527,7 +527,7 @@ export function checkInput(rubric: Rubric, raw: unknown): Input {
       throw new Error(
         t('core.input.criterionComputed', {
           id: k,
-          fields: c.computation === 'remote' ? 'inputs.onsite_days' : 'entrees.salaire_min / salaire_max / unite',
+          fields: c.computation === 'remote' ? 'inputs.onsite_days' : 'inputs.salary_min / salary_max / unit',
         }),
       );
     }

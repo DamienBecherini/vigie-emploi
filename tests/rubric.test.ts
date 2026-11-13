@@ -212,11 +212,11 @@ describe('score computation', () => {
     const b = structuredClone(g.scales);
     b.compensation.salary.target_high = 40;
     expect(() => validateRubric({ ...database, scales: b })).toThrow(/cible haute doit dépasser le plancher/);
-    expect(() => validateRubric({ ...database, criteria: [{ id: 'x', label: 'X', source: 'computation', weight: 1 }] })).toThrow(/calcul.*attendu/);
+    expect(() => validateRubric({ ...database, criteria: [{ id: 'x', label: 'X', source: 'computation', weight: 1 }] })).toThrow(/computation.*attendu/);
     expect(() =>
       validateRubric({ ...database, examples: [{ title: 'E', criteria: { teletravail: { score: 1, justification: '' } } }] }),
     ).toThrow(/critère IA inconnu teletravail/);
-    expect(() => validateRubric({ ...database, rules: [{ id: 'p', label: 'P', effect: 'cap' }] })).toThrow(/valeur.*plafond/);
+    expect(() => validateRubric({ ...database, rules: [{ id: 'p', label: 'P', effect: 'cap' }] })).toThrow(/value.*plafond/);
   });
 
   it('partial change: weights, scales, rules, inventory', () => {
@@ -239,7 +239,7 @@ describe('score computation', () => {
     expect(g2.inventory.find((t) => t.technology === 'Kubernetes')!.level).toBe('light');
     expect(g2.inventory.some((t) => t.technology === 'Java')).toBe(false);
     expect(() => applyChange(example(), { weight: { unknown: 3 } })).toThrow(/Critère inconnu/);
-    expect(() => applyChange(example(), { rules: [{ id: 'new' }] })).toThrow(/libelle.*effet/);
+    expect(() => applyChange(example(), { rules: [{ id: 'new' }] })).toThrow(/label.*effect/);
     expect(() => applyChange(example(), { inventory: { remove: ['Cobol'] } })).toThrow(/absente/);
     // Removing then adding the same technology in one call replaces it (it is never lost).
     const g3 = applyChange(example(), { inventory: { remove: ['PHP'], add: [{ technology: 'php', level: 'medium' }] } });
@@ -300,7 +300,7 @@ describe('storage, versions and rescoring', () => {
     );
     // 8×.35 + 10×.2 (full remote) + 10×.2 (60 K€ ≥ cible haute 60) + 7×.1 + 6×.1 + 7×.05 = 8,45
     expect(r).toMatchObject({ score: 8.5, exact_score: 8.45, rubric_version: 1, status: 'scored' });
-    expect(r.warnings?.[0]).toMatch(/« note » \(9\) ignoré/);
+    expect(r.warnings?.[0]).toMatch(/« score » \(9\) ignoré/);
     const n = scoresOffer(db, ids[0])[0];
     expect(n).toMatchObject({ score: 8.5, exact_score: 8.45, raw_score: 8.45, rubric_version: '1', fit: 'API' });
     expect(n.breakdown!.criteria).toHaveLength(6);

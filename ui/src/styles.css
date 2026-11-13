@@ -19,6 +19,22 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
+/* Curseur main sur ce qui est cliquable (Tailwind v4 laisse le curseur par défaut sur les boutons), « interdit » sur ce
+   qui est désactivé. Dans la couche base : une classe utilitaire (cursor-…) l'emporte toujours. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role='button'][aria-disabled='true'],
+  select:disabled {
+    cursor: not-allowed;
+  }
+}
+
 /* Focus toujours visible au clavier. */
 :focus-visible {
   outline: 3px solid var(--color-blue-500);

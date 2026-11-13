@@ -439,7 +439,7 @@ export function App() {
         {filtresOuverts && etroit && (
           <div className="fixed inset-0 z-40">
             {/* Page derrière : assombrie et floutée, pour que le tiroir s'en détache aussi en thème sombre. */}
-            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm dark:bg-black/70" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] dark:bg-black/70" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
             <aside
               aria-label={t('liste.filtres')}
               className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-slate-300 bg-white shadow-2xl shadow-black/50 dark:border-slate-500 dark:bg-slate-800 dark:shadow-black"

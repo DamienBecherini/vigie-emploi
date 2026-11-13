@@ -1,8 +1,9 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { STATUTS, type Statut } from '../../../src/core/statuts.ts';
 import { statutAffiche, t } from '../i18n/index.ts';
 import type { Meta } from '../api.ts';
 import { CLES_FILTRES, useDebounce, type CleUrl } from '../etat.ts';
+import { OmbresVerticales, useOmbresVerticales } from './OmbresVerticales.tsx';
 
 type Modifier = (maj: Partial<Record<CleUrl, string | null>>) => void;
 
@@ -50,13 +51,16 @@ function Cases(props: {
     else s.add(v);
     props.modifier({ [props.cle]: [...s].join(',') || null, page: null });
   };
+  const liste = useRef<HTMLDivElement>(null);
+  const ombres = useOmbresVerticales(liste, props.options.length > 0);
   if (!props.options.length) return null;
   return (
     <fieldset className="min-w-0">
       <legend className="etiquette">{props.legende}</legend>
-      {/* Liste qui défile : encadrée pour qu'on en voie les bords ; sur téléphone, une bande libre à droite laisse le
-          pouce faire défiler le tiroir plutôt que la liste. */}
-      <div className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 max-md:mr-10 dark:border-slate-600">
+      {/* Liste qui défile : encadrée pour qu'on en voie les bords, ombrée en haut / en bas quand des cases sont
+          cachées de ce côté ; sur téléphone, une bande libre à droite laisse le pouce faire défiler le tiroir. */}
+      <div className="relative max-md:mr-10">
+      <div ref={liste} className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-600">
         {props.options.map((o) => (
           <label key={o.valeur} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
             <input
@@ -69,6 +73,8 @@ function Cases(props: {
             {o.n !== undefined && <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">{o.n}</span>}
           </label>
         ))}
+      </div>
+      <OmbresVerticales {...ombres} />
       </div>
     </fieldset>
   );

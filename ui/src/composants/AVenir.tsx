@@ -1,11 +1,12 @@
 // Bandeau « À venir » de l'écran principal : échéances en retard et des 7 prochains jours, et statistiques.
 // Au-delà de 10 échéances, la liste défile ; l'affichage des statistiques est retenu (localStorage).
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type EcheanceOffre } from '../api.ts';
 import { usePreference } from '../etat.ts';
 import { BadgeType, dateEvenement } from './Journal.tsx';
+import { OmbresVerticales, useOmbresVerticales } from './OmbresVerticales.tsx';
 import { nombre, t } from '../i18n/index.ts';
 
 /** Nombre d'échéances visibles avant la barre de défilement. */
@@ -89,29 +90,6 @@ function useHauteurLimitee(dependance: unknown) {
   return { ref, max };
 }
 
-/** Ombres haut / bas d'une zone qui défile : visibles seulement quand il reste du contenu caché de ce côté. */
-function useOmbresVerticales(ref: React.RefObject<HTMLDivElement | null>, actif: boolean) {
-  const [ombres, setOmbres] = useState({ haut: false, bas: false });
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !actif) return setOmbres({ haut: false, bas: false });
-    const mesurer = () => {
-      const haut = el.scrollTop > 1;
-      const bas = el.scrollHeight - el.clientHeight - el.scrollTop > 1;
-      setOmbres((o) => (o.haut === haut && o.bas === bas ? o : { haut, bas }));
-    };
-    mesurer();
-    el.addEventListener('scroll', mesurer, { passive: true });
-    const obs = new ResizeObserver(mesurer);
-    obs.observe(el);
-    return () => {
-      el.removeEventListener('scroll', mesurer);
-      obs.disconnect();
-    };
-  }, [ref, actif]);
-  return ombres;
-}
-
 export function AVenir({ choisir }: { choisir: (id: number) => void }) {
   const q = useQuery({ queryKey: ['echeances'], queryFn: () => api.echeances(7) });
   const r = q.data;
@@ -119,7 +97,6 @@ export function AVenir({ choisir }: { choisir: (id: number) => void }) {
   const [stats, setStats] = usePreference<boolean>('statistiques-visibles', false);
   const { ref, max } = useHauteurLimitee(r);
   const ombres = useOmbresVerticales(ref, Boolean(max));
-  const ombre = 'pointer-events-none absolute inset-x-px h-4 from-slate-900/15 to-transparent transition-opacity duration-200 dark:from-black/60';
   return (
     <section
       aria-labelledby="a-venir-titre"
@@ -173,12 +150,7 @@ export function AVenir({ choisir }: { choisir: (id: number) => void }) {
               </ul>
             )}
           </div>
-          {max && (
-            <>
-              <div aria-hidden="true" className={`${ombre} top-px rounded-t-md bg-linear-to-b ${ombres.haut ? 'opacity-100' : 'opacity-0'}`} />
-              <div aria-hidden="true" className={`${ombre} bottom-px rounded-b-md bg-linear-to-t ${ombres.bas ? 'opacity-100' : 'opacity-0'}`} />
-            </>
-          )}
+          {max && <OmbresVerticales {...ombres} />}
           </div>
         </div>
         {/* Statistiques sous l'en-tête (près de leur bouton) tant que la place manque ; à droite de la liste sur grand écran. */}

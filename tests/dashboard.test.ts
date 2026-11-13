@@ -130,7 +130,7 @@ describe('open_dashboard (logic)', () => {
   it('all ports taken: clear error', async () => {
     const taken = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [4410 + i, { service: null }]));
     const { dep } = simulate(taken);
-    await expect(openDashboard(config, {}, dep)).rejects.toThrow(/4410 à 4419/);
+    await expect(openDashboard(config, {}, dep)).rejects.toThrow(/4410 to 4419/);
   });
 });
 

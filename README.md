@@ -212,7 +212,7 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 | `excludedTitles` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `rejectedEmployers` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{folder}` et `{prompt}` y sont remplacés | Windows : `["wt.exe", "-d", "{folder}", "claude", "{prompt}"]` ; ailleurs : aucune |
-| `language` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --language`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
+| `language` | Langue du tableau de bord, des messages de la CLI, des textes du serveur MCP montrés à l'utilisateur (ce que seule l'IA lit est en anglais) et du suivi généré : `fr` ou `en` (écrite par `init --language`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
 
 Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_DATABASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`.
 

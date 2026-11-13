@@ -63,13 +63,13 @@ describe('standalone MCP server (in memory)', () => {
     ] as const) {
       const r = (await call(tool, args)) as Result;
       expect(r.isError, tool).toBe(true);
-      expect(text(r)).toMatch(/Espace non initialisé.*initialize_workspace/);
+      expect(text(r)).toMatch(/Workspace not initialised.*initialize_workspace/);
     }
     expect(existsSync(workspace)).toBe(false);
     const p = await client.getPrompt({ name: 'onboarding' });
     expect(textPrompt(p)).toMatch(/initialize_workspace/);
     const other = await client.getPrompt({ name: 'process-emails' });
-    expect(textPrompt(other)).toMatch(/prompt « onboarding »/);
+    expect(textPrompt(other)).toMatch(/"onboarding" prompt/);
   });
 
   it('lists the prompts of the workspace instructions', async () => {
@@ -81,7 +81,7 @@ describe('standalone MCP server (in memory)', () => {
   it('initialize_workspace creates the workspace and the server settles in it', async () => {
     const inApp = (await call('initialize_workspace', { folder: join(ROOT, 'dry-run-workspace') })) as Result;
     expect(inApp.isError).toBe(true);
-    expect(text(inApp)).toMatch(/dossier de l'application/);
+    expect(text(inApp)).toMatch(/application's folder/);
 
     const r = json(await call('initialize_workspace', {}));
     expect(r.ok).toBe(true);
@@ -94,7 +94,7 @@ describe('standalone MCP server (in memory)', () => {
 
     const again = (await call('initialize_workspace', {})) as Result;
     expect(again.isError).toBe(true);
-    expect(text(again)).toMatch(/existe déjà/);
+    expect(text(again)).toMatch(/already exists/);
   });
 
   it('the prompts read the instructions from the disk at each call', async () => {
@@ -113,7 +113,7 @@ describe('standalone MCP server (in memory)', () => {
 
     const cv = textPrompt(await client.getPrompt({ name: 'targeted-cv', arguments: { offer: '#12 Acme' } }));
     expect(cv).toContain('# Procédure : CV ciblé');
-    expect(cv).toContain('Offre visée : #12 Acme');
+    expect(cv).toContain('Target job ad: #12 Acme');
     expect(textPrompt(await client.getPrompt({ name: 'prepare-go' }))).toContain('# Procédure : préparer les candidatures');
   });
 
@@ -148,7 +148,7 @@ describe('standalone MCP server (in memory)', () => {
   it('reads the text of a dropped PDF and returns an image as an image', async () => {
     copyFileSync(join(ROOT, 'docs', 'exemples', 'CV-damien-becherini-sobre.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
     const pdf = text(await call('read_file', { path: 'a-deposer/CV.pdf' }));
-    expect(pdf).toMatch(/PDF, 2 page\(s\), texte extrait/);
+    expect(pdf).toMatch(/PDF, 2 page\(s\), extracted text/);
     expect(pdf).toContain('Damien BECHERINI');
     expect(pdf).toContain('----- page 2 / 2 -----');
 
@@ -220,7 +220,7 @@ describe('standalone MCP server (stdio, end to end)', () => {
     expect(existsSync(join(workspace, 'cv', '_exemple-structure.pdf'))).toBe(true);
     // Fill measured on the real PDF: one value in % per page.
     expect(info.fill).toHaveLength(2);
-    for (const p of info.fill as string[]) expect(p).toMatch(/^page \d : \d{1,3} %$/);
+    for (const p of info.fill as string[]) expect(p).toMatch(/^page \d: \d{1,3}%$/);
     expect(Array.isArray(info.warnings)).toBe(true);
     expect(r.content[1]).toMatchObject({ type: 'image', mimeType: 'image/png' });
     expect(Buffer.from(r.content[1].data!, 'base64').subarray(1, 4).toString()).toBe('PNG');

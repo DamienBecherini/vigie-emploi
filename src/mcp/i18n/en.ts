@@ -1,9 +1,11 @@
-// Texts of the MCP server in English. Same keys as fr.ts (a missing key is a compilation error).
+// Texts of the MCP server (reference): instructions, tool descriptions, parameters, results and errors are read by the
+// AI only and stay in English whatever the user's language. The texts shown to the user verbatim (USER_KEYS: tool and
+// prompt titles, prompt descriptions, the to_tell sentences) are translated in the other dictionaries (fr.ts…).
+// "{name}" parameters filled by tm() / tu() (src/mcp/texts.ts).
 import type { MessageText } from '../../i18n/tool.ts';
-import type { KeyMcp } from './fr.ts';
 
-export const en: Record<KeyMcp, MessageText> = {
-  "server.INSTRUCTIONS": "vigie-emploi helps the user with their search for a job or freelance work. Speak and write in English. Their workspace\n(a folder) holds their instructions, their context, their CVs and their application files; the SQLite database keeps the state\nof the job ads: ads, scores, statuses, tags, applications. The application calls no model: you do the reading and scoring.\nStart of a session: if the workspace does not exist (workspace_state), offer to create it (initialize_workspace, folder confirmed by\nthe user). The workspace's instructions prevail: AGENTS.md (\"instructions\" resource or read_file AGENTS.md), to be read\nbefore anything else; prompts onboarding, process-emails, prepare-go, targeted-cv. Without direct file access or a terminal (Claude Desktop…):\nlist_files / read_file / write_file (paths relative to the workspace) instead of reading the disk, generate_cv (capture: true\nto see the pages; deal with its page-fill warnings) instead of \"vigie-emploi cv\", count instead of \"vigie-emploi count\".\nIn that case, never ask the user to type a terminal command: name the tool. To browse their job ads or tune their grid with the\nmouse, offer them the dashboard: open_dashboard (returns the address to click), never \"vigie-emploi serve\".\nHonesty first: only write in a CV or a message what _CONTEXTE.md allows them to claim. The user sends their applications\nthemselves.\nUsual flow: ingest_emails (pass on its to_tell: deleted e-mails, errors) → offers_to_read (paged summary) → rubric\n(read the scoring grid: criteria, scales, rules, inventory, examples) → (read each job ad with read_offer, score its criteria) → score_batch with criteria / inputs / blockers\n(the application calculates the final score; do not give it) → summarise for the user → on their \"go\": apply, prepare the application file, save_application\n→ generate_tracker. No \"go\": change_status to \"dismissed\" with the reason.\nWhen the user reports a call, an interview, a message, a quote: add_event (with the application folder's\nfile if there is one, see folder_files), then the next deadline (add_event dated in\nthe future, done: false). deadlines lists what is overdue or coming up; mark_done closes a deadline.\nDo not download LinkedIn, Indeed or Glassdoor pages with a script: read them in the user's browser\nor ask them for the text. The application instructions are in the user's data folder (returned by\napply): read them before writing. Only change the grid (update_rubric) when the user asks,\nafter a trial run (dry_run: true) whose impact you show them (job ads and computed_examples). Whatever the user had removed\n(a task, an idea) is not recreated: record the refusal in _JOURNAL-DECISIONS.md.",
+export const en = {
+  "server.INSTRUCTIONS": "vigie-emploi helps the user with their search for a job or freelance work. Speak and write in {language} with the user. Their workspace\n(a folder) holds their instructions, their context, their CVs and their application files; the SQLite database keeps the state\nof the job ads: ads, scores, statuses, tags, applications. The application calls no model: you do the reading and scoring.\nStart of a session: if the workspace does not exist (workspace_state), offer to create it (initialize_workspace, folder confirmed by\nthe user). The workspace's instructions prevail: AGENTS.md (\"instructions\" resource or read_file AGENTS.md), to be read\nbefore anything else; prompts onboarding, process-emails, prepare-go, targeted-cv. Without direct file access or a terminal (Claude Desktop…):\nlist_files / read_file / write_file (paths relative to the workspace) instead of reading the disk, generate_cv (capture: true\nto see the pages; deal with its page-fill warnings) instead of \"vigie-emploi cv\", count instead of \"vigie-emploi count\".\nIn that case, never ask the user to type a terminal command: name the tool. To browse their job ads or tune their grid with the\nmouse, offer them the dashboard: open_dashboard (returns the address to click), never \"vigie-emploi serve\".\nHonesty first: only write in a CV or a message what _CONTEXTE.md allows them to claim. The user sends their applications\nthemselves.\nUsual flow: ingest_emails (pass on its to_tell: deleted e-mails, errors) → offers_to_read (paged summary) → rubric\n(read the scoring grid: criteria, scales, rules, inventory, examples) → (read each job ad with read_offer, score its criteria) → score_batch with criteria / inputs / blockers\n(the application calculates the final score; do not give it) → summarise for the user → on their \"go\": apply, prepare the application file, save_application\n→ generate_tracker. No \"go\": change_status to \"dismissed\" with the reason.\nWhen the user reports a call, an interview, a message, a quote: add_event (with the application folder's\nfile if there is one, see folder_files), then the next deadline (add_event dated in\nthe future, done: false). deadlines lists what is overdue or coming up; mark_done closes a deadline.\nDo not download LinkedIn, Indeed or Glassdoor pages with a script: read them in the user's browser\nor ask them for the text. The application instructions are in the user's data folder (returned by\napply): read them before writing. Only change the grid (update_rubric) when the user asks,\nafter a trial run (dry_run: true) whose impact you show them (job ads and computed_examples). Whatever the user had removed\n(a task, an idea) is not recreated: record the refusal in _JOURNAL-DECISIONS.md.",
   "server.id": "Job ad id in vigie-emploi (id field)",
   "server.fieldsScore.criteria.score": "Sub-score from 0 to 10",
   "server.fieldsScore.criteria.justification": "Short justification (gaps, for the technical criterion)",
@@ -144,7 +146,7 @@ export const en: Record<KeyMcp, MessageText> = {
   "server.startMcp": "vigie-emploi MCP ready (data: {d}{p3})\n",
   "workspace.PROMPTS.onboarding.title": "Guided onboarding",
   "workspace.PROMPTS.onboarding.description": "First interview (or resuming it): read what the user has dropped in, ask the questions, fill in _CONTEXTE.md, adapt the grid, write a first CV. Instructions read from the workspace (AGENTS.md then DEMARRAGE.md). Creates the workspace if it does not exist yet.",
-  "workspace.PROMPTS.onboarding.instruction": "Follow the onboarding: first check which tools you have, read what I have dropped into a-deposer/, then ask me your questions, a few at a time. Talk to me in English.",
+  "workspace.PROMPTS.onboarding.instruction": "Follow the onboarding: first check which tools you have, read what I have dropped into a-deposer/, then ask me your questions, a few at a time. Talk to me in {language}.",
   "workspace.PROMPTS.process_emails.title": "Process the job alert e-mails",
   "workspace.PROMPTS.process_emails.description": "Ingest the job alerts dropped into emails/, read and score the job ads with the grid, then present those above the threshold.",
   "workspace.PROMPTS.process_emails.instruction": "Now process the job alert e-mails following this procedure.",
@@ -157,7 +159,7 @@ export const en: Record<KeyMcp, MessageText> = {
   "workspace.ACCESS_WITHOUT_FILES": "If you have no direct access to my files and no terminal, use the vigie-emploi server's tools: list_files, read_file, write_file (paths relative to my workspace), generate_cv (with capture to see the result) and count, instead of reading files directly and running commands.",
   "workspace.readInstruction": "({file} is missing from the workspace {p2}.)",
   "workspace.argsSchema.offer": "Target job ad: number, company or title",
-  "workspace.saveToolsWorkspace": "I want to get started with vigie-emploi, but my workspace does not exist yet ({p1}). Offer to create it in {d}, or in the folder I choose, and call initialize_workspace. Then read AGENTS.md and DEMARRAGE.md from the workspace with read_file and follow the onboarding: first check which tools you have, tell me to drop my CV into a-deposer/, read it, then ask me your questions, a few at a time. Talk to me in English.",
+  "workspace.saveToolsWorkspace": "I want to get started with vigie-emploi, but my workspace does not exist yet ({p1}). Offer to create it in {d}, or in the folder I choose, and call initialize_workspace. Then read AGENTS.md and DEMARRAGE.md from the workspace with read_file and follow the onboarding: first check which tools you have, tell me to drop my CV into a-deposer/, read it, then ask me your questions, a few at a time. Talk to me in {language}.",
   "workspace.saveToolsWorkspace2": "My vigie-emploi workspace does not exist yet ({p1}). Start with the \"onboarding\" prompt.",
   "workspace.offer": "Target job ad: {target}",
   "workspace.saveToolsWorkspace3": "Instructions of my vigie-emploi workspace ({folder}), read from disk. {access}\n\n",
@@ -249,4 +251,64 @@ export const en: Record<KeyMcp, MessageText> = {
   "dashboard.toTell.link": " (link to click, or offer to open it: open: true).",
   "dashboard.toTell.hosted": " It stays available as long as the AI application keeps the server open, and stops after {minutes} minutes without activity.",
   "dashboard.toTell.detached": " It stops by itself after {minutes} minutes without activity; calling this tool again restarts it.",
-};
+} satisfies Record<string, MessageText>;
+
+export type KeyMcp = keyof typeof en;
+
+/** Texts shown to the user verbatim: they follow the user's language. */
+export const USER_KEYS = [
+  'server.list_offers.title',
+  'server.read_offer.title',
+  'server.offers_to_read.title',
+  'server.score_offer.title',
+  'server.score_batch.title',
+  'server.rubric.title',
+  'server.update_rubric.title',
+  'server.rescore.title',
+  'server.rubric_history.title',
+  'server.change_status.title',
+  'server.update_tags.title',
+  'server.update_link.title',
+  'server.apply.title',
+  'server.save_application.title',
+  'server.add_event.title',
+  'server.update_event.title',
+  'server.journal.title',
+  'server.deadlines.title',
+  'server.mark_done.title',
+  'server.folder_files.title',
+  'server.ingest_emails.title',
+  'server.generate_tracker.title',
+  'workspace.PROMPTS.onboarding.title',
+  'workspace.PROMPTS.onboarding.description',
+  'workspace.PROMPTS.process_emails.title',
+  'workspace.PROMPTS.process_emails.description',
+  'workspace.PROMPTS.prepare_go.title',
+  'workspace.PROMPTS.prepare_go.description',
+  'workspace.PROMPTS.cv_target.title',
+  'workspace.PROMPTS.cv_target.description',
+  'workspace.instructions.title',
+  'workspace.workspace_state.title',
+  'workspace.initialize_workspace.title',
+  'workspace.list_files.title',
+  'workspace.read_file.title',
+  'workspace.write_file.title',
+  'workspace.move_file.title',
+  'workspace.generate_cv.title',
+  'workspace.count.title',
+  'workspace.list_templates.title',
+  'workspace.choose_template.title',
+  'presentation.presentIngestion',
+  'presentation.presentIngestion2',
+  'presentation.presentIngestion3',
+  'presentation.presentIngestion4',
+  'presentation.presentIngestion5',
+  'dashboard.open_dashboard.title',
+  'dashboard.toTell.alreadyLaunched',
+  'dashboard.toTell.started',
+  'dashboard.toTell.open',
+  'dashboard.toTell.link',
+  'dashboard.toTell.hosted',
+  'dashboard.toTell.detached',
+] as const satisfies readonly KeyMcp[];
+export type KeyMcpUser = (typeof USER_KEYS)[number];

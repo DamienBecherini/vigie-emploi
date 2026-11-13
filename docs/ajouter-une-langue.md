@@ -22,7 +22,7 @@ La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom appara�
 |---|---|
 | `src/i18n/es.ts` (copie de `en.ts`), à ajouter dans `DICTIONNAIRES` de `src/i18n/index.ts` | CLI, API, suivi généré, initialisation |
 | `ui/src/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_UI` de `ui/src/i18n/index.ts` | Tableau de bord |
-| `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_MCP` de `src/mcp/texts.ts` | Instructions, outils, paramètres, résultats et erreurs du serveur MCP |
+| `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONARIES_MCP_USER` de `src/mcp/texts.ts` | Textes du serveur MCP montrés tels quels à l'utilisateur (titres des outils et des prompts, descriptions des prompts, phrases `to_tell`) ; le reste (instructions, descriptions des outils, paramètres, résultats et erreurs, lus par l'IA seule) reste en anglais |
 | `src/i18n/libelles.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
 | `ui/src/theme.ts` | Noms des couleurs (`LIBELLES_NEUTRES`, `LIBELLES_ACCENTS`) |
 

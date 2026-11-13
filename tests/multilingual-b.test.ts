@@ -155,3 +155,40 @@ describe('MCP server in English', () => {
     expect(() => eventOrError(state.db!, 999)).toThrow('Event 999 not found');
   });
 });
+
+describe('MCP server for a French workspace', () => {
+  const workspace = join(root, 'mcp-fr');
+  let state: StateMcp;
+  let client: Client;
+  let instructions: string | undefined;
+
+  beforeAll(async () => {
+    state = openState({ dataDir: workspace, env: { VIGIE_EMPLOI_LANGUAGE: 'fr' }, cwd: root });
+    const server = createServerMcp(state);
+    const [side1, side2] = InMemoryTransport.createLinkedPair();
+    client = new Client({ name: 'test', version: '1.0.0' });
+    await Promise.all([server.connect(side2), client.connect(side1)]);
+    instructions = client.getInstructions();
+  });
+  afterAll(async () => {
+    await client.close();
+    state.db?.close();
+    defineLanguage('fr');
+  });
+
+  it('text read by the AI in English, text shown to the user in French', async () => {
+    expect(instructions).toMatch(/^vigie-emploi helps the user/);
+    expect(instructions).toContain('Speak and write in French with the user.');
+    const { tools } = await client.listTools();
+    const list = tools.find((t) => t.name === 'list_offers')!;
+    expect(list.title).toBe('Lister les offres');
+    expect(list.description).toMatch(/^Paged list of the job ads/);
+    expect(JSON.stringify(list.inputSchema)).toContain('Full-text search');
+    const { prompts } = await client.listPrompts();
+    expect(prompts.find((p) => p.name === 'onboarding')?.title).toBe('Démarrage guidé');
+    const r = (await client.callTool({ name: 'list_offers', arguments: {} })) as { isError?: boolean; content: { text: string }[] };
+    expect(r.content[0].text).toMatch(/^Error: Workspace not initialised/);
+    const p = await client.getPrompt({ name: 'onboarding' });
+    expect((p.messages[0].content as { text: string }).text).toContain('Talk to me in French.');
+  });
+});

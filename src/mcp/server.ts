@@ -45,7 +45,7 @@ import { messageNotInitialized, openState, type StateMcp } from './state.ts';
 import { saveToolsWorkspace } from './workspace.ts';
 import { saveToolDashboard } from './dashboard.ts';
 import { on } from './results.ts';
-import { bi, bt, tm } from './texts.ts';
+import { languageNameEn, tm, tu } from './texts.ts';
 import {
   TO_READ_DEFAULT,
   TO_READ_MAX,
@@ -62,7 +62,6 @@ import {
 
 const ORIGIN = 'mcp';
 
-const INSTRUCTIONS = bt('server.INSTRUCTIONS');
 
 /** Parameter schemas, built in the current language (descriptions included). */
 function buildSchemas() {
@@ -167,7 +166,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   defineLanguage(state.config.language);
   const { id, inputBatch, textOptional } = buildSchemas();
   const VERSION_APP = (JSON.parse(readFileSync(join(APP_ROOT, 'package.json'), 'utf8')) as { version: string }).version;
-  const server = new McpServer({ name: 'vigie-emploi', version: VERSION_APP }, { instructions: bi(INSTRUCTIONS) });
+  const server = new McpServer({ name: 'vigie-emploi', version: VERSION_APP }, { instructions: tm('server.INSTRUCTIONS', { language: languageNameEn(state.config.language) }) });
   const reading = { readOnlyHint: true, openWorldHint: false };
   /** Database of the workspace; clear error as long as the workspace is not initialized. */
   const database = (): Database => {
@@ -185,7 +184,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'list_offers',
     {
-      title: tm('server.list_offers.title'),
+      title: tu('server.list_offers.title'),
       description: tm('server.list_offers.description'),
       inputSchema: {
         statuses: z
@@ -267,7 +266,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'read_offer',
     {
-      title: tm('server.read_offer.title'),
+      title: tu('server.read_offer.title'),
       description: tm('server.read_offer.description'),
       inputSchema: { id, full: z.boolean().optional().describe(tm('server.read_offer.inputSchema.full')) },
       annotations: reading,
@@ -281,7 +280,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'offers_to_read',
     {
-      title: tm('server.offers_to_read.title'),
+      title: tu('server.offers_to_read.title'),
       description: tm('server.offers_to_read.description', { TO_READ_DEFAULT: String(TO_READ_DEFAULT), LENGTH_DESCRIPTION_PAGE: String(LENGTH_DESCRIPTION_PAGE), TO_READ_MAX_DESCRIPTIONS: String(TO_READ_MAX_DESCRIPTIONS) }),
       inputSchema: {
         limit: z
@@ -317,7 +316,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'score_offer',
     {
-      title: tm('server.score_offer.title'),
+      title: tu('server.score_offer.title'),
       description: tm('server.score_offer.description'),
       inputSchema: inputBatch.shape,
     },
@@ -330,7 +329,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'score_batch',
     {
-      title: tm('server.score_batch.title'),
+      title: tu('server.score_batch.title'),
       description: tm('server.score_batch.description'),
       inputSchema: {
         offers: z.array(inputBatch).min(1).describe(tm('server.score_batch.inputSchema.offers')),
@@ -349,7 +348,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'rubric',
     {
-      title: tm('server.rubric.title'),
+      title: tu('server.rubric.title'),
       description: tm('server.rubric.description'),
       inputSchema: { version: z.number().int().positive().optional().describe(tm('server.rubric.inputSchema.version')) },
       annotations: reading,
@@ -383,7 +382,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'update_rubric',
     {
-      title: tm('server.update_rubric.title'),
+      title: tu('server.update_rubric.title'),
       description: tm('server.update_rubric.description'),
       inputSchema: {
         change: schemaChange.optional().describe(tm('server.update_rubric.inputSchema.change')),
@@ -426,7 +425,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'rescore',
     {
-      title: tm('server.rescore.title'),
+      title: tu('server.rescore.title'),
       description: tm('server.rescore.description'),
       inputSchema: {},
     },
@@ -436,7 +435,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'rubric_history',
     {
-      title: tm('server.rubric_history.title'),
+      title: tu('server.rubric_history.title'),
       description: tm('server.rubric_history.description'),
       inputSchema: {},
       annotations: reading,
@@ -450,7 +449,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'change_status',
     {
-      title: tm('server.change_status.title'),
+      title: tu('server.change_status.title'),
       description: tm('server.change_status.description'),
       inputSchema: {
         id,
@@ -468,7 +467,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'update_tags',
     {
-      title: tm('server.update_tags.title'),
+      title: tu('server.update_tags.title'),
       description: tm('server.update_tags.description'),
       inputSchema: {
         id,
@@ -485,7 +484,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'update_link',
     {
-      title: tm('server.update_link.title'),
+      title: tu('server.update_link.title'),
       description: tm('server.update_link.description'),
       inputSchema: { id, url: z.string().nullable().describe(tm('server.update_link.inputSchema.url')) },
     },
@@ -499,7 +498,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'apply',
     {
-      title: tm('server.apply.title'),
+      title: tu('server.apply.title'),
       description: tm('server.apply.description'),
       inputSchema: { id },
     },
@@ -509,7 +508,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'save_application',
     {
-      title: tm('server.save_application.title'),
+      title: tu('server.save_application.title'),
       description: tm('server.save_application.description'),
       inputSchema: {
         id,
@@ -561,7 +560,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'add_event',
     {
-      title: tm('server.add_event.title'),
+      title: tu('server.add_event.title'),
       description: tm('server.add_event.description'),
       inputSchema: {
         id,
@@ -591,7 +590,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'update_event',
     {
-      title: tm('server.update_event.title'),
+      title: tu('server.update_event.title'),
       description: tm('server.update_event.description'),
       inputSchema: {
         event_id: z.number().int().positive().describe(tm('server.update_event.inputSchema.event_id')),
@@ -608,7 +607,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'journal',
     {
-      title: tm('server.journal.title'),
+      title: tu('server.journal.title'),
       description: tm('server.journal.description'),
       inputSchema: { id },
       annotations: reading,
@@ -622,7 +621,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'deadlines',
     {
-      title: tm('server.deadlines.title'),
+      title: tu('server.deadlines.title'),
       description: tm('server.deadlines.description'),
       inputSchema: {
         days: z.number().int().min(0).max(366).optional().describe(tm('server.deadlines.inputSchema.days')),
@@ -635,7 +634,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'mark_done',
     {
-      title: tm('server.mark_done.title'),
+      title: tu('server.mark_done.title'),
       description: tm('server.mark_done.description'),
       inputSchema: {
         event_id: z.number().int().positive().describe(tm('server.mark_done.inputSchema.event_id')),
@@ -651,7 +650,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'folder_files',
     {
-      title: tm('server.folder_files.title'),
+      title: tu('server.folder_files.title'),
       description: tm('server.folder_files.description'),
       inputSchema: { id },
       annotations: reading,
@@ -665,7 +664,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'ingest_emails',
     {
-      title: tm('server.ingest_emails.title'),
+      title: tu('server.ingest_emails.title'),
       description: tm('server.ingest_emails.description'),
       inputSchema: {
         keep: z.boolean().optional().describe(tm('server.ingest_emails.inputSchema.keep')),
@@ -681,7 +680,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   server.registerTool(
     'generate_tracker',
     {
-      title: tm('server.generate_tracker.title'),
+      title: tu('server.generate_tracker.title'),
       description: tm('server.generate_tracker.description'),
       inputSchema: {
         replace: z.boolean().optional().describe(tm('server.generate_tracker.inputSchema.replace')),

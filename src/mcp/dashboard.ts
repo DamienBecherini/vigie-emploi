@@ -15,7 +15,7 @@ import { openDatabase } from '../db/database.ts';
 import { BINARY } from '../init/init.ts';
 import { messageNotInitialized, type StateMcp } from './state.ts';
 import { on } from './results.ts';
-import { tm } from './texts.ts';
+import { tm, tu } from './texts.ts';
 
 /** Automatic stop of the dashboard launched by the AI, in minutes without activity. */
 export const IDLE_MIN = 60;
@@ -124,12 +124,12 @@ export async function openDashboard(
       auto_stop_min: stop,
       browser_opened: Boolean(options.open),
       to_tell:
-        tm(already ? 'dashboard.toTell.alreadyLaunched' : 'dashboard.toTell.started', { url }) +
-        tm(options.open ? 'dashboard.toTell.open' : 'dashboard.toTell.link') +
+        tu(already ? 'dashboard.toTell.alreadyLaunched' : 'dashboard.toTell.started', { url }) +
+        tu(options.open ? 'dashboard.toTell.open' : 'dashboard.toTell.link') +
         (mode === 'hosted'
-          ? tm('dashboard.toTell.hosted', { minutes: IDLE_MIN })
+          ? tu('dashboard.toTell.hosted', { minutes: IDLE_MIN })
           : mode === 'detached'
-            ? tm('dashboard.toTell.detached', { minutes: IDLE_MIN })
+            ? tu('dashboard.toTell.detached', { minutes: IDLE_MIN })
             : ''),
     };
   };
@@ -167,7 +167,7 @@ export function saveToolDashboard(server: McpServer, state: StateMcp): void {
   server.registerTool(
     'open_dashboard',
     {
-      title: tm('dashboard.open_dashboard.title'),
+      title: tu('dashboard.open_dashboard.title'),
       description: tm('dashboard.open_dashboard.description', { IDLE_MIN: String(IDLE_MIN) }),
       inputSchema: {
         open: z

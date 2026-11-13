@@ -42,7 +42,7 @@ describe('MCP server (stdio)', () => {
     rmSync(folder, { recursive: true, force: true });
   });
 
-  it('exposes the expected tools, described in French', async () => {
+  it('exposes the expected tools, described in English', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
@@ -83,7 +83,7 @@ describe('MCP server (stdio)', () => {
       ].sort(),
     );
     const score = tools.find((t) => t.name === 'score_offer')!;
-    expect(score.description).toMatch(/historique/);
+    expect(score.description).toMatch(/history/);
     expect(Object.keys(score.inputSchema.properties ?? {})).toEqual(expect.arrayContaining(['id', 'url', 'score', 'fit', 'gaps']));
   });
 

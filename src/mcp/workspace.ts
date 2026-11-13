@@ -16,7 +16,7 @@ import { analyzePages } from '../cv/pages.ts';
 import { initializeWorkspace } from '../init/init.ts';
 import { toggle, folderByDefault, workspaceExists, messageNotInitialized, type StateMcp } from './state.ts';
 import { on, onContent } from './results.ts';
-import { bi, bt, tm, type Bilingual } from './texts.ts';
+import { bi, bt, languageNameEn, tm, tu, type Bilingual, type KeyMcp } from './texts.ts';
 import { LANGUAGES, type Language } from '../i18n/index.ts';
 
 const slash = (p: string) => p.replace(/\\/g, '/');
@@ -28,30 +28,30 @@ const IMAGE_MAX = 5 * 1024 * 1024;
 const CHUNK_TEXT = 24_000;
 
 /** Workspace instructions exposed as prompts: name → files read from the disk at each call. */
-const PROMPTS: Record<string, { title: Bilingual; description: Bilingual; file: string; instruction: Bilingual }> = {
+const PROMPTS: Record<string, { title: Bilingual; description: Bilingual; file: string; instruction: KeyMcp }> = {
   onboarding: {
     title: bt('workspace.PROMPTS.onboarding.title'),
     description: bt('workspace.PROMPTS.onboarding.description'),
     file: 'DEMARRAGE.md',
-    instruction: bt('workspace.PROMPTS.onboarding.instruction'),
+    instruction: 'workspace.PROMPTS.onboarding.instruction',
   },
   'process-emails': {
     title: bt('workspace.PROMPTS.process_emails.title'),
     description: bt('workspace.PROMPTS.process_emails.description'),
     file: 'procedures/traiter-emails.md',
-    instruction: bt('workspace.PROMPTS.process_emails.instruction'),
+    instruction: 'workspace.PROMPTS.process_emails.instruction',
   },
   'prepare-go': {
     title: bt('workspace.PROMPTS.prepare_go.title'),
     description: bt('workspace.PROMPTS.prepare_go.description'),
     file: 'procedures/preparer-go.md',
-    instruction: bt('workspace.PROMPTS.prepare_go.instruction'),
+    instruction: 'workspace.PROMPTS.prepare_go.instruction',
   },
   'targeted-cv': {
     title: bt('workspace.PROMPTS.cv_target.title'),
     description: bt('workspace.PROMPTS.cv_target.description'),
     file: 'procedures/cv-cible.md',
-    instruction: bt('workspace.PROMPTS.cv_target.instruction'),
+    instruction: 'workspace.PROMPTS.cv_target.instruction',
   },
 };
 
@@ -90,7 +90,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
           const d = slash(state.config.dataDir);
           text =
             name === 'onboarding'
-              ? tm('workspace.saveToolsWorkspace', { p1: String(messageNotInitialized(state)), d: String(d) })
+              ? tm('workspace.saveToolsWorkspace', { language: languageNameEn(state.config.language), p1: String(messageNotInitialized(state)), d: String(d) })
               : tm('workspace.saveToolsWorkspace2', { p1: String(messageNotInitialized(state)) });
         } else {
           const folder = state.config.dataDir;
@@ -100,7 +100,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
             tm('workspace.saveToolsWorkspace3', { folder: slash(folder), access: tm('workspace.ACCESS_WITHOUT_FILES') }) +
             `===== AGENTS.md (${tm('workspace.saveToolsWorkspace4')}) =====\n\n${readInstruction(folder, 'AGENTS.md')}\n\n` +
             `===== ${p.file} =====\n\n${readInstruction(folder, p.file)}\n\n` +
-            `=====\n\n${bi(p.instruction)}${offer}`;
+            `=====\n\n${tm(p.instruction, { language: languageNameEn(state.config.language) })}${offer}`;
         }
         return { description: bi(p.title), messages: [{ role: 'user', content: { type: 'text', text: text } }] };
       },
@@ -111,7 +111,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
     'instructions',
     'vigie-emploi://workspace/AGENTS.md',
     {
-      title: tm('workspace.instructions.title'),
+      title: tu('workspace.instructions.title'),
       description: tm('workspace.instructions.description'),
       mimeType: 'text/markdown',
     },
@@ -132,7 +132,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'workspace_state',
     {
-      title: tm('workspace.workspace_state.title'),
+      title: tu('workspace.workspace_state.title'),
       description: tm('workspace.workspace_state.description'),
       inputSchema: {},
       annotations: reading,
@@ -157,7 +157,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'initialize_workspace',
     {
-      title: tm('workspace.initialize_workspace.title'),
+      title: tu('workspace.initialize_workspace.title'),
       description: tm('workspace.initialize_workspace.description', { p1: String(slash(state.config.dataDir)) }),
       inputSchema: {
         folder: z
@@ -224,7 +224,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'list_files',
     {
-      title: tm('workspace.list_files.title'),
+      title: tu('workspace.list_files.title'),
       description: tm('workspace.list_files.description'),
       inputSchema: {
         folder: z.string().optional().describe(tm('workspace.list_files.inputSchema.folder')),
@@ -244,7 +244,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'read_file',
     {
-      title: tm('workspace.read_file.title'),
+      title: tu('workspace.read_file.title'),
       description: tm('workspace.read_file.description'),
       inputSchema: {
         path: z.string().min(1).describe(tm('workspace.read_file.inputSchema.path')),
@@ -318,7 +318,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'write_file',
     {
-      title: tm('workspace.write_file.title'),
+      title: tu('workspace.write_file.title'),
       description: tm('workspace.write_file.description', { p1: String(EXTENSIONS_WRITE.join(', ')) }),
       inputSchema: {
         path: z
@@ -336,7 +336,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'move_file',
     {
-      title: tm('workspace.move_file.title'),
+      title: tu('workspace.move_file.title'),
       description: tm('workspace.move_file.description'),
       inputSchema: {
         source: z.string().min(1).describe(tm('workspace.move_file.inputSchema.source')),
@@ -355,7 +355,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'generate_cv',
     {
-      title: tm('workspace.generate_cv.title'),
+      title: tu('workspace.generate_cv.title'),
       description: tm('workspace.generate_cv.description'),
       inputSchema: {
         path: z.string().min(1).describe(tm('workspace.generate_cv.inputSchema.path')),
@@ -412,7 +412,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'count',
     {
-      title: tm('workspace.count.title'),
+      title: tu('workspace.count.title'),
       description: tm('workspace.count.description'),
       inputSchema: {
         text: z.string().optional().describe(tm('workspace.count.inputSchema.text')),
@@ -432,7 +432,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'list_templates',
     {
-      title: tm('workspace.list_templates.title'),
+      title: tu('workspace.list_templates.title'),
       description: tm('workspace.list_templates.description'),
       inputSchema: {},
       annotations: reading,
@@ -443,7 +443,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   server.registerTool(
     'choose_template',
     {
-      title: tm('workspace.choose_template.title'),
+      title: tu('workspace.choose_template.title'),
       description: tm('workspace.choose_template.description'),
       inputSchema: { name: z.string().min(1).describe(tm('workspace.choose_template.inputSchema.name')) },
     },

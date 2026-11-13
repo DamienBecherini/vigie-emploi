@@ -4,7 +4,7 @@ import type { Impact } from '../core/rubric-storage.ts';
 import type { DetailOffer } from '../core/offers.ts';
 import type { LineList } from '../core/queries.ts';
 import type { SummaryIngest } from '../ingest/ingest.ts';
-import { tm } from './texts.ts';
+import { tm, tu } from './texts.ts';
 
 /** Target size of a tool response, in characters. */
 export const REPLY_MAX = 25_000;
@@ -80,26 +80,26 @@ export function presentIngestion(r: SummaryIngest, o: { keep?: boolean } = {}): 
   const read = r.files - r.without_offer.length;
   if (r.files_deleted > 0) {
     toTell.push(
-      tm('presentation.presentIngestion', { files_deleted: String(r.files_deleted) }),
+      tu('presentation.presentIngestion', { files_deleted: String(r.files_deleted) }),
     );
   } else if (o.keep && read > 0) {
     toTell.push(
-      tm('presentation.presentIngestion2', { read: String(read) }),
+      tu('presentation.presentIngestion2', { read: String(read) }),
     );
   }
   if (r.without_offer.length) {
     toTell.push(
-      tm('presentation.presentIngestion3', { length: String(r.without_offer.length), p2: String(r.without_offer.join(', ')) }),
+      tu('presentation.presentIngestion3', { length: String(r.without_offer.length), p2: String(r.without_offer.join(', ')) }),
     );
   }
   if (r.errors.length) {
     toTell.push(
-      tm('presentation.presentIngestion4', { length: String(r.errors.length) }),
+      tu('presentation.presentIngestion4', { length: String(r.errors.length) }),
     );
   }
   if (r.confirmations.length) {
     toTell.push(
-      tm('presentation.presentIngestion5', { length: String(r.confirmations.length) }),
+      tu('presentation.presentIngestion5', { length: String(r.confirmations.length) }),
     );
   }
   const added = first(r.detail.added, DETAIL_INGESTION_MAX);

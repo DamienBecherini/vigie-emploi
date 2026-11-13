@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { LANGUAGE_DEFAULT, LANGUAGES, LOCALES, NAMES_LANGUAGES, translate } from '../src/i18n/tool.ts';
 import { DICTIONARIES } from '../src/i18n/index.ts';
 import { DICTIONARIES_UI } from '../ui/src/i18n/index.ts';
-import { DICTIONARIES_MCP } from '../src/mcp/texts.ts';
+import { DICTIONARIES_MCP_USER } from '../src/mcp/texts.ts';
 import { normalizeLanguage } from '../src/core/config.ts';
 import { APP_ROOT } from '../src/core/config.ts';
 
@@ -36,34 +36,34 @@ describe('declared languages', () => {
     }
   });
 
-  it.each(OTHERS)('%s : modèle d’espace complet (mêmes fichiers que modele/)', (l) => {
+  it.each(OTHERS)('%s: complete workspace template (same files as scaffold/)', (l) => {
     const translated = join(APP_ROOT, `scaffold-${l}`);
-    expect(existsSync(translated), `scaffold-${l}/ manquant`).toBe(true);
+    expect(existsSync(translated), `scaffold-${l}/ missing`).toBe(true);
     expect(files(translated)).toEqual(files(join(APP_ROOT, 'scaffold')));
   });
 
-  it.each(OTHERS)('%s : consignes, grille d’exemple et README traduits', (l) => {
+  it.each(OTHERS)('%s: instructions, sample rubric and README translated', (l) => {
     for (const f of [`AGENTS.${l}.md`, `examples/rubric.${l}.json`, `README.${l}.md`]) {
-      expect(existsSync(join(APP_ROOT, f)), `${f} manquant`).toBe(true);
+      expect(existsSync(join(APP_ROOT, f)), `${f} missing`).toBe(true);
     }
   });
 
-  it.each(OTHERS)('%s : aucun texte vide ni recopié du français dans les dictionnaires', (l) => {
+  it.each(OTHERS)('%s: no empty text nor text copied from French in the dictionaries', (l) => {
     const suspicious: string[] = [];
     for (const [name, set] of [
       ['src', DICTIONARIES],
       ['ui', DICTIONARIES_UI],
-      ['mcp', DICTIONARIES_MCP],
+      ['mcp', DICTIONARIES_MCP_USER],
     ] as const) {
       const database = set[LANGUAGE_DEFAULT] as Record<string, unknown>;
       const target = set[l] as Record<string, unknown>;
       for (const key of Object.keys(database)) {
         const text = translate(target[key] as never, l, { n: 2 });
-        if (!text.trim()) suspicious.push(`${name} ${key} : vide`);
+        if (!text.trim()) suspicious.push(`${name} ${key}: empty`);
         // A text identical to the French one is suspicious only if it contains accented letters or common French
         // words (proper names, acronyms and commands rightly stay identical).
         const fr = translate(database[key] as never, LANGUAGE_DEFAULT, { n: 2 });
-        if (text === fr && /[éèêàùç]|\b(le|la|les|des|une|est|pour|avec)\b/i.test(fr)) suspicious.push(`${name} ${key} : identique au français`);
+        if (text === fr && /[éèêàùç]|\b(le|la|les|des|une|est|pour|avec)\b/i.test(fr)) suspicious.push(`${name} ${key}: identical to the French text`);
       }
     }
     expect(suspicious).toEqual([]);

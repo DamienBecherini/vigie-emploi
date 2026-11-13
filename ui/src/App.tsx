@@ -438,12 +438,13 @@ export function App() {
         )}
         {filtresOuverts && etroit && (
           <div className="fixed inset-0 z-40">
-            <div className="absolute inset-0 bg-slate-900/50" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
+            {/* Page derrière : assombrie et floutée, pour que le tiroir s'en détache aussi en thème sombre. */}
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm dark:bg-black/70" aria-hidden="true" onClick={() => setTiroirFiltres(false)} />
             <aside
               aria-label={t('liste.filtres')}
-              className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+              className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-slate-300 bg-white shadow-2xl shadow-black/50 dark:border-slate-500 dark:bg-slate-800 dark:shadow-black"
             >
-              <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+              <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-600">
                 <h2 className="font-semibold">{t('liste.filtres')}</h2>
                 <button
                   type="button"

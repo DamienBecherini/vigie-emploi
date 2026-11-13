@@ -56,9 +56,9 @@ function Cases(props: {
       <legend className="etiquette">{props.legende}</legend>
       {/* Liste qui défile : encadrée pour qu'on en voie les bords ; sur téléphone, une bande libre à droite laisse le
           pouce faire défiler le tiroir plutôt que la liste. */}
-      <div className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 max-md:mr-10 dark:border-slate-700">
+      <div className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 max-md:mr-10 dark:border-slate-600">
         {props.options.map((o) => (
-          <label key={o.valeur} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
+          <label key={o.valeur} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
             <input
               type="checkbox"
               className="size-4 accent-blue-700 dark:accent-blue-400"

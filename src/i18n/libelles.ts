@@ -3,7 +3,8 @@
 // Aucune dépendance Node : partagé avec l'interface.
 import { LIBELLES_STATUTS, LIBELLES_TYPES, type Statut, type TypeEvenement } from '../core/statuts.ts';
 import { LIBELLES_NIVEAUX, type Niveau } from '../core/grille.ts';
-import type { Langue } from './outil.ts';
+import { LANGUE_DEFAUT, type Langue } from './outil.ts';
+import { tl } from './index.ts';
 
 const STATUTS_EN: Record<Statut, string> = {
   nouvelle: 'New',
@@ -51,16 +52,16 @@ export function libelleNiveau(n: Niveau, langue: Langue): string {
  * d'après son code ; un code inconnu garde le message d'origine.
  */
 export function messageDrapeau(d: { code: string; message: string }, langue: Langue): string {
-  if (langue === 'fr') return d.message;
-  if (d.code === 'teletravail_inconnu') return 'Remote work unknown (neutral value): to check';
-  if (d.code === 'remuneration_inconnue') return 'Pay unknown (neutral value): to ask';
+  if (langue === LANGUE_DEFAUT) return d.message;
+  if (d.code === 'teletravail_inconnu') return tl(langue, 'drapeau.teletravailInconnu');
+  if (d.code === 'remuneration_inconnue') return tl(langue, 'drapeau.remunerationInconnue');
   if (d.code === 'sous_plancher') {
     const valeur = d.message.match(/\(([^)]*)\)/)?.[1];
-    return `Pay below the floor${valeur ? ` (${valeur})` : ''}: to point out`;
+    return tl(langue, 'drapeau.sousPlancher', { valeur: valeur ? ` (${valeur})` : '' });
   }
   if (d.code.startsWith('critere_manquant:')) {
     const libelle = d.message.split(' : ')[0] || d.code.slice('critere_manquant:'.length);
-    return `${libelle}: no sub-score (neutral value 5)`;
+    return tl(langue, 'drapeau.critereManquant', { libelle });
   }
   return d.message;
 }

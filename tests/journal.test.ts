@@ -293,7 +293,7 @@ describe('offre déjà suivie revue dans un lot, le registre ou une alerte : sta
   describe('ingest', () => {
     let dossier: string;
     beforeAll(() => {
-      dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-revue-'));
+      dossier = mkdtempSync(join(tmpdir(), 'vigie-emploi-revue-'));
     });
     afterAll(() => rmSync(dossier, { recursive: true, force: true }));
 

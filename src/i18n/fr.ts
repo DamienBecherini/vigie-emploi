@@ -7,12 +7,12 @@ const p = (one: string, other: string): Pluriel => ({ one, other });
 export const fr = {
   // ---------------------------------------------------------------------------------------------
   // CLI : aide (les noms des commandes et des options restent en français dans les deux langues)
-  'cli.aide': `postuler-juste — offres, notes et candidatures (base SQLite locale)
+  'cli.aide': `vigie-emploi — offres, notes et candidatures (base SQLite locale)
 
-Usage : postuler-juste <commande> [options]
+Usage : vigie-emploi <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--gabarit sobre|moderne|compact] [--langue fr|en]
+  init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--gabarit sobre|moderne|compact] [--langue fr|en]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA ; --langue : langue de l'interface,
                         de la CLI et du suivi (fr par défaut)
@@ -76,15 +76,15 @@ Commandes
                         candidatures/_SUIVI.genere.md (aperçu) ; --remplacer écrit candidatures/_SUIVI.md
   serve [--port 4410] [--inactivite <minutes>]
                         Lance le tableau de bord (http://localhost:4410) ; --inactivite : s'arrête seul après ce temps sans visite
-  mcp                   Serveur MCP (transport stdio) pour piloter postuler-juste depuis une IA ; sans dossier
+  mcp                   Serveur MCP (transport stdio) pour piloter vigie-emploi depuis une IA ; sans dossier
                         configuré : ~/ma-recherche, créé au besoin par l'outil initialiser_espace
 
 Options générales
-  --data <dossier>      Dossier de données (sinon POSTULER_JUSTE_DATA ou postuler-juste.config.json)
+  --data <dossier>      Dossier de données (sinon VIGIE_EMPLOI_DATA ou vigie-emploi.config.json)
   --config <fichier>    Fichier de configuration
   --json                Sortie JSON (toutes les commandes)
 
-Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable POSTULER_JUSTE_LANGUE.
+Langue : clé « langue » de vigie-emploi.config.json (fr ou en) ou variable VIGIE_EMPLOI_LANGUE.
 `,
 
   // CLI : messages généraux
@@ -143,7 +143,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.ingest.sansOffre': '  aucune offre reconnue, e-mail conservé : {fichier}',
   'cli.ingest.accuse': '  accusé de candidature (pas une alerte) : {sujet}{suite}',
   'cli.ingest.offreAbsente': ' → offre absente de la base',
-  'cli.ingest.suite': 'Suite : postuler-juste a-lire',
+  'cli.ingest.suite': 'Suite : vigie-emploi a-lire',
 
   // CLI : import-historique
   'cli.import.lots': 'Lots : {fichiers} fichier(s), {entrees} entrée(s), {offres} offre(s) créée(s), {notes} note(s).',
@@ -170,7 +170,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.aLire.navigateur': 'à lire dans le navigateur',
   'cli.aLire.humain': 'page protégée : demander le texte',
   'cli.aLire.sansUrl': '(sans URL)',
-  'cli.aLire.total': '{n} offre(s) à traiter. Détail JSON (descriptions comprises) : postuler-juste a-lire --json',
+  'cli.aLire.total': '{n} offre(s) à traiter. Détail JSON (descriptions comprises) : vigie-emploi a-lire --json',
   'cli.noter.attendu': "noter : --json '{...}' ou --fichier lot.json attendu",
   'cli.noter.uneSeule': 'noter <id> : une seule note attendue',
 
@@ -219,7 +219,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.fait.rouvert': 'Événement #{id} rouvert (à faire) : {resume}',
 
   // CLI : fichiers, stats, suivi
-  'cli.fichiers.sansDossier': '#{id} : pas de dossier de candidature (postuler-juste candidature {id} --dossier candidatures/…)',
+  'cli.fichiers.sansDossier': '#{id} : pas de dossier de candidature (vigie-emploi candidature {id} --dossier candidatures/…)',
   'cli.fichiers.absent': '#{id} : dossier {dossier} absent du dossier de données',
   'cli.fichiers.titre': '{dossier} ({n} fichier(s)) :',
   'cli.fichiers.ko': 'Ko',
@@ -229,7 +229,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.suivi.resume': '{fichier} : {enCours} en cours, {sansSuite} envoyée(s) sans suite, {closes} close(s).',
 
   // CLI : init
-  'cli.init.usage': 'Usage : postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--langue fr|en]',
+  'cli.init.usage': 'Usage : vigie-emploi init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--langue fr|en]',
   'cli.init.cree': 'Espace de travail créé : {dossier}',
   'cli.init.config': '  configuration : {config} (port {port}, langue {langue})',
   'cli.init.mcp': '  serveur MCP « {nom} » : {mcp}',
@@ -241,15 +241,15 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'cli.init.etape3': '  3. Colle-lui ce prompt :',
 
   // CLI : compter, gabarits, cv
-  'cli.compter.usage': 'Usage : postuler-juste compter <fichier>',
+  'cli.compter.usage': 'Usage : vigie-emploi compter <fichier>',
   'cli.compter.ligne': '{caracteres} caractères  {mots} mots  « {debut}… »',
-  'cli.gabarits.choisir': "Choisir : postuler-juste gabarit <nom> (depuis l'espace de travail ; l'ancien gabarit est gardé à côté).",
-  'cli.gabarit.usage': 'Usage : postuler-juste gabarit <nom> (liste : postuler-juste gabarits)',
+  'cli.gabarits.choisir': "Choisir : vigie-emploi gabarit <nom> (depuis l'espace de travail ; l'ancien gabarit est gardé à côté).",
+  'cli.gabarit.usage': 'Usage : vigie-emploi gabarit <nom> (liste : vigie-emploi gabarits)',
   'cli.gabarit.installe': 'Gabarit « {nom} » installé dans {dossier}{ancien}.',
   'cli.gabarit.ancien': ' (ancien gabarit gardé dans {dossier})',
-  'cli.gabarit.regenerer': 'Régénérer les CV pour voir le résultat : postuler-juste cv "cv/<nom>.md" --capture',
-  'cli.cv.usage': 'Usage : postuler-juste cv <cv.md>… [--gabarit <dossier>] [--capture]',
-  'cli.cv.sansNavigateur': 'Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans POSTULER_JUSTE_NAVIGATEUR)',
+  'cli.gabarit.regenerer': 'Régénérer les CV pour voir le résultat : vigie-emploi cv "cv/<nom>.md" --capture',
+  'cli.cv.usage': 'Usage : vigie-emploi cv <cv.md>… [--gabarit <dossier>] [--capture]',
+  'cli.cv.sansNavigateur': 'Aucun Chrome, Edge ou Chromium trouvé (indiquer son chemin dans VIGIE_EMPLOI_NAVIGATEUR)',
   'cli.cv.pages': 'page(s)',
   'cli.cv.depasse': '  <-- DÉPASSE 2 PAGES',
   'cli.cv.remplissage': 'remplissage : {taux}',
@@ -261,7 +261,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'serveur.demarre': 'Tableau de bord : http://localhost:{port}/  (données : {dossier})',
   'serveur.arreter': 'Ctrl+C pour arrêter.',
   'serveur.portUtilise': 'Le port {port} est déjà utilisé : le tableau de bord tourne sans doute déjà sur http://localhost:{port}/',
-  'serveur.autrePort': 'Sinon, choisissez un autre port : postuler-juste serve --port {suivant}',
+  'serveur.autrePort': 'Sinon, choisissez un autre port : vigie-emploi serve --port {suivant}',
   'serveur.inactivite': 'Aucune activité depuis {minutes} min : arrêt du tableau de bord.',
   'api.hoteRefuse': 'Hôte refusé',
   'api.origineRefusee': 'Origine refusée',
@@ -272,18 +272,18 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'api.champTexte': 'Champ {champ} : texte attendu',
   'api.cheminMalEncode': 'Chemin mal encodé',
   'api.routeInconnue': 'Route inconnue',
-  'api.nonCompilee': 'Interface non compilée : lancer « npm run build » dans le dossier de postuler-juste.',
+  'api.nonCompilee': 'Interface non compilée : lancer « npm run build » dans le dossier de vigie-emploi.',
   'api.sansTerminal':
-    'Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans postuler-juste.config.json, ou lancer « claude {invite} » dans {dossier}.',
+    'Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans vigie-emploi.config.json, ou lancer « claude {invite} » dans {dossier}.',
   'api.terminalImpossible': "Impossible d'ouvrir le terminal ({programme}) : {message}",
 
   // ---------------------------------------------------------------------------------------------
   // Suivi généré (_SUIVI.md)
   'suivi.titre': '# Suivi des candidatures',
   'suivi.quand': '{date} à {heure}',
-  'suivi.avertissement1': '> **Fichier généré par postuler-juste le {quand} : ne pas éditer à la main.** Les changements se font dans la base',
+  'suivi.avertissement1': '> **Fichier généré par vigie-emploi le {quand} : ne pas éditer à la main.** Les changements se font dans la base',
   'suivi.avertissement2':
-    '> (tableau de bord, CLI ou outils MCP), puis `postuler-juste generer-suivi`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
+    '> (tableau de bord, CLI ou outils MCP), puis `vigie-emploi generer-suivi`. Une ligne par offre ; le détail est dans le dossier de chaque offre.',
   'suivi.enCours': 'En cours',
   'suivi.sansSuite': 'Envoyées sans suite',
   'suivi.closes': 'Closes',
@@ -291,7 +291,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'suivi.entetesCloses': '| Offre | Issue |',
   'suivi.estimations': "Les dates « ≈ » sont des estimations, pas une trace d'envoi. Les corriger si tu retrouves la vraie date.",
   'suivi.pied':
-    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `postuler-juste serve`, ou `postuler-juste list --statut ecartee`).',
+    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `vigie-emploi serve`, ou `vigie-emploi list --statut ecartee`).',
   'suivi.aEnvoyer': '**À envoyer** — GO',
   'suivi.teletravail': 'télétravail {valeur}',
   'suivi.dossier': 'dossier',
@@ -302,17 +302,17 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   // Initialisation d'un espace
   'init.invite':
     "Tu vas m'aider dans ma recherche d'emploi. Mon espace de travail est {espace}. Lis {espace}/AGENTS.md puis {espace}/DEMARRAGE.md, et suis le démarrage : vérifie d'abord de quels outils tu disposes, lis ce que j'ai déposé dans a-deposer/, puis pose-moi tes questions, quelques-unes à la fois.",
-  'init.dossierAttendu': 'Dossier à créer attendu : postuler-juste init <dossier>',
+  'init.dossierAttendu': 'Dossier à créer attendu : vigie-emploi init <dossier>',
   'init.pasUnDossier': "{dossier} existe et n'est pas un dossier",
   'init.nonVide': "Le dossier {dossier} n'est pas vide : choisir un dossier neuf ou vide",
   'init.nomMcpInvalide': 'Nom de serveur MCP invalide : {nom} (lettres, chiffres, - et _)',
   'init.gabaritInconnu': 'Gabarit inconnu : {gabarit} (disponibles : {liste})',
   'init.langueInconnue': 'Langue inconnue : {langue} ({langues})',
   'init.npx':
-    'Lancé par npx : le serveur MCP et les consignes utilisent « {commande} » (version figée). Au premier lancement, npx la télécharge (connexion nécessaire), puis la garde en cache. Pour un chemin fixe, installer plutôt avec « npm install -g postuler-juste » puis relancer init.',
-  'init.nonCompile': 'Tableau de bord non compilé : lancer « npm run build » dans {app} avant « postuler-juste serve ».',
+    'Lancé par npx : le serveur MCP et les consignes utilisent « {commande} » (version figée). Au premier lancement, npx la télécharge (connexion nécessaire), puis la garde en cache. Pour un chemin fixe, installer plutôt avec « npm install -g vigie-emploi » puis relancer init.',
+  'init.nonCompile': 'Tableau de bord non compilé : lancer « npm run build » dans {app} avant « vigie-emploi serve ».',
   'init.sansNavigateur':
-    'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans POSTULER_JUSTE_NAVIGATEUR.',
+    'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans VIGIE_EMPLOI_NAVIGATEUR.',
   'init.modeleFrancais': "Les consignes de l'IA (modèle de l'espace) sont en français pour l'instant ; leur version anglaise viendra plus tard.",
 
   // ---------------------------------------------------------------------------------------------
@@ -326,6 +326,11 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'core.dateFormat': 'Date invalide : « {texte} » (JJ/MM/AAAA, JJ/MM/AAAA HH:MM ou AAAA-MM-JJ attendu)',
   'core.dateInvalide': 'Date invalide : « {texte} »',
   'core.heureInvalide': 'Heure invalide : « {texte} »',
+  // Drapeaux de note : le message enregistré est en français (grille.ts) ; ces textes servent aux autres langues.
+  'drapeau.teletravailInconnu': 'Télétravail inconnu (valeur neutre) : à vérifier',
+  'drapeau.remunerationInconnue': 'Rémunération inconnue (valeur neutre) : à demander',
+  'drapeau.sousPlancher': 'Rémunération sous le plancher{valeur} : à signaler',
+  'drapeau.critereManquant': '{libelle} : pas de sous-note (valeur neutre 5)',
   'core.texteAttendu': '{nom} : texte attendu',
   'core.nombreAttendu': '{nom} : nombre attendu ({valeur})',
   'core.cheminVide': 'Chemin de fichier vide',
@@ -349,7 +354,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'core.fusionImpossible': 'Fusion impossible : offre {cible} ou {doublon} introuvable',
   'core.entreeSansId': 'Entrée sans "id" ni "url"',
   'core.sansGrille':
-    'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (postuler-juste grille --init)',
+    'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (vigie-emploi grille --init)',
   'core.noteIgnoree': 'Champ « note » ({note}) ignoré : note calculée avec la grille v{version} = {calculee}',
   'core.noteBruteIgnoree': 'Champ « note_brute » ignoré : remplacé par la moyenne pondérée',
   'core.lotIllisible': 'Lot illisible : tableau JSON attendu',
@@ -358,7 +363,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'core.etape.consignes': 'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
   'core.etape.dossier': "Créer le dossier {dossier} avec l'annonce, le fit, les écarts et les messages",
   'core.etape.enregistrer':
-    'Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou postuler-juste candidature {id} --dossier {dossier}',
+    'Enregistrer la candidature (dossier, CV, canal, prochaine action) : enregistrer_candidature ou vigie-emploi candidature {id} --dossier {dossier}',
   'core.etape.envoi': "Après l'envoi : enregistrer la date d'envoi (envoyee_le), l'offre passe en « envoyee »",
   'core.grilleIllisible': 'Grille illisible ({chemin}) : {message}',
   'core.grilleObjet': 'Grille illisible ({chemin}) : objet JSON attendu',
@@ -366,7 +371,7 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
   'core.resumeChangement': 'Résumé du changement attendu',
   'core.grilleModifieeFichier': 'Modifiée dans le fichier grille.json',
   'core.grilleInitiale': 'Version initiale (fichier grille.json)',
-  'core.pasDeGrille': 'Pas de grille de notation : créer {chemin} (modèle : exemples/grille.json, ou « postuler-juste grille --init »)',
+  'core.pasDeGrille': 'Pas de grille de notation : créer {chemin} (modèle : exemples/grille.json, ou « vigie-emploi grille --init »)',
   'core.aucunChangement': 'Aucun changement par rapport à la version courante',
   'core.retourVersion': 'Retour à la version {version}',
   'core.grille.calculAttendu': 'critère {id} : « calcul » attendu ({calculs})',
@@ -464,9 +469,9 @@ Langue : clé « langue » de postuler-juste.config.json (fr ou en) ou variable 
     "Remarque : dernière page ({page}) remplie à {pc} %, il reste environ {vide} % de page vide ; acceptable, mais de la place pour un élément utile à l'offre s'il en manque.",
   'core.pages.pourcent': '{pc} %',
   'core.config.nonConfigure':
-    'Dossier de données non configuré : définir POSTULER_JUSTE_DATA, passer --data <dossier> ou créer {fichier} avec "dossierDonnees" (voir postuler-juste.config.example.json).',
+    'Dossier de données non configuré : définir VIGIE_EMPLOI_DATA, passer --data <dossier> ou créer {fichier} avec "dossierDonnees" (voir vigie-emploi.config.example.json).',
   'core.config.introuvable': 'Fichier de configuration introuvable : {chemin}',
-  'core.config.langue': 'Langue inconnue : {langue} ({langues} ; POSTULER_JUSTE_LANGUE ou "langue" de {fichier})',
+  'core.config.langue': 'Langue inconnue : {langue} ({langues} ; VIGIE_EMPLOI_LANGUE ou "langue" de {fichier})',
 
   // Exemple de pluriel (utilisé par les tests du mécanisme)
   'commun.offres': p('{n} offre', '{n} offres'),

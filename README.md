@@ -1,6 +1,6 @@
 <div align="center">
 
-# postuler-juste
+# vigie-emploi
 
 **Français** · [English](README.en.md)
 
@@ -18,12 +18,12 @@
 
 ---
 
-postuler-juste est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **votre** grille, prépare les candidatures que vous validez (dossier, CV ciblé, message) et tient le suivi. Tout reste sur votre ordinateur.
+vigie-emploi est un kit local pour chercher un CDI ou des missions freelance avec un agent IA (Claude Code, Cursor, Codex…). L'IA trie les offres reçues par alertes e-mail, note chacune avec **votre** grille, prépare les candidatures que vous validez (dossier, CV ciblé, message) et tient le suivi. Tout reste sur votre ordinateur.
 
-Postuler *juste*, dans les deux sens :
+Une vigie, c'est le guetteur en haut du mât. Deux promesses :
 
-- **juste comme ciblé** : une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup ;
-- **juste comme honnête** : l'IA s'appuie sur un inventaire de ce que vous pouvez revendiquer ou non, construit avec vous au démarrage. Elle n'écrit dans un CV que ce que vous pouvez défendre en entretien. Au fil des candidatures, vous affinez avec elle ce qui fait votre valeur et le message que vous voulez faire passer, jusqu'à ce que le résultat vous ressemble vraiment.
+- **elle veille pour vous** : vos alertes sont lues et triées, une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup, et aucune relance n'est oubliée ;
+- **elle ne vous fait jamais mentir** : l'IA s'appuie sur un inventaire de ce que vous pouvez revendiquer ou non, construit avec vous au démarrage. Elle n'écrit dans un CV que ce que vous pouvez défendre en entretien. Au fil des candidatures, vous affinez avec elle ce qui fait votre valeur et le message que vous voulez faire passer, jusqu'à ce que le résultat vous ressemble vraiment.
 
 ## Comment ça marche
 
@@ -56,7 +56,7 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 <a href="docs/exemples/CV-damien-becherini-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="CV de l'auteur, gabarit « moderne » (page 1 du PDF)" width="32%"></a>
 <a href="docs/exemples/CV-damien-becherini-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV de l'auteur, gabarit « compact » (page 1 du PDF)" width="32%"></a>
 
-<em>Mon propre CV, écrit avec postuler-juste et rendu avec chacun des trois gabarits (première page ; cliquez pour ouvrir le PDF complet). Source Markdown : <a href="docs/exemples/CV-damien-becherini.md">docs/exemples/CV-damien-becherini.md</a>.</em>
+<em>Mon propre CV, écrit avec vigie-emploi et rendu avec chacun des trois gabarits (première page ; cliquez pour ouvrir le PDF complet). Source Markdown : <a href="docs/exemples/CV-damien-becherini.md">docs/exemples/CV-damien-becherini.md</a>.</em>
 </div>
 
 ## Ce qu'il faut
@@ -70,20 +70,20 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 
 ### Installation en un clic (Claude Desktop)
 
-1. Téléchargez le fichier `postuler-juste-<version>.mcpb` (page [Releases](https://github.com/DamienBecherini/postuler-juste/releases) du dépôt).
+1. Téléchargez le fichier `vigie-emploi-<version>.mcpb` (page [Releases](https://github.com/DamienBecherini/vigie-emploi/releases) du dépôt).
 2. Double-cliquez dessus (ou glissez-le dans la fenêtre de Claude Desktop, ou **Paramètres → Extensions → Paramètres avancés → Installer une extension…**), puis cliquez sur **Installer**.
 3. Choisissez le **dossier de l'espace** (par défaut `ma-recherche` dans votre dossier personnel ; il n'a pas besoin d'exister) et la **langue** (`fr` ou `en`).
-4. Dans une nouvelle conversation, demandez « crée mon espace postuler-juste », ou bouton **+** → postuler-juste → prompt **`demarrage`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
+4. Dans une nouvelle conversation, demandez « crée mon espace vigie-emploi », ou bouton **+** → vigie-emploi → prompt **`demarrage`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
 
 Pas de terminal ni de Node à installer : l'extension contient l'application et utilise le Node intégré à Claude Desktop. Pour parcourir vos offres dans le tableau de bord, demandez à Claude de l'ouvrir (outil `ouvrir_tableau_de_bord`). Détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
 ### Avec Claude Code ou un autre agent
 
 ```sh
-npx postuler-juste init ~/ma-recherche
+npx vigie-emploi init ~/ma-recherche
 ```
 
-Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y postuler-juste@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g postuler-juste`, puis `postuler-juste init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
+Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
 `init` crée votre espace de travail (`--gabarit moderne` ou `compact` pour changer de gabarit de CV, `--langue en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes, de statuts et de fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
 
@@ -137,52 +137,52 @@ Prérequis : Node.js 24 ou plus (SQLite est intégré à Node via `node:sqlite`,
 Depuis npm (le paquet contient le code compilé en JavaScript et l'interface compilée) :
 
 ```sh
-npx postuler-juste init ~/ma-recherche    # sans installation
-npm install -g postuler-juste             # ou commande installée à demeure
+npx vigie-emploi init ~/ma-recherche    # sans installation
+npm install -g vigie-emploi             # ou commande installée à demeure
 ```
 
 Commande inscrite par `init` dans `.mcp.json` et dans les consignes de l'espace :
 
-- lancé par `npx` : `npx -y postuler-juste@<version>` (sous Windows, `cmd /c npx …` pour le serveur MCP). Le cache de npx peut être vidé : son chemin n'est jamais écrit. La version est figée pour que la base et l'application restent accordées ; au besoin, npx la retélécharge (connexion nécessaire). Les consignes de l'application (`AGENTS.md`, ou `AGENTS.en.md` pour un espace anglais) sont copiées dans `procedures/application.md`. Pour changer de version, remplacez le numéro dans `.mcp.json` et dans les consignes, ou passez à une installation globale ;
-- installé (`npm install -g`, ou depuis le dépôt) : `node <chemin>/bin/postuler-juste.js`, avec le chemin absolu de l'installation.
+- lancé par `npx` : `npx -y vigie-emploi@<version>` (sous Windows, `cmd /c npx …` pour le serveur MCP). Le cache de npx peut être vidé : son chemin n'est jamais écrit. La version est figée pour que la base et l'application restent accordées ; au besoin, npx la retélécharge (connexion nécessaire). Les consignes de l'application (`AGENTS.md`, ou `AGENTS.en.md` pour un espace anglais) sont copiées dans `procedures/application.md`. Pour changer de version, remplacez le numéro dans `.mcp.json` et dans les consignes, ou passez à une installation globale ;
+- installé (`npm install -g`, ou depuis le dépôt) : `node <chemin>/bin/vigie-emploi.js`, avec le chemin absolu de l'installation.
 
 Depuis le dépôt (contributeurs) :
 
 ```sh
-git clone https://github.com/DamienBecherini/postuler-juste.git
-cd postuler-juste
+git clone https://github.com/DamienBecherini/vigie-emploi.git
+cd vigie-emploi
 npm install
 npm run build      # vérifie les types, compile src/ dans dist/ et l'interface dans dist/ui
-npm link           # rend la commande `postuler-juste` disponible partout (facultatif)
+npm link           # rend la commande `vigie-emploi` disponible partout (facultatif)
 ```
 
-Sans `npm link`, remplacez `postuler-juste` par `node <chemin>/bin/postuler-juste.js`. Dans le dépôt, `bin/postuler-juste.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
+Sans `npm link`, remplacez `vigie-emploi` par `node <chemin>/bin/vigie-emploi.js`. Dans le dépôt, `bin/vigie-emploi.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
 
-Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi` n'existe plus (utilisez `postuler-juste`) ; les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
+Anciens noms : l'application s'appelait **cap-emploi**. La commande `cap-emploi` n'existe plus (utilisez `vigie-emploi`) ; les variables `CAP_EMPLOI_*`, le fichier `cap-emploi.config.json` et la base `data/cap-emploi.sqlite` restent reconnus ; les nouveaux noms passent en premier.
 
 ### Créer son espace de travail
 
 ```sh
-postuler-juste init <dossier> [--port 4410] [--nom-mcp postuler-juste] [--langue fr|en]
+vigie-emploi init <dossier> [--port 4410] [--nom-mcp vigie-emploi] [--langue fr|en]
 ```
 
-Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`gabarits/cv/sobre/`) et la grille d'exemple, puis écrit `postuler-juste.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
+Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`modele/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`gabarits/cv/sobre/`) et la grille d'exemple, puis écrit `vigie-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
 
-Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp postuler-juste-test`).
+Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --nom-mcp vigie-emploi-test`).
 
 ### Avec Claude Desktop ou un autre client MCP
 
-Le serveur MCP (`postuler-juste mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`ouvrir_tableau_de_bord`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `POSTULER_JUSTE_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+Le serveur MCP (`vigie-emploi mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialiser_espace`, sans passer par `init`), fournit les consignes en prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`ouvrir_tableau_de_bord`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `VIGIE_EMPLOI_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
-Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/postuler-juste/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/postuler-juste-<version>.mcpb` (environ 5 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
+Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/vigie-emploi/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/vigie-emploi-<version>.mcpb` (environ 5 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
 
 ### CV en PDF
 
 ```sh
-postuler-juste cv "cv/<nom>.md" [--gabarit <dossier>]
+vigie-emploi cv "cv/<nom>.md" [--gabarit <dossier>]
 ```
 
-Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `POSTULER_JUSTE_NAVIGATEUR` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--gabarit`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `modele/cv/LISEZMOI.md`.
+Convertit un CV Markdown en PDF A4 (Chrome, Edge ou Chromium sans interface ; `VIGIE_EMPLOI_NAVIGATEUR` pour imposer un chemin), écrit à côté du `.md`, et affiche le nombre de pages (cible : 2). Le gabarit est un dossier (`gabarit.css`, polices, `portrait.jpg|png|webp` facultatif) : `--gabarit`, sinon `cv/gabarit/` de l'espace de travail, sinon celui de l'application. La structure Markdown attendue est décrite dans `modele/cv/LISEZMOI.md`.
 
 ### Configuration du dossier de données
 
@@ -190,64 +190,64 @@ Le dossier de données contient la base et la boîte de réception :
 
 ```
 <dossier>/
-  data/postuler-juste.sqlite   base (créée au premier lancement)
+  data/vigie-emploi.sqlite   base (créée au premier lancement)
   emails/                  .eml à ingérer (supprimés une fois traités)
   candidatures/            historique facultatif à reprendre (voir import-historique)
-  profil/grille.json       grille de notation (postuler-juste grille --init copie l'exemple)
+  profil/grille.json       grille de notation (vigie-emploi grille --init copie l'exemple)
 ```
 
 Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 
 1. l'option `--data <dossier>` sur chaque commande ;
-2. la variable d'environnement `POSTULER_JUSTE_DATA` ;
-3. un fichier `postuler-juste.config.json` (non versionné) dans le dossier courant, dans le dossier de données ou à la racine de l'application. Modèle : [`postuler-juste.config.example.json`](postuler-juste.config.example.json).
+2. la variable d'environnement `VIGIE_EMPLOI_DATA` ;
+3. un fichier `vigie-emploi.config.json` (non versionné) dans le dossier courant, dans le dossier de données ou à la racine de l'application. Modèle : [`vigie-emploi.config.example.json`](vigie-emploi.config.example.json).
 
 | Clé | Rôle | Défaut |
 |---|---|---|
 | `dossierDonnees` | Dossier de données (chemin absolu ou relatif au fichier) | — |
-| `base` | Chemin de la base | `<données>/data/postuler-juste.sqlite` |
+| `base` | Chemin de la base | `<données>/data/vigie-emploi.sqlite` |
 | `emails` | Boîte de réception | `<données>/emails` |
 | `port` | Port du tableau de bord | `4410` |
 | `telechargerJsonLd` | Lire les pages Hellowork / Free-Work | `true` |
 | `titresExclus` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `employeursRefuses` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{dossier}` et `{invite}` y sont remplacés | Windows : `["wt.exe", "-d", "{dossier}", "claude", "{invite}"]` ; ailleurs : aucune |
-| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur | `fr` |
+| `langue` | Langue du tableau de bord, des messages de la CLI, du serveur MCP et du suivi généré : `fr` ou `en` (écrite par `init --langue`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
 
-Variables d'environnement reconnues aussi : `POSTULER_JUSTE_CONFIG` (fichier de config), `POSTULER_JUSTE_BASE` (base), `POSTULER_JUSTE_PORT`, `POSTULER_JUSTE_LANGUE`.
+Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_BASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUE`.
 
 ### Commandes
 
-Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et `--config`. `postuler-juste --help` donne la liste complète.
+Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et `--config`. `vigie-emploi --help` donne la liste complète.
 
 | Commande | Effet |
 |---|---|
-| `postuler-juste ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`nouvelle`, ou `ecartee` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
-| `postuler-juste import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par postuler-juste n'est pas relu |
-| `postuler-juste list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` ; tri sur plusieurs niveaux : `--tri recue_le:desc,note:desc` |
-| `postuler-juste show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
-| `postuler-juste a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
-| `postuler-juste noter <id> --json '{…}'` | Enregistre une note pour une offre |
-| `postuler-juste noter --fichier lot.json [--essai]` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) ; `--essai` calcule sans enregistrer |
-| `postuler-juste grille [--consignes]` | Grille de notation courante : critères et poids, barèmes, règles, inventaire, exemples (`--consignes` : consignes pour l'IA) |
-| `postuler-juste grille --modifier '{…}' --resume "…" [--essai]` | Changement partiel (poids, seuil, barèmes, règles, inventaire) ; nouvelle version et renotation, ou aperçu avec `--essai` |
-| `postuler-juste grille --historique` / `--version N` / `--restaurer N` / `--init` | Versions de la grille, retour à une version, copie de la grille d'exemple |
-| `postuler-juste renoter` | Recalcule les notes à critères avec la grille courante |
-| `postuler-juste statut <id> <statut> [--commentaire "…"]` | Change le statut (historisé) |
-| `postuler-juste tag <id> +ajout -retrait` | Ajoute / retire des tags |
-| `postuler-juste candidater <id>` | Passe l'offre en `go` et affiche ce qu'il faut pour préparer la candidature |
-| `postuler-juste candidature <id> [--dossier] [--cv] [--canal] [--envoyee-le] [--message] [--prochaine-action]` | Enregistre la candidature (`""` efface un champ) ; avec `--envoyee-le`, l'offre passe en `envoyee` |
-| `postuler-juste prochaine-action <id> "texte"` | Prochaine action de la candidature (`-` pour l'effacer) |
-| `postuler-juste lien <id> <url ou ->` | Lien de l'offre |
-| `postuler-juste evenement <id> --type <type> [--le "JJ/MM/AAAA HH:MM"] --resume "…" [--sens envoye\|recu] [--canal] [--interlocuteurs] [--details] [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier <chemin>]… [--fait\|--no-fait]` | Ajoute un événement au journal (types : `message`, `entretien`, `test`, `proposition`, `decision`, `note`). `--le` : JJ/MM/AAAA, AAAA-MM-JJ, avec heure facultative, `demain`, `+3` ; par défaut maintenant. Daté dans le futur, il n'est pas fait : c'est une échéance |
-| `postuler-juste journal <id>` | Journal de la candidature : échéances d'abord (retards en tête), puis du plus récent au plus ancien |
-| `postuler-juste echeances [--jours 7]` | Échéances en retard et à venir sur N jours, toutes offres confondues |
-| `postuler-juste fait <evenement_id> [--no-fait]` | Marque une échéance comme faite (ou la rouvre) |
-| `postuler-juste fichiers <id>` | Fichiers du dossier de candidature (chemins à citer dans `--fichier`) |
-| `postuler-juste stats` | Candidatures par étape (envoyée, réponse, entretien, proposition) et délai moyen avant la première réponse |
-| `postuler-juste generer-suivi [--sortie <fichier>] [--remplacer]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--remplacer` |
-| `postuler-juste mcp` | Serveur MCP (stdio) pour une IA |
-| `postuler-juste serve [--port 4410] [--inactivite <minutes>]` | Lance le tableau de bord sur http://localhost:4410 ; avec `--inactivite`, il s'arrête seul après ce temps sans visite (`GET /api/sante` donne le temps restant) |
+| `vigie-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`nouvelle`, ou `ecartee` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
+| `vigie-emploi import-historique` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par vigie-emploi n'est pas relu |
+| `vigie-emploi list [filtres]` | Liste paginée : `--statut a,b`, `--note-min`, `--note-max`, `--sans-note`, `--source`, `--tag`, `--depuis` / `--jusqua` (réception), `--texte`, `--contrat`, `--teletravail`, `--candidatures`, `--page`, `--taille`, `--tri`, `--ordre` ; tri sur plusieurs niveaux : `--tri recue_le:desc,note:desc` |
+| `vigie-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |
+| `vigie-emploi a-lire [--limite N] [--complet]` | Offres à traiter sans note, avec l'URL à lire, ou la description déjà extraite |
+| `vigie-emploi noter <id> --json '{…}'` | Enregistre une note pour une offre |
+| `vigie-emploi noter --fichier lot.json [--essai]` | Enregistre un lot de notes (offres retrouvées par `id` ou par `url`, créées au besoin) ; `--essai` calcule sans enregistrer |
+| `vigie-emploi grille [--consignes]` | Grille de notation courante : critères et poids, barèmes, règles, inventaire, exemples (`--consignes` : consignes pour l'IA) |
+| `vigie-emploi grille --modifier '{…}' --resume "…" [--essai]` | Changement partiel (poids, seuil, barèmes, règles, inventaire) ; nouvelle version et renotation, ou aperçu avec `--essai` |
+| `vigie-emploi grille --historique` / `--version N` / `--restaurer N` / `--init` | Versions de la grille, retour à une version, copie de la grille d'exemple |
+| `vigie-emploi renoter` | Recalcule les notes à critères avec la grille courante |
+| `vigie-emploi statut <id> <statut> [--commentaire "…"]` | Change le statut (historisé) |
+| `vigie-emploi tag <id> +ajout -retrait` | Ajoute / retire des tags |
+| `vigie-emploi candidater <id>` | Passe l'offre en `go` et affiche ce qu'il faut pour préparer la candidature |
+| `vigie-emploi candidature <id> [--dossier] [--cv] [--canal] [--envoyee-le] [--message] [--prochaine-action]` | Enregistre la candidature (`""` efface un champ) ; avec `--envoyee-le`, l'offre passe en `envoyee` |
+| `vigie-emploi prochaine-action <id> "texte"` | Prochaine action de la candidature (`-` pour l'effacer) |
+| `vigie-emploi lien <id> <url ou ->` | Lien de l'offre |
+| `vigie-emploi evenement <id> --type <type> [--le "JJ/MM/AAAA HH:MM"] --resume "…" [--sens envoye\|recu] [--canal] [--interlocuteurs] [--details] [--montant 3000 --unite "€ HT"] [--jours 6] [--fichier <chemin>]… [--fait\|--no-fait]` | Ajoute un événement au journal (types : `message`, `entretien`, `test`, `proposition`, `decision`, `note`). `--le` : JJ/MM/AAAA, AAAA-MM-JJ, avec heure facultative, `demain`, `+3` ; par défaut maintenant. Daté dans le futur, il n'est pas fait : c'est une échéance |
+| `vigie-emploi journal <id>` | Journal de la candidature : échéances d'abord (retards en tête), puis du plus récent au plus ancien |
+| `vigie-emploi echeances [--jours 7]` | Échéances en retard et à venir sur N jours, toutes offres confondues |
+| `vigie-emploi fait <evenement_id> [--no-fait]` | Marque une échéance comme faite (ou la rouvre) |
+| `vigie-emploi fichiers <id>` | Fichiers du dossier de candidature (chemins à citer dans `--fichier`) |
+| `vigie-emploi stats` | Candidatures par étape (envoyée, réponse, entretien, proposition) et délai moyen avant la première réponse |
+| `vigie-emploi generer-suivi [--sortie <fichier>] [--remplacer]` | Génère le suivi des candidatures depuis la base : `candidatures/_SUIVI.genere.md` par défaut (aperçu), `candidatures/_SUIVI.md` avec `--remplacer` |
+| `vigie-emploi mcp` | Serveur MCP (stdio) pour une IA |
+| `vigie-emploi serve [--port 4410] [--inactivite <minutes>]` | Lance le tableau de bord sur http://localhost:4410 ; avec `--inactivite`, il s'arrête seul après ce temps sans visite (`GET /api/sante` donne le temps restant) |
 
 Statuts : `nouvelle`, `a-lire`, `notee`, `ecartee`, `go`, `envoyee`, `relancee`, `entretien`, `refus`, `close`, `abandonnee`. « Mes candidatures » regroupe `envoyee` et les suivants.
 
@@ -274,7 +274,7 @@ Avec `criteres` (ou `entrees`, `bloquants`), la note est **calculée** avec la g
 
 ### Grille de notation
 
-La grille vit dans `<données>/profil/grille.json` (modèle générique : [`exemples/grille.json`](exemples/grille.json), copié par `postuler-juste grille --init`). Elle contient :
+La grille vit dans `<données>/profil/grille.json` (modèle générique : [`exemples/grille.json`](exemples/grille.json), copié par `vigie-emploi grille --init`). Elle contient :
 
 - **critères pondérés** (7 au plus) notés de 0 à 10 : par l'IA (`source: "ia"`, avec une consigne dans `description`) ou par l'application (`source: "calcul"`, `calcul: "teletravail"` ou `"remuneration"`) ; poids relatifs, normalisés à 100 % ;
 - **barèmes** : télétravail (sous-note pour 0 à 5 jours sur site, valeur « inconnu ») ; rémunération (salaire en K€/an et TJM en €/j : plancher = 5, cible haute = 10, sous le plancher = 0, linéaire entre ; plancher full remote facultatif ; milieu, bas ou haut de fourchette) ;
@@ -290,7 +290,7 @@ Chaque enregistrement (panneau, CLI, MCP, ou fichier modifié à la main) crée 
 
 ### Tableau de bord
 
-`postuler-juste serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement). `--inactivite <minutes>` l'arrête après une période sans activité.
+`vigie-emploi serve`, puis http://localhost:4410 (écoute sur 127.0.0.1 uniquement). `--inactivite <minutes>` l'arrête après une période sans activité.
 
 Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L'outil MCP `ouvrir_tableau_de_bord` le démarre en arrière-plan s'il ne tourne pas déjà (processus séparé qui survit au redémarrage du serveur MCP et s'arrête après 60 minutes sans activité), sur le port de l'espace ou le suivant libre, et renvoie l'adresse à cliquer ; `ouvrir: true` l'ouvre dans le navigateur par défaut. Il lui faut un `node` (24 ou plus) installé ; sinon il tourne dans le processus du serveur MCP, tant que Claude Desktop reste ouvert.
 
@@ -305,17 +305,17 @@ Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L
 - Fichiers : servis en lecture par `/api/fichier/<chemin>`, uniquement dans le dossier de données (pas de `..`, pas de fichiers cachés, ni `data/` ni `emails/`, liens symboliques résolus) ; Markdown rendu en HTML simple sans script (CSP), `?brut=1` pour le texte, PDF et images tels quels. Le serveur refuse les requêtes dont l'hôte n'est pas `localhost` / `127.0.0.1`, et les écritures venues d'une autre origine (en-tête `Origin` non local ou `Sec-Fetch-Site: cross-site`).
 - Thème clair / sombre / système, taille du texte réglable (mémorisés dans le navigateur), navigation au clavier (Entrée ouvre une offre, Échap ferme le panneau).
 
-Développement de l'interface : `postuler-juste serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `POSTULER_JUSTE_API` pour en changer).
+Développement de l'interface : `vigie-emploi serve` d'un côté, `npm run dev:ui` de l'autre (Vite sur http://localhost:5173, l'API est relayée vers le port 4410 ; `VIGIE_EMPLOI_API` pour en changer).
 
 ### Suivi des candidatures généré
 
-`postuler-juste generer-suivi` écrit le suivi au format de l'ancien `_SUIVI.md` : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par postuler-juste le … : ne pas éditer à la main ».
+`vigie-emploi generer-suivi` écrit le suivi au format de l'ancien `_SUIVI.md` : sections **En cours** (à envoyer d'abord, puis du dernier envoi au plus ancien), **Envoyées sans suite** (statut « sans nouvelles » ou « sans réponse »), **Closes** (refus, abandon, clôture), colonnes Offre, Type, Canal, Envoyé, Statut, Prochaine action, Dossier, liens vers les dossiers. En tête : « Fichier généré par vigie-emploi le … : ne pas éditer à la main ».
 
 Colonne Prochaine action : la prochaine échéance du journal (« **04/11** : Relancer », « (en retard) » si la date est passée), sinon le champ `prochaine_action`.
 
 Tant qu'une candidature n'a pas bougé depuis la reprise, ses cellules sont réécrites telles quelles ; ensuite la colonne Statut reprend le commentaire du dernier statut. La prochaine action saisie dans l'interface, la CLI ou par MCP n'est jamais écrasée par une nouvelle reprise de l'ancien `_SUIVI.md`.
 
-Bascule : comparer `_SUIVI.genere.md` à `_SUIVI.md`, puis `postuler-juste generer-suivi --remplacer`. Après la bascule, la base fait foi.
+Bascule : comparer `_SUIVI.genere.md` à `_SUIVI.md`, puis `vigie-emploi generer-suivi --remplacer`. Après la bascule, la base fait foi.
 
 ### Journal et échéances
 
@@ -331,13 +331,13 @@ Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot 
 npm test            # Vitest (fixtures fictives dans tests/fixtures)
 npm run typecheck   # TypeScript (serveur + interface)
 npm run build       # typecheck + compilation de l'interface
-npm run mcpb        # extension Claude Desktop : build/postuler-juste-<version>.mcpb
+npm run mcpb        # extension Claude Desktop : build/vigie-emploi-<version>.mcpb
 ```
 
 Arborescence :
 
 ```
-bin/postuler-juste.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
+bin/vigie-emploi.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
 migrations/         schéma SQL versionné (PRAGMA user_version)
 src/core/           configuration, liens, normalisation, opérations sur les offres, requêtes,
                     grille de notation (grille.ts : schéma et calcul purs ; grille-stockage.ts : fichier, versions, renotation)

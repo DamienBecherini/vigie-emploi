@@ -11,7 +11,7 @@ import {
 import { STATUTS_A_TRAITER } from '../../src/core/statuts.ts';
 import { api, type LigneOffre } from './api.ts';
 import { basculerNiveau, ecrireNiveaux, lireNiveaux } from './tri.ts';
-import { choisirLangue, langue, LANGUES, locale, nombre, t, type Langue } from './i18n/index.ts';
+import { choisirLangue, langue, LANGUES, locale, NOMS_LANGUES, nombre, t, type Langue } from './i18n/index.ts';
 import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FILTRES } from './etat.ts';
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
@@ -126,7 +126,7 @@ function useSombreSysteme(): boolean {
 
 function enregistrer(cle: string, valeur: unknown) {
   try {
-    localStorage.setItem(`postuler-juste:${cle}`, JSON.stringify(valeur));
+    localStorage.setItem(`vigie-emploi:${cle}`, JSON.stringify(valeur));
   } catch {
     /* stockage indisponible : la préférence vaut pour la session */
   }
@@ -134,7 +134,6 @@ function enregistrer(cle: string, valeur: unknown) {
 
 /** Langue de l'interface : le choix est mémorisé (localStorage) et l'emporte sur la configuration. */
 function ChoixLangue() {
-  const noms: Record<Langue, string> = { fr: 'Français', en: 'English' };
   // Codes courts dans l'en-tête (FR / EN), nom complet de la langue dans l'infobulle de chaque option.
   return (
     <select
@@ -146,7 +145,7 @@ function ChoixLangue() {
       title={t('entete.langue')}
     >
       {LANGUES.map((l) => (
-        <option key={l} value={l} lang={l} title={noms[l]}>
+        <option key={l} value={l} lang={l} title={NOMS_LANGUES[l]}>
           {l.toUpperCase()}
         </option>
       ))}
@@ -354,7 +353,7 @@ export function App() {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-lg font-extrabold tracking-tight">
-            postuler<span className="text-blue-700 dark:text-blue-400">-juste</span>
+            vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
           </h1>
           <div className="min-w-48 flex-1">
             <label htmlFor="recherche" className="sr-only">

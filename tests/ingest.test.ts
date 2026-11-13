@@ -73,7 +73,7 @@ describe('ingestion', () => {
   };
 
   beforeEach(() => {
-    dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-'));
+    dossier = mkdtempSync(join(tmpdir(), 'vigie-emploi-'));
     cpSync(EMAILS, join(dossier, 'emails'), { recursive: true });
     db = ouvrirBase(':memory:');
     telechargees.length = 0;

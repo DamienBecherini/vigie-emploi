@@ -199,7 +199,7 @@ export function creerApp(
       dossier: config.dossierDonnees,
       etat: 'pret',
       contrat: 1,
-      service: 'postuler-juste',
+      service: 'vigie-emploi',
       langue,
       version: VERSION,
       occupe: false,

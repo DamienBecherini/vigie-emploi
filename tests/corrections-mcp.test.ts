@@ -78,7 +78,7 @@ describe('serveur MCP : réponses de taille raisonnable', () => {
   };
 
   beforeAll(async () => {
-    const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-plafonds-'));
+    const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-plafonds-'));
     dossier = join(racine, 'espace');
     initialiserEspace({ dossier });
     const etat = ouvrirEtat({ dossierDonnees: dossier, env: {}, cwd: racine });
@@ -178,7 +178,7 @@ describe('grille : exemples dans le changement partiel', () => {
   });
 
   it('modifierGrille (CLI et MCP) : exemples recalculés en essai et après enregistrement, base vide', () => {
-    const dossier = mkdtempSync(join(tmpdir(), 'postuler-juste-exemples-'));
+    const dossier = mkdtempSync(join(tmpdir(), 'vigie-emploi-exemples-'));
     const db = ouvrirBase(':memory:');
     initialiserGrille(db, dossier);
     const essai = modifierGrille(db, dossier, { poids: { technique: 90 } }, { auteur: 'cli', resume: '', essai: true });

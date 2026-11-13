@@ -15,29 +15,29 @@ export const MODELE = join(RACINE_APP, 'modele');
  * à venir pour l'anglais), sinon modele/ (français).
  */
 export function modeleDeLangue(langue: Langue, racine: string = RACINE_APP): string {
-  if (langue === 'fr') return join(racine, 'modele');
+  if (langue === LANGUE_DEFAUT) return join(racine, 'modele');
   const traduit = join(racine, `modele-${langue}`);
   return existsSync(traduit) ? traduit : join(racine, 'modele');
 }
-export const BINAIRE = join(RACINE_APP, 'bin', 'postuler-juste.js');
+export const BINAIRE = join(RACINE_APP, 'bin', 'vigie-emploi.js');
 /** Consignes de l'application pour l'agent (AGENTS.md à la racine de l'application). */
 export const CONSIGNES_APP = join(RACINE_APP, 'AGENTS.md');
 
 /** Nom des consignes de l'application dans une langue : AGENTS.<langue>.md s'il existe, sinon AGENTS.md (français). */
 export function nomConsignesApp(langue: Langue, racine: string = RACINE_APP): string {
-  if (langue === 'fr') return 'AGENTS.md';
+  if (langue === LANGUE_DEFAUT) return 'AGENTS.md';
   return existsSync(join(racine, `AGENTS.${langue}.md`)) ? `AGENTS.${langue}.md` : 'AGENTS.md';
 }
-const DEPOT_PUBLIC = 'https://github.com/DamienBecherini/postuler-juste/blob/main/';
+const DEPOT_PUBLIC = 'https://github.com/DamienBecherini/vigie-emploi/blob/main/';
 /** Où l'init copie les consignes de l'application quand celle-ci tourne depuis le cache de npx. */
 export const COPIE_CONSIGNES = 'procedures/application.md';
 
 /**
  * Comment l'espace de travail relance l'application (consignes de l'IA et serveur MCP).
  * - Depuis le dépôt ou une installation durable (npm i -g, node_modules d'un projet, extension Claude Desktop) :
- *   `node <chemin>/bin/postuler-juste.js` ; dans le Node intégré de Claude Desktop, la commande MCP est « node » (celui du système).
- * - Depuis le cache de npx (`npx postuler-juste init …`) : ce cache peut être purgé, le chemin ne vaut rien.
- *   On écrit `npx -y postuler-juste@<version>` (version figée : la base et ses migrations restent cohérentes) ;
+ *   `node <chemin>/bin/vigie-emploi.js` ; dans le Node intégré de Claude Desktop, la commande MCP est « node » (celui du système).
+ * - Depuis le cache de npx (`npx vigie-emploi init …`) : ce cache peut être purgé, le chemin ne vaut rien.
+ *   On écrit `npx -y vigie-emploi@<version>` (version figée : la base et ses migrations restent cohérentes) ;
  *   sous Windows, le client MCP lance npx via `cmd /c` (npx y est un script .cmd).
  */
 export interface Lancement {
@@ -57,7 +57,7 @@ export function lancement(
   node: string = commandeNode(),
 ): Lancement {
   if (/[\\/]_npx[\\/]/.test(racine)) {
-    const paquet = `postuler-juste@${version}`;
+    const paquet = `vigie-emploi@${version}`;
     const args = ['-y', paquet, 'mcp'];
     return {
       mode: 'npx',
@@ -66,7 +66,7 @@ export function lancement(
       mcp: plateforme === 'win32' ? { command: 'cmd', args: ['/c', 'npx', ...args] } : { command: 'npx', args },
     };
   }
-  const binaire = join(racine, 'bin', 'postuler-juste.js');
+  const binaire = join(racine, 'bin', 'vigie-emploi.js');
   return { mode: 'chemin', commande: `node "${oblique(binaire)}"`, app: oblique(racine), mcp: { command: node, args: [binaire, 'mcp'] } };
 }
 
@@ -137,7 +137,7 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
     if (readdirSync(dossier).length) erreurUtilisateur(m('init.nonVide', { dossier }));
   }
   const port = o.port ?? 4410;
-  const nomMcp = o.nomMcp ?? 'postuler-juste';
+  const nomMcp = o.nomMcp ?? 'vigie-emploi';
   if (!/^[\w-]+$/.test(nomMcp)) erreurUtilisateur(m('init.nomMcpInvalide', { nom: nomMcp }));
 
   const gabarit = o.gabarit ? join(DOSSIER_GABARITS, o.gabarit) : GABARIT_DEFAUT;
@@ -172,11 +172,11 @@ export function initialiserEspace(o: OptionsInit): ResultatInit {
   writeFileSync(config, `${JSON.stringify({ dossierDonnees: '.', port, langue }, null, 2)}\n`, 'utf8');
 
   const mcp = join(dossier, '.mcp.json');
-  const serveur = { ...lance.mcp, env: { POSTULER_JUSTE_DATA: dossier } };
+  const serveur = { ...lance.mcp, env: { VIGIE_EMPLOI_DATA: dossier } };
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [nomMcp]: serveur } }, null, 2)}\n`, 'utf8');
 
   const avertissements: string[] = [];
-  if (langue !== 'fr' && modele === MODELE) avertissements.push(m('init.modeleFrancais'));
+  if (langue !== LANGUE_DEFAUT && modele === MODELE) avertissements.push(m('init.modeleFrancais'));
   if (lance.mode === 'npx') avertissements.push(m('init.npx', { commande }));
   if (!existsSync(join(RACINE_APP, 'dist', 'ui', 'index.html'))) avertissements.push(m('init.nonCompile', { app }));
   const navigateur = trouverNavigateur(o.env);

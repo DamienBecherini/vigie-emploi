@@ -19,7 +19,7 @@ Sprint 4 : jusqu'ici l'IA donnait une note brute « au jugement » et des pénal
 9. **Correction à la main** (`modifierSousNotes`) : part de la dernière note, remplace les sous-notes, entrées ou règles modifiées, et ajoute une note à l'historique (origine `interface`) ; chaque sous-note garde son origine (`ia` ou `interface`). Elle vaut aussi pour passer une ancienne note globale en note à critères.
 10. **Restauration** : le contenu d'une ancienne version devient une nouvelle version (l'historique ne se réécrit pas).
 11. **MCP** : `grille` (grille + consignes de notation générées depuis la grille + format attendu + notes calculées des exemples), `modifier_grille` (changement partiel, `essai` pour l'aperçu, `restaurer_version`), `renoter`, `historique_grille` ; `noter_offre` / `noter_lot` acceptent `criteres`, `entrees`, `bloquants` (et `essai` pour le lot). Les consignes demandent à l'IA de ne modifier la grille qu'à la demande de l'utilisateur, après un essai.
-12. **Exemple générique** dans le dépôt (`exemples/grille.json`, sociétés fictives), copié par `postuler-juste grille --init`.
+12. **Exemple générique** dans le dépôt (`exemples/grille.json`, sociétés fictives), copié par `vigie-emploi grille --init`.
 
 ## Conséquences
 

@@ -5,12 +5,11 @@ import { Check, Monitor, Moon, Sun, X } from 'lucide-react';
 import {
   ACCENTS,
   LIBELLES_ACCENTS,
-  LIBELLES_ACCENTS_EN,
   LIBELLES_NEUTRES,
-  LIBELLES_NEUTRES_EN,
   NEUTRES,
   PERSO,
   teinte,
+  textesPalette,
   type Accent,
   type Neutre,
   type Palette,
@@ -18,8 +17,8 @@ import {
 } from '../theme.ts';
 import { langue, t } from '../i18n/index.ts';
 
-const neutres = () => (langue() === 'en' ? LIBELLES_NEUTRES_EN : LIBELLES_NEUTRES);
-const accents = () => (langue() === 'en' ? LIBELLES_ACCENTS_EN : LIBELLES_ACCENTS);
+const neutres = () => LIBELLES_NEUTRES[langue()];
+const accents = () => LIBELLES_ACCENTS[langue()];
 
 export type Mode = 'systeme' | 'clair' | 'sombre';
 
@@ -67,7 +66,10 @@ function ChoixPalette(props: {
     <fieldset className="space-y-2">
       <legend className="etiquette">{props.titre}</legend>
       <div className="grid gap-2 sm:grid-cols-2">
-        {props.palettes.map((p) => (langue() === 'en' && p.en ? carte(p.id, p, p.en.nom, p.en.description) : carte(p.id, p, p.nom, p.description)))}
+        {props.palettes.map((p) => {
+          const { nom: libelle, description } = textesPalette(p, langue());
+          return carte(p.id, p, libelle, description);
+        })}
         {carte(PERSO, props.perso, t('theme.perso'), `${neutres()[props.perso.neutre]} · ${accents()[props.perso.accent]}`)}
       </div>
       {props.choisie === PERSO && (

@@ -7,7 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { marked, type Token, type Tokens } from 'marked';
 import { RACINE_APP, variable } from '../core/config.ts';
 import { capturerPages } from './pages.ts';
-import { langueCourante, t } from '../i18n/index.ts';
+import { LANGUE_DEFAUT, langueCourante, t, type Langue } from '../i18n/index.ts';
 
 /** Gabarit livré avec l'application. */
 export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
@@ -20,16 +20,24 @@ export const GABARIT_DEFAUT = join(RACINE_APP, 'gabarits', 'cv', 'sobre');
  */
 export const SECTIONS_DEUX_COLONNES = /compétences|competences|competencies|formations|certifications|langues|skills|education|languages/i;
 
-/** Titres de section usuels d'un CV en anglais : un CV qui en a au moins deux est déclaré en anglais (attribut lang). */
-const SECTIONS_ANGLAISES = /^(summary|profile|professional summary|about me|(work |professional )?experience|employment history|(technical |key |core )?skills|(key |core )?competencies|education|education (&|and) certifications|certifications|languages|projects|interests)$/i;
+/**
+ * Titres de section usuels d'un CV dans les langues autres que celle par défaut : un CV qui en a au moins deux est déclaré
+ * dans cette langue (attribut lang). Une langue absente de la table n'est simplement jamais détectée.
+ */
+const SECTIONS_PAR_LANGUE: Partial<Record<Langue, RegExp>> = {
+  en: /^(summary|profile|professional summary|about me|(work |professional )?experience|employment history|(technical |key |core )?skills|(key |core )?competencies|education|education (&|and) certifications|certifications|languages|projects|interests)$/i,
+};
 
 /** Marqueurs de saut de page manuel : <!-- saut-de-page -->, son alias anglais <!-- page-break -->, ou un div break-after. */
 const SAUT_DE_PAGE = /saut-de-page|page-break|break-after/i;
 
-/** Langue d'un CV Markdown d'après ses titres de section : « en » s'il a au moins deux titres anglais usuels, sinon « fr ». */
-export function langueDuCv(markdown: string): 'fr' | 'en' {
+/** Langue d'un CV Markdown d'après ses titres de section : la première langue dont il a au moins deux titres usuels, sinon la langue par défaut. */
+export function langueDuCv(markdown: string): Langue {
   const titres = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
-  return titres.filter((x) => SECTIONS_ANGLAISES.test(x)).length >= 2 ? 'en' : 'fr';
+  for (const [langue, motif] of Object.entries(SECTIONS_PAR_LANGUE) as [Langue, RegExp][]) {
+    if (titres.filter((x) => motif.test(x)).length >= 2) return langue;
+  }
+  return LANGUE_DEFAUT;
 }
 
 const ICONES: Record<string, string> = {
@@ -269,7 +277,7 @@ const NAVIGATEURS_LINUX = [
   '/snap/bin/chromium',
 ];
 
-/** Premier Chrome / Edge / Chromium trouvé (POSTULER_JUSTE_NAVIGATEUR pour l'imposer), ou null. */
+/** Premier Chrome / Edge / Chromium trouvé (VIGIE_EMPLOI_NAVIGATEUR pour l'imposer), ou null. */
 export function trouverNavigateur(env: NodeJS.ProcessEnv = process.env): string | null {
   const impose = variable(env, 'NAVIGATEUR');
   if (impose) return existsSync(impose) ? impose : null;
@@ -365,15 +373,17 @@ export function genererCv(markdown: string, dossierGabarit: string, navigateur: 
 
 export const DOSSIER_GABARITS = join(RACINE_APP, 'gabarits', 'cv');
 
-/** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
-/** Descriptions anglaises des gabarits livrés (l'en-tête des feuilles est en français). */
-const DESCRIPTIONS_EN: Record<string, string> = {
-  compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
-  moderne: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
-  sobre:
-    '"sobre" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
+/** Descriptions traduites des gabarits livrés, par langue (l'en-tête des feuilles, lu à défaut, est en français). */
+const DESCRIPTIONS_GABARITS: Partial<Record<Langue, Record<string, string>>> = {
+  en: {
+    compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
+    moderne: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
+    sobre:
+      '"sobre" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
+  },
 };
 
+/** Gabarits livrés avec l'application : nom du dossier et première phrase de l'en-tête de gabarit.css. */
 export function listerGabarits(): { nom: string; description: string }[] {
   return readdirSync(DOSSIER_GABARITS)
     .filter((n) => existsSync(join(DOSSIER_GABARITS, n, 'gabarit.css')))
@@ -382,7 +392,7 @@ export function listerGabarits(): { nom: string; description: string }[] {
       const entete = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
       const phrase = entete.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
       // La description vient de l'en-tête (français) de la feuille ; traduite pour les gabarits livrés connus.
-      const traduite = langueCourante() === 'en' ? DESCRIPTIONS_EN[nom] : undefined;
+      const traduite = DESCRIPTIONS_GABARITS[langueCourante()]?.[nom];
       return { nom, description: traduite ?? phrase };
     });
 }

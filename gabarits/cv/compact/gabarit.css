@@ -1,7 +1,7 @@
 /* Gabarit « compact » — CV dense sur une seule colonne, pour les parcours longs ou un CV en 1 page.
    Sans empattement (Source Sans 3, licence SIL OFL, voir fonts/OFL.txt), noir et gris, dates des postes
    au-dessus de l'intitulé (pas de colonne de dates), marges réduites. Photo facultative, petite, à droite.
-   Pour l'adapter : changer les couleurs de :root, puis régénérer le PDF (postuler-juste cv). */
+   Pour l'adapter : changer les couleurs de :root, puis régénérer le PDF (vigie-emploi cv). */
 
 @font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 400; src: url("fonts/source-sans-3-400-normal.woff2") format("woff2"); }
 @font-face { font-family: "Source Sans 3"; font-style: italic; font-weight: 400; src: url("fonts/source-sans-3-400-italic.woff2") format("woff2"); }

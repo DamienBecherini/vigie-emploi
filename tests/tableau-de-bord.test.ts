@@ -14,7 +14,7 @@ import { creerServeurMcp, ouvrirEtatTolerant } from '../src/mcp/serveur.ts';
 import { ouvrirEtat } from '../src/mcp/etat.ts';
 import { lancerDetache, ouvrirTableauDeBord, sonder, type Dependances, type Sante } from '../src/mcp/tableau-de-bord.ts';
 
-const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-tableau-'));
+const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-tableau-'));
 afterAll(() => rmSync(racine, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
 
 const sansElectron = { node: '24.12.0' } as unknown as NodeJS.ProcessVersions;
@@ -52,21 +52,21 @@ describe('réglages de l’extension Claude Desktop', () => {
   const dossier = join(racine, 'reglages');
 
   it('variable vide ou non substituée = absente', () => {
-    const c = chargerConfig({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: '${user_config.langue}' }, cwd: racine });
+    const c = chargerConfig({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: '${user_config.langue}' }, cwd: racine });
     expect(c.langue).toBe('fr');
-    const e = ouvrirEtat({ env: { POSTULER_JUSTE_DATA: '${user_config.dossier}' }, cwd: racine });
+    const e = ouvrirEtat({ env: { VIGIE_EMPLOI_DATA: '${user_config.dossier}' }, cwd: racine });
     expect(e.parDefaut).toBe(true);
   });
 
   it('langue saisie à la main : casse et noms tolérés', () => {
-    expect(chargerConfig({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: ' EN ' }, cwd: racine }).langue).toBe('en');
-    expect(chargerConfig({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: 'English' }, cwd: racine }).langue).toBe('en');
-    expect(chargerConfig({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: 'Français' }, cwd: racine }).langue).toBe('fr');
+    expect(chargerConfig({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: ' EN ' }, cwd: racine }).langue).toBe('en');
+    expect(chargerConfig({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: 'English' }, cwd: racine }).langue).toBe('en');
+    expect(chargerConfig({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: 'Français' }, cwd: racine }).langue).toBe('fr');
   });
 
   it('langue inconnue : le serveur MCP démarre quand même (langue ignorée)', () => {
-    expect(() => ouvrirEtat({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: 'de' }, cwd: racine })).toThrow(/de/);
-    const e = ouvrirEtatTolerant({ dossierDonnees: dossier, env: { POSTULER_JUSTE_LANGUE: 'de' }, cwd: racine });
+    expect(() => ouvrirEtat({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: 'de' }, cwd: racine })).toThrow(/de/);
+    const e = ouvrirEtatTolerant({ dossierDonnees: dossier, env: { VIGIE_EMPLOI_LANGUE: 'de' }, cwd: racine });
     expect(e.config.langue).toBe('fr');
   });
 });
@@ -80,7 +80,7 @@ function simuler(ports: Record<number, Sante>, o: { node?: string | null; repond
     node: () => (o.node === undefined ? '/usr/bin/node' : o.node),
     lancerDetache: (_node, config, port) => {
       lances.push({ mode: 'detache', port });
-      if (o.repond !== false) ports[port] = { service: 'postuler-juste', dossier: o.dossier ?? config.dossierDonnees };
+      if (o.repond !== false) ports[port] = { service: 'vigie-emploi', dossier: o.dossier ?? config.dossierDonnees };
       return 1234;
     },
     lancerHeberge: async (_config, port) => {
@@ -96,7 +96,7 @@ describe('ouvrir_tableau_de_bord (logique)', () => {
   const config = { dossierDonnees: join(racine, 'espace'), port: 4410, langue: 'fr' } as Config;
 
   it('tableau de bord déjà lancé pour cet espace : son adresse, sans relancer', async () => {
-    const { dep, lances, ouverts } = simuler({ 4410: { service: 'postuler-juste', dossier: config.dossierDonnees.toUpperCase() } });
+    const { dep, lances, ouverts } = simuler({ 4410: { service: 'vigie-emploi', dossier: config.dossierDonnees.toUpperCase() } });
     const r = await ouvrirTableauDeBord(config, {}, dep);
     expect(r).toMatchObject({ url: 'http://localhost:4410/', deja_lance: true, mode: 'existant', navigateur_ouvert: false });
     expect(lances).toEqual([]);
@@ -105,7 +105,7 @@ describe('ouvrir_tableau_de_bord (logique)', () => {
 
   it('port pris par un autre espace ou un autre logiciel : port suivant libre, processus détaché', async () => {
     const { dep, lances, ouverts } = simuler({
-      4410: { service: 'postuler-juste', dossier: '/autre/espace' },
+      4410: { service: 'vigie-emploi', dossier: '/autre/espace' },
       4411: { service: null },
     });
     const r = await ouvrirTableauDeBord(config, { ouvrir: true }, dep);

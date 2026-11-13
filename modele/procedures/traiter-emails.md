@@ -48,4 +48,4 @@ Tableau des offres au-dessus du seuil de la grille, meilleures d'abord : note, n
 
 Finir par : « Dis-moi sur quelles offres tu dis go ; les autres passeront en écartées. » Sur sa réponse : les offres sans go passent en `ecartee` (raison en commentaire), puis proposer de préparer les candidatures (procédure `preparer-go`).
 
-Si l'espace est versionné avec git : commit de la base (`data/postuler-juste.sqlite`) avec un message « Lot du JJ/MM : N offres, X écartées, Y notées ».
+Si l'espace est versionné avec git : commit de la base (`data/vigie-emploi.sqlite`) avec un message « Lot du JJ/MM : N offres, X écartées, Y notées ».

@@ -50,7 +50,7 @@ export function useParametres(): [URLSearchParams, (maj: Partial<Record<CleUrl, 
 
 function lire<T>(cle: string, defaut: T): T {
   try {
-    const v = localStorage.getItem(`postuler-juste:${cle}`);
+    const v = localStorage.getItem(`vigie-emploi:${cle}`);
     return v === null ? defaut : (JSON.parse(v) as T);
   } catch {
     return defaut;
@@ -62,7 +62,7 @@ export function usePreference<T>(cle: string, defaut: T): [T, (v: T) => void] {
   const [valeur, setValeur] = useState<T>(() => lire(cle, defaut));
   useEffect(() => {
     try {
-      localStorage.setItem(`postuler-juste:${cle}`, typeof valeur === 'string' ? valeur : JSON.stringify(valeur));
+      localStorage.setItem(`vigie-emploi:${cle}`, typeof valeur === 'string' ? valeur : JSON.stringify(valeur));
     } catch {
       /* stockage indisponible : la préférence vaut pour la session */
     }
@@ -74,14 +74,14 @@ export function usePreference<T>(cle: string, defaut: T): [T, (v: T) => void] {
 export function usePreferenceTexte(cle: string, defaut: string): [string, (v: string) => void] {
   const [valeur, setValeur] = useState<string>(() => {
     try {
-      return localStorage.getItem(`postuler-juste:${cle}`) ?? defaut;
+      return localStorage.getItem(`vigie-emploi:${cle}`) ?? defaut;
     } catch {
       return defaut;
     }
   });
   useEffect(() => {
     try {
-      localStorage.setItem(`postuler-juste:${cle}`, valeur);
+      localStorage.setItem(`vigie-emploi:${cle}`, valeur);
     } catch {
       /* ignoré */
     }

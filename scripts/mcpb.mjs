@@ -1,38 +1,39 @@
 #!/usr/bin/env node
-// Construit l'extension Claude Desktop (MCP Bundle) : build/postuler-juste-<version>.mcpb.
+// Construit l'extension Claude Desktop (MCP Bundle) : build/vigie-emploi-<version>.mcpb.
 // 1. compile l'application (npm run build : dist/ et dist/ui), sauf avec --sans-build ;
-// 2. prépare build/mcpb/postuler-juste/ : JavaScript compilé, ressources lues à l'exécution, manifeste (version de
+// 2. prépare build/mcpb/vigie-emploi/ : JavaScript compilé, ressources lues à l'exécution, manifeste (version de
 //    package.json), icône, et node_modules de production seulement (npm ci --omit=dev) ;
 // 3. valide le manifeste et emballe le dossier avec l'outil officiel (@anthropic-ai/mcpb : validate, pack).
 // Usage : npm run mcpb [-- --sans-build]
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(readFileSync(join(racine, 'package.json'), 'utf8'));
 const sortie = join(racine, 'build');
-const etage = join(sortie, 'mcpb', 'postuler-juste');
-const paquet = join(sortie, `postuler-juste-${pkg.version}.mcpb`);
+const etage = join(sortie, 'mcpb', 'vigie-emploi');
+const paquet = join(sortie, `vigie-emploi-${pkg.version}.mcpb`);
 const cliMcpb = join(racine, 'node_modules', '@anthropic-ai', 'mcpb', 'dist', 'cli', 'cli.js');
+
+/** Versions traduites présentes à la racine : modele-<langue>/, AGENTS.<langue>.md, README.<langue>.md. */
+const TRADUCTIONS = readdirSync(racine).filter((n) => /^modele-[a-z]{2,3}$|^(AGENTS|README)\.[a-z]{2,3}\.md$/.test(n));
 
 /** Ce que l'application lit à l'exécution (comme le champ files de package.json), sans le dossier docs/ entier. */
 const A_COPIER = [
-  'bin/postuler-juste.js',
+  'bin/vigie-emploi.js',
   'dist',
   'migrations',
   'modele',
-  'modele-en',
   'gabarits',
   'exemples',
   'AGENTS.md',
-  'AGENTS.en.md',
   'docs/utiliser-avec-une-ia.md',
-  'postuler-juste.config.example.json',
+  'vigie-emploi.config.example.json',
   'LICENSE',
   'README.md',
-  'README.en.md',
+  ...TRADUCTIONS,
 ];
 
 function lancer(commande, args, options = {}) {

@@ -2,6 +2,9 @@
 // Un dictionnaire par langue, de même type : une clé absente de la traduction anglaise est une erreur de compilation.
 // Les textes portent des paramètres « {nom} » ; un texte au pluriel est un objet { one, other } choisi d'après
 // le paramètre « n » (règles de pluriel de la langue : en français, 0 et 1 sont au singulier).
+//
+// Ajouter une langue : docs/ajouter-une-langue.md. Ici, l'ajouter à LANGUES, LOCALES et NOMS_LANGUES ; le compilateur
+// signale ensuite chaque texte à traduire.
 
 export const LANGUES = ['fr', 'en'] as const;
 export type Langue = (typeof LANGUES)[number];
@@ -10,8 +13,19 @@ export const LANGUE_DEFAUT: Langue = 'fr';
 /** Locale utilisée pour les dates et les nombres (Intl) : jour avant le mois dans les deux langues. */
 export const LOCALES: Record<Langue, string> = { fr: 'fr-FR', en: 'en-GB' };
 
+/** Nom de chaque langue dans cette langue (sélecteur de l'interface ; aussi accepté comme valeur de « langue »). */
+export const NOMS_LANGUES: Record<Langue, string> = { fr: 'Français', en: 'English' };
+
+/**
+ * Texte au pluriel : `one` et `other` toujours ; `zero`, `two`, `few`, `many` pour les langues qui les distinguent
+ * (catégories de Intl.PluralRules : polonais, arabe…). Une catégorie absente retombe sur `other`.
+ */
 export interface Pluriel {
+  zero?: string;
   one: string;
+  two?: string;
+  few?: string;
+  many?: string;
   other: string;
 }
 export type Texte = string | Pluriel;
@@ -33,7 +47,7 @@ function reglesPluriel(langue: Langue): Intl.PluralRules {
 
 /** Remplace les paramètres {nom} ; un paramètre absent laisse le marqueur visible (oubli repérable). */
 export function traduire(texte: Texte, langue: Langue, params: Params = {}): string {
-  const brut = typeof texte === 'string' ? texte : reglesPluriel(langue).select(Number(params.n ?? 0)) === 'one' ? texte.one : texte.other;
+  const brut = typeof texte === 'string' ? texte : (texte[reglesPluriel(langue).select(Number(params.n ?? 0))] ?? texte.other);
   return brut.replace(/\{(\w+)\}/g, (m, cle: string) => {
     const v = params[cle];
     return v === undefined || v === null ? m : String(v);

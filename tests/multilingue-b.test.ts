@@ -18,7 +18,7 @@ import { creerServeurMcp } from '../src/mcp/serveur.ts';
 import { ouvrirEtat, type EtatMcp } from '../src/mcp/etat.ts';
 
 const APP = join(import.meta.dirname, '..');
-const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-i18n-b-'));
+const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-i18n-b-'));
 afterAll(() => rmSync(racine, { recursive: true, force: true }));
 afterEach(() => definirLangue('fr'));
 
@@ -51,7 +51,7 @@ describe('modele-en', () => {
 
 describe('init --langue en', () => {
   const espace = join(racine, 'espace-en');
-  const r = initialiserEspace({ dossier: espace, langue: 'en', env: { POSTULER_JUSTE_NAVIGATEUR: '/nulle/part' } });
+  const r = initialiserEspace({ dossier: espace, langue: 'en', env: { VIGIE_EMPLOI_NAVIGATEUR: '/nulle/part' } });
 
   it('copie modele-en sans marqueur restant, avec le .gitignore', () => {
     for (const f of arborescence(espace).filter((x) => /\.(md|txt)$/.test(x))) {
@@ -92,7 +92,7 @@ describe('messages du noyau', () => {
   it('erreur de configuration reconnue par son code, message dans la langue de la variable', () => {
     let e: unknown;
     try {
-      chargerConfig({ cwd: racine, env: { POSTULER_JUSTE_LANGUE: 'en' } });
+      chargerConfig({ cwd: racine, env: { VIGIE_EMPLOI_LANGUE: 'en' } });
     } catch (x) {
       e = x;
     }
@@ -114,7 +114,7 @@ describe('serveur MCP en anglais', () => {
   let instructions: string | undefined;
 
   beforeAll(async () => {
-    etat = ouvrirEtat({ dossierDonnees: espace, env: { POSTULER_JUSTE_LANGUE: 'en' }, cwd: racine });
+    etat = ouvrirEtat({ dossierDonnees: espace, env: { VIGIE_EMPLOI_LANGUE: 'en' }, cwd: racine });
     const serveur = creerServeurMcp(etat);
     const [cote1, cote2] = InMemoryTransport.createLinkedPair();
     client = new Client({ name: 'test', version: '1.0.0' });
@@ -127,7 +127,7 @@ describe('serveur MCP en anglais', () => {
   });
 
   it('instructions, outils et prompts en anglais', async () => {
-    expect(instructions).toMatch(/^postuler-juste helps the user/);
+    expect(instructions).toMatch(/^vigie-emploi helps the user/);
     expect(instructions).not.toMatch(/recherche d'emploi/);
     const { tools } = await client.listTools();
     const lister = tools.find((t) => t.name === 'lister_offres')!;
@@ -147,10 +147,10 @@ describe('serveur MCP en anglais', () => {
     expect(res.ok).toBe(true);
     expect(res.suite[0]).toMatch(/^Ask the user to drop their CV/);
     expect(readFileSync(join(espace, 'DEMARRAGE.md'), 'utf8')).toMatch(/^# Onboarding/);
-    expect(JSON.parse(readFileSync(join(espace, 'postuler-juste.config.json'), 'utf8')).langue).toBe('en');
+    expect(JSON.parse(readFileSync(join(espace, 'vigie-emploi.config.json'), 'utf8')).langue).toBe('en');
     const prompt = await client.getPrompt({ name: 'demarrage' });
     const texte = (prompt.messages[0].content as { text: string }).text;
-    expect(texte).toMatch(/^Instructions of my postuler-juste workspace/);
+    expect(texte).toMatch(/^Instructions of my vigie-emploi workspace/);
     expect(texte).toMatch(/Talk to me in English\.$/);
     expect(() => evenementOuErreur(etat.db!, 999)).toThrow('Event 999 not found');
   });

@@ -12,7 +12,7 @@ import { ouvrirEtat, type EtatMcp } from '../src/mcp/etat.ts';
 import { trouverNavigateur } from '../src/cv/cv.ts';
 
 const RACINE = join(import.meta.dirname, '..');
-const racine = mkdtempSync(join(tmpdir(), 'postuler-juste-autonome-'));
+const racine = mkdtempSync(join(tmpdir(), 'vigie-emploi-autonome-'));
 afterAll(() => rmSync(racine, { recursive: true, force: true }));
 
 type Contenu = { type: string; text?: string; data?: string; mimeType?: string };
@@ -86,7 +86,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
     const r = json(await appeler('initialiser_espace', {}));
     expect(r.ok).toBe(true);
     expect(r.dossier).toBe(espace.replace(/\\/g, '/'));
-    expect(r.avertissements as string[]).not.toEqual(expect.arrayContaining([expect.stringMatching(/POSTULER_JUSTE_DATA/)]));
+    expect(r.avertissements as string[]).not.toEqual(expect.arrayContaining([expect.stringMatching(/VIGIE_EMPLOI_DATA/)]));
     expect(existsSync(join(espace, 'AGENTS.md'))).toBe(true);
     expect(etat.db).not.toBeNull();
     expect(json(await appeler('lister_offres'))).toMatchObject({ total: 0 });
@@ -119,8 +119,8 @@ describe('serveur MCP autonome (en mémoire)', () => {
 
   it('expose AGENTS.md comme ressource', async () => {
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toContain('postuler-juste://espace/AGENTS.md');
-    const r = await client.readResource({ uri: 'postuler-juste://espace/AGENTS.md' });
+    expect(resources.map((r) => r.uri)).toContain('vigie-emploi://espace/AGENTS.md');
+    const r = await client.readResource({ uri: 'vigie-emploi://espace/AGENTS.md' });
     expect((r.contents[0] as { text: string }).text).toContain('Règles non négociables');
   });
 
@@ -137,7 +137,7 @@ describe('serveur MCP autonome (en mémoire)', () => {
       expect(r.isError, chemin).toBe(true);
     }
     expect(existsSync(join(racine, 'dehors.md'))).toBe(false);
-    const lu = (await appeler('lire_fichier', { chemin: 'data/postuler-juste.sqlite' })) as Resultat;
+    const lu = (await appeler('lire_fichier', { chemin: 'data/vigie-emploi.sqlite' })) as Resultat;
     expect(lu.isError).toBe(true);
 
     const liste = json(await appeler('lister_fichiers', { dossier: 'candidatures', profondeur: 2 }));
@@ -186,9 +186,9 @@ describe('serveur MCP autonome (stdio, bout à bout)', () => {
   beforeAll(async () => {
     const transport = new StdioClientTransport({
       command: process.execPath,
-      args: [join(RACINE, 'bin', 'postuler-juste.js'), 'mcp'],
+      args: [join(RACINE, 'bin', 'vigie-emploi.js'), 'mcp'],
       cwd: racine,
-      env: { ...(process.env as Record<string, string>), POSTULER_JUSTE_CONFIG: '', POSTULER_JUSTE_DATA: espace },
+      env: { ...(process.env as Record<string, string>), VIGIE_EMPLOI_CONFIG: '', VIGIE_EMPLOI_DATA: espace },
       stderr: 'pipe',
     });
     client = new Client({ name: 'essai', version: '1.0.0' });

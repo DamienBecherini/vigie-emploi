@@ -310,8 +310,8 @@ export function App() {
   const page = Number(params.get('page') ?? 1);
   const taille = Number(params.get('taille') ?? 50);
 
-  // Changement de page : si la barre au-dessus du tableau (filtres, nombre d'offres, colonnes) est sortie de l'écran,
-  // on remonte jusqu'à elle, sous l'en-tête collé de l'application, pour revoir l'en-tête du tableau.
+  // Repères de mise en page : en-tête de l'application (et sa rangée collée en fenêtre étroite), barre au-dessus du
+  // tableau (cible de la remontée au changement de page), tableau et son conteneur à défilement horizontal.
   const enteteRef = useRef<HTMLElement>(null);
   const ligneRef = useRef<HTMLDivElement>(null);
   const barreRef = useRef<HTMLDivElement>(null);
@@ -335,18 +335,15 @@ export function App() {
       window.removeEventListener('resize', maj);
     };
   }, [partieCollee]);
+  // La remontée attend les lignes de la nouvelle page (effet plus bas, après la requête) : une page plus courte
+  // (souvent la dernière) réduit la hauteur du document à leur arrivée, ce qui recale le défilement et casserait
+  // une remontée lancée trop tôt.
   const pagePrecedente = useRef(page);
-  useEffect(() => {
-    if (pagePrecedente.current === page) return;
+  const remonteeEnAttente = useRef(false);
+  if (pagePrecedente.current !== page) {
     pagePrecedente.current = page;
-    const barre = barreRef.current;
-    if (!barre) return;
-    const sousEntete = basEntete() + 8;
-    const haut = barre.getBoundingClientRect().top;
-    if (haut >= sousEntete) return;
-    const doux = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: window.scrollY + haut - sousEntete, behavior: doux ? 'smooth' : 'auto' });
-  }, [page, basEntete]);
+    remonteeEnAttente.current = true;
+  }
   // Tri sur un ou plusieurs niveaux : ?tri=recue_le:desc,note:desc (ancien format : ?tri=note&ordre=asc).
   const ordreDefaut = params.get('ordre') === 'asc' ? 'asc' : 'desc';
   const niveaux = useMemo(() => lireNiveaux(params.get('tri'), ordreDefaut), [params, ordreDefaut]);
@@ -362,6 +359,22 @@ export function App() {
 
   const columns = useMemo(colonnes, []);
   const liste = useQuery({ queryKey: ['offres', cle], queryFn: () => api.offres(requete), placeholderData: keepPreviousData });
+
+  // Changement de page : une fois les lignes de la nouvelle page affichées (plus les données de l'ancienne gardées en
+  // attendant), si la barre au-dessus du tableau est sortie de l'écran, on remonte jusqu'à elle, sous l'en-tête collé.
+  const pretePage = liste.data !== undefined && !liste.isPlaceholderData;
+  useEffect(() => {
+    if (!remonteeEnAttente.current || !pretePage) return;
+    remonteeEnAttente.current = false;
+    const barre = barreRef.current;
+    if (!barre) return;
+    const sousEntete = basEntete() + 8;
+    const haut = barre.getBoundingClientRect().top;
+    if (haut >= sousEntete) return;
+    // Saut immédiat (pas d'animation) : on veut voir tout de suite le haut de la nouvelle page, et une animation est
+    // interrompue par le navigateur quand la hauteur du contenu change encore (recalage du défilement).
+    window.scrollTo({ top: window.scrollY + haut - sousEntete, behavior: 'instant' });
+  }, [pretePage, liste.data, page, basEntete]);
   const meta = useQuery({ queryKey: ['meta'], queryFn: api.meta });
 
   const tri2: SortingState = useMemo(() => niveaux.map((n) => ({ id: n.colonne, desc: n.ordre === 'desc' })), [niveaux]);

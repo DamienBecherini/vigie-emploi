@@ -54,7 +54,9 @@ function Cases(props: {
   return (
     <fieldset className="min-w-0">
       <legend className="etiquette">{props.legende}</legend>
-      <div className="flex max-h-56 flex-col gap-0.5 overflow-y-auto pr-1">
+      {/* Liste qui défile : encadrée pour qu'on en voie les bords ; sur téléphone, une bande libre à droite laisse le
+          pouce faire défiler le tiroir plutôt que la liste. */}
+      <div className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 max-md:mr-10 dark:border-slate-700">
         {props.options.map((o) => (
           <label key={o.valeur} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800">
             <input
@@ -78,7 +80,8 @@ export function Filtres({ params, modifier, meta }: { params: URLSearchParams; m
   const nParStatut = new Map((meta?.statuts ?? []).map((s) => [s.valeur, s.n]));
   const actifs = CLES_FILTRES.filter((k) => params.has(k)).length;
   return (
-    <div className="flex flex-col gap-4">
+    // Sur téléphone, plus d'espace entre les blocs : de quoi poser le pouce hors des listes qui défilent.
+    <div className="flex flex-col gap-4 max-md:gap-7">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold">{t('filtres.titre')}{actifs ? ` (${actifs})` : ''}</h2>
         <button

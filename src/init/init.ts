@@ -4,6 +4,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, s
 import { join, resolve } from 'node:path';
 import { NOM_FICHIER_CONFIG, RACINE_APP } from '../core/config.ts';
 import { exempleGrille } from '../core/grille-stockage.ts';
+import { commandeNode } from '../core/node.ts';
 import { DOSSIER_GABARITS, GABARIT_DEFAUT, listerGabarits, trouverNavigateur } from '../cv/cv.ts';
 import { estLangue, LANGUE_DEFAUT, LANGUES, tl, type Langue } from '../i18n/index.ts';
 
@@ -33,7 +34,8 @@ export const COPIE_CONSIGNES = 'procedures/application.md';
 
 /**
  * Comment l'espace de travail relance l'application (consignes de l'IA et serveur MCP).
- * - Depuis le dépôt ou une installation durable (npm i -g, node_modules d'un projet) : `node <chemin>/bin/postuler-juste.js`.
+ * - Depuis le dépôt ou une installation durable (npm i -g, node_modules d'un projet, extension Claude Desktop) :
+ *   `node <chemin>/bin/postuler-juste.js` ; dans le Node intégré de Claude Desktop, la commande MCP est « node » (celui du système).
  * - Depuis le cache de npx (`npx postuler-juste init …`) : ce cache peut être purgé, le chemin ne vaut rien.
  *   On écrit `npx -y postuler-juste@<version>` (version figée : la base et ses migrations restent cohérentes) ;
  *   sous Windows, le client MCP lance npx via `cmd /c` (npx y est un script .cmd).
@@ -52,7 +54,7 @@ export function lancement(
   racine: string = RACINE_APP,
   version: string = versionApp(racine),
   plateforme: NodeJS.Platform = process.platform,
-  node: string = process.execPath,
+  node: string = commandeNode(),
 ): Lancement {
   if (/[\\/]_npx[\\/]/.test(racine)) {
     const paquet = `postuler-juste@${version}`;

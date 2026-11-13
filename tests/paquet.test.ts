@@ -57,3 +57,32 @@ describe('paquet npm', () => {
     expect(base.migrations().length).toBeGreaterThan(0);
   });
 });
+
+describe('extension Claude Desktop (mcpb/manifest.json)', () => {
+  const m = JSON.parse(readFileSync(join(racine, 'mcpb', 'manifest.json'), 'utf8')) as {
+    name: string;
+    server: { type: string; entry_point: string; mcp_config: { command: string; args: string[]; env: Record<string, string> } };
+    user_config: Record<string, { type: string; default?: string }>;
+    compatibility: { runtimes: { node: string } };
+  };
+
+  it('lance le binaire de la commande postuler-juste avec le node de Claude Desktop', () => {
+    expect(m.name).toBe('postuler-juste');
+    expect(pkg.bin).toEqual({ 'postuler-juste': 'bin/postuler-juste.js' });
+    expect(m.server.type).toBe('node');
+    expect(m.server.entry_point).toBe(pkg.bin['postuler-juste']);
+    expect(m.server.mcp_config.command).toBe('node');
+    expect(m.server.mcp_config.args).toEqual([`\${__dirname}/${m.server.entry_point}`, 'mcp']);
+  });
+
+  it('transmet le dossier et la langue choisis à l’installation', () => {
+    expect(m.server.mcp_config.env).toEqual({ POSTULER_JUSTE_DATA: '${user_config.dossier}', POSTULER_JUSTE_LANGUE: '${user_config.langue}' });
+    expect(m.user_config.dossier).toMatchObject({ type: 'directory', default: '${HOME}/ma-recherche' });
+    expect(m.user_config.langue).toMatchObject({ type: 'string', default: 'fr' });
+  });
+
+  it('exige le même Node que package.json (node:sqlite)', () => {
+    const engines = (JSON.parse(readFileSync(join(racine, 'package.json'), 'utf8')) as { engines: { node: string } }).engines.node;
+    expect(m.compatibility.runtimes.node).toBe(`${engines}.0.0`);
+  });
+});

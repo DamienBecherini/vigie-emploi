@@ -46,6 +46,7 @@ Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) 
 | `generer_cv` | CV Markdown → PDF à côté, avec le gabarit de l'espace ; nombre de pages, `pdf_existait` ; `capture: true` joint l'image PNG du rendu |
 | `compter` | Caractères et mots de chaque bloc à copier-coller d'un texte ou d'un fichier |
 | `lister_gabarits`, `choisir_gabarit` | Gabarits de CV livrés ; installation dans `cv/gabarit` (l'ancien est gardé) |
+| `ouvrir_tableau_de_bord` | Démarre le tableau de bord en arrière-plan s'il ne tourne pas déjà, et renvoie son adresse (`ouvrir: true` l'ouvre dans le navigateur par défaut) ; voir « Tableau de bord sans terminal » |
 
 **Sécurité des outils fichiers** : tout chemin est relatif à l'espace (un chemin absolu n'est accepté que s'il est dans l'espace) ; `..`, les fichiers et dossiers cachés (`.mcp.json`, `.git`…), `data/` (la base, qui ne se modifie que par les outils de l'application) et les liens symboliques qui sortent de l'espace sont refusés. Aucun outil ne supprime de fichier ; l'écriture se limite aux fichiers texte.
 
@@ -92,11 +93,31 @@ En ligne de commande : `claude mcp add postuler-juste -- postuler-juste mcp` (po
 
 ## Claude Desktop
 
-Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveur, y compris la création de l'espace. Aucune commande à taper hormis l'installation de l'application.
+Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveur, y compris la création de l'espace et l'ouverture du tableau de bord. Aucune commande à taper.
+
+### Extension en un clic (recommandé)
+
+**1. Installer** : double-clic sur `postuler-juste-<version>.mcpb` (ou le glisser dans la fenêtre de Claude Desktop, ou Paramètres → Extensions → Paramètres avancés → Installer une extension…). Claude Desktop affiche les outils et demande deux réglages :
+
+- **Dossier de l'espace** : par défaut `ma-recherche` dans votre dossier personnel. Il peut ne pas exister encore. Évitez un dossier synchronisé (OneDrive, Dropbox…) : la base SQLite s'y abîme facilement ;
+- **Langue** : `fr` ou `en` (consignes de l'IA, tableau de bord, suivi).
+
+Pour les changer ensuite : Paramètres → Extensions → postuler-juste → Configurer.
+
+**2. Démarrer** : voir l'étape 2 plus bas (prompt `demarrage`).
+
+L'extension contient l'application compilée et ses dépendances ; Claude Desktop la lance avec son Node intégré (Node 24.22 dans Claude Desktop 5.11492, novembre 2026), qui comprend `node:sqlite`. Le manifeste exige Node 24 ou plus (`compatibility.runtimes.node`) : si un jour le Node intégré était plus ancien, Claude Desktop prendrait un `node` du système assez récent, et à défaut le serveur s'arrête avec un message clair (« installer Node 24 ou plus récent »), visible dans le journal de l'extension.
+
+**Si vous aviez déclaré le serveur à la main** (section suivante) : retirez cette entrée de `claude_desktop_config.json` avant d'installer l'extension, sinon Claude aura deux serveurs `postuler-juste` aux outils identiques.
+
+Construire l'extension : `npm run mcpb` dans le dépôt (voir le README).
+
+### Déclaration à la main
 
 **1. Déclarer le serveur** dans `claude_desktop_config.json` (Paramètres → Développeur → Modifier la configuration) :
 
-- Windows : `%APPDATA%\Claude\claude_desktop_config.json` ;
+- Windows, installation classique : `%APPDATA%\Claude\claude_desktop_config.json` ;
+- Windows, installation par le Microsoft Store : Claude Desktop range ses données dans `%LOCALAPPDATA%\Claude-Data\claude_<identifiant>\claude_desktop_config.json` (par exemple `claude_pzs8sxrjxfjjc`) ; le menu ci-dessus ouvre le bon fichier ;
 - macOS : `~/Library/Application Support/Claude/claude_desktop_config.json`.
 
 ```json
@@ -113,9 +134,11 @@ Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveu
 
 `command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/postuler-juste.js` de l'application, avec des barres obliques. `env.POSTULER_JUSTE_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/ma-recherche`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
 
-**2. Démarrer** : dans une nouvelle conversation, bouton « + » → postuler-juste → prompt **`demarrage`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialiser_espace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans `POSTULER_JUSTE_DATA` : sinon la session suivante repartira du dossier configuré.
+**2. Démarrer** : dans une nouvelle conversation, bouton « + » → postuler-juste → prompt **`demarrage`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialiser_espace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `POSTULER_JUSTE_DATA`) : sinon la session suivante repartira du dossier configuré.
 
 **3. Ensuite** : prompts `traiter-emails`, `preparer-go` et `cv-cible`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generer_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
+
+**Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `ouvrir_tableau_de_bord` vérifie `/api/sante` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`postuler-juste serve --inactivite 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `ouvrir: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
 
 Limites : l'IA ne lit pas LinkedIn, Indeed ni Glassdoor (pas de navigateur dans Claude Desktop sans extension) : collez le texte des offres quand elle le demande. Un PDF scanné, sans texte, ne se lit pas : glissez-le directement dans la conversation.
 

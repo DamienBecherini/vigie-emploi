@@ -14,6 +14,18 @@ process.emitWarning = function (avertissement, ...reste) {
   return emettre.call(process, avertissement, ...reste);
 };
 
+// node:sqlite (base de l'application) : Node 22.13 au moins, 24 recommandé. Message clair plutôt qu'une erreur de module,
+// notamment dans Claude Desktop, dont le journal de l'extension affiche stderr.
+try {
+  await import('node:sqlite');
+} catch {
+  process.stderr.write(
+    `postuler-juste : Node ${process.versions.node} n'a pas node:sqlite ; installer Node 24 ou plus récent (https://nodejs.org).\n` +
+      `postuler-juste: Node ${process.versions.node} lacks node:sqlite; install Node 24 or later (https://nodejs.org).\n`,
+  );
+  process.exit(1);
+}
+
 const source = new URL('../src/cli/main.ts', import.meta.url);
 const { main } = existsSync(source) ? await import(source.href) : await import('../dist/cli/main.js');
 process.exitCode = await main(process.argv.slice(2));

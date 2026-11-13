@@ -63,12 +63,23 @@ Résumés are written in Markdown and rendered as two-page A4 PDFs, with three t
 
 ## Requirements
 
-- **Node.js 24** or later.
+- **Node.js 24** or later, except with the Claude Desktop extension (it uses the Node built into the application).
 - **Chrome, Edge or Chromium** (for PDF résumés).
-- **An AI agent** that works in a folder: Claude Code preferably (MCP server and skills included); Cursor, Codex or another agent read the same instructions (`AGENTS.md`) and use the CLI.
+- **An AI**: Claude Desktop (one-click extension, nothing else to install), or an agent that works in a folder: Claude Code preferably (MCP server and skills included); Cursor, Codex or another agent read the same instructions (`AGENTS.md`) and use the CLI.
 - Optional: a **browser driven by the AI** with your sessions (for example Claude in Chrome), to read LinkedIn, Indeed or Glassdoor offers. Without it, you paste the offer text when the AI asks.
 
 ## Getting started
+
+### One-click install (Claude Desktop)
+
+1. Download the `postuler-juste-<version>.mcpb` file (the repository's [Releases](https://github.com/DamienBecherini/postuler-juste/releases) page).
+2. Double-click it (or drag it into the Claude Desktop window, or **Settings → Extensions → Advanced settings → Install Extension…**), then click **Install**.
+3. Choose the **workspace folder** (by default `ma-recherche` in your home folder; it does not need to exist) and the **language**: type `en`.
+4. In a new conversation, ask "create my postuler-juste workspace", or **+** button → postuler-juste → **`demarrage`** prompt. Claude creates the workspace, asks you to drop your résumé into `a-deposer/`, then runs the onboarding.
+
+No terminal and no Node to install: the extension contains the application and uses the Node built into Claude Desktop. To browse your job ads in the dashboard, ask Claude to open it (`ouvrir_tableau_de_bord` tool). Details (in French): [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+
+### With Claude Code or another agent
 
 ```sh
 npx postuler-juste init ~/my-search --langue en
@@ -149,7 +160,7 @@ npm link           # makes the `postuler-juste` command available everywhere (op
 
 Without `npm link`, replace `postuler-juste` with `node <path>/bin/postuler-juste.js`. In the repository, `bin/postuler-juste.js` runs the TypeScript in `src/` directly; without `src/` (npm package), it loads the compiled JavaScript from `dist/`, because Node refuses to run TypeScript located under `node_modules`. `npm pack` and `npm publish` rebuild everything (`prepack`).
 
-Former names: the application used to be called **cap-emploi**. The `cap-emploi` command, the `CAP_EMPLOI_*` variables, the `cap-emploi.config.json` file and the `data/cap-emploi.sqlite` database are still recognised; the new names take precedence.
+Former names: the application used to be called **cap-emploi**. The `cap-emploi` command no longer exists (use `postuler-juste`); the `CAP_EMPLOI_*` variables, the `cap-emploi.config.json` file and the `data/cap-emploi.sqlite` database are still recognised; the new names take precedence.
 
 ### Creating your workspace
 
@@ -160,6 +171,12 @@ postuler-juste init <folder> [--port 4410] [--nom-mcp postuler-juste] [--langue 
 The folder must be new or empty. `init` copies the workspace template into it (`modele/`: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`gabarits/cv/sobre/`) and the sample grid, then writes `postuler-juste.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
 
 To try it without touching an existing installation: another folder, another port and another MCP server name (`--port 4411 --nom-mcp postuler-juste-test`).
+
+### With Claude Desktop or another MCP client
+
+The MCP server (`postuler-juste mcp`) is enough for an AI with no access to your files and no terminal, such as Claude Desktop: it creates the workspace (`initialiser_espace`), provides the instructions as prompts (`demarrage`, `traiter-emails`, `preparer-go`, `cv-cible`), reads the documents you drop in, writes the context, application files and résumés, generates the PDFs and starts the dashboard (`ouvrir_tableau_de_bord`). With Claude Desktop, the simplest route is the `.mcpb` extension ([One-click install](#one-click-install-claude-desktop)); you can also declare the server by hand in `claude_desktop_config.json`, with your workspace folder in `POSTULER_JUSTE_DATA` and `POSTULER_JUSTE_LANGUE` set to `en`. Details: [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+
+Building the extension (for a GitHub release): `npm run mcpb` builds the application, prepares `build/mcpb/postuler-juste/` (compiled JavaScript, interface, templates, production `node_modules` only), validates `mcpb/manifest.json` and packs everything into `build/postuler-juste-<version>.mcpb` (about 5 MB) with the official `@anthropic-ai/mcpb` tool. Attach that file to the release.
 
 ### PDF résumés
 
@@ -275,7 +292,9 @@ Each save (panel, CLI, MCP, or file edited by hand) creates a **version** (numbe
 
 ### Dashboard
 
-`postuler-juste serve`, then http://localhost:4410 (listens on 127.0.0.1 only).
+`postuler-juste serve`, then http://localhost:4410 (listens on 127.0.0.1 only). `--inactivite <minutes>` stops it after a period without activity.
+
+Without a terminal (Claude Desktop): ask the AI to open the dashboard. The `ouvrir_tableau_de_bord` MCP tool starts it in the background if it is not already running (a separate process that survives an MCP server restart and stops after 60 minutes without activity), on the workspace's port or the next free one, and returns the address to click; `ouvrir: true` opens it in the default browser. It needs an installed `node` (24 or later); otherwise it runs inside the MCP server process, as long as Claude Desktop stays open.
 
 - Server-side paginated table (25 to 500 rows per page), Thunderbird-style column sorting (the last header clicked becomes the primary sort, the previous one becomes secondary: click Note then Reçue le to sort by date, then by score for equal dates; the URL keeps the levels), hideable columns.
 - Filters: score, received and published dates, source, status, contract, remote work, tags, full-text search (accent-insensitive). Filters live in the URL: you can bookmark it.
@@ -314,6 +333,7 @@ An offer already being followed (`go` and beyond) seen again in an e-mail alert,
 npm test            # Vitest (fictitious fixtures in tests/fixtures)
 npm run typecheck   # TypeScript (server + interface)
 npm run build       # typecheck + interface build
+npm run mcpb        # Claude Desktop extension: build/postuler-juste-<version>.mcpb
 ```
 
 Layout:

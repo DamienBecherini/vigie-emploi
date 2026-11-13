@@ -303,12 +303,14 @@ export function enregistrerOutilsEspace(serveur: McpServer, etat: EtatMcp, donne
                 bi({
                   fr:
                     `Ce dossier n'est pas celui que le serveur ouvrira au prochain lancement (${oblique(dossierDeDemarrage)}). ` +
-                    `Pour les prochaines sessions, l'utilisateur doit l'indiquer dans la configuration de son client MCP : ` +
-                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (Claude Desktop : claude_desktop_config.json, puis redémarrer).`,
+                    `Pour les prochaines sessions, l'utilisateur doit l'indiquer à son client MCP. Extension Claude Desktop : ` +
+                    `Paramètres > Extensions > postuler-juste > Configurer, champ « Dossier de l'espace ». Configuration écrite à la main : ` +
+                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (claude_desktop_config.json, puis redémarrer).`,
                   en:
                     `This folder is not the one the server will open next time it starts (${oblique(dossierDeDemarrage)}). ` +
-                    `For future sessions, the user must set it in their MCP client's configuration: ` +
-                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (Claude Desktop: claude_desktop_config.json, then restart).`,
+                    `For future sessions, the user must give it to their MCP client. Claude Desktop extension: ` +
+                    `Settings > Extensions > postuler-juste > Configure, "Workspace folder" field. Hand-written configuration: ` +
+                    `"env": { "POSTULER_JUSTE_DATA": "${r.dossier}" } (claude_desktop_config.json, then restart).`,
                 }),
               ]),
         ],

@@ -205,7 +205,7 @@ describe('serveur MCP autonome (stdio, bout à bout)', () => {
     expect(prompts.map((p) => p.name)).toContain('demarrage');
     expect(textePrompt(await client.getPrompt({ name: 'demarrage' }))).toMatch(/initialiser_espace/);
     const { tools } = await client.listTools();
-    expect(tools.length).toBe(32);
+    expect(tools.length).toBe(33);
 
     expect(json(await appeler('initialiser_espace'))).toMatchObject({ ok: true });
     expect(textePrompt(await client.getPrompt({ name: 'demarrage' }))).toContain('# Démarrage — consignes pour l');

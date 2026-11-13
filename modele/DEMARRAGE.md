@@ -81,7 +81,7 @@ Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois l
 - `exemples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
 - `seuil` : la note à partir de laquelle une offre lui est présentée.
 
-Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il a un terminal et le souhaite, il peut aussi la régler lui-même dans le tableau de bord (`{{CMD}} serve`, « Réglages de la note ») : c'est facultatif.
+Après chaque modification, relis la grille (`grille`, ou `{{CMD}} grille --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il le souhaite, il peut aussi la régler lui-même dans le tableau de bord (« Réglages de la note » ; outil `ouvrir_tableau_de_bord`, ou `{{CMD}} serve` avec un terminal) : c'est facultatif.
 
 ## 7. Premier CV générique
 

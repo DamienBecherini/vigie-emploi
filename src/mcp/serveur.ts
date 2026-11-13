@@ -8,7 +8,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { RACINE_APP } from '../core/config.ts';
+import { ErreurConfig, RACINE_APP, variable } from '../core/config.ts';
 import type { OptionsConfig } from '../core/config.ts';
 import type { Base } from '../db/base.ts';
 import { transaction } from '../db/base.ts';
@@ -43,6 +43,7 @@ import {
 import { definirLangue } from '../i18n/index.ts';
 import { messageNonInitialise, ouvrirEtat, type EtatMcp } from './etat.ts';
 import { enregistrerOutilsEspace } from './espace.ts';
+import { enregistrerOutilTableauDeBord } from './tableau-de-bord.ts';
 import { sur } from './resultats.ts';
 import { bi } from './textes.ts';
 import {
@@ -70,8 +71,8 @@ l'utilisateur). Les consignes de l'espace font foi : AGENTS.md (ressource « con
 avant tout ; prompts demarrage, traiter-emails, preparer-go, cv-cible. Sans accès direct aux fichiers ni terminal (Claude Desktop…) :
 lister_fichiers / lire_fichier / ecrire_fichier (chemins relatifs à l'espace) au lieu de lire le disque, generer_cv (capture: true
 pour voir les pages ; traiter ses avertissements de remplissage) au lieu de « postuler-juste cv », compter au lieu de « postuler-juste compter ».
-Dans ce cas, ne propose jamais à l'utilisateur une commande de terminal à taper : cite l'outil. Seule option facultative, s'il a un
-terminal et le souhaite : lancer lui-même le tableau de bord (« postuler-juste serve ») pour parcourir ses offres ou régler sa grille.
+Dans ce cas, ne propose jamais à l'utilisateur une commande de terminal à taper : cite l'outil. Pour parcourir ses offres ou régler sa
+grille à la souris, propose-lui le tableau de bord : ouvrir_tableau_de_bord (renvoie l'adresse à cliquer), jamais « postuler-juste serve ».
 Honnêteté d'abord : n'écrire dans un CV ou un message que ce que _CONTEXTE.md permet de revendiquer. C'est l'utilisateur qui envoie
 ses candidatures.
 Flux habituel : ingerer_emails (transmettre son a_dire : e-mails supprimés, erreurs) → offres_a_lire (résumé paginé) → grille
@@ -95,8 +96,8 @@ the user). The workspace's instructions prevail: AGENTS.md ("consignes" resource
 before anything else; prompts demarrage, traiter-emails, preparer-go, cv-cible. Without direct file access or a terminal (Claude Desktop…):
 lister_fichiers / lire_fichier / ecrire_fichier (paths relative to the workspace) instead of reading the disk, generer_cv (capture: true
 to see the pages; deal with its page-fill warnings) instead of "postuler-juste cv", compter instead of "postuler-juste compter".
-In that case, never ask the user to type a terminal command: name the tool. The one optional exception, if they have a
-terminal and want to: start the dashboard themselves ("postuler-juste serve") to browse their job ads or tune their grid.
+In that case, never ask the user to type a terminal command: name the tool. To browse their job ads or tune their grid with the
+mouse, offer them the dashboard: ouvrir_tableau_de_bord (returns the address to click), never "postuler-juste serve".
 Honesty first: only write in a CV or a message what _CONTEXTE.md allows them to claim. The user sends their applications
 themselves.
 Usual flow: ingerer_emails (pass on its a_dire: deleted e-mails, errors) → offres_a_lire (paged summary) → grille
@@ -238,6 +239,7 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
     return etat.config.dossierDonnees;
   };
   enregistrerOutilsEspace(serveur, etat, donnees);
+  enregistrerOutilTableauDeBord(serveur, etat);
   const chargerGrille = () => grilleCourante(base(), donnees());
 
   serveur.registerTool(
@@ -970,12 +972,30 @@ export function creerServeurMcp(etat: EtatMcp): McpServer {
 }
 
 /**
+ * Comme ouvrirEtat, mais une langue inconnue dans l'environnement (réglage « Langue » de l'extension Claude Desktop mal
+ * saisi) n'empêche pas le serveur de démarrer : elle est ignorée, avec un avertissement sur stderr.
+ */
+export function ouvrirEtatTolerant(options: OptionsConfig = {}): EtatMcp {
+  try {
+    return ouvrirEtat(options);
+  } catch (e) {
+    const env = options.env ?? process.env;
+    if (!(e instanceof ErreurConfig && e.code === 'langue-inconnue') || !variable(env, 'LANGUE')) throw e;
+    process.stderr.write(`postuler-juste: ${e.message}\n`);
+    const sansLangue = { ...env };
+    delete sansLangue.POSTULER_JUSTE_LANGUE;
+    delete sansLangue.CAP_EMPLOI_LANGUE;
+    return ouvrirEtat({ ...options, env: sansLangue });
+  }
+}
+
+/**
  * Lance le serveur sur stdio. Le dossier de données vient de --data, POSTULER_JUSTE_DATA ou du fichier de config,
  * sinon du dossier par défaut (~/ma-recherche) ; s'il n'existe pas encore, le serveur démarre quand même
  * (outil initialiser_espace).
  */
 export async function demarrerMcp(options: OptionsConfig = {}): Promise<void> {
-  const etat = ouvrirEtat(options);
+  const etat = ouvrirEtatTolerant(options);
   const serveur = creerServeurMcp(etat);
   const transport = new StdioServerTransport();
   const fermer = async () => {

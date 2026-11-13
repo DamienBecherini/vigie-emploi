@@ -79,6 +79,7 @@ describe('serveur MCP (stdio)', () => {
         'compter',
         'lister_gabarits',
         'choisir_gabarit',
+        'ouvrir_tableau_de_bord',
       ].sort(),
     );
     const noter = tools.find((t) => t.name === 'noter_offre')!;

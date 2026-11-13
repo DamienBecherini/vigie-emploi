@@ -51,12 +51,12 @@ export function textesPalette(p: PaletteNommee, langue: Langue): { nom: string; 
 export const PERSO = 'perso';
 
 export const PALETTES_CLAIRES: PaletteNommee[] = [
-  // Sable en tête : palette par défaut, et repli d'une palette disparue (ancienne « framboise »).
+  // Sable en tête : palette par défaut, et repli d'une palette inconnue.
   { id: 'sable', nom: 'Sable', neutre: 'stone', accent: 'orange', description: 'Gris chauds, accent orange', traductions: { en: { nom: 'Sand', description: 'Warm greys, orange accent' } } },
-  { id: 'orange', nom: 'Orange', neutre: 'neutral', accent: 'orange', description: 'Gris neutres, accent orange', traductions: { en: { nom: 'Orange', description: 'Neutral greys, orange accent' } } },
   { id: 'bleu', nom: 'Ardoise bleue', neutre: 'slate', accent: 'blue', description: "La palette d'origine", traductions: { en: { nom: 'Blue slate', description: 'The original palette' } } },
   { id: 'sauge', nom: 'Sauge', neutre: 'neutral', accent: 'teal', traductions: { en: { nom: 'Sage' } } },
   { id: 'lavande', nom: 'Lavande', neutre: 'zinc', accent: 'violet', traductions: { en: { nom: 'Lavender' } } },
+  { id: 'framboise', nom: 'Framboise', neutre: 'gray', accent: 'rose', traductions: { en: { nom: 'Raspberry' } } },
 ];
 
 export const PALETTES_SOMBRES: PaletteNommee[] = [

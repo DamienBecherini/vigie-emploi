@@ -34,41 +34,42 @@ function LienCv({ chemin }: { chemin: string }) {
 }
 
 /**
- * Dossier de la candidature : lien vers sa fiche (dossier-candidature.md, sinon le premier .md du dossier), affichée
- * mise en forme par /api/fichier. Un navigateur ne peut pas ouvrir un dossier local depuis une page web : sans fiche,
- * le chemin reste en texte (les fichiers du dossier sont listés plus bas).
+ * Dossier de la candidature.
+ * - Sur la machine du serveur (poste_local, vérifié aussi par le serveur) : icône + nom du dossier, qui l'ouvre dans
+ *   l'explorateur de fichiers.
+ * - Ailleurs (téléphone, autre poste) : lien vers sa fiche (dossier-candidature.md, sinon le premier .md du dossier),
+ *   affichée mise en forme par /api/fichier ; sans fiche, le chemin en texte (les fichiers sont listés plus bas).
  */
 function LienDossier({ offreId, dossier }: { offreId: number; dossier: string }) {
   const q = useQuery({ queryKey: ['fichiers', offreId], queryFn: () => api.fichiers(offreId) });
-  const md = q.data?.fichiers ?? [];
-  const fiche = md.find((f) => f.nom === 'dossier-candidature.md') ?? md.find((f) => f.nom.toLowerCase().endsWith('.md'));
-  // Bouton « ouvrir dans l'explorateur » : seulement sur la machine du serveur (le serveur le vérifie aussi).
   const sante = useQuery({ queryKey: ['sante'], queryFn: api.sante, staleTime: Infinity });
   const ouvrir = useMutation({ mutationFn: () => api.ouvrirDossier(offreId) });
+  const md = q.data?.fichiers ?? [];
+  const fiche = md.find((f) => f.nom === 'dossier-candidature.md') ?? md.find((f) => f.nom.toLowerCase().endsWith('.md'));
   const nom = dossier.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? dossier;
-  return (
-    <span className="inline-flex flex-wrap items-center gap-2">
-      {fiche ? (
-        <a className="break-all text-blue-700 underline dark:text-blue-300" href={urlFichier(fiche.chemin)} target="_blank" rel="noreferrer noopener" title={fiche.chemin}>
-          {nom}
-        </a>
-      ) : (
-        <span className="break-all">{dossier}</span>
-      )}
-      {sante.data?.poste_local && q.data?.existe && (
+  const lien = 'break-all text-blue-700 underline dark:text-blue-300';
+  if (sante.data?.poste_local && q.data?.existe) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="rounded p-0.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+          className={`inline-flex items-center gap-1 text-left ${lien}`}
           onClick={() => ouvrir.mutate()}
           disabled={ouvrir.isPending}
-          aria-label={t('detail.ouvrirDossier')}
-          title={t('detail.ouvrirDossier')}
+          title={`${t('detail.ouvrirDossier')} : ${dossier}`}
         >
-          <FolderOpen className="size-4" aria-hidden="true" />
+          <FolderOpen className="size-4 shrink-0" aria-hidden="true" />
+          {nom}
         </button>
-      )}
-      {ouvrir.isError && <span className="text-xs text-rose-700 dark:text-rose-300">{(ouvrir.error as Error).message}</span>}
-    </span>
+        {ouvrir.isError && <span className="text-xs text-rose-700 dark:text-rose-300">{(ouvrir.error as Error).message}</span>}
+      </span>
+    );
+  }
+  if (!fiche) return <span className="break-all">{dossier}</span>;
+  return (
+    <a className={lien} href={urlFichier(fiche.chemin)} target="_blank" rel="noreferrer noopener" title={fiche.chemin}>
+      {nom}
+    </a>
   );
 }
 

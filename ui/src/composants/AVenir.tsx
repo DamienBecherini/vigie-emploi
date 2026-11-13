@@ -122,8 +122,10 @@ export function AVenir({ choisir }: { choisir: (id: number) => void }) {
           )}
           <div
             ref={ref}
-            className={max ? 'overflow-y-auto pr-1' : ''}
-            style={max ? { maxHeight: `${max}px` } : undefined}
+            // Liste qui défile : jamais plus de 40 % de l'écran, encadrée, et sur téléphone une bande libre à droite
+            // pour faire défiler la page au pouce plutôt que la liste.
+            className={max ? 'mt-1 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 max-md:mr-10 dark:border-slate-700' : ''}
+            style={max ? { maxHeight: `min(${max}px, 40vh)` } : undefined}
             tabIndex={max ? 0 : undefined}
             aria-label={max ? t('avenir.defilante') : undefined}
           >

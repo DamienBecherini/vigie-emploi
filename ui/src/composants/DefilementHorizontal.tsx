@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
- * `data-gauche` (« true » quand du contenu est caché à gauche) est posé sur le conteneur qui défile, nommé
- * `group/defilement` : une colonne collée à gauche peut s'en servir pour afficher sa propre ombre
- * (`group-data-[gauche=true]/defilement:…`) ; `ombreGauche={false}` retire alors l'ombre du bord gauche.
+ * Le conteneur qui défile, nommé `group/defilement`, porte `data-gauche` (« true » quand du contenu est caché à gauche)
+ * et `data-collee` (« true » quand la colonne marquée `data-colonne-collee` — une cellule `position: sticky` — est
+ * réellement collée au bord gauche, c'est-à-dire quand le défilement dépasse sa position naturelle). Cette colonne
+ * affiche alors sa propre ombre (`group-data-[collee=true]/defilement:…`) ; `ombreGauche={false}` retire l'ombre du bord gauche.
  */
 export function DefilementHorizontal({
   className,
@@ -17,15 +18,19 @@ export function DefilementHorizontal({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [bords, setBords] = useState({ gauche: false, droite: false });
+  const [bords, setBords] = useState({ gauche: false, droite: false, collee: false });
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const mesurer = () => {
       const reste = el.scrollWidth - el.clientWidth - el.scrollLeft;
+      // Position naturelle de la colonne collée : la fin de la cellule qui la précède (la sienne bouge une fois collée).
+      const cellule = el.querySelector<HTMLElement>('[data-colonne-collee]');
+      const avant = cellule?.previousElementSibling as HTMLElement | null | undefined;
+      const naturelle = avant ? avant.offsetLeft + avant.offsetWidth : 0;
       setBords((b) => {
-        const n = { gauche: el.scrollLeft > 1, droite: reste > 1 };
-        return n.gauche === b.gauche && n.droite === b.droite ? b : n;
+        const n = { gauche: el.scrollLeft > 1, droite: reste > 1, collee: Boolean(cellule) && el.scrollLeft > naturelle + 1 };
+        return n.gauche === b.gauche && n.droite === b.droite && n.collee === b.collee ? b : n;
       });
     };
     mesurer();
@@ -42,7 +47,7 @@ export function DefilementHorizontal({
   const ombre = 'pointer-events-none absolute inset-y-px w-8 transition-opacity duration-200';
   return (
     <div className="relative">
-      <div ref={ref} className={`group/defilement ${className ?? ''}`} data-gauche={bords.gauche}>
+      <div ref={ref} className={`group/defilement ${className ?? ''}`} data-gauche={bords.gauche} data-collee={bords.collee}>
         {children}
       </div>
       {ombreGauche && (

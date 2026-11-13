@@ -119,11 +119,12 @@ function BoutonRafraichir() {
 const ECRAN_ETROIT = '(max-width: 767px)';
 
 /**
- * Colonne Intitulé collée au bord gauche quand le tableau défile horizontalement ; ombre à sa droite seulement quand
- * des colonnes sont cachées dessous (data-gauche du conteneur, voir DefilementHorizontal).
+ * Colonne Intitulé collée au bord gauche quand le tableau défile horizontalement. Son ombre (un dégradé sur toute la
+ * hauteur de chaque cellule, donc continu d'une ligne à l'autre) n'apparaît que lorsqu'elle est réellement collée et
+ * que des colonnes passent dessous (data-collee du conteneur, voir DefilementHorizontal).
  */
 const COLLEE =
-  'sticky left-0 z-[1] group-data-[gauche=true]/defilement:shadow-[6px_0_8px_-6px_rgba(0,0,0,0.35)] dark:group-data-[gauche=true]/defilement:shadow-[6px_0_8px_-4px_rgba(0,0,0,0.9)]';
+  'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[collee=true]/defilement:after:opacity-100';
 function useEcranEtroit(): boolean {
   const [etroit, setEtroit] = useState(() => window.matchMedia(ECRAN_ETROIT).matches);
   useEffect(() => {
@@ -527,6 +528,7 @@ export function App() {
                         <th
                           key={h.id}
                           scope="col"
+                          data-colonne-collee={h.column.id === 'titre' ? '' : undefined}
                           aria-sort={sens === 'asc' ? 'ascending' : sens === 'desc' ? 'descending' : 'none'}
                           className={`px-2 py-2 font-semibold whitespace-nowrap text-slate-700 dark:text-slate-200 ${h.column.id === 'titre' ? `${COLLEE} bg-slate-100 dark:bg-slate-800` : ''}`}
                         >

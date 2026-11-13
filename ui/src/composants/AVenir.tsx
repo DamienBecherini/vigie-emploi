@@ -24,7 +24,8 @@ function Element({ e, choisir }: { e: EcheanceOffre; choisir: (id: number) => vo
         <span className="font-semibold whitespace-nowrap tabular-nums">{dateEvenement(e.le)}</span>
         <BadgeType type={e.type} />
         <span className="font-semibold">{e.entreprise ?? e.titre}</span>
-        <span className="min-w-0 flex-1 break-words">{e.resume}</span>
+        {/* Largeur minimale : sans place à côté de la date et de l'entreprise, le résumé passe à la ligne entier. */}
+        <span className="min-w-[min(14rem,100%)] flex-1 break-words">{e.resume}</span>
       </button>
     </li>
   );
@@ -145,8 +146,9 @@ export function AVenir({ choisir }: { choisir: (id: number) => void }) {
             )}
           </div>
         </div>
+        {/* Statistiques sous l'en-tête (près de leur bouton) tant que la place manque ; à droite de la liste sur grand écran. */}
         {stats && (
-          <div className="mt-1 w-full sm:w-80">
+          <div className="order-first mt-1 w-full lg:order-none lg:w-80">
             <Statistiques />
           </div>
         )}

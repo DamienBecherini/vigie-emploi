@@ -33,6 +33,23 @@ function LienCv({ chemin }: { chemin: string }) {
   );
 }
 
+/**
+ * Dossier de la candidature : lien vers sa fiche (dossier-candidature.md, sinon le premier .md du dossier), affichée
+ * mise en forme par /api/fichier. Un navigateur ne peut pas ouvrir un dossier local depuis une page web : sans fiche,
+ * le chemin reste en texte (les fichiers du dossier sont listés plus bas).
+ */
+function LienDossier({ offreId, dossier }: { offreId: number; dossier: string }) {
+  const q = useQuery({ queryKey: ['fichiers', offreId], queryFn: () => api.fichiers(offreId) });
+  const md = q.data?.fichiers ?? [];
+  const fiche = md.find((f) => f.nom === 'dossier-candidature.md') ?? md.find((f) => f.nom.toLowerCase().endsWith('.md'));
+  if (!fiche) return <>{dossier}</>;
+  return (
+    <a className="break-all text-blue-700 underline dark:text-blue-300" href={urlFichier(fiche.chemin)} target="_blank" rel="noreferrer noopener" title={fiche.chemin}>
+      {dossier.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? dossier}
+    </a>
+  );
+}
+
 function EditeurTags({ offre }: { offre: DetailOffre }) {
   const client = useQueryClient();
   const id = useId();
@@ -584,7 +601,9 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             </h3>
             {o.candidature && (
               <dl className="mb-2">
-                <Ligne libelle={t('detail.dossier')}>{o.candidature.dossier}</Ligne>
+                <Ligne libelle={t('detail.dossier')}>
+                  {o.candidature.dossier && <LienDossier offreId={o.id} dossier={o.candidature.dossier} />}
+                </Ligne>
                 <Ligne libelle={t('detail.cv')}>{o.candidature.cv && <LienCv chemin={o.candidature.cv} />}</Ligne>
                 <Ligne libelle={t('detail.conditions')}>{o.candidature.conditions}</Ligne>
               </dl>

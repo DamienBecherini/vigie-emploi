@@ -15,6 +15,7 @@ import { choisirLangue, langue, LANGUES, locale, NOMS_LANGUES, nombre, t, type L
 import { useParametres, usePreference, usePreferenceTexte, useDebounce, CLES_FILTRES } from './etat.ts';
 import { BadgeNote, BadgeStatut, formaterDate } from './composants/Badges.tsx';
 import { Filtres } from './composants/Filtres.tsx';
+import { DefilementHorizontal } from './composants/DefilementHorizontal.tsx';
 import { Detail } from './composants/Detail.tsx';
 import { AVenir } from './composants/AVenir.tsx';
 import { ActionsAgent, useNotifications } from './composants/ActionsAgent.tsx';
@@ -499,7 +500,7 @@ export function App() {
             </p>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <DefilementHorizontal className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table className="w-full border-collapse text-sm">
               <caption className="sr-only">
                 {t('liste.legende', {
@@ -588,7 +589,7 @@ export function App() {
                 )}
               </tbody>
             </table>
-          </div>
+          </DefilementHorizontal>
 
           <nav aria-label={t('liste.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <button type="button" className="bouton" disabled={page <= 1} onClick={() => modifier({ page: null })}>

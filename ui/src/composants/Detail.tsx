@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STATUTS, type Statut } from '../../../src/core/statuts.ts';
 import { statutAffiche, t } from '../i18n/index.ts';
-import { api, type DetailOffre } from '../api.ts';
+import { api, urlFichier, type DetailOffre } from '../api.ts';
 import { BadgeNote, BadgeStatut, formaterDate, formaterNote } from './Badges.tsx';
 import { FichiersDuDossier, Journal } from './Journal.tsx';
 import { BadgeAncienneGrille, DecompositionNote, EditeurSousNotes } from './Decomposition.tsx';
@@ -15,6 +15,21 @@ function Ligne({ libelle, children }: { libelle: string; children: React.ReactNo
       <dt className="font-semibold text-slate-600 dark:text-slate-300">{libelle}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
+  );
+}
+
+/**
+ * CV de la candidature : lien qui l'ouvre dans un nouvel onglet (servi par /api/fichier, seulement dans le dossier de
+ * données). Un chemin absolu ou hors de l'espace n'est pas servi : il reste affiché en texte.
+ */
+function LienCv({ chemin }: { chemin: string }) {
+  const relatif = chemin.replace(/\\/g, '/');
+  if (/^([a-z]:|\/)/i.test(relatif) || relatif.split('/').includes('..')) return <>{chemin}</>;
+  const nom = relatif.split('/').pop() ?? relatif;
+  return (
+    <a className="break-all text-blue-700 underline dark:text-blue-300" href={urlFichier(relatif)} target="_blank" rel="noreferrer noopener" title={relatif}>
+      {nom}
+    </a>
   );
 }
 
@@ -570,7 +585,7 @@ export function Detail({ id, fermer, annoncer }: { id: number; fermer: () => voi
             {o.candidature && (
               <dl className="mb-2">
                 <Ligne libelle={t('detail.dossier')}>{o.candidature.dossier}</Ligne>
-                <Ligne libelle={t('detail.cv')}>{o.candidature.cv}</Ligne>
+                <Ligne libelle={t('detail.cv')}>{o.candidature.cv && <LienCv chemin={o.candidature.cv} />}</Ligne>
                 <Ligne libelle={t('detail.conditions')}>{o.candidature.conditions}</Ligne>
               </dl>
             )}

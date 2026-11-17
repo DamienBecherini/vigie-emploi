@@ -15,7 +15,7 @@ import { listOffers, meta, type OptionsList } from '../core/queries.ts';
 import { addStatus, FIELDS_APPLICATION, detailOffer, updateLink, updateTags, offerById, tagsOffer, type FieldsApplication } from '../core/offers.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
 import { updateSubScores, scoreOffers, prepareApplication, trackApplication, type InputSubScores } from '../core/actions.ts';
-import { scoreExample, LEVELS, validateRubric } from '../core/rubric.ts';
+import { scoreExample, LEVELS, validateRubric, type Breakdown, type Level } from '../core/rubric.ts';
 import {
   previewRubric,
   saveRubric,
@@ -93,6 +93,16 @@ export function optionsFromRequest(q: Record<string, string | undefined>): Optio
     sort: q.sort || undefined,
     order: q.order === 'asc' ? 'asc' : 'desc',
   };
+}
+
+/** Scoring rubric as GET /api/rubric sends it (PUT and restore add ok and impact): levels with their labels, computed examples. */
+export type ReplyRubric = VersionRubric & { levels: { value: Level; label: string }[]; examples: Breakdown[] };
+
+/** GET /api/rubric when no rubric exists yet. */
+export interface ReplyNoRubric {
+  version: null;
+  rubric: null;
+  examples: Breakdown[];
 }
 
 const HOSTS_LOCAL = ['localhost', '127.0.0.1', '[::1]'];
@@ -287,7 +297,7 @@ export function createApp(
   });
 
   // Scoring rubric: current version (with the computed examples), preview, save, versions.
-  const replyRubric = (v: VersionRubric | null) =>
+  const replyRubric = (v: VersionRubric | null): ReplyRubric | ReplyNoRubric =>
     v
       ? {
           ...v,

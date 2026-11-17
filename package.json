@@ -33,7 +33,7 @@
     "dist",
     "migrations",
     "scaffold",
-    "scaffold-*",
+    "scaffold-en",
     "templates",
     "examples",
     "AGENTS.md",

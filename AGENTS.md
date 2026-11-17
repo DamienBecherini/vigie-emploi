@@ -119,4 +119,4 @@ The dashboard's "Apply" button copies `apply <id>`: when the user pastes that te
 - `npm test` and `npm run build` must pass before each commit.
 - Fictitious fixtures only (`tests/fixtures`): never real e-mails or real job ads.
 - Schema: add a migration `migrations/000N_name.sql`; never change a migration that has already been published.
-- The code (identifiers, comments, tests) is in English; the documentation is written in French, and `AGENTS.en.md`, `README.en.md`, `docs/*.en.md` and `scaffold-en/` are its English versions (the architecture decisions in `docs/adr/` stay in French).
+- The code (identifiers, comments, tests) is in English; the documentation is written in English first: a file without a language suffix is the English one (`README.md`, `AGENTS.md`, `docs/*.md`, `scaffold/`), and its French version carries `.fr` (`README.fr.md`, `AGENTS.fr.md`, `docs/*.fr.md`, `scaffold-fr/`). A change to one goes into the other.

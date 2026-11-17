@@ -353,7 +353,8 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'init.notCompile': 'Tableau de bord non compilé : lancer « npm run build » dans {app} avant « vigie-emploi serve ».',
   'init.withoutBrowser':
     'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans VIGIE_EMPLOI_BROWSER.',
-  'init.scaffoldEnglish': "Pas encore de modèle d'espace dans cette langue : les consignes de l'IA sont en anglais. Votre IA peut tout de même vous parler dans votre langue.",
+  'init.scaffoldEnglish':
+    "Pas encore de modèle d'espace dans cette langue : les consignes de l'IA sont en anglais. Votre IA peut tout de même vous parler dans votre langue.",
 
   // ---------------------------------------------------------------------------------------------
   // Core (src/core, ingestion, CV): errors and messages returned to the CLI, the API and the MCP server

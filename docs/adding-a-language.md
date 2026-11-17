@@ -1,8 +1,8 @@
 # Adding a language
 
-[Français](adding-a-language.fr.md) · **English**
+**English** · [Français](adding-a-language.fr.md) · [README](../README.md)
 
-vigie-emploi ships in French (the default language) and English. One more language needs no change to the logic: you declare it, then translate what the compiler and the tests point out. Example with Spanish (`es`).
+vigie-emploi ships in English and French. One more language needs no change to the logic: you declare it, then translate what the compiler and the tests point out. Example with Spanish (`es`).
 
 ## 1. Declare the language
 
@@ -36,11 +36,11 @@ Texts keep their `{name}` parameters. A plural text is an object `{ one, other }
 
 | File | Role | Without a translation |
 |---|---|---|
-| `scaffold-es/` (copy of `scaffold-en/`) | Workspace created by `init --language es`: AI instructions, onboarding, sample résumé | The French template is copied, with a warning |
-| `AGENTS.es.md` | The application's instructions for the agent | `AGENTS.md` (French) |
-| `examples/rubric.es.json` | Sample grid | French grid |
+| `scaffold-es/` (copy of `scaffold/`) | Workspace created by `init --language es`: AI instructions, onboarding, sample résumé | The English template is copied, with a warning |
+| `AGENTS.es.md` | The application's instructions for the agent | `AGENTS.md` (English) |
+| `examples/rubric.es.json` | Sample grid | English grid |
 | `README.es.md` | Presentation, to link from the language selector at the top of the READMEs | — |
-| `docs/*.es.md` | Guides (using with an AI, adding a language), to link from their language selector | French guides |
+| `docs/*.es.md` | Guides (reference, MCP server, adding a language, the code), to link from their language selector | English guides |
 
 `npm test` (file `tests/languages.test.ts`) checks that these files exist, that `scaffold-es/` contains the same files as `scaffold/`, and that no dictionary text is empty or left in French.
 

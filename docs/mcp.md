@@ -1,6 +1,6 @@
 # Using vigie-emploi with an AI (MCP server)
 
-[Français](mcp.fr.md) · **English**
+**English** · [Français](mcp.fr.md) · [README](../README.md) · [Reference](reference.md)
 
 `vigie-emploi mcp` starts an [MCP](https://modelcontextprotocol.io) server on standard input / output (stdio transport). An AI (Claude Code, Claude Desktop or any MCP client) finds there the tools to ingest alerts, read, score, apply and generate the tracker, without going through the command line. The server calls the same core as the CLI and the dashboard; it calls no AI model itself.
 
@@ -63,7 +63,7 @@ The workspace's instructions are read again from disk on every call (the user or
 | `prepare-go` | `AGENTS.md` then `procedures/preparer-go.md` |
 | `targeted-cv` | `AGENTS.md` then `procedures/cv-cible.md` (optional `offer` argument) |
 
-The resource `vigie-emploi://espace/AGENTS.md` gives the general instructions alone; the server's `instructions` point to them.
+The resource `vigie-emploi://workspace/AGENTS.md` gives the general instructions alone; the server's `instructions` point to them.
 
 Errors (ad not found, score out of scale, invalid link…) come back to the AI as a readable error result; the server keeps running.
 
@@ -163,4 +163,4 @@ Official inspector, to try the tools by hand: `npx @modelcontextprotocol/inspect
 
 ## Typical flow
 
-See [`AGENTS.en.md`](../AGENTS.en.md): ingest → read → read the grid (`rubric`) → score the criteria (`score_batch`) → apply → record the application → keep the journal (events, deadlines) → generate the tracker.
+See [`AGENTS.md`](../AGENTS.md): ingest → read → read the grid (`rubric`) → score the criteria (`score_batch`) → apply → record the application → keep the journal (events, deadlines) → generate the tracker.

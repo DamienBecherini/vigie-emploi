@@ -1,8 +1,8 @@
 # Ajouter une langue
 
-**Français** · [English](adding-a-language.md)
+[English](adding-a-language.md) · **Français** · [README](../README.fr.md)
 
-vigie-emploi est livré en français (langue par défaut) et en anglais. Une langue de plus ne demande aucun changement de logique : on la déclare, puis on traduit ce que le compilateur et les tests signalent. Exemple avec l'espagnol (`es`).
+vigie-emploi est livré en anglais et en français. Une langue de plus ne demande aucun changement de logique : on la déclare, puis on traduit ce que le compilateur et les tests signalent. Exemple avec l'espagnol (`es`).
 
 ## 1. Déclarer la langue
 
@@ -36,8 +36,8 @@ Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `
 
 | Fichier | Rôle | Sans traduction |
 |---|---|---|
-| `scaffold-es/` (copie de `scaffold-en/`) | Espace de travail créé par `init --language es` : consignes de l'IA, démarrage, exemple de CV | Le modèle français est copié, avec un avertissement |
-| `AGENTS.es.md` | Consignes de l'application pour l'agent | `AGENTS.md` (français) |
+| `scaffold-es/` (copie de `scaffold/`) | Espace de travail créé par `init --language es` : consignes de l'IA, démarrage, exemple de CV | Le modèle anglais est copié, avec un avertissement |
+| `AGENTS.es.md` | Consignes de l'application pour l'agent | `AGENTS.md` (anglais) |
 | `examples/rubric.es.json` | Grille d'exemple | Grille française |
 | `README.es.md` | Présentation, à relier au sélecteur de langue en tête des README | — |
 | `docs/*.es.md` | Guides (utiliser avec une IA, ajouter une langue), à relier à leur sélecteur de langue | Guides français |

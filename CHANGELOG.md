@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.1 — unreleased
+## 0.7.0 — unreleased
 
 ### Security
 
@@ -9,9 +9,21 @@
 - Scoring an offer by its address: only http(s) addresses are accepted, as when editing the link.
 - Résumés: the HTML page rendered by Chrome for the PDF forbids any script, any connection and any frame (a job ad text copied into a résumé cannot run anything).
 
+### Languages
+
+- A new workspace takes the system's language: `init` without `--language` (and the Claude Desktop extension with the language left empty) creates it in French on a French system, in English otherwise. `--language fr` or `--language en` still forces one. A workspace whose configuration file names no language stays French, as before.
+- English is now the reference language of the shipped files: `scaffold/`, `AGENTS.md` and `examples/rubric.json` are the English versions; the French ones are `scaffold-fr/`, `AGENTS.fr.md` and `examples/rubric.fr.json`. A language without its own translation falls back on English.
+
 ### Documentation
 
-- `docs/` guides in English (`utiliser-avec-une-ia.en.md`, `ajouter-une-langue.en.md`).
+- English first: `README.md` is in English and `README.fr.md` in French; the same rule applies in `docs/`.
+- The reference (installation, configuration, commands, scoring grid, dashboard) moved from the README to `docs/reference.md`.
+- Guides renamed: `docs/mcp.md` (was `docs/utiliser-avec-une-ia.md`) and `docs/adding-a-language.md` (was `docs/ajouter-une-langue.md`), each with its `.fr.md` version; architecture decisions (`docs/adr/`) and this changelog translated to English.
+
+### Development
+
+- Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.
+- Tests of the command-line interface, of the documentation's links and of the lockfile.
 
 ## 0.6.0 — November 2026 (first public release)
 

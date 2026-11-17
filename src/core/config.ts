@@ -97,7 +97,10 @@ export function normalizeLanguage(v: string): string {
  */
 export function systemLanguage(env: NodeJS.ProcessEnv = process.env, localeNode: string = Intl.DateTimeFormat().resolvedOptions().locale): Language {
   for (const locale of [env.LC_ALL, env.LC_MESSAGES, env.LANG, localeNode]) {
-    const code = (locale ?? '').trim().split(/[_.@-]/)[0].toLowerCase();
+    const code = (locale ?? '')
+      .trim()
+      .split(/[_.@-]/)[0]
+      .toLowerCase();
     if (!code || code === 'c' || code === 'posix') continue;
     return isLanguage(code) ? code : LANGUAGE_REFERENCE;
   }

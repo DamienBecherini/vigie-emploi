@@ -119,4 +119,4 @@ Le bouton « Candidater » du tableau de bord copie `apply <id>` : quand l'utili
 - `npm test` et `npm run build` doivent passer avant chaque commit.
 - Fixtures uniquement fictives (`tests/fixtures`) : jamais de vrais e-mails ni de vraies offres.
 - Schéma : ajouter une migration `migrations/000N_nom.sql`, ne jamais modifier une migration déjà publiée.
-- Code (identifiants, commentaires, tests) en anglais ; interface et documentation en français, avec leurs versions anglaises (`AGENTS.en.md`, `README.en.md`, `scaffold-en/`, dictionnaires `en.ts`).
+- Code (identifiants, commentaires, tests) en anglais ; documentation en anglais d'abord : un fichier sans suffixe de langue est la version anglaise (`README.md`, `AGENTS.md`, `docs/*.md`, `scaffold/`), sa version française porte `.fr` (`README.fr.md`, `AGENTS.fr.md`, `docs/*.fr.md`, `scaffold-fr/`). Une modification de l'une se reporte dans l'autre.

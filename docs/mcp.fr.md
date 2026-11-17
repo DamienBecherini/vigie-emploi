@@ -1,6 +1,6 @@
 # Utiliser vigie-emploi avec une IA (serveur MCP)
 
-**Français** · [English](mcp.md)
+[English](mcp.md) · **Français** · [README](../README.fr.md) · [Référence](reference.fr.md)
 
 `vigie-emploi mcp` lance un serveur [MCP](https://modelcontextprotocol.io) sur l'entrée / sortie standard (transport stdio). Une IA (Claude Code, Claude Desktop ou tout client MCP) y trouve les outils pour ingérer les alertes, lire, noter, candidater et générer le suivi, sans passer par la ligne de commande. Le serveur appelle le même noyau que la CLI et le tableau de bord ; il n'appelle lui-même aucun modèle d'IA.
 
@@ -63,7 +63,7 @@ Les consignes de l'espace sont relues sur le disque à chaque appel (l'utilisate
 | `prepare-go` | `AGENTS.md` puis `procedures/preparer-go.md` |
 | `targeted-cv` | `AGENTS.md` puis `procedures/cv-cible.md` (argument facultatif `offer`) |
 
-La ressource `vigie-emploi://espace/AGENTS.md` donne les consignes générales seules ; les `instructions` du serveur renvoient vers elles.
+La ressource `vigie-emploi://workspace/AGENTS.md` donne les consignes générales seules ; les `instructions` du serveur renvoient vers elles.
 
 Les erreurs (offre introuvable, note hors échelle, lien invalide…) reviennent à l'IA comme résultat d'erreur lisible ; le serveur continue.
 
@@ -163,4 +163,4 @@ Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprot
 
 ## Flux type
 
-Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → lire la grille (`rubric`) → noter les critères (`score_batch`) → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.
+Voir [`AGENTS.fr.md`](../AGENTS.fr.md) : ingérer → lire → lire la grille (`rubric`) → noter les critères (`score_batch`) → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.

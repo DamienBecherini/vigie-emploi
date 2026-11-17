@@ -147,7 +147,7 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'cli.import.trackerIgnore': 'Tracking file: not read ({reason}).',
   'cli.import.tracker': 'Tracking file: {lines} line(s), {offers} offer(s) created, {applications} application(s), {statuses} status(es).',
   'cli.import.journals':
-    'Journals: {folders} folder(s), {lines} dated line(s), {created} event(s) created, {existing} already in the database, {removed} removed, {deadlines} deadline(s); types: {types}.',
+    'Journals: {folders} folder(s), {lines} dated line(s), {created} event(s) created, {existing} already in the database, {duplicate} already entered by hand, {removed} removed, {deadlines} deadline(s); types: {types}.',
   'cli.import.attached': '  folder linked to offer #{offer}: {folder}',
   'cli.import.withoutOffer': '  folder without an offer in the database: {folder}',
   'cli.import.withoutTracker': '  folder without dated tracking: {folder}',

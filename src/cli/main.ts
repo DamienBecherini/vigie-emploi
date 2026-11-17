@@ -295,6 +295,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
         lines: J.lines,
         created: J.events_created,
         existing: J.events_existing,
+        duplicate: J.events_duplicate.length,
         removed: J.events_removed,
         deadlines: J.deadlines,
         types: Object.entries(J.by_type).map(([x, n]) => `${x} ${n}`).join(', ') || '—',

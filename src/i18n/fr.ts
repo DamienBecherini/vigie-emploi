@@ -152,7 +152,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'cli.import.trackerIgnore': 'Suivi : non relu ({reason}).',
   'cli.import.tracker': 'Suivi : {lines} ligne(s), {offers} offre(s) créée(s), {applications} candidature(s), {statuses} statut(s).',
   'cli.import.journals':
-    'Journaux : {folders} dossier(s), {lines} ligne(s) datée(s), {created} événement(s) créé(s), {existing} déjà en base, {removed} retiré(s), {deadlines} échéance(s) ; types : {types}.',
+    'Journaux : {folders} dossier(s), {lines} ligne(s) datée(s), {created} événement(s) créé(s), {existing} déjà en base, {duplicate} déjà saisi(s) à la main, {removed} retiré(s), {deadlines} échéance(s) ; types : {types}.',
   'cli.import.attached': "  dossier rattaché à l'offre #{offer} : {folder}",
   'cli.import.withoutOffer': '  dossier sans offre en base : {folder}',
   'cli.import.withoutTracker': '  dossier sans suivi daté : {folder}',

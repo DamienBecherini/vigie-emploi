@@ -21,6 +21,8 @@ export interface ReportJournal {
   lines: number;
   events_created: number;
   events_existing: number;
+  /** Lines already recorded by hand (CLI, MCP, dashboard): same offer, type and day, compatible direction. Not imported. */
+  events_duplicate: { folder: string; line: number; excerpt: string }[];
   /** Events imported from a line that disappeared from the folder (never modified since): deleted. */
   events_removed: number;
   deadlines: number;
@@ -224,6 +226,7 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
     lines: 0,
     events_created: 0,
     events_existing: 0,
+    events_duplicate: [],
     events_removed: 0,
     deadlines: 0,
     by_type: {},
@@ -238,6 +241,10 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
     .sort();
   const offerOf = db.prepare('SELECT offer_id FROM applications WHERE folder = ? OR folder = ?');
   const existing = db.prepare("SELECT id, import_key, updated_at FROM events WHERE offer_id = ? AND origin = 'import' AND import_key LIKE 'tracker:%'");
+  // An event entered by hand (CLI, MCP, dashboard) is not duplicated by the import of the same fact written in the folder.
+  const recordedByHand = db.prepare(
+    "SELECT 1 FROM events WHERE offer_id = ? AND type = ? AND origin <> 'import' AND substr(at, 1, 10) = ? AND (direction IS NULL OR ? IS NULL OR direction = ?) LIMIT 1",
+  );
   transaction(db, () => {
     for (const name of names) {
       const sheet = join(root, name, 'dossier-candidature.md');
@@ -273,6 +280,11 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
         if (!guessed.recognized) report.untyped.push({ folder: folderRel, line: l.number, excerpt: excerpt(l.text) });
         if (already.has(key)) {
           report.events_existing++;
+          continue;
+        }
+        const direction = guessed.direction ?? null;
+        if (recordedByHand.get(link.offer_id, guessed.type, l.at.slice(0, 10), direction, direction)) {
+          report.events_duplicate.push({ folder: folderRel, line: l.number, excerpt: excerpt(l.text) });
           continue;
         }
         const summary = summaryOf(l.text);

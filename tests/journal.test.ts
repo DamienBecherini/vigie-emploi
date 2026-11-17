@@ -176,6 +176,20 @@ describe('import of the folder journals', () => {
     const quote = j.find((e) => e.type === 'proposal')!;
     expect(quote).toMatchObject({ amount: 3000, unit: '€ HT', days: 6, files: ['candidatures/acme-developpeur-php/devis-2026-10-29.md'] });
     expect(j.find((e) => e.type === 'interview')!.files).toEqual(['candidatures/acme-developpeur-php/compte-rendu-appel.md']);
+    expect(r.events_duplicate).toEqual([]);
+  });
+
+  it('a fact already entered by hand (same type, day, compatible direction) is not imported again', () => {
+    const db2 = openDatabase(':memory:');
+    importHistory(db2, DATA);
+    const id = findOffer(db2, 'linkedin', '4200000099')!.id;
+    const imported = journal(db2, id, NOW).find((e) => e.at === '2026-10-27' && e.type === 'interview')!;
+    db2.prepare('DELETE FROM events WHERE id = ?').run(imported.id);
+    addEvent(db2, id, { type: 'interview', at: '27/10/2026 14:00', summary: 'Entretien saisi à la main' }, 'mcp', { now: NOW });
+    const r = importHistory(db2, DATA).journal;
+    expect(r.events_created).toBe(0);
+    expect(r.events_duplicate).toHaveLength(1);
+    expect(journal(db2, id, NOW).filter((e) => e.type === 'interview').map((e) => e.origin)).toEqual(['mcp']);
   });
 
   it('tracker formats: dated bullets, unchecked boxes ignored, code blocks ignored', () => {

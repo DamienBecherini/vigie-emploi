@@ -11,8 +11,8 @@ export default defineConfig({
       // Dictionaries are data: every key is checked by the compiler, not by a test.
       exclude: ['src/i18n/fr.ts', 'src/i18n/en.ts', 'src/mcp/i18n/**'],
       reporter: ['text-summary', 'text'],
-      // Floor a little under the figures measured when coverage was introduced (72 / 66 / 75 / 76): it may only go up.
-      thresholds: { statements: 70, branches: 64, functions: 72, lines: 74 },
+      // Floor a little under the measured figures (84 / 77 / 84 / 88 once the CLI got its tests): it may only go up.
+      thresholds: { statements: 82, branches: 75, functions: 82, lines: 86 },
     },
   },
 });

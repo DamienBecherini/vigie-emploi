@@ -2,6 +2,8 @@
 
 Date : 02/11/2026 · Statut : accepté
 
+> Les noms d'outils, de champs et de commandes cités sont ceux de l'époque, en français ; le code et l'API sont depuis en anglais (par exemple `ajouter_evenement` → `add_event`, `noter_lot` → `score_batch`, `grille` → `rubric`).
+
 ## Contexte
 
 Sprint 3 : le suivi d'une candidature (messages, appels, devis, relances) vivait dans les sections « Suivi » des `dossier-candidature.md`, en formats variés (tableaux Date | Événement, puces datées, cases à cocher). Rien ne signalait une relance due ni un entretien à venir. Il fallait aussi ouvrir les documents du dossier depuis le tableau de bord, et corriger un défaut : une offre déjà suivie, revue dans un lot d'alertes ou le registre, retombait en « notée » ou « écartée ».

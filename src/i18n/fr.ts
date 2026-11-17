@@ -83,7 +83,7 @@ Commandes
   serve [--port 4410] [--idle <minutes>]
                         Lance le tableau de bord (http://localhost:4410) ; --idle : s'arrête seul après ce temps sans visite
   mcp                   Serveur MCP (transport stdio) pour piloter vigie-emploi depuis une IA ; sans dossier
-                        configuré : ~/ma-recherche, créé au besoin par l'outil initialize_workspace
+                        configuré : ~/vigie-emploi, créé au besoin par l'outil initialize_workspace
 
 Options générales
   --data <dossier>      Dossier de données (sinon VIGIE_EMPLOI_DATA ou vigie-emploi.config.json)

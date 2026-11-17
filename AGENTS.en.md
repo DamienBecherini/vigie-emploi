@@ -7,15 +7,16 @@ Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the 
 ## Rules
 
 - CLI: always pass `--json`: the output is stable and unambiguous. Errors go to stderr (`{"ok": false, "error": "…"}`) with a non-zero exit code. MCP: an error comes back as an error result (`isError`), and the server keeps running.
-- `_SUIVI.md` (the tracker) is generated from the database (`generate_tracker` / `vigie-emploi generate-tracker`): once the user has switched to it, do not edit it by hand. By default it writes the preview `candidatures/_SUIVI.genere.md`; use `replace` only if the user asks for it.
+- `_SUIVI.md` (the tracker) is generated from the database (`generate_tracker` / `vigie-emploi generate-tracker`): do not edit it by hand (if it replaces a tracker kept by hand, compare with the preview first). By default it writes the preview `candidatures/_SUIVI.genere.md`; use `replace` only if the user asks for it.
 - The data folder comes from `VIGIE_EMPLOI_DATA`, `--data` or `vigie-emploi.config.json`. Never write personal data into the application's repository.
+- Mailbox: never ask for the password in the conversation. The user connects their mailbox themselves, in the dashboard ("Mailbox" button) or with `vigie-emploi mail setup`; the password goes to the system keychain.
 - Do not download LinkedIn, Indeed or Glassdoor pages with a script: read them in the user's browser, or ask them for the text (Glassdoor blocks bots). The Hellowork and Free-Work descriptions are already in the database after `ingest`.
 - The scoring grid belongs to the user (`profil/grille.json` in their data folder): read it before scoring a batch (`rubric` over MCP, `vigie-emploi rubric --instructions --json` on the CLI). Never give the final score: score the criteria, and the application calculates it.
 - Only change the grid (`update_rubric`, `vigie-emploi rubric --update`) when the user asks: first a trial run (`dry_run: true` / `--dry-run`) whose impact you show them, then save it with a summary.
 
 ## Full flow over MCP
 
-1. **Ingest**: `ingest_emails` (`keep: true` to keep the `.eml` files). Note `added`, `duplicates`, `dismissed` (discarded), `to_read` and `errors`.
+1. **Ingest**: `ingest_emails` (`keep: true` to keep the `.eml` files); it fetches the mailbox first when one is configured. Note `added`, `duplicates`, `dismissed` (discarded), `to_read` and `errors`, and pass on `to_tell` (e-mails fetched or mailbox error, e-mails deleted).
 2. **Read**: `offers_to_read`. Depending on `reading`: text in `description`; `browser` = open `url` in the user's browser; `human` = ask them for the text. `read_offer` for the full details.
 3. **Score** with the grid: `rubric` first (criteria, weights, scales, rules, inventory, examples, `instructions_ai`), then `score_batch` (`{ "offers": [ {id, criteria, inputs, blockers, fit, gaps, read, tags}, … ] }`) or `score_offer` for a single one. See "Scoring with the grid" below. Seen before? `list_offers` with `text`.
 4. **Summarise** for the user: job ads scored, those above their threshold (the grid's), with the breakdown (sub-scores, rules, "unknown" flags to check), conditions, what matches, gaps. No "go": `change_status` to `dismissed`, with the reason as the comment.

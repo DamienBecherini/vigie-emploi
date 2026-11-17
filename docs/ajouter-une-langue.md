@@ -4,12 +4,12 @@ vigie-emploi est livré en français (langue par défaut) et en anglais. Une lan
 
 ## 1. Déclarer la langue
 
-Dans `src/i18n/outil.ts` :
+Dans `src/i18n/tool.ts` :
 
 ```ts
-export const LANGUES = ['fr', 'en', 'es'] as const;
-export const LOCALES: Record<Langue, string> = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES' };
-export const NOMS_LANGUES: Record<Langue, string> = { fr: 'Français', en: 'English', es: 'Español' };
+export const LANGUAGES = ['fr', 'en', 'es'] as const;
+export const LOCALES: Record<Language, string> = { fr: 'fr-FR', en: 'en-GB', es: 'es-ES' };
+export const NAMES_LANGUAGES: Record<Language, string> = { fr: 'Français', en: 'English', es: 'Español' };
 ```
 
 La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom apparaît dans le sélecteur de l'interface et est accepté comme valeur de `language` (« Español », « espanol », « es »).
@@ -20,11 +20,11 @@ La locale règle les dates, les nombres et les pluriels (`Intl`). Le nom appara�
 
 | Fichier | Contenu |
 |---|---|
-| `src/i18n/es.ts` (copie de `en.ts`), à ajouter dans `DICTIONNAIRES` de `src/i18n/index.ts` | CLI, API, suivi généré, initialisation |
-| `ui/src/i18n/es.ts`, à ajouter dans `DICTIONNAIRES_UI` de `ui/src/i18n/index.ts` | Tableau de bord |
+| `src/i18n/es.ts` (copie de `en.ts`), à ajouter dans `DICTIONARIES` de `src/i18n/index.ts` | CLI, API, suivi généré, initialisation |
+| `ui/src/i18n/es.ts`, à ajouter dans `DICTIONARIES_UI` de `ui/src/i18n/index.ts` | Tableau de bord |
 | `src/mcp/i18n/es.ts`, à ajouter dans `DICTIONARIES_MCP_USER` de `src/mcp/texts.ts` | Textes du serveur MCP montrés tels quels à l'utilisateur (titres des outils et des prompts, descriptions des prompts, phrases `to_tell`) ; le reste (instructions, descriptions des outils, paramètres, résultats et erreurs, lus par l'IA seule) reste en anglais |
-| `src/i18n/libelles.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
-| `ui/src/theme.ts` | Noms des couleurs (`LIBELLES_NEUTRES`, `LIBELLES_ACCENTS`) |
+| `src/i18n/labels.ts` | Libellés des statuts, types d'événement, niveaux d'inventaire |
+| `ui/src/theme.ts` | Noms des couleurs (`LABELS_NEUTRAL`, `LABELS_ACCENTS`) |
 
 Soit trois dictionnaires (environ un millier de textes en tout, à partir des fichiers anglais) et cinq petites tables. Le compilateur ne signale rien d'autre : le reste du code ne connaît aucune langue en particulier.
 
@@ -43,8 +43,8 @@ Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `
 
 ## 4. Facultatif
 
-- Titres de section usuels d'un CV dans la langue (`SECTIONS_PAR_LANGUE`, `src/cv/cv.ts`) : l'attribut `lang` du CV est alors détecté tout seul.
-- Descriptions des gabarits de CV (`DESCRIPTIONS_GABARITS`, même fichier) et noms des palettes (`traductions` dans `ui/src/theme.ts`) : à défaut, le français.
+- Titres de section usuels d'un CV dans la langue (`SECTIONS_BY_LANGUAGE`, `src/cv/cv.ts`) : l'attribut `lang` du CV est alors détecté tout seul.
+- Descriptions des gabarits de CV (`DESCRIPTIONS_TEMPLATES`, même fichier) et noms des palettes (`translations` dans `ui/src/theme.ts`) : à défaut, le français.
 - Champ « Langue » de l'extension Claude Desktop (`mcpb/manifest.json`) : citer la nouvelle valeur dans la description.
 
 ## 5. Vérifier

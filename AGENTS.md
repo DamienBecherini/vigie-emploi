@@ -7,15 +7,16 @@ Deux façons de piloter : les **outils MCP** (`vigie-emploi mcp`, à privilégie
 ## Règles
 
 - CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "error": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
-- `_SUIVI.md` se génère depuis la base (`generate_tracker` / `vigie-emploi generate-tracker`) : ne pas l'éditer à la main une fois la bascule faite. Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `replace` seulement si l'utilisateur le demande.
+- `_SUIVI.md` se génère depuis la base (`generate_tracker` / `vigie-emploi generate-tracker`)  : ne pas l'éditer à la main (s'il remplace un ancien suivi tenu à la main, comparer d'abord avec l'aperçu). Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `replace` seulement si l'utilisateur le demande.
 - Le dossier de données vient de `VIGIE_EMPLOI_DATA`, de `--data` ou de `vigie-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
+- Boîte mail : ne jamais demander le mot de passe dans la conversation. L'utilisateur connecte sa boîte lui-même, dans le tableau de bord (bouton « Boîte mail ») ou avec `vigie-emploi mail setup` ; le mot de passe va dans le trousseau du système.
 - Ne pas télécharger LinkedIn, Indeed ni Glassdoor par script : lire ces pages dans le navigateur de l'utilisateur, ou lui demander le texte (Glassdoor bloque les robots). Les descriptions Hellowork et Free-Work sont déjà en base après `ingest`.
 - La grille de notation appartient à l'utilisateur (`profil/grille.json` de son dossier de données) : la lire avant de noter un lot (`rubric` en MCP, `vigie-emploi rubric --instructions --json` en CLI). Ne jamais donner la note finale : noter les critères, l'application calcule.
 - Ne modifier la grille (`update_rubric`, `vigie-emploi rubric --update`) qu'à la demande de l'utilisateur : d'abord un essai (`dry_run: true` / `--dry-run`) dont on lui montre l'impact, puis l'enregistrement avec un résumé.
 
 ## Flux complet via MCP
 
-1. **Ingérer** : `ingest_emails` (`keep: true` pour conserver les `.eml`). Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`.
+1. **Ingérer** : `ingest_emails` (`keep: true` pour conserver les `.eml`) ; il relève d'abord la boîte mail si elle est configurée. Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`, et transmettre `to_tell` (e-mails relevés ou erreur de la boîte, e-mails supprimés).
 2. **Lire** : `offers_to_read`. Selon `reading` : texte dans `description` ; `browser` = ouvrir `url` dans le navigateur de l'utilisateur ; `human` = lui demander le texte. `read_offer` pour le détail complet.
 3. **Noter** avec la grille : `rubric` d'abord (critères, poids, barèmes, règles, inventaire, exemples, `instructions_ai`), puis `score_batch` (`{ "offers": [ {id, criteria, inputs, blockers, fit, gaps, read, tags}, … ] }`) ou `score_offer` pour une seule. Voir « Noter avec la grille » ci-dessous. Déjà vue ? `list_offers` avec `text`.
 4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil (celui de la grille), avec la décomposition (sous-notes, règles, drapeaux « inconnu » à vérifier), conditions, ce qui colle, écarts. Sans « go » : `change_status` → `dismissed` avec la raison en commentaire.

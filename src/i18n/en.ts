@@ -84,7 +84,7 @@ Commands
   serve [--port 4410] [--idle <minutes>]
                         Starts the dashboard (http://localhost:4410); --idle: stops by itself after that idle time
   mcp                   MCP server (stdio transport) to drive vigie-emploi from an AI; without a configured
-                        folder: ~/ma-recherche, created if needed by the initialize_workspace tool
+                        folder: ~/vigie-emploi, created if needed by the initialize_workspace tool
 
 General options
   --data <folder>       Data folder (else VIGIE_EMPLOI_DATA or vigie-emploi.config.json)

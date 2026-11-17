@@ -37,7 +37,7 @@
       "type": "directory",
       "title": "Dossier de l'espace (Workspace folder)",
       "description": "Dossier de vos données de recherche ; il peut ne pas exister encore : Claude le crée à votre demande. / Folder for your job search data; it may not exist yet: Claude creates it when you ask.",
-      "default": "${HOME}/ma-recherche",
+      "default": "${HOME}/vigie-emploi",
       "required": false
     },
     "language": {

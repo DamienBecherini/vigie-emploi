@@ -21,7 +21,7 @@ The file and folder names stay in French: the application expects them.
 | `profil/grille.json` | Your job-ad scoring grid (criteria, weights, pay floor…). |
 | `cv/` | Your CVs in Markdown and their PDFs; `cv/gabarit/` = the layout. |
 | `candidatures/` | One folder per job ad (ad, fit, messages, follow-up) and `_SUIVI.md`, the generated tracker. |
-| `emails/` | Job alert e-mails (`.eml`) to sort. |
+| `emails/` | Job alert e-mails (`.eml`) to sort: fetched from your mailbox if you connected it, or dropped by hand. |
 | `profils-publics/` | The state of your public profiles (LinkedIn, Malt…). |
 | `messages/` | Message outlines: application, freelance bid, recruiter, follow-up, thank-you. |
 | `procedures/` | The procedures the AI follows (sorting e-mails, preparing applications, targeted CV). |
@@ -35,7 +35,8 @@ The application's command (run it from this folder):
 {{CMD}} serve      dashboard in the browser
 {{CMD}} cv "cv/<name>.md"
                    CV as a PDF (shows the page count)
-{{CMD}} ingest     reads the job alert e-mails in emails/
+{{CMD}} mail setup connects your mailbox (folder of the alerts; also with the "Mailbox" button of the dashboard)
+{{CMD}} ingest     fetches the mailbox, then reads the job alert e-mails in emails/
 ```
 
 Tip: put this folder under version control with git (`git init`), so you can get back an earlier version of a CV or a message.

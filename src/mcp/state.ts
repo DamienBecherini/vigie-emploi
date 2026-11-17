@@ -11,7 +11,7 @@ import { tm } from './texts.ts';
 
 /** Data folder when nothing is configured (neither --data, nor VIGIE_EMPLOI_DATA, nor a config file). */
 export function folderByDefault(): string {
-  return join(homedir(), 'ma-recherche');
+  return join(homedir(), 'vigie-emploi');
 }
 
 export interface StateMcp {

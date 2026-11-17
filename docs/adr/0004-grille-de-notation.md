@@ -2,6 +2,8 @@
 
 Date : 02/11/2026 · Statut : accepté
 
+> Les noms d'outils, de champs et de commandes cités sont ceux de l'époque, en français ; le code et l'API sont depuis en anglais (par exemple `ajouter_evenement` → `add_event`, `noter_lot` → `score_batch`, `grille` → `rubric`).
+
 ## Contexte
 
 Sprint 4 : jusqu'ici l'IA donnait une note brute « au jugement » et des pénalités fixes (−0,5, −1) tirées d'une grille Markdown. La note était peu reproductible, ses raisons peu lisibles, et tout changement de priorité obligeait à renoter les offres à la main. L'utilisateur veut voir et régler les critères (poids, barèmes, règles) dans un panneau, et que les notes suivent.

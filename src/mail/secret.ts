@@ -23,9 +23,10 @@ export interface SecretStore {
 const SERVICE = 'vigie-emploi';
 
 function run(command: string, args: string[], input?: string): { ok: boolean; out: string; err: string; missing: boolean } {
-  const r = spawnSync(command, args, { input, encoding: 'utf8', windowsHide: true, timeout: 20000 });
+  // A ceiling, not a delay: PowerShell answers in a fraction of a second, but can take 20 s to start on a loaded machine (seen on the CI).
+  const r = spawnSync(command, args, { input, encoding: 'utf8', windowsHide: true, timeout: 60000 });
   const missing = (r.error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT';
-  return { ok: r.status === 0 && !r.error, out: (r.stdout ?? '').replace(/\r?\n$/, ''), err: (r.stderr ?? '').trim(), missing };
+  return { ok: r.status === 0 && !r.error, out: (r.stdout ?? '').replace(/\r?\n$/, ''), err: (r.stderr ?? '').trim() || (r.error?.message ?? ''), missing };
 }
 
 /** File name of an account (letters, digits, dot, dash, underscore, at sign). */

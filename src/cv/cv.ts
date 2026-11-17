@@ -241,6 +241,7 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
 <html lang="${o.language ?? cvLanguage(markdown)}">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
 <title>CV</title>
 <link rel="stylesheet" href="${o.css}">
 </head>

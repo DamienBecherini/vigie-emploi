@@ -36,14 +36,21 @@ const FILES_MAX = 500;
  * hidden segment, outside data/ and emails/, and which stays inside the folder once symbolic links are resolved.
  * Throws an error otherwise (or if the file does not exist).
  */
+/** Forbidden first-level folder? Trailing dots and spaces are ignored, as Windows does ("data." is "data"). */
+function forbidden(firstSegment: string): boolean {
+  return FOLDERS_FORBIDDEN.has(firstSegment.replace(/[.\s]+$/, '').toLowerCase());
+}
+
 export function safeFile(dataDir: string, path: string): { absolute: string; relative: string } {
   const rel = pathRelative(path);
-  if (FOLDERS_FORBIDDEN.has(rel.split('/')[0].toLowerCase())) throw new Error(t('core.accessRefused', { path }));
+  if (forbidden(rel.split('/')[0])) throw new Error(t('core.accessRefused', { path }));
   const root = realpathSync(resolve(dataDir));
   const target = resolve(root, ...rel.split('/'));
   if (!existsSync(target)) throw new Error(t('core.fileNotFound', { path: rel }));
   const real = realpathSync(target);
   if (real !== root && !real.startsWith(root + sep)) throw new Error(t('core.accessRefused', { path }));
+  // Checked again once links are resolved: a symbolic link inside the folder may lead to data/ or emails/.
+  if (forbidden(relative(root, real).split(sep)[0])) throw new Error(t('core.accessRefused', { path }));
   if (!statSync(real).isFile()) throw new Error(t('core.notOneFile', { path: rel }));
   return { absolute: real, relative: rel };
 }

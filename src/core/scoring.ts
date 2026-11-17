@@ -90,6 +90,8 @@ export function offerForInput(
     return { id: o.id, created: false };
   }
   if (!e.url) throw new Error(t('core.inputWithoutId'));
+  // Same rule as updateLink: only http(s) addresses (the link is clickable in the dashboard).
+  if (!/^https?:\/\/\S+$/i.test(e.url)) throw new Error(t('core.linkInvalid', { link: e.url }));
   const ident = canonicalize(e.url);
   const source = ident?.source ?? (e.source || 'manual');
   const siteId = ident?.siteId ?? `url-${fingerprint(e.url)}`;

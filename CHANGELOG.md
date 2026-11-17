@@ -1,5 +1,18 @@
 # Nouveautés
 
+## 0.6.1 — à venir
+
+### Sécurité
+
+- Boîte mail sans TLS direct (port 143) : le chiffrement (STARTTLS) est désormais exigé avant l'envoi du mot de passe ; un serveur qui ne le propose pas est refusé au lieu de recevoir le mot de passe en clair. Seul un serveur sur la machine même (passerelle locale) peut s'en passer.
+- Tableau de bord : un lien symbolique placé dans l'espace ne donne plus accès à `data/` ni à `emails/`.
+- Notation d'une offre par son adresse : seules les adresses http(s) sont acceptées, comme pour la modification du lien.
+- CV : la page HTML rendue par Chrome pour le PDF interdit tout script, toute connexion et tout cadre (un texte d'annonce recopié dans un CV ne peut rien exécuter).
+
+### Documentation
+
+- Guides `docs/` en anglais (`utiliser-avec-une-ia.en.md`, `ajouter-une-langue.en.md`).
+
 ## 0.6.0 — novembre 2026 (première version publique)
 
 Première version publiée : tout ce qui suit est nouveau pour qui l'installe.

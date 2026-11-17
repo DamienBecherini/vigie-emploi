@@ -426,7 +426,7 @@ export function createApp(
       file = safeFile(config.dataDir, path);
     } catch (e) {
       const message = (e as Error).message;
-      return c.text(message, /introuvable/i.test(message) ? 404 : 403);
+      return c.text(message, /introuvable|not found/i.test(message) ? 404 : 403);
     }
     const p = pageFile(file.absolute, file.relative, { raw: c.req.query('raw') === '1' });
     return c.body(p.body, 200, p.headers);

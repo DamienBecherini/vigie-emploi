@@ -62,11 +62,20 @@ export function classify(e: unknown): MailError {
   return new MailError('other', text);
 }
 
+/** Server on this machine (local bridge such as Proton Mail Bridge): no network to cross. */
+export function isLoopback(host: string): boolean {
+  return /^(localhost|127(\.\d{1,3}){3}|::1|\[::1\])$/i.test(host.trim());
+}
+
 function client(mail: MailConfig, o: OptionsFetch): ImapFlow {
   return new ImapFlow({
     host: mail.host,
     port: mail.port,
     secure: mail.secure,
+    // Without direct TLS, encryption must be started (STARTTLS) before the password is sent: a server that
+    // does not offer it, or an attacker on the network who removes it, is refused instead of receiving the
+    // password in clear. Only a server on this machine may do without it.
+    ...(mail.secure ? {} : { doSTARTTLS: !isLoopback(mail.host) }),
     auth: { user: mail.user, pass: o.password },
     logger: false,
     connectionTimeout: 20000,

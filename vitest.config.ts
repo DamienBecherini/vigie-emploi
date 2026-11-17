@@ -4,9 +4,10 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
-    // The language taken from the system (new workspace, no configuration) is French for the whole suite, on every machine;
-    // the tests of the detection pass their own environment.
+    // The language taken from the system (new workspace, no configuration) is French for the whole suite, on every machine:
+    // the locale variable here, the locale Node reports in tests/setup.ts. The tests of the detection pass their own.
     env: { LC_ALL: 'fr_FR.UTF-8' },
+    setupFiles: ['tests/setup.ts'],
     // `npm run coverage`: the server code (src/). The interface has no component tests yet, it is left out of the figure.
     coverage: {
       provider: 'v8',

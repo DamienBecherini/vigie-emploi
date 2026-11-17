@@ -77,6 +77,16 @@ describe('text', () => {
     expect(readCompensation('26,6-54,6 K€')).toEqual({ min: 26600, max: 54600, unit: 'year' });
     expect(readCompensation('NC')).toEqual({ min: null, max: null, unit: null });
   });
+  it('readCompensation: thousands separated by a comma or a dot (English job ads)', () => {
+    expect(readCompensation('€52,000–58,000')).toEqual({ min: 52000, max: 58000, unit: 'year' });
+    expect(readCompensation('£45,000 - £55,000 a year')).toEqual({ min: 45000, max: 55000, unit: 'year' });
+    expect(readCompensation('$120,000')).toEqual({ min: 120000, max: 120000, unit: 'year' });
+    expect(readCompensation('52.000-58.000 €')).toEqual({ min: 52000, max: 58000, unit: 'year' });
+    expect(readCompensation('1,250,000 €')).toEqual({ min: 1250000, max: 1250000, unit: 'year' });
+    // French decimal comma unchanged
+    expect(readCompensation('45,5 K€')).toEqual({ min: 45500, max: 45500, unit: 'year' });
+    expect(readCompensation('12,50 €/h')).toEqual({ min: 12.5, max: 12.5, unit: 'hour' });
+  });
   it('findCompensation ignores percentages and districts', () => {
     expect(findCompensation('100 % télétravail, Paris 5e, 50-60 K€')).toBe('50-60 K€');
     expect(findCompensation('Freelance full télétravail, 200-300 €/j')).toBe('200-300 €/j');

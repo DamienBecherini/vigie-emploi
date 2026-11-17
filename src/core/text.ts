@@ -25,7 +25,9 @@ function number(s: string): number {
   return Number(s.replace(/[\s  ]/g, '').replace(',', '.'));
 }
 
-const COUNT = String.raw`\d{1,3}(?:[ .]\d{3})+|\d+(?:[.,]\d+)?`;
+// Thousands separators: space, dot, comma ("52,000", English style). A comma followed by anything other than
+// groups of three digits stays a decimal comma ("26,6 K€").
+const COUNT = String.raw`\d{1,3}(?:[ .,]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)?`;
 const CURRENCY = String.raw`(?:k\s*€|k\s*eur|€|eur\b|euros?\b|k\b)`;
 const RE_RANGE = new RegExp(
   String.raw`(?:${COUNT})\s*(?:k\s*)?(?:€\s*)?(?:-|–|à|to)\s*(?:${COUNT})\s*${CURRENCY}[^,;·(]*`,
@@ -57,7 +59,7 @@ export function readCompensation(text: string | null | undefined): Compensation 
   const re = new RegExp(String.raw`(${COUNT})\s*(k)?`, 'gi');
   const values: { v: number; k: boolean }[] = [];
   for (const m of t.matchAll(re)) {
-    const raw = m[1].includes('.') && /\.\d{3}$/.test(m[1]) ? m[1].replace(/\./g, '') : m[1];
+    const raw = /^\d{1,3}(?:[.,]\d{3})+$/.test(m[1]) ? m[1].replace(/[.,]/g, '') : m[1];
     const v = number(raw);
     if (!Number.isFinite(v) || v === 0) continue;
     values.push({ v, k: Boolean(m[2]) });

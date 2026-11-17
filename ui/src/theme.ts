@@ -1,23 +1,23 @@
-// Palettes de couleurs : chaque palette remplace les gris (classes slate-*) et l'accent (classes blue-*)
-// par une famille de Tailwind. Les classes du code ne changent pas : seules les variables CSS changent.
-import couleurs from 'tailwindcss/colors';
-import type { Langue } from '../../src/i18n/outil.ts';
+// Colour palettes: each palette replaces the greys (slate-* classes) and the accent (blue-* classes)
+// with a Tailwind family. The classes of the code do not change: only the CSS variables change.
+import colors from 'tailwindcss/colors';
+import type { Language } from '../../src/i18n/tool.ts';
 
-export const NEUTRES = ['slate', 'gray', 'zinc', 'neutral', 'stone'] as const;
+export const NEUTRAL = ['slate', 'gray', 'zinc', 'neutral', 'stone'] as const;
 export const ACCENTS = [
   'blue', 'sky', 'cyan', 'teal', 'emerald', 'green', 'lime', 'yellow', 'amber',
   'orange', 'red', 'rose', 'pink', 'fuchsia', 'purple', 'violet', 'indigo',
 ] as const;
-export type Neutre = (typeof NEUTRES)[number];
+export type Neutral = (typeof NEUTRAL)[number];
 export type Accent = (typeof ACCENTS)[number];
 
-/** Noms des familles de gris, par langue (une langue ajoutée doit les traduire : erreur de compilation sinon). */
-export const LIBELLES_NEUTRES: Record<Langue, Record<Neutre, string>> = {
+/** Names of the grey families, by language (an added language must translate them: compilation error otherwise). */
+export const LABELS_NEUTRAL: Record<Language, Record<Neutral, string>> = {
   fr: { slate: 'Ardoise (bleuté)', gray: 'Gris', zinc: 'Zinc', neutral: 'Neutre', stone: 'Pierre (chaud)' },
   en: { slate: 'Slate (bluish)', gray: 'Grey', zinc: 'Zinc', neutral: 'Neutral', stone: 'Stone (warm)' },
 };
-/** Noms des couleurs d'accent, par langue. */
-export const LIBELLES_ACCENTS: Record<Langue, Record<Accent, string>> = {
+/** Names of the accent colours, by language. */
+export const LABELS_ACCENTS: Record<Language, Record<Accent, string>> = {
   fr: {
     blue: 'Bleu', sky: 'Ciel', cyan: 'Cyan', teal: 'Sarcelle', emerald: 'Émeraude', green: 'Vert', lime: 'Citron vert',
     yellow: 'Jaune', amber: 'Ambre', orange: 'Orange', red: 'Rouge', rose: 'Rose', pink: 'Rose vif', fuchsia: 'Fuchsia',
@@ -31,70 +31,70 @@ export const LIBELLES_ACCENTS: Record<Langue, Record<Accent, string>> = {
 };
 
 export interface Palette {
-  neutre: Neutre;
+  neutral: Neutral;
   accent: Accent;
 }
-export interface PaletteNommee extends Palette {
-  /** Nom et description dans les autres langues ; à défaut, le nom français. */
-  traductions?: Partial<Record<Langue, { nom: string; description?: string }>>;
+export interface PaletteNamed extends Palette {
+  /** Name and description in the other languages; otherwise, the French name. */
+  translations?: Partial<Record<Language, { name: string; description?: string }>>;
   id: string;
-  nom: string;
+  name: string;
   description?: string;
 }
 
-/** Nom et description d'une palette livrée dans la langue voulue (le français à défaut de traduction). */
-export function textesPalette(p: PaletteNommee, langue: Langue): { nom: string; description?: string } {
-  return p.traductions?.[langue] ?? { nom: p.nom, description: p.description };
+/** Name and description of a shipped palette in the wanted language (French if there is no translation). */
+export function textsPalette(p: PaletteNamed, language: Language): { name: string; description?: string } {
+  return p.translations?.[language] ?? { name: p.name, description: p.description };
 }
 
-/** Identifiant de la palette réglée par l'utilisateur (une par mode). */
-export const PERSO = 'perso';
+/** Id of the palette set by the user (one per mode). */
+export const PERSONAL = 'personal';
 
-export const PALETTES_CLAIRES: PaletteNommee[] = [
-  // Sable en tête : palette par défaut, et repli d'une palette inconnue.
-  { id: 'sable', nom: 'Sable', neutre: 'stone', accent: 'orange', description: 'Gris chauds, accent orange', traductions: { en: { nom: 'Sand', description: 'Warm greys, orange accent' } } },
-  { id: 'bleu', nom: 'Ardoise bleue', neutre: 'slate', accent: 'blue', description: "La palette d'origine", traductions: { en: { nom: 'Blue slate', description: 'The original palette' } } },
-  { id: 'sauge', nom: 'Sauge', neutre: 'neutral', accent: 'teal', traductions: { en: { nom: 'Sage' } } },
-  { id: 'lavande', nom: 'Lavande', neutre: 'zinc', accent: 'violet', traductions: { en: { nom: 'Lavender' } } },
-  { id: 'framboise', nom: 'Framboise', neutre: 'gray', accent: 'rose', traductions: { en: { nom: 'Raspberry' } } },
+export const PALETTES_LIGHT: PaletteNamed[] = [
+  // Sand first: default palette, and fallback for an unknown palette.
+  { id: 'sand', name: 'Sable', neutral: 'stone', accent: 'orange', description: 'Gris chauds, accent orange', translations: { en: { name: 'Sand', description: 'Warm greys, orange accent' } } },
+  { id: 'blue', name: 'Ardoise bleue', neutral: 'slate', accent: 'blue', description: "La palette d'origine", translations: { en: { name: 'Blue slate', description: 'The original palette' } } },
+  { id: 'sage', name: 'Sauge', neutral: 'neutral', accent: 'teal', translations: { en: { name: 'Sage' } } },
+  { id: 'lavender', name: 'Lavande', neutral: 'zinc', accent: 'violet', translations: { en: { name: 'Lavender' } } },
+  { id: 'raspberry', name: 'Framboise', neutral: 'gray', accent: 'rose', translations: { en: { name: 'Raspberry' } } },
 ];
 
-export const PALETTES_SOMBRES: PaletteNommee[] = [
-  { id: 'chaud', nom: 'Chaud', neutre: 'stone', accent: 'orange', description: 'Sans lumière bleue', traductions: { en: { nom: 'Warm', description: 'No blue light' } } },
-  { id: 'olive', nom: 'Olive', neutre: 'stone', accent: 'lime', description: 'Sans lumière bleue', traductions: { en: { nom: 'Olive', description: 'No blue light' } } },
-  { id: 'braise', nom: 'Braise', neutre: 'neutral', accent: 'red', description: 'Sans lumière bleue', traductions: { en: { nom: 'Embers', description: 'No blue light' } } },
-  { id: 'bleu-nuit', nom: 'Bleu nuit', neutre: 'slate', accent: 'blue', description: "La palette d'origine", traductions: { en: { nom: 'Midnight blue', description: 'The original palette' } } },
+export const PALETTES_DARK: PaletteNamed[] = [
+  { id: 'warm', name: 'Chaud', neutral: 'stone', accent: 'orange', description: 'Sans lumière bleue', translations: { en: { name: 'Warm', description: 'No blue light' } } },
+  { id: 'olive', name: 'Olive', neutral: 'stone', accent: 'lime', description: 'Sans lumière bleue', translations: { en: { name: 'Olive', description: 'No blue light' } } },
+  { id: 'embers', name: 'Braise', neutral: 'neutral', accent: 'red', description: 'Sans lumière bleue', translations: { en: { name: 'Embers', description: 'No blue light' } } },
+  { id: 'blue-night', name: 'Bleu nuit', neutral: 'slate', accent: 'blue', description: "La palette d'origine", translations: { en: { name: 'Midnight blue', description: 'The original palette' } } },
 ];
 
-export const PALETTE_CLAIRE_DEFAUT = 'sable';
-export const PALETTE_SOMBRE_DEFAUT = 'chaud';
-export const PERSO_DEFAUT: Palette = { neutre: 'stone', accent: 'orange' };
+export const PALETTE_LIGHT_DEFAULT = 'sand';
+export const PALETTE_DARK_DEFAULT = 'warm';
+export const PERSONAL_DEFAULT: Palette = { neutral: 'stone', accent: 'orange' };
 
-const NUANCES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'] as const;
+const SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'] as const;
 
-export function trouverPalette(liste: PaletteNommee[], id: string, perso: Palette): Palette {
-  if (id === PERSO) return perso;
-  return liste.find((p) => p.id === id) ?? liste[0];
+export function findPalette(list: PaletteNamed[], id: string, personal: Palette): Palette {
+  if (id === PERSONAL) return personal;
+  return list.find((p) => p.id === id) ?? list[0];
 }
 
-/** Variables CSS d'une palette : --color-slate-* = gris choisi, --color-blue-* = accent choisi. */
+/** CSS variables of a palette: --color-slate-* = chosen grey, --color-blue-* = chosen accent. */
 export function variablesPalette(p: Palette): Record<string, string> {
   const v: Record<string, string> = {};
-  const neutre = couleurs[p.neutre] as Record<string, string>;
-  const accent = couleurs[p.accent] as Record<string, string>;
-  for (const n of NUANCES) {
-    v[`--color-slate-${n}`] = neutre[n];
+  const neutral = colors[p.neutral] as Record<string, string>;
+  const accent = colors[p.accent] as Record<string, string>;
+  for (const n of SHADES) {
+    v[`--color-slate-${n}`] = neutral[n];
     v[`--color-blue-${n}`] = accent[n];
   }
   return v;
 }
 
-/** Couleur d'aperçu (pastilles de la fenêtre Thème). */
-export function teinte(famille: Neutre | Accent, nuance: (typeof NUANCES)[number]): string {
-  return (couleurs[famille] as Record<string, string>)[nuance];
+/** Preview colour (dots of the Theme window). */
+export function hue(family: Neutral | Accent, shade: (typeof SHADES)[number]): string {
+  return (colors[family] as Record<string, string>)[shade];
 }
 
-export function appliquerPalette(p: Palette) {
+export function applyPalette(p: Palette) {
   const s = document.documentElement.style;
   for (const [k, val] of Object.entries(variablesPalette(p))) s.setProperty(k, val);
 }

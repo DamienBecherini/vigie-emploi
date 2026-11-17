@@ -1,67 +1,67 @@
-// Texte d'un document déposé par l'utilisateur (CV, export LinkedIn…) pour une IA qui ne lit pas le disque :
-// PDF par unpdf (pdf.js sans dépendance, chargé à la demande), Word (.docx) par lecture directe de l'archive.
+// Text of a document dropped by the user (CV, LinkedIn export…) for an AI that does not read the disk:
+// PDF through unpdf (pdf.js without dependencies, loaded on demand), Word (.docx) by reading the archive directly.
 import { inflateRawSync } from 'node:zlib';
 
 /**
- * Texte d'un PDF, page par page (tableau vide si le PDF n'a pas de couche texte : scan, image), et les adresses des liens
- * de chaque page : dans un CV, l'URL du profil GitHub ou LinkedIn se cache souvent derrière un simple mot (« GitHub »).
+ * Text of a PDF, page by page (empty array if the PDF has no text layer: scan, image), and the addresses of the links
+ * of each page: in a CV, the URL of the GitHub or LinkedIn profile often hides behind a single word ("GitHub").
  */
-export async function textePdf(donnees: Uint8Array): Promise<{ pages: number; texte: string[]; liens: string[][] }> {
+export async function textPdf(data: Uint8Array): Promise<{ pages: number; text: string[]; links: string[][] }> {
   const { extractText, getDocumentProxy } = await import('unpdf');
-  const pdf = await getDocumentProxy(new Uint8Array(donnees));
+  const pdf = await getDocumentProxy(new Uint8Array(data));
   const r = await extractText(pdf, { mergePages: false });
-  const liens: string[][] = [];
+  const links: string[][] = [];
   for (let i = 1; i <= r.totalPages; i += 1) {
     try {
       const annotations = (await (await pdf.getPage(i)).getAnnotations()) as { subtype?: string; url?: string; unsafeUrl?: string }[];
       const urls = annotations.filter((a) => a.subtype === 'Link').map((a) => a.url ?? a.unsafeUrl).filter((u): u is string => Boolean(u));
-      liens.push([...new Set(urls)]);
+      links.push([...new Set(urls)]);
     } catch {
-      liens.push([]);
+      links.push([]);
     }
   }
-  return { pages: r.totalPages, texte: (r.text as string[]).map((t) => t.replace(/[ \t]+\n/g, '\n').trim()), liens };
+  return { pages: r.totalPages, text: (r.text as string[]).map((t) => t.replace(/[ \t]+\n/g, '\n').trim()), links };
 }
 
-/** Fichier d'une archive ZIP (méthodes « stocké » et « deflate »), ou null s'il n'y est pas. */
-function fichierZip(zip: Buffer, nom: string): Buffer | null {
-  // Fin du répertoire central : signature 0x06054b50, cherchée depuis la fin.
-  let fin = -1;
+/** File of a ZIP archive ("stored" and "deflate" methods), or null if it is not in it. */
+function fileZip(zip: Buffer, name: string): Buffer | null {
+  // End of the central directory: signature 0x06054b50, searched from the end.
+  let end = -1;
   for (let i = zip.length - 22; i >= Math.max(0, zip.length - 65_557); i -= 1) {
     if (zip.readUInt32LE(i) === 0x06054b50) {
-      fin = i;
+      end = i;
       break;
     }
   }
-  if (fin < 0) return null;
-  const nombre = zip.readUInt16LE(fin + 10);
-  let p = zip.readUInt32LE(fin + 16);
-  for (let n = 0; n < nombre && p + 46 <= zip.length; n += 1) {
+  if (end < 0) return null;
+  const number = zip.readUInt16LE(end + 10);
+  let p = zip.readUInt32LE(end + 16);
+  for (let n = 0; n < number && p + 46 <= zip.length; n += 1) {
     if (zip.readUInt32LE(p) !== 0x02014b50) return null;
-    const methode = zip.readUInt16LE(p + 10);
-    const taille = zip.readUInt32LE(p + 20);
-    const lNom = zip.readUInt16LE(p + 28);
-    const lExtra = zip.readUInt16LE(p + 30);
-    const lComm = zip.readUInt16LE(p + 32);
+    const method = zip.readUInt16LE(p + 10);
+    const size = zip.readUInt32LE(p + 20);
+    const nameLen = zip.readUInt16LE(p + 28);
+    const extraLen = zip.readUInt16LE(p + 30);
+    const commentLen = zip.readUInt16LE(p + 32);
     const local = zip.readUInt32LE(p + 42);
-    const nomFichier = zip.toString('utf8', p + 46, p + 46 + lNom);
-    if (nomFichier === nom) {
-      const debut = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28);
-      const brut = zip.subarray(debut, debut + taille);
-      if (methode === 0) return Buffer.from(brut);
-      if (methode === 8) return inflateRawSync(brut);
+    const nameFile = zip.toString('utf8', p + 46, p + 46 + nameLen);
+    if (nameFile === name) {
+      const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28);
+      const raw = zip.subarray(start, start + size);
+      if (method === 0) return Buffer.from(raw);
+      if (method === 8) return inflateRawSync(raw);
       return null;
     }
-    p += 46 + lNom + lExtra + lComm;
+    p += 46 + nameLen + extraLen + commentLen;
   }
   return null;
 }
 
-const ENTITES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 
-/** Texte d'un document Word .docx (paragraphes, tableaux à plat), ou null si l'archive est illisible. */
-export function texteDocx(donnees: Buffer): string | null {
-  const xml = fichierZip(donnees, 'word/document.xml');
+/** Text of a Word .docx document (paragraphs, flattened tables), or null if the archive is unreadable. */
+export function textDocx(data: Buffer): string | null {
+  const xml = fileZip(data, 'word/document.xml');
   if (!xml) return null;
   return xml
     .toString('utf8')
@@ -70,7 +70,7 @@ export function texteDocx(donnees: Buffer): string | null {
     .replace(/<\/w:p>/g, '\n')
     .replace(/<\/w:tc>/g, '\t')
     .replace(/<[^>]+>/g, '')
-    .replace(/&(amp|lt|gt|quot|apos);/g, (_m, e: string) => ENTITES[e])
+    .replace(/&(amp|lt|gt|quot|apos);/g, (_m, e: string) => ENTITIES[e])
     .replace(/&#(\d+);/g, (_m, n: string) => String.fromCodePoint(Number(n)))
     .replace(/\n{3,}/g, '\n\n')
     .trim();

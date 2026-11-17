@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { lireEmail } from '../src/ingest/eml.ts';
-import { extraireJsonLd } from '../src/ingest/jsonld.ts';
-import { canoniser } from '../src/core/liens.ts';
+import { readEmail } from '../src/ingest/eml.ts';
+import { extractJsonLd } from '../src/ingest/jsonld.ts';
+import { canonicalize } from '../src/core/links.ts';
 
-// Données fictives au format des e-mails et des pages Collective (collective.work).
+// Fictitious data in the format of the Collective e-mails and pages (collective.work).
 const EMAIL = [
   'From: Collective <ops@exemple.test>',
   'To: moi@exemple.test',
@@ -17,7 +17,7 @@ const EMAIL = [
   '<a href="https://www.collective.work/company/collective/jobs">On recrute</a></body></html>',
 ].join('\r\n');
 
-const donnees = {
+const data = {
   props: {
     pageProps: {
       project: {
@@ -36,38 +36,38 @@ const donnees = {
     },
   },
 };
-const PAGE = `<html><head></head><body><script id="__NEXT_DATA__" type="application/json">${JSON.stringify(donnees)}</script></body></html>`;
+const PAGE = `<html><head></head><body><script id="__NEXT_DATA__" type="application/json">${JSON.stringify(data)}</script></body></html>`;
 
 describe('Collective', () => {
-  it('canonise les liens d’offres, pas ceux de l’application', () => {
-    expect(canoniser('https://www.collective.work/jobs/fr/developpeur-php-and-api-hf-x1y2')).toEqual({
+  it('canonicalizes offer links, not those of the application', () => {
+    expect(canonicalize('https://www.collective.work/jobs/fr/developpeur-php-and-api-hf-x1y2')).toEqual({
       source: 'collective',
-      idSite: 'developpeur-php-and-api-hf-x1y2',
+      siteId: 'developpeur-php-and-api-hf-x1y2',
       url: 'https://www.collective.work/jobs/fr/developpeur-php-and-api-hf-x1y2',
     });
-    expect(canoniser('https://www.collective.work/company/collective/jobs')).toBeNull();
+    expect(canonicalize('https://www.collective.work/company/collective/jobs')).toBeNull();
   });
 
-  it('lit l’offre et son intitulé dans l’e-mail', async () => {
-    const e = await lireEmail(EMAIL);
-    expect(e.offres).toHaveLength(1);
-    expect(e.offres[0]).toMatchObject({
+  it('reads the offer and its job title in the e-mail', async () => {
+    const e = await readEmail(EMAIL);
+    expect(e.offers).toHaveLength(1);
+    expect(e.offers[0]).toMatchObject({
       source: 'collective',
-      idSite: 'developpeur-php-and-api-hf-x1y2',
-      titre: 'Développeur PHP & API (H/F)',
-      recueLe: '2026-11-03',
+      siteId: 'developpeur-php-and-api-hf-x1y2',
+      title: 'Développeur PHP & API (H/F)',
+      receivedAt: '2026-11-03',
     });
   });
 
-  it('extrait l’offre des données de page', () => {
-    expect(extraireJsonLd(PAGE)).toEqual({
-      titre: 'Développeur PHP & API (H/F)',
-      entreprise: 'Anonyme',
-      lieu: 'Paris, France',
-      contrat: 'Freelance',
-      remuneration: '450 - 500€/j',
-      teletravail: 'hybride',
-      publiee_le: '2026-11-03',
+  it('extracts the offer from the page data', () => {
+    expect(extractJsonLd(PAGE)).toEqual({
+      title: 'Développeur PHP & API (H/F)',
+      company: 'Anonyme',
+      location: 'Paris, France',
+      contract: 'Freelance',
+      compensation: '450 - 500€/j',
+      remote: 'hybride',
+      published_at: '2026-11-03',
       description: 'TJM maximum : 500 € HT/jour.\nDévelopper des API REST.\n\nProfil recherché\n5 ans de PHP.',
     });
   });

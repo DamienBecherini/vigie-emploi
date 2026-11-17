@@ -33,7 +33,7 @@ const serveur = spawn(process.execPath, [resolve(import.meta.dirname, '../../bin
 let pret = false;
 for (let i = 0; i < 50 && !pret; i++) {
   await attendre(200);
-  pret = await fetch(`${base}/api/sante`).then((r) => r.ok, () => false);
+  pret = await fetch(`${base}/api/health`).then((r) => r.ok, () => false);
 }
 if (!pret) throw new Error(`tableau de bord injoignable sur ${base}`);
 
@@ -67,15 +67,15 @@ const cdp = (method, params = {}) =>
 const evaluer = async (expression) => (await cdp('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
 const vues = [
-  { fichier: `tableau-de-bord${suffixe}.png`, chemin: '/?tri=recue_le:desc,note:desc', largeur: 1440, hauteur: 860 },
-  { fichier: `detail-offre${suffixe}.png`, chemin: '/?tri=recue_le:desc,note:desc&offre=4', largeur: 1440, hauteur: 1000 },
+  { fichier: `tableau-de-bord${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc', largeur: 1440, hauteur: 860 },
+  { fichier: `detail-offre${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc&offer=4', largeur: 1440, hauteur: 1000 },
 ];
 try {
   await cdp('Page.enable');
   await cdp('Page.navigate', { url: base });
   await attendre(1500);
   await evaluer(
-    `localStorage.setItem('vigie-emploi:statistiques-visibles', 'true'); localStorage.setItem('vigie-emploi:theme', 'clair'); localStorage.setItem('vigie-emploi:langue', '${langue}'); true`,
+    `localStorage.setItem('vigie-emploi:statistics-visible', 'true'); localStorage.setItem('vigie-emploi:theme', 'light'); localStorage.setItem('vigie-emploi:language', '${langue}'); true`,
   );
   for (const v of vues) {
     await cdp('Emulation.setDeviceMetricsOverride', { width: v.largeur, height: v.hauteur, deviceScaleFactor: 1, mobile: false });

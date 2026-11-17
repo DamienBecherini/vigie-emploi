@@ -67,7 +67,7 @@ Assignments for SMEs, agencies, local authorities and institutions, from gatheri
 ### 2016 – 2017 · Vercors, France
 **IoT & embedded systems R&D project (C/C++)**
 
-Hardware and software prototyping of a connected (IoT) ecosystem, in a pair: a fleet of **Arduino** microcontrollers communicating **by radio** with a central node (custom protocol), a management "mini-OS", and a remote control and monitoring interface.
+Hardware and software prototyping of a connected (IoT) ecosystem, as a two-person team: a fleet of **Arduino** microcontrollers communicating **by radio** with a central node (custom protocol), a management "mini-OS", and a remote control and monitoring interface.
 
 ### 01/2014 – 04/2016 · Vercors, France
 **IT & systems technician — Self-employed**

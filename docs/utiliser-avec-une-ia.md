@@ -4,49 +4,49 @@
 
 Le serveur suffit aussi à un client **sans accès aux fichiers ni au terminal** (Claude Desktop) : il crée l'espace de travail, expose les consignes de l'espace en prompts, lit et écrit les fichiers de l'espace et génère les CV en PDF (voir « Claude Desktop » plus bas).
 
-Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `VIGIE_EMPLOI_DATA`, sinon `vigie-emploi.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/ma-recherche`** (`C:\Users\<nom>\ma-recherche` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialiser_espace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
+Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `VIGIE_EMPLOI_DATA`, sinon `vigie-emploi.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/ma-recherche`** (`C:\Users\<nom>\ma-recherche` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialize_workspace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
 
 ## Outils
 
 | Outil | Rôle |
 |---|---|
-| `lister_offres` | Liste paginée, mêmes filtres que `vigie-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `recue_le:desc,note:desc`) |
-| `lire_offre` | Détail complet : description, notes, historique des statuts, tags, candidature |
-| `offres_a_lire` | Offres à traiter sans note, avec `lecture` = `description`, `navigateur` ou `humain` |
-| `grille` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |
-| `noter_offre` | Une note (par `id`, ou par `url` : l'offre est créée au besoin) : `criteres`, `entrees`, `bloquants` ; la note finale est calculée et renvoyée avec sa décomposition |
-| `noter_lot` | Plusieurs notes au format des lots, tout ou rien ; `essai: true` calcule sans enregistrer |
-| `modifier_grille` | Changement partiel de la grille (poids, seuil, barèmes, règles, inventaire) avec un résumé ; `essai: true` pour l'aperçu ; `restaurer_version` ; renvoie l'impact (notes qui changent, offres qui franchissent le seuil) |
-| `renoter` | Recalcule les notes à critères avec la grille courante |
-| `historique_grille` | Versions de la grille (date, auteur, résumé) |
-| `changer_statut` | Statut + commentaire (historisé) |
-| `modifier_tags` | Ajout / retrait de tags |
-| `modifier_lien` | Lien de l'offre (ou `null` pour l'effacer) |
-| `candidater` | Passe en `go`, renvoie l'offre, le dossier de données, un dossier suggéré et les étapes |
-| `enregistrer_candidature` | Dossier, CV, canal, date d'envoi, message, prochaine action ; avec une date d'envoi, l'offre passe en `envoyee` |
-| `ajouter_evenement` | Événement daté au journal (message, entretien, test, proposition, décision, note) ; daté dans le futur et pas fait, c'est une échéance |
-| `modifier_evenement` | Corrige un événement (champ absent inchangé, `null` efface) |
+| `list_offers` | Liste paginée, mêmes filtres que `vigie-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `received_at:desc,note:desc`) |
+| `read_offer` | Détail complet : description, notes, historique des statuts, tags, candidature |
+| `offers_to_read` | Offres à traiter sans note, avec `reading` = `description`, `browser` ou `human` |
+| `rubric` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |
+| `score_offer` | Une note (par `id`, ou par `url` : l'offre est créée au besoin) : `criteria`, `inputs`, `blockers` ; la note finale est calculée et renvoyée avec sa décomposition |
+| `score_batch` | Plusieurs notes au format des lots, tout ou rien ; `dry_run: true` calcule sans enregistrer |
+| `update_rubric` | Changement partiel de la grille (poids, seuil, barèmes, règles, inventaire) avec un résumé ; `dry_run: true` pour l'aperçu ; `restore_version` ; renvoie l'impact (notes qui changent, offres qui franchissent le seuil) |
+| `rescore` | Recalcule les notes à critères avec la grille courante |
+| `rubric_history` | Versions de la grille (date, auteur, résumé) |
+| `change_status` | Statut + commentaire (historisé) |
+| `update_tags` | Ajout / retrait de tags |
+| `update_link` | Lien de l'offre (ou `null` pour l'effacer) |
+| `apply` | Passe en `go`, renvoie l'offre, le dossier de données, un dossier suggéré et les étapes |
+| `save_application` | Dossier, CV, canal, date d'envoi, message, prochaine action ; avec une date d'envoi, l'offre passe en `sent` |
+| `add_event` | Événement daté au journal (message, entretien, test, proposition, décision, note) ; daté dans le futur et pas fait, c'est une échéance |
+| `update_event` | Corrige un événement (champ absent inchangé, `null` efface) |
 | `journal` | Journal d'une offre : échéances d'abord, puis du plus récent au plus ancien |
-| `echeances` | Échéances en retard et à venir sur N jours (7 par défaut), toutes offres |
-| `marquer_fait` | Marque une échéance comme faite (ou la rouvre) |
-| `fichiers_dossier` | Fichiers du dossier de candidature (chemins à citer dans un événement) |
-| `ingerer_emails` | Lit les `.eml` puis les supprime (sauf `garder: true`) |
-| `generer_suivi` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `remplacer: true` |
+| `deadlines` | Échéances en retard et à venir sur N jours (7 par défaut), toutes offres |
+| `mark_done` | Marque une échéance comme faite (ou la rouvre) |
+| `folder_files` | Fichiers du dossier de candidature (chemins à citer dans un événement) |
+| `ingest_emails` | Lit les `.eml` puis les supprime (sauf `keep: true`) |
+| `generate_tracker` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `replace: true` |
 
 Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) :
 
 | Outil | Rôle |
 |---|---|
-| `etat_espace` | Dossier de l'espace, initialisé ou non, démarrage fait ou non, navigateur trouvé pour les PDF, gabarit installé |
-| `initialiser_espace` | Crée l'espace (comme `vigie-emploi init`) dans le dossier du serveur ou celui choisi par l'utilisateur, puis s'y installe |
-| `lister_fichiers` | Contenu d'un dossier de l'espace, sur 1 à 4 niveaux |
-| `lire_fichier` | Texte tel quel ; PDF : texte extrait page par page ; Word (`.docx`) : texte ; image : contenu `image` |
-| `ecrire_fichier` | Crée ou remplace un fichier texte (`.md`, `.txt`, `.json`, `.csv`, `.yml`, `.css`), dossiers parents compris ; renvoie `existait` ; `creer_seulement: true` refuse d'écraser |
-| `deplacer_fichier` | Déplace ou renomme un fichier, sans jamais écraser |
-| `generer_cv` | CV Markdown → PDF à côté, avec le gabarit de l'espace ; nombre de pages, `pdf_existait` ; `capture: true` joint l'image PNG du rendu |
-| `compter` | Caractères et mots de chaque bloc à copier-coller d'un texte ou d'un fichier |
-| `lister_gabarits`, `choisir_gabarit` | Gabarits de CV livrés ; installation dans `cv/gabarit` (l'ancien est gardé) |
-| `ouvrir_tableau_de_bord` | Démarre le tableau de bord en arrière-plan s'il ne tourne pas déjà, et renvoie son adresse (`ouvrir: true` l'ouvre dans le navigateur par défaut) ; voir « Tableau de bord sans terminal » |
+| `workspace_state` | Dossier de l'espace, initialisé ou non, démarrage fait ou non, navigateur trouvé pour les PDF, gabarit installé |
+| `initialize_workspace` | Crée l'espace (comme `vigie-emploi init`) dans le dossier du serveur ou celui choisi par l'utilisateur, puis s'y installe |
+| `list_files` | Contenu d'un dossier de l'espace, sur 1 à 4 niveaux |
+| `read_file` | Texte tel quel ; PDF : texte extrait page par page ; Word (`.docx`) : texte ; image : contenu `image` |
+| `write_file` | Crée ou remplace un fichier texte (`.md`, `.txt`, `.json`, `.csv`, `.yml`, `.css`), dossiers parents compris ; renvoie `existait` ; `create_only: true` refuse d'écraser |
+| `move_file` | Déplace ou renomme un fichier, sans jamais écraser |
+| `generate_cv` | CV Markdown → PDF à côté, avec le gabarit de l'espace ; nombre de pages, `pdf_existed` ; `capture: true` joint l'image PNG du rendu |
+| `count` | Caractères et mots de chaque bloc à copier-coller d'un texte ou d'un fichier |
+| `list_templates`, `choose_template` | Gabarits de CV livrés ; installation dans `cv/gabarit` (l'ancien est gardé) |
+| `open_dashboard` | Démarre le tableau de bord en arrière-plan s'il ne tourne pas déjà, et renvoie son adresse (`open: true` l'ouvre dans le navigateur par défaut) ; voir « Tableau de bord sans terminal » |
 
 **Sécurité des outils fichiers** : tout chemin est relatif à l'espace (un chemin absolu n'est accepté que s'il est dans l'espace) ; `..`, les fichiers et dossiers cachés (`.mcp.json`, `.git`…), `data/` (la base, qui ne se modifie que par les outils de l'application) et les liens symboliques qui sortent de l'espace sont refusés. Aucun outil ne supprime de fichier ; l'écriture se limite aux fichiers texte.
 
@@ -56,10 +56,10 @@ Les consignes de l'espace sont relues sur le disque à chaque appel (l'utilisate
 
 | Prompt | Contenu |
 |---|---|
-| `demarrage` | `AGENTS.md` puis `DEMARRAGE.md` : premier entretien ou reprise. Sans espace, il demande à l'IA de le créer d'abord (`initialiser_espace`) |
-| `traiter-emails` | `AGENTS.md` puis `procedures/traiter-emails.md` |
-| `preparer-go` | `AGENTS.md` puis `procedures/preparer-go.md` |
-| `cv-cible` | `AGENTS.md` puis `procedures/cv-cible.md` (argument facultatif `offre`) |
+| `onboarding` | `AGENTS.md` puis `DEMARRAGE.md` : premier entretien ou reprise. Sans espace, il demande à l'IA de le créer d'abord (`initialize_workspace`) |
+| `process-emails` | `AGENTS.md` puis `procedures/traiter-emails.md` |
+| `prepare-go` | `AGENTS.md` puis `procedures/preparer-go.md` |
+| `targeted-cv` | `AGENTS.md` puis `procedures/cv-cible.md` (argument facultatif `offer`) |
 
 La ressource `vigie-emploi://espace/AGENTS.md` donne les consignes générales seules ; les `instructions` du serveur renvoient vers elles.
 
@@ -104,7 +104,7 @@ Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveu
 
 Pour les changer ensuite : Paramètres → Extensions → vigie-emploi → Configurer.
 
-**2. Démarrer** : voir l'étape 2 plus bas (prompt `demarrage`).
+**2. Démarrer** : voir l'étape 2 plus bas (prompt `onboarding`).
 
 L'extension contient l'application compilée et ses dépendances ; Claude Desktop la lance avec son Node intégré (Node 24.22 dans Claude Desktop 5.11492, novembre 2026), qui comprend `node:sqlite`. Le manifeste exige Node 24 ou plus (`compatibility.runtimes.node`) : si un jour le Node intégré était plus ancien, Claude Desktop prendrait un `node` du système assez récent, et à défaut le serveur s'arrête avec un message clair (« installer Node 24 ou plus récent »), visible dans le journal de l'extension.
 
@@ -134,11 +134,11 @@ Construire l'extension : `npm run mcpb` dans le dépôt (voir le README).
 
 `command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/vigie-emploi.js` de l'application, avec des barres obliques. `env.VIGIE_EMPLOI_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/ma-recherche`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
 
-**2. Démarrer** : dans une nouvelle conversation, bouton « + » → vigie-emploi → prompt **`demarrage`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialiser_espace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `VIGIE_EMPLOI_DATA`) : sinon la session suivante repartira du dossier configuré.
+**2. Démarrer** : dans une nouvelle conversation, bouton « + » → vigie-emploi → prompt **`onboarding`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialize_workspace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `VIGIE_EMPLOI_DATA`) : sinon la session suivante repartira du dossier configuré.
 
-**3. Ensuite** : prompts `traiter-emails`, `preparer-go` et `cv-cible`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generer_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
+**3. Ensuite** : prompts `process-emails`, `prepare-go` et `targeted-cv`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generate_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
 
-**Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `ouvrir_tableau_de_bord` vérifie `/api/sante` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`vigie-emploi serve --inactivite 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `ouvrir: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
+**Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `open_dashboard` vérifie `/api/health` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`vigie-emploi serve --idle 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `open: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
 
 Limites : l'IA ne lit pas LinkedIn, Indeed ni Glassdoor (pas de navigateur dans Claude Desktop sans extension) : collez le texte des offres quand elle le demande. Un PDF scanné, sans texte, ne se lit pas : glissez-le directement dans la conversation.
 
@@ -152,11 +152,11 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const client = new Client({ name: 'mon-client', version: '1.0.0' });
 await client.connect(new StdioClientTransport({ command: 'node', args: ['C:/chemin/vigie-emploi/bin/vigie-emploi.js', 'mcp'] }));
-const r = await client.callTool({ name: 'offres_a_lire', arguments: { limite: 10 } });
+const r = await client.callTool({ name: 'offers_to_read', arguments: { limit: 10 } });
 ```
 
 Inspecteur officiel, pour essayer les outils à la main : `npx @modelcontextprotocol/inspector node bin/vigie-emploi.js mcp --data <dossier>`.
 
 ## Flux type
 
-Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → lire la grille (`grille`) → noter les critères (`noter_lot`) → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.
+Voir [`AGENTS.md`](../AGENTS.md) : ingérer → lire → lire la grille (`rubric`) → noter les critères (`score_batch`) → candidater → enregistrer la candidature → tenir le journal (événements, échéances) → générer le suivi.

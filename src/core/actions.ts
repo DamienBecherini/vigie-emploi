@@ -1,175 +1,175 @@
-// Opérations de haut niveau partagées par la CLI, l'API du tableau de bord et le serveur MCP.
-// Chaque fonction valide ses entrées et lève une Error au message lisible par l'utilisateur.
-import type { Base } from '../db/base.ts';
-import { transaction } from '../db/base.ts';
-import { listerOffres } from './requetes.ts';
+// High-level operations shared by the CLI, the dashboard API and the MCP server.
+// Each function validates its inputs and throws an Error with a message the user can read.
+import type { Database } from '../db/database.ts';
+import { transaction } from '../db/database.ts';
+import { listOffers } from './queries.ts';
 import {
-  ajouterStatut,
-  detailOffre,
-  enregistrerCandidature,
-  modifierTags,
-  offreParId,
-  type ChampsCandidature,
-  type DetailOffre,
-  type Offre,
-} from './offres.ts';
-import { estNoteACriteres, noterEntree, type EntreeLot, type ResultatNotation } from './notation.ts';
-import { notesOffre } from './offres.ts';
-import type { VersionGrille } from './grille-stockage.ts';
-import type { Entrees } from './grille.ts';
-import { STATUTS_A_TRAITER, type Statut } from './statuts.ts';
-import { dateFr } from './texte.ts';
+  addStatus,
+  detailOffer,
+  saveApplication,
+  updateTags,
+  offerById,
+  type FieldsApplication,
+  type DetailOffer,
+  type Offer,
+} from './offers.ts';
+import { isCriteriaScore, scoreInput, type InputBatch, type ResultScoring } from './scoring.ts';
+import { scoresOffer } from './offers.ts';
+import type { VersionRubric } from './rubric-storage.ts';
+import type { Inputs } from './rubric.ts';
+import { STATUSES_TO_PROCESS, type Status } from './statuses.ts';
+import { dateFr } from './text.ts';
 import { t } from '../i18n/index.ts';
 
-/** Statuts d'avant l'envoi : une candidature envoyée ou « candidater » les font avancer. */
-export const STATUTS_AVANT_GO: Statut[] = ['nouvelle', 'a-lire', 'notee', 'ecartee'];
+/** Statuses before sending: a sent application or "apply" moves them forward. */
+export const STATUSES_BEFORE_GO: Status[] = ['new', 'to-read', 'scored', 'dismissed'];
 
-export function offreOuErreur(db: Base, id: number): Offre {
-  const o = Number.isInteger(id) ? offreParId(db, id) : undefined;
-  if (!o) throw new Error(t('core.offreIntrouvable', { id }));
+export function offerOrError(db: Database, id: number): Offer {
+  const o = Number.isInteger(id) ? offerById(db, id) : undefined;
+  if (!o) throw new Error(t('core.offerNotFound', { id }));
   return o;
 }
 
-function tronquer(s: string, n: number): string {
+function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-export interface OffreALire {
+export interface OfferToRead {
   id: number;
   source: string;
   url: string | null;
-  titre: string;
-  entreprise: string | null;
-  lieu: string | null;
-  contrat: string | null;
-  remuneration: string | null;
-  teletravail: string | null;
-  recue_le: string | null;
-  /** description : texte déjà en base ; navigateur : ouvrir l'URL ; humain : page protégée, demander le texte. */
-  lecture: 'description' | 'navigateur' | 'humain';
-  /** Longueur de la description en base (0 si aucune). */
-  longueur_description: number;
-  /** Absente en mode résumé (descriptions: false). */
+  title: string;
+  company: string | null;
+  location: string | null;
+  contract: string | null;
+  compensation: string | null;
+  remote: string | null;
+  received_at: string | null;
+  /** description: text already in the database; browser: open the URL; human: protected page, ask for the text. */
+  reading: 'description' | 'browser' | 'human';
+  /** Length of the description in the database (0 if none). */
+  length_description: number;
+  /** Absent in summary mode (descriptions: false). */
   description?: string | null;
 }
 
-export interface OptionsALire {
-  /** Offres par page (500 par défaut). */
-  limite?: number;
-  /** Page (1 par défaut). */
+export interface OptionsToRead {
+  /** Offers per page (500 by default). */
+  limit?: number;
+  /** Page (1 by default). */
   page?: number;
-  /** false : résumé sans description (lire ensuite chaque offre avec son id). true par défaut. */
+  /** false: summary without description (then read each offer with its id). true by default. */
   descriptions?: boolean;
-  /** Descriptions entières (sinon tronquées à `longueur`). */
-  complet?: boolean;
-  /** Longueur maximale d'une description tronquée (2 500 par défaut). */
-  longueur?: number;
+  /** Whole descriptions (otherwise truncated to `length`). */
+  full?: boolean;
+  /** Maximum length of a truncated description (2,500 by default). */
+  length?: number;
 }
 
-export interface ResultatALire {
+export interface ResultToRead {
   total: number;
   page: number;
   pages: number;
-  /** Offres à lire après cette page. */
-  restantes: number;
-  offres: OffreALire[];
+  /** Offers to read after this page. */
+  remaining: number;
+  offers: OfferToRead[];
 }
 
-/** Offres à traiter (nouvelle, à lire) sans note, des plus anciennes aux plus récentes, par pages. */
-export function offresALire(db: Base, o: OptionsALire = {}): ResultatALire {
-  const r = listerOffres(db, { statuts: STATUTS_A_TRAITER, sansNote: true, taille: o.limite ?? 500, page: o.page, tri: 'id', ordre: 'asc' });
-  const avecDescriptions = o.descriptions !== false;
-  const offres = r.offres.map((l): OffreALire => {
-    const d = offreParId(db, l.id)!;
-    const lecture = d.description ? 'description' : l.source === 'glassdoor' ? 'humain' : 'navigateur';
-    const base: OffreALire = {
+/** Offers to process (new, to read) without a score, from the oldest to the most recent, by pages. */
+export function offersToRead(db: Database, o: OptionsToRead = {}): ResultToRead {
+  const r = listOffers(db, { statuses: STATUSES_TO_PROCESS, unscored: true, size: o.limit ?? 500, page: o.page, sort: 'id', order: 'asc' });
+  const withDescriptions = o.descriptions !== false;
+  const offers = r.offers.map((l): OfferToRead => {
+    const d = offerById(db, l.id)!;
+    const reading = d.description ? 'description' : l.source === 'glassdoor' ? 'human' : 'browser';
+    const base: OfferToRead = {
       id: l.id,
       source: l.source,
-      url: l.url_canonique,
-      titre: l.titre,
-      entreprise: l.entreprise,
-      lieu: l.lieu,
-      contrat: l.contrat,
-      remuneration: l.remuneration,
-      teletravail: l.teletravail,
-      recue_le: l.recue_le,
-      lecture,
-      longueur_description: d.description?.length ?? 0,
+      url: l.canonical_url,
+      title: l.title,
+      company: l.company,
+      location: l.location,
+      contract: l.contract,
+      compensation: l.compensation,
+      remote: l.remote,
+      received_at: l.received_at,
+      reading,
+      length_description: d.description?.length ?? 0,
     };
-    if (!avecDescriptions) return base;
-    const texte = d.description ? (o.complet ? d.description : tronquer(d.description.replace(/\s+/g, ' '), o.longueur ?? 2500)) : null;
-    return { ...base, description: texte };
+    if (!withDescriptions) return base;
+    const text = d.description ? (o.full ? d.description : truncate(d.description.replace(/\s+/g, ' '), o.length ?? 2500)) : null;
+    return { ...base, description: text };
   });
-  return { total: r.total, page: r.page, pages: r.pages, restantes: Math.max(0, r.total - (r.page - 1) * r.taille - offres.length), offres };
+  return { total: r.total, page: r.page, pages: r.pages, remaining: Math.max(0, r.total - (r.page - 1) * r.size - offers.length), offers };
 }
 
-export interface OptionsNoter {
-  /** Charge la grille courante (appelé seulement si une entrée a des critères). */
-  grille?: () => VersionGrille | null;
-  /** Essai : calcule et renvoie les notes sans rien enregistrer. */
-  essai?: boolean;
+export interface OptionsScore {
+  /** Loads the current rubric (called only if an input has criteria). */
+  rubric?: () => VersionRubric | null;
+  /** Dry run: computes and returns the scores without saving anything. */
+  dry_run?: boolean;
 }
 
-/** Enregistre des notes au format des lots (dans une transaction : tout ou rien). */
-export function noterOffres(db: Base, entrees: EntreeLot[], origine: string, o: OptionsNoter = {}): ResultatNotation[] {
-  if (!entrees.length) throw new Error(t('core.aucuneNote'));
-  const grille = entrees.some(estNoteACriteres) ? (o.grille?.() ?? null) : null;
-  const noter = () =>
-    entrees.map((e) => {
-      const r = noterEntree(db, e, { origine, origineOffre: 'manuel', grille });
-      if (Array.isArray(e.tags) && e.tags.length) modifierTags(db, r.id, e.tags, []);
+/** Saves scores in the batch format (in a transaction: all or nothing). */
+export function scoreOffers(db: Database, inputs: InputBatch[], origin: string, o: OptionsScore = {}): ResultScoring[] {
+  if (!inputs.length) throw new Error(t('core.noneScore'));
+  const rubric = inputs.some(isCriteriaScore) ? (o.rubric?.() ?? null) : null;
+  const score = () =>
+    inputs.map((e) => {
+      const r = scoreInput(db, e, { origin, originOffer: 'manual', rubric });
+      if (Array.isArray(e.tags) && e.tags.length) updateTags(db, r.id, e.tags, []);
       return r;
     });
-  if (!o.essai) return transaction(db, noter);
+  if (!o.dry_run) return transaction(db, score);
   db.exec('BEGIN IMMEDIATE');
   try {
-    return noter();
+    return score();
   } finally {
     db.exec('ROLLBACK');
   }
 }
 
-export interface SaisieSousNotes {
-  /** Sous-notes modifiées (critères notés par l'IA) ; null retire la sous-note (valeur neutre). */
-  criteres?: Record<string, { note: number | string; justification?: string | null } | null>;
-  /** Données d'entrée des critères calculés ; null efface une valeur (retour à la déduction depuis l'offre). */
-  entrees?: { [K in keyof Entrees]?: Entrees[K] | null };
-  bloquants?: string[];
+export interface InputSubScores {
+  /** Modified sub-scores (criteria scored by the AI); null removes the sub-score (neutral value). */
+  criteria?: Record<string, { score: number | string; justification?: string | null } | null>;
+  /** Inputs of the computed criteria; null clears a value (back to the deduction from the offer). */
+  inputs?: { [K in keyof Inputs]?: Inputs[K] | null };
+  blockers?: string[];
 }
 
 /**
- * Correction des sous-notes depuis l'interface : part de la dernière note (sous-notes, entrées, règles,
- * « colle », « ecarts »), applique les changements et ajoute une note à l'historique (origine interface).
- * Sur une note globale de l'ancienne grille, les critères non saisis valent la valeur neutre.
+ * Correction of the sub-scores from the interface: starts from the last score (sub-scores, inputs, rules,
+ * "fit", "gaps"), applies the changes and adds a score to the history (origin interface).
+ * On an overall score of the old rubric, the criteria not entered get the neutral value.
  */
-export function modifierSousNotes(db: Base, id: number, s: SaisieSousNotes, origine: string, grille: VersionGrille): ResultatNotation {
-  offreOuErreur(db, id);
-  const derniere = notesOffre(db, id)[0];
-  const base = derniere?.saisie ?? { criteres: {}, entrees: undefined, bloquants: [] };
-  const criteres: NonNullable<EntreeLot['criteres']> = {};
-  for (const [k, v] of Object.entries(base.criteres)) criteres[k] = { note: v.note, justification: v.justification, origine: v.origine ?? 'ia' };
-  for (const [k, v] of Object.entries(s.criteres ?? {})) {
-    if (v === null) delete criteres[k];
-    else criteres[k] = { note: v.note, justification: v.justification ?? undefined, origine: 'interface' };
+export function updateSubScores(db: Database, id: number, s: InputSubScores, origin: string, rubric: VersionRubric): ResultScoring {
+  offerOrError(db, id);
+  const last = scoresOffer(db, id)[0];
+  const base = last?.input ?? { criteria: {}, inputs: undefined, blockers: [] };
+  const criteria: NonNullable<InputBatch['criteria']> = {};
+  for (const [k, v] of Object.entries(base.criteria)) criteria[k] = { score: v.score, justification: v.justification, origin: v.origin ?? 'ai' };
+  for (const [k, v] of Object.entries(s.criteria ?? {})) {
+    if (v === null) delete criteria[k];
+    else criteria[k] = { score: v.score, justification: v.justification ?? undefined, origin: 'interface' };
   }
-  const entrees: Record<string, unknown> = { ...(base.entrees ?? {}) };
-  for (const [k, v] of Object.entries(s.entrees ?? {})) {
-    if (v === null || v === undefined) delete entrees[k];
-    else entrees[k] = v;
+  const inputs: Record<string, unknown> = { ...(base.inputs ?? {}) };
+  for (const [k, v] of Object.entries(s.inputs ?? {})) {
+    if (v === null || v === undefined) delete inputs[k];
+    else inputs[k] = v;
   }
   return transaction(db, () =>
-    noterEntree(
+    scoreInput(
       db,
       {
         id,
-        criteres,
-        entrees: entrees as Entrees,
-        bloquants: s.bloquants ?? base.bloquants,
-        colle: derniere?.colle ?? undefined,
-        ecarts: derniere?.ecarts ?? undefined,
-        lu: derniere?.lu ?? true,
+        criteria,
+        inputs: inputs as Inputs,
+        blockers: s.blockers ?? base.blockers,
+        fit: last?.fit ?? undefined,
+        gaps: last?.gaps ?? undefined,
+        read: last?.read ?? true,
       },
-      { origine, grille },
+      { origin, rubric },
     ),
   );
 }
@@ -188,65 +188,65 @@ export function slug(s: string): string {
     .join('-');
 }
 
-export interface PreparationCandidature {
-  offre: DetailOffre;
-  dossier_donnees: string;
-  dossier_suggere: string;
-  etapes: string[];
+export interface PreparationApplication {
+  offer: DetailOffer;
+  data_dir: string;
+  suggested_folder: string;
+  steps: string[];
 }
 
-/** Statuts de fin : « candidater » les rouvre (l'utilisateur reprend l'offre). */
-const STATUTS_ROUVRABLES: Statut[] = ['abandonnee', 'refus', 'close'];
+/** End statuses: "apply" reopens them (the user takes the offer up again). */
+const REOPENABLE_STATUSES: Status[] = ['withdrawn', 'rejected', 'closed'];
 
 /**
- * Passe l'offre en « go » et rassemble ce qu'il faut pour candidater. Une candidature en cours
- * (go, envoyee, relancee, entretien) garde son statut ; une offre abandonnée, refusée ou close est rouverte.
+ * Moves the offer to "go" and gathers what is needed to apply. An application in progress
+ * (go, sent, followed-up, interview) keeps its status; a withdrawn, rejected or closed offer is reopened.
  */
-export function preparerCandidature(db: Base, dossierDonnees: string, id: number, origine: string): PreparationCandidature {
-  const avant = offreOuErreur(db, id);
-  if (STATUTS_AVANT_GO.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: 'candidater', origine });
-  else if (STATUTS_ROUVRABLES.includes(avant.statut)) ajouterStatut(db, id, 'go', { commentaire: t('core.reprise', { statut: avant.statut }), origine });
-  const d = detailOffre(db, id)!;
-  const dossier = d.candidature?.dossier ?? `candidatures/${slug(`${d.entreprise ?? d.source} ${d.titre}`)}`;
+export function prepareApplication(db: Database, dataDir: string, id: number, origin: string): PreparationApplication {
+  const before = offerOrError(db, id);
+  if (STATUSES_BEFORE_GO.includes(before.status)) addStatus(db, id, 'go', { comment: 'apply', origin });
+  else if (REOPENABLE_STATUSES.includes(before.status)) addStatus(db, id, 'go', { comment: t('core.import', { status: before.status }), origin });
+  const d = detailOffer(db, id)!;
+  const folder = d.application?.folder ?? `candidatures/${slug(`${d.company ?? d.source} ${d.title}`)}`;
   return {
-    offre: d,
-    dossier_donnees: dossierDonnees,
-    dossier_suggere: dossier,
-    etapes: [
-      t('core.etape.relire', { url: d.url_canonique ?? t('core.sansUrl') }),
-      t('core.etape.consignes'),
-      t('core.etape.dossier', { dossier }),
-      t('core.etape.enregistrer', { id, dossier }),
-      t('core.etape.envoi'),
+    offer: d,
+    data_dir: dataDir,
+    suggested_folder: folder,
+    steps: [
+      t('core.step.reread', { url: d.canonical_url ?? t('core.withoutUrl') }),
+      t('core.step.instructions'),
+      t('core.step.folder', { folder }),
+      t('core.step.save', { id, folder }),
+      t('core.step.send'),
     ],
   };
 }
 
 /**
- * Met à jour la candidature d'une offre. Avec une date d'envoi, une offre pas encore envoyée passe
- * en « envoyee » (commentaire : canal et date).
+ * Updates the application of an offer. With a sending date, an offer not sent yet moves
+ * to "sent" (comment: channel and date).
  */
-export function suivreCandidature(
-  db: Base,
+export function trackApplication(
+  db: Database,
   id: number,
-  champs: ChampsCandidature,
-  origine: string,
-): { offre: DetailOffre; statut_ajoute: Statut | null } {
-  const o = offreOuErreur(db, id);
-  const envoi = champs.envoyee_le?.trim();
-  // « 02/11/2026 » est rangé en 2026-11-02 ; un texte libre (« ≈ 25/08/2026 ») est gardé tel quel.
-  const champsNorm: ChampsCandidature = {
-    ...champs,
-    envoyee_le: envoi && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(envoi) ? dateFr(envoi) : champs.envoyee_le,
+  fields: FieldsApplication,
+  origin: string,
+): { offer: DetailOffer; status_added: Status | null } {
+  const o = offerOrError(db, id);
+  const send = fields.sent_at?.trim();
+  // "02/11/2026" is stored as 2026-11-02; a free text ("≈ 25/08/2026") is kept as it is.
+  const fieldsNorm: FieldsApplication = {
+    ...fields,
+    sent_at: send && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(send) ? dateFr(send) : fields.sent_at,
   };
   return transaction(db, () => {
-    const c = enregistrerCandidature(db, id, champsNorm, { origine });
-    let statutAjoute: Statut | null = null;
-    if (envoi && [...STATUTS_AVANT_GO, 'go'].includes(o.statut)) {
-      const commentaire = [c.canal, t('core.envoyeeLe', { date: envoi })].filter(Boolean).join(', ');
-      ajouterStatut(db, id, 'envoyee', { commentaire, origine });
-      statutAjoute = 'envoyee';
+    const c = saveApplication(db, id, fieldsNorm, { origin });
+    let statusAdded: Status | null = null;
+    if (send && [...STATUSES_BEFORE_GO, 'go'].includes(o.status)) {
+      const comment = [c.channel, t('core.sentAt', { date: send })].filter(Boolean).join(', ');
+      addStatus(db, id, 'sent', { comment, origin });
+      statusAdded = 'sent';
     }
-    return { offre: detailOffre(db, id)!, statut_ajoute: statutAjoute };
+    return { offer: detailOffer(db, id)!, status_added: statusAdded };
   });
 }

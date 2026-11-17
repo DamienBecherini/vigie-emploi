@@ -1,7 +1,7 @@
 {
-  "dossierDonnees": "C:/chemin/vers/mes-donnees",
+  "dataDir": "C:/chemin/vers/mes-donnees",
   "port": 4410,
-  "telechargerJsonLd": true,
-  "titresExclus": ["\bjunior\b", "\bstage\b", "alternan"],
-  "employeursRefuses": []
+  "fetchJsonLd": true,
+  "excludedTitles": ["\bjunior\b", "\bstage\b", "alternan"],
+  "rejectedEmployers": []
 }

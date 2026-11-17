@@ -1,167 +1,167 @@
-// Reprise des journaux de candidature : sections « Suivi » des candidatures/*/dossier-candidature.md
-// (dossiers actifs, pas _archives/) → événements (origine « import »). Lecture seule sur les dossiers ;
-// idempotent : chaque ligne reprise a une empreinte (cle_import) et n'est créée qu'une fois.
+// Import of the application journals: "Suivi" sections of candidatures/*/dossier-candidature.md
+// (active folders, not _archives/) → events (origin "import"). Read only on the folders;
+// idempotent: each imported line has a fingerprint (import_key) and is only created once.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
-import type { Base } from '../db/base.ts';
-import { transaction } from '../db/base.ts';
-import { ajouterEvenement, type SaisieEvenement, type Sens, type TypeEvenement } from '../core/evenements.ts';
-import { empreinte, sansMarkdown } from '../core/texte.ts';
-import { enregistrerCandidature } from '../core/offres.ts';
-import { cellules } from './markdown.ts';
+import type { Database } from '../db/database.ts';
+import { transaction } from '../db/database.ts';
+import { addEvent, type EventInput, type Direction, type TypeEvent } from '../core/events.ts';
+import { fingerprint, withoutMarkdown } from '../core/text.ts';
+import { saveApplication } from '../core/offers.ts';
+import { cells } from './markdown.ts';
 
-export interface RapportJournal {
-  dossiers: number;
-  /** Dossiers sans offre en base (aucune candidature ne pointe vers eux). */
-  dossiers_sans_offre: string[];
-  /** Dossiers rattachés à la candidature sans dossier de la même entreprise (nom du dossier). */
-  dossiers_rattaches: { dossier: string; offre_id: number }[];
-  /** Dossiers sans section « Suivi » exploitable. */
-  dossiers_sans_suivi: string[];
-  lignes: number;
-  evenements_crees: number;
-  evenements_existants: number;
-  /** Événements repris d'une ligne qui a disparu du dossier (jamais modifiés depuis) : supprimés. */
-  evenements_retires: number;
-  echeances: number;
-  par_type: Record<string, number>;
-  /** Lignes reprises en « note » faute de type reconnu. */
-  non_typees: { dossier: string; ligne: number; extrait: string }[];
-  /** Lignes cochées ou de journal sans date : non reprises. */
-  sans_date: { dossier: string; ligne: number; extrait: string }[];
+export interface ReportJournal {
+  folders: number;
+  /** Folders without an offer in the database (no application points to them). */
+  folders_without_offer: string[];
+  /** Folders attached to the folderless application of the same company (folder name). */
+  folders_attached: { folder: string; offer_id: number }[];
+  /** Folders without a usable "Suivi" section. */
+  folders_without_tracker: string[];
+  lines: number;
+  events_created: number;
+  events_existing: number;
+  /** Events imported from a line that disappeared from the folder (never modified since): deleted. */
+  events_removed: number;
+  deadlines: number;
+  by_type: Record<string, number>;
+  /** Lines imported as "note" for lack of a recognized type. */
+  untyped: { folder: string; line: number; excerpt: string }[];
+  /** Checked or journal lines without a date: not imported. */
+  without_date: { folder: string; line: number; excerpt: string }[];
 }
 
-export interface LigneJournal {
-  numero: number;
-  le: string;
-  texte: string;
+export interface LineJournal {
+  number: number;
+  at: string;
+  text: string;
 }
 
-const extrait = (s: string) => {
-  const t = sansMarkdown(s);
+const excerpt = (s: string) => {
+  const t = withoutMarkdown(s);
   return t.length > 140 ? `${t.slice(0, 137)}…` : t;
 };
 
-const deux = (n: number | string) => String(n).padStart(2, '0');
+const two = (n: number | string) => String(n).padStart(2, '0');
 
-/** Première date du texte : JJ/MM/AAAA, sinon JJ/MM (année du contexte). */
-function dateDuTexte(texte: string, anneeParDefaut: number): string | null {
-  const complete = texte.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})\/(\d{4})(?![\d/])/);
-  if (complete) return `${complete[3]}-${deux(complete[2])}-${deux(complete[1])}`;
-  const courte = texte.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})(?![\d/])/);
-  if (courte && Number(courte[2]) <= 12 && Number(courte[1]) <= 31) return `${anneeParDefaut}-${deux(courte[2])}-${deux(courte[1])}`;
+/** First date of the text: DD/MM/YYYY, otherwise DD/MM (year from the context). */
+function dateOfText(text: string, yearByDefault: number): string | null {
+  const complete = text.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})\/(\d{4})(?![\d/])/);
+  if (complete) return `${complete[3]}-${two(complete[2])}-${two(complete[1])}`;
+  const short = text.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})(?![\d/])/);
+  if (short && Number(short[2]) <= 12 && Number(short[1]) <= 31) return `${yearByDefault}-${two(short[2])}-${two(short[1])}`;
   return null;
 }
 
 /**
- * Lignes datées de la ou des sections « Suivi » d'un dossier : tableaux Date | Événement, puces
- * « - 13/10/2026 — … » et cases cochées « - [x] Candidature envoyée le : 13/10/2026 (…) ». Les cases non
- * cochées (à faire) et les blocs de code sont ignorés.
+ * Dated lines of the "Suivi" section(s) of a folder: Date | Événement tables, bullets
+ * "- 13/10/2026 — …" and checked boxes "- [x] Candidature envoyée le : 13/10/2026 (…)". Unchecked
+ * boxes (to do) and code blocks are ignored.
  */
-export function lignesDuSuivi(texte: string, anneeParDefaut = new Date().getFullYear()): { lignes: LigneJournal[]; sansDate: { numero: number; texte: string }[]; section: boolean } {
-  const lignes = texte.split(/\r?\n/);
-  const r: LigneJournal[] = [];
-  const sansDate: { numero: number; texte: string }[] = [];
-  let dansSuivi = false;
+export function linesOfTracker(text: string, yearByDefault = new Date().getFullYear()): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
+  const lines = text.split(/\r?\n/);
+  const r: LineJournal[] = [];
+  const withoutDate: { number: number; text: string }[] = [];
+  let inTracker = false;
   let section = false;
   let code = false;
-  let entetes: string[] | null = null;
-  let annee = anneeParDefaut;
-  const garder = (numero: number, le: string | null, t: string) => {
-    const propre = t.trim();
-    if (!propre) return;
-    if (!le) {
-      sansDate.push({ numero, texte: propre });
+  let headers: string[] | null = null;
+  let year = yearByDefault;
+  const keep = (number: number, at: string | null, t: string) => {
+    const clean = t.trim();
+    if (!clean) return;
+    if (!at) {
+      withoutDate.push({ number, text: clean });
       return;
     }
-    annee = Number(le.slice(0, 4));
-    r.push({ numero, le, texte: propre });
+    year = Number(at.slice(0, 4));
+    r.push({ number, at, text: clean });
   };
-  for (let i = 0; i < lignes.length; i++) {
-    const l = lignes[i];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
     if (/^\s*(```|~~~)/.test(l)) {
       code = !code;
       continue;
     }
     if (code) continue;
-    const titre = l.match(/^(#{1,6})\s+(.*)$/);
-    if (titre) {
-      dansSuivi = /\bsuivi\b/i.test(titre[2]) && titre[1].length >= 2;
-      if (dansSuivi) section = true;
-      entetes = null;
+    const title = l.match(/^(#{1,6})\s+(.*)$/);
+    if (title) {
+      inTracker = /\bsuivi\b/i.test(title[2]) && title[1].length >= 2;
+      if (inTracker) section = true;
+      headers = null;
       continue;
     }
-    if (!dansSuivi) continue;
+    if (!inTracker) continue;
     const t = l.trim();
     if (t.startsWith('|')) {
-      const c = cellules(t);
+      const c = cells(t);
       if (c.every((x) => /^:?-{2,}:?$/.test(x))) continue;
-      if (!entetes) {
-        entetes = c.map((x) => x.toLowerCase());
+      if (!headers) {
+        headers = c.map((x) => x.toLowerCase());
         continue;
       }
-      const iDate = entetes.findIndex((e) => e.startsWith('date'));
-      const iTexte = entetes.findIndex((e) => /^(événement|evenement|action|quoi)/.test(e));
+      const iDate = headers.findIndex((e) => e.startsWith('date'));
+      const iText = headers.findIndex((e) => /^(événement|evenement|action|quoi)/.test(e));
       if (iDate < 0) continue;
-      const texteLigne = iTexte >= 0 ? c[iTexte] : c.filter((_, k) => k !== iDate).join(' — ');
-      garder(i + 1, dateDuTexte(c[iDate] ?? '', annee), texteLigne ?? '');
+      const textLine = iText >= 0 ? c[iText] : c.filter((_, k) => k !== iDate).join(' — ');
+      keep(i + 1, dateOfText(c[iDate] ?? '', year), textLine ?? '');
       continue;
     }
-    entetes = null;
-    const puce = t.match(/^[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/);
-    if (!puce) continue;
-    if (puce[1] === ' ') continue; // case non cochée : à faire, pas un événement
-    const contenu = puce[2];
-    // « 13/10/2026 — texte » : la date en tête est retirée du texte.
-    const tete = contenu.match(/^\**(\d{1,2}\/\d{1,2}(?:\/\d{4})?)\**\s*(?:—|–|-|:)\s*(.*)$/);
-    if (tete) garder(i + 1, dateDuTexte(tete[1], annee), tete[2]);
-    else garder(i + 1, dateDuTexte(contenu, annee), contenu);
+    headers = null;
+    const bullet = t.match(/^[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/);
+    if (!bullet) continue;
+    if (bullet[1] === ' ') continue; // unchecked box: to do, not an event
+    const content = bullet[2];
+    // "13/10/2026 — text": the leading date is removed from the text.
+    const head = content.match(/^\**(\d{1,2}\/\d{1,2}(?:\/\d{4})?)\**\s*(?:—|–|-|:)\s*(.*)$/);
+    if (head) keep(i + 1, dateOfText(head[1], year), head[2]);
+    else keep(i + 1, dateOfText(content, year), content);
   }
-  return { lignes: r, sansDate, section };
+  return { lines: r, withoutDate, section };
 }
 
-/** Type et sens devinés d'une ligne de journal (meilleur effort ; « note » à défaut). */
-export function devinerType(texte: string): { type: TypeEvenement; sens: Sens | null; reconnu: boolean } {
-  const t = sansMarkdown(texte).toLowerCase();
-  // Sens : le premier indice qui apparaît (« Brief reçu par e-mail … réponse envoyée » → reçu).
-  const sansNegation = t.replace(/\b(non|pas|jamais) envoy\w*|avant (l')?envoi/g, ' ');
-  const iEnvoye = sansNegation.search(/\b(envoy|relanc)/);
-  const iRecu = sansNegation.search(/reçue?\b|\bentrant|\be-?mail de\b|\bmessage de\b|\bréponse (client|de (?!\d)|du (?!\d)|d')|\bretour de\b/);
-  const sens: Sens | null =
-    iEnvoye < 0 && iRecu < 0 ? null : iRecu < 0 ? 'envoye' : iEnvoye < 0 ? 'recu' : iEnvoye < iRecu ? 'envoye' : 'recu';
-  const type = ((): TypeEvenement | null => {
+/** Type and direction guessed for a journal line (best effort; "note" otherwise). */
+export function guessType(text: string): { type: TypeEvent; direction: Direction | null; recognized: boolean } {
+  const t = withoutMarkdown(text).toLowerCase();
+  // Direction: the first clue that appears ("Brief reçu par e-mail … réponse envoyée" → received).
+  const withoutNegation = t.replace(/\b(non|pas|jamais) envoy\w*|avant (l')?envoi/g, ' ');
+  const iSent = withoutNegation.search(/\b(envoy|relanc)/);
+  const iReceived = withoutNegation.search(/reçue?\b|\bentrant|\be-?mail de\b|\bmessage de\b|\bréponse (client|de (?!\d)|du (?!\d)|d')|\bretour de\b/);
+  const direction: Direction | null =
+    iSent < 0 && iReceived < 0 ? null : iReceived < 0 ? 'sent' : iSent < 0 ? 'received' : iSent < iReceived ? 'sent' : 'received';
+  const type = ((): TypeEvent | null => {
     if (/^(message entrant|e-?mail de|mail de|message de)\b/.test(t)) return 'message';
     if ((/^(proposition|devis)\b/.test(t) || /\b(proposition|devis) (envoy|reçu|transmi)/.test(t)) && !/proposition d'offre/.test(t)) {
-      return 'proposition';
+      return 'proposal';
     }
     if (/(^|[^\p{L}])(refus|non retenu|clos|clôtur|abandonn|mise? de côté|mise en pause|perdue|go(?!\p{L}))/u.test(t)) return 'decision';
     if (/\b(test technique|case study|exercice|questionnaire technique)\b/.test(t)) return 'test';
-    if (/^(appel|entretien|visio|rendez-vous|rdv)\b|\b(appel|entretien|visio) (à \d|avec\b|le \d)/.test(t)) return 'entretien';
-    if (sens) return 'message';
+    if (/^(appel|entretien|visio|rendez-vous|rdv)\b|\b(appel|entretien|visio) (à \d|avec\b|le \d)/.test(t)) return 'interview';
+    if (direction) return 'message';
     return null;
   })();
-  if (!type) return { type: 'note', sens: null, reconnu: false };
-  if (type === 'message' && /^(message entrant|e-?mail de|mail de|message de)\b/.test(t)) return { type, sens: 'recu', reconnu: true };
-  return { type, sens: ['message', 'proposition', 'test'].includes(type) ? sens : null, reconnu: true };
+  if (!type) return { type: 'note', direction: null, recognized: false };
+  if (type === 'message' && /^(message entrant|e-?mail de|mail de|message de)\b/.test(t)) return { type, direction: 'received', recognized: true };
+  return { type, direction: ['message', 'proposal', 'test'].includes(type) ? direction : null, recognized: true };
 }
 
-/** Montant (« 3 000 € HT », « 450 €/j ») et jours (« 6 jours ») d'une proposition. */
-function montantEtJours(texte: string): Pick<SaisieEvenement, 'montant' | 'unite' | 'jours'> {
-  const t = sansMarkdown(texte).replace(/ | /g, ' ');
+/** Amount ("3 000 € HT", "450 €/j") and days ("6 jours") of a proposal. */
+function amountAndDays(text: string): Pick<EventInput, 'amount' | 'unit' | 'days'> {
+  const t = withoutMarkdown(text).replace(/ | /g, ' ');
   const m = t.match(/(\d{1,3}(?:[ .]\d{3})+|\d+(?:,\d+)?)\s*(€\s*HT|€\s*\/\s*j|K€\s*\/\s*an|K€|€)/i);
   const j = t.match(/(\d+(?:,\d+)?)\s*(?:jours|j)\b(?!\s*cumul)/i);
   return {
-    montant: m ? Number(m[1].replace(/[ .]/g, '').replace(',', '.')) : null,
-    unite: m ? m[2].replace(/\s+/g, ' ').replace(/€ \/ j/, '€/j').replace(/K€ \/ an/i, 'K€/an') : null,
-    jours: j ? Number(j[1].replace(',', '.')) : null,
+    amount: m ? Number(m[1].replace(/[ .]/g, '').replace(',', '.')) : null,
+    unit: m ? m[2].replace(/\s+/g, ' ').replace(/€ \/ j/, '€/j').replace(/K€ \/ an/i, 'K€/an') : null,
+    days: j ? Number(j[1].replace(',', '.')) : null,
   };
 }
 
-/** Liens Markdown relatifs et chemins entre accents graves qui désignent un fichier existant. */
-function fichiersCites(texte: string, dossierDonnees: string, dossierRel: string): string[] {
-  const trouves = new Set<string>();
-  const essayer = (brut: string, base: string) => {
-    const p = brut.trim().replace(/^<|>$/g, '').split('#')[0];
+/** Relative Markdown links and paths between backticks that designate an existing file. */
+function filesCited(text: string, dataDir: string, folderRel: string): string[] {
+  const found = new Set<string>();
+  const attempt = (raw: string, base: string) => {
+    const p = raw.trim().replace(/^<|>$/g, '').split('#')[0];
     if (!p || /^[a-z]+:/i.test(p) || p.startsWith('/')) return;
     let decode = p;
     try {
@@ -171,25 +171,25 @@ function fichiersCites(texte: string, dossierDonnees: string, dossierRel: string
     }
     const rel = posix.normalize(posix.join(base, decode));
     if (rel.startsWith('..') || rel.split('/').some((s) => s.startsWith('.'))) return;
-    const abs = join(dossierDonnees, ...rel.split('/'));
-    if (existsSync(abs) && statSync(abs).isFile()) trouves.add(rel);
+    const abs = join(dataDir, ...rel.split('/'));
+    if (existsSync(abs) && statSync(abs).isFile()) found.add(rel);
   };
-  for (const m of texte.matchAll(/\]\(([^)\s]+)\)/g)) essayer(m[1], dossierRel);
-  for (const m of texte.matchAll(/`([^`\s]+\.[a-z0-9]{2,5})`/gi)) {
-    essayer(m[1], dossierRel);
-    essayer(m[1], '');
+  for (const m of text.matchAll(/\]\(([^)\s]+)\)/g)) attempt(m[1], folderRel);
+  for (const m of text.matchAll(/`([^`\s]+\.[a-z0-9]{2,5})`/gi)) {
+    attempt(m[1], folderRel);
+    attempt(m[1], '');
   }
-  return [...trouves];
+  return [...found];
 }
 
-/** Résumé court : première phrase (ou 200 caractères) du texte sans Markdown. */
-function resumeDe(texte: string): string {
-  const t = sansMarkdown(texte).replace(/\s*\(\s*\)/g, '');
+/** Short summary: first sentence (or 200 characters) of the text without Markdown. */
+function summaryOf(text: string): string {
+  const t = withoutMarkdown(text).replace(/\s*\(\s*\)/g, '');
   const phrase = t.match(/^(.{20,200}?[.!?])(\s|$)/)?.[1] ?? t;
   return phrase.length > 200 ? `${phrase.slice(0, 197)}…` : phrase;
 }
 
-const mots = (s: string) =>
+const words = (s: string) =>
   s
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
@@ -198,111 +198,111 @@ const mots = (s: string) =>
     .filter((m) => m.length >= 3);
 
 /**
- * Candidature sans dossier dont tous les mots de l'entreprise (3 lettres et plus) figurent dans le nom du
- * dossier (« Hippocrate Care » → hippocrate-care-cto-cofondateur), si elle est unique.
+ * Folderless application whose company words (3 letters or more) all appear in the folder
+ * name ("Hippocrate Care" → hippocrate-care-cto-cofondateur), if it is unique.
  */
-function candidatureDuNom(db: Base, nom: string): number | null {
-  const motsDossier = new Set(mots(nom));
+function applicationOfName(db: Database, name: string): number | null {
+  const wordsFolder = new Set(words(name));
   const candidates = (
     db
-      .prepare('SELECT c.offre_id, o.entreprise FROM candidatures c JOIN offres o ON o.id = c.offre_id WHERE c.dossier IS NULL')
-      .all() as { offre_id: number; entreprise: string | null }[]
+      .prepare('SELECT c.offer_id, o.company FROM applications c JOIN offers o ON o.id = c.offer_id WHERE c.folder IS NULL')
+      .all() as { offer_id: number; company: string | null }[]
   ).filter((c) => {
-    const m = mots(c.entreprise ?? '');
-    return m.length > 0 && m.every((x) => motsDossier.has(x));
+    const m = words(c.company ?? '');
+    return m.length > 0 && m.every((x) => wordsFolder.has(x));
   });
-  return candidates.length === 1 ? candidates[0].offre_id : null;
+  return candidates.length === 1 ? candidates[0].offer_id : null;
 }
 
-/** Reprend les journaux des dossiers de candidature actifs. */
-export function importerJournaux(db: Base, dossierDonnees: string): RapportJournal {
-  const rapport: RapportJournal = {
-    dossiers: 0,
-    dossiers_sans_offre: [],
-    dossiers_rattaches: [],
-    dossiers_sans_suivi: [],
-    lignes: 0,
-    evenements_crees: 0,
-    evenements_existants: 0,
-    evenements_retires: 0,
-    echeances: 0,
-    par_type: {},
-    non_typees: [],
-    sans_date: [],
+/** Imports the journals of the active application folders. */
+export function importJournals(db: Database, dataDir: string): ReportJournal {
+  const report: ReportJournal = {
+    folders: 0,
+    folders_without_offer: [],
+    folders_attached: [],
+    folders_without_tracker: [],
+    lines: 0,
+    events_created: 0,
+    events_existing: 0,
+    events_removed: 0,
+    deadlines: 0,
+    by_type: {},
+    untyped: [],
+    without_date: [],
   };
-  const racine = join(dossierDonnees, 'candidatures');
-  if (!existsSync(racine)) return rapport;
-  const noms = readdirSync(racine, { withFileTypes: true })
+  const root = join(dataDir, 'candidatures');
+  if (!existsSync(root)) return report;
+  const names = readdirSync(root, { withFileTypes: true })
     .filter((d) => d.isDirectory() && !d.name.startsWith('_') && !d.name.startsWith('.'))
     .map((d) => d.name)
     .sort();
-  const offreDu = db.prepare('SELECT offre_id FROM candidatures WHERE dossier = ? OR dossier = ?');
-  const existants = db.prepare("SELECT id, cle_import, maj_le FROM evenements WHERE offre_id = ? AND origine = 'import' AND cle_import LIKE 'suivi:%'");
+  const offerOf = db.prepare('SELECT offer_id FROM applications WHERE folder = ? OR folder = ?');
+  const existing = db.prepare("SELECT id, import_key, updated_at FROM events WHERE offer_id = ? AND origin = 'import' AND import_key LIKE 'tracker:%'");
   transaction(db, () => {
-    for (const nom of noms) {
-      const fiche = join(racine, nom, 'dossier-candidature.md');
-      if (!existsSync(fiche)) continue;
-      rapport.dossiers++;
-      const dossierRel = `candidatures/${nom}`;
-      let lien = offreDu.get(dossierRel, `${dossierRel}/`) as { offre_id: number } | undefined;
-      if (!lien) {
-        const offreId = candidatureDuNom(db, nom);
-        if (offreId === null) {
-          rapport.dossiers_sans_offre.push(dossierRel);
+    for (const name of names) {
+      const sheet = join(root, name, 'dossier-candidature.md');
+      if (!existsSync(sheet)) continue;
+      report.folders++;
+      const folderRel = `candidatures/${name}`;
+      let link = offerOf.get(folderRel, `${folderRel}/`) as { offer_id: number } | undefined;
+      if (!link) {
+        const offerId = applicationOfName(db, name);
+        if (offerId === null) {
+          report.folders_without_offer.push(folderRel);
           continue;
         }
-        enregistrerCandidature(db, offreId, { dossier: dossierRel }, { origine: 'import-suivi' });
-        rapport.dossiers_rattaches.push({ dossier: dossierRel, offre_id: offreId });
-        lien = { offre_id: offreId };
+        saveApplication(db, offerId, { folder: folderRel }, { origin: 'import-tracker' });
+        report.folders_attached.push({ folder: folderRel, offer_id: offerId });
+        link = { offer_id: offerId };
       }
-      const texte = readFileSync(fiche, 'utf8');
-      const { lignes, sansDate, section } = lignesDuSuivi(texte);
-      if (!section || (!lignes.length && !sansDate.length)) rapport.dossiers_sans_suivi.push(dossierRel);
-      for (const s of sansDate) rapport.sans_date.push({ dossier: dossierRel, ligne: s.numero, extrait: extrait(s.texte) });
-      const cles = new Set<string>();
-      const deja = new Map(
-        (existants.all(lien.offre_id) as { id: number; cle_import: string; maj_le: string | null }[]).map((e) => [e.cle_import, e]),
+      const text = readFileSync(sheet, 'utf8');
+      const { lines, withoutDate, section } = linesOfTracker(text);
+      if (!section || (!lines.length && !withoutDate.length)) report.folders_without_tracker.push(folderRel);
+      for (const s of withoutDate) report.without_date.push({ folder: folderRel, line: s.number, excerpt: excerpt(s.text) });
+      const keys = new Set<string>();
+      const already = new Map(
+        (existing.all(link.offer_id) as { id: number; import_key: string; updated_at: string | null }[]).map((e) => [e.import_key, e]),
       );
-      for (const l of lignes) {
-        rapport.lignes++;
-        const cle = `suivi:${empreinte(`${l.le}|${l.texte}`)}`;
-        if (cles.has(cle)) continue;
-        cles.add(cle);
-        const devine = devinerType(l.texte);
-        rapport.par_type[devine.type] = (rapport.par_type[devine.type] ?? 0) + 1;
-        if (!devine.reconnu) rapport.non_typees.push({ dossier: dossierRel, ligne: l.numero, extrait: extrait(l.texte) });
-        if (deja.has(cle)) {
-          rapport.evenements_existants++;
+      for (const l of lines) {
+        report.lines++;
+        const key = `tracker:${fingerprint(`${l.at}|${l.text}`)}`;
+        if (keys.has(key)) continue;
+        keys.add(key);
+        const guessed = guessType(l.text);
+        report.by_type[guessed.type] = (report.by_type[guessed.type] ?? 0) + 1;
+        if (!guessed.recognized) report.untyped.push({ folder: folderRel, line: l.number, excerpt: excerpt(l.text) });
+        if (already.has(key)) {
+          report.events_existing++;
           continue;
         }
-        const resume = resumeDe(l.texte);
-        const details = sansMarkdown(l.texte) === resume ? null : l.texte;
-        const e = ajouterEvenement(
+        const summary = summaryOf(l.text);
+        const details = withoutMarkdown(l.text) === summary ? null : l.text;
+        const e = addEvent(
           db,
-          lien.offre_id,
+          link.offer_id,
           {
-            type: devine.type,
-            sens: devine.sens,
-            le: l.le,
-            resume,
+            type: guessed.type,
+            direction: guessed.direction,
+            at: l.at,
+            summary,
             details,
-            fichiers: fichiersCites(l.texte, dossierDonnees, dossierRel),
-            ...(devine.type === 'proposition' ? montantEtJours(l.texte) : {}),
+            files: filesCited(l.text, dataDir, folderRel),
+            ...(guessed.type === 'proposal' ? amountAndDays(l.text) : {}),
           },
           'import',
-          { cleImport: cle },
+          { importKey: key },
         );
-        rapport.evenements_crees++;
-        if (!e.fait) rapport.echeances++;
+        report.events_created++;
+        if (!e.done) report.deadlines++;
       }
-      // Ligne disparue ou réécrite dans le dossier : l'événement repris (jamais modifié depuis) est retiré.
-      for (const [cle, e] of deja) {
-        if (!cles.has(cle) && !e.maj_le) {
-          db.prepare('DELETE FROM evenements WHERE id = ?').run(e.id);
-          rapport.evenements_retires++;
+      // Line gone or rewritten in the folder: the imported event (never modified since) is removed.
+      for (const [key, e] of already) {
+        if (!keys.has(key) && !e.updated_at) {
+          db.prepare('DELETE FROM events WHERE id = ?').run(e.id);
+          report.events_removed++;
         }
       }
     }
   });
-  return rapport;
+  return report;
 }

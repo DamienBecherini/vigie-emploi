@@ -6,7 +6,7 @@ Deux façons de piloter : les **outils MCP** (`vigie-emploi mcp`, à privilégie
 
 ## Règles
 
-- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "erreur": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
+- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "error": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
 - `_SUIVI.md` se génère depuis la base (`generate_tracker` / `vigie-emploi generate-tracker`) : ne pas l'éditer à la main une fois la bascule faite. Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `replace` seulement si l'utilisateur le demande.
 - Le dossier de données vient de `VIGIE_EMPLOI_DATA`, de `--data` ou de `vigie-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
 - Ne pas télécharger LinkedIn, Indeed ni Glassdoor par script : lire ces pages dans le navigateur de l'utilisateur, ou lui demander le texte (Glassdoor bloque les robots). Les descriptions Hellowork et Free-Work sont déjà en base après `ingest`.
@@ -90,8 +90,8 @@ Format d'une entrée de lot :
 | Besoin | Commande |
 |---|---|
 | Déjà vue ? | `vigie-emploi list --text "entreprise" --json` |
-| Meilleures offres non traitées | `vigie-emploi list --status scored --score-min 5 --sort note --json` |
-| Par lot reçu, meilleures notes d'abord | `vigie-emploi list --status scored --sort received_at:desc,note:desc --json` |
+| Meilleures offres non traitées | `vigie-emploi list --status scored --score-min 5 --sort score --json` |
+| Par lot reçu, meilleures notes d'abord | `vigie-emploi list --status scored --sort received_at:desc,score:desc --json` |
 | Mes candidatures | `vigie-emploi list --applications --json` |
 | Détail d'une offre | `vigie-emploi show <id> --json` |
 | Candidature (dossier, canal, envoi, prochaine action) | `vigie-emploi application <id> --folder candidatures/x --channel LinkedIn --sent-at 02/11/2026 --next-action "…" --json` |
@@ -99,7 +99,7 @@ Format d'une entrée de lot :
 | Relance, entretien, refus | `vigie-emploi status <id> followed-up --comment "canal, date"` |
 | Suivi des candidatures | `vigie-emploi generate-tracker --json` (aperçu `candidatures/_SUIVI.genere.md`) |
 | Tags | `vigie-emploi tag <id> +a-reprendre -urgent --json` |
-| Événement (appel, devis…) | `vigie-emploi event <id> --type proposition --at 15/10/2026 --summary "Devis envoyé sur Malt" --direction envoye --amount 3000 --unit "€ HT" --days 6 --file candidatures/x/devis.md --json` |
+| Événement (appel, devis…) | `vigie-emploi event <id> --type proposal --at 15/10/2026 --summary "Devis envoyé sur Malt" --direction sent --amount 3000 --unit "€ HT" --days 6 --file candidatures/x/devis.md --json` |
 | Échéance | `vigie-emploi event <id> --type message --at +7 --summary "Relancer si sans nouvelles" --json` |
 | Journal, échéances | `vigie-emploi journal <id> --json`, `vigie-emploi deadlines --days 7 --json`, `vigie-emploi done <event_id> --json` |
 | Fichiers du dossier | `vigie-emploi files <id> --json` |
@@ -118,4 +118,4 @@ Le bouton « Candidater » du tableau de bord copie `apply <id>` : quand l'utili
 - `npm test` et `npm run build` doivent passer avant chaque commit.
 - Fixtures uniquement fictives (`tests/fixtures`) : jamais de vrais e-mails ni de vraies offres.
 - Schéma : ajouter une migration `migrations/000N_nom.sql`, ne jamais modifier une migration déjà publiée.
-- Interface et documentation en français.
+- Code (identifiants, commentaires, tests) en anglais ; interface et documentation en français, avec leurs versions anglaises (`AGENTS.en.md`, `README.en.md`, `scaffold-en/`, dictionnaires `en.ts`).

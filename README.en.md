@@ -24,8 +24,8 @@ vigie-emploi is a local kit to look for a permanent job or freelance assignments
 
 The name means "job lookout" (*vigie*, the sailor in the crow's nest who spots what matters and calls it out). Two promises:
 
-- **it sorts for you**: the alerts your mail client drops off are read in a single pass when you start the triage, a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time, and every follow-up has its date;
-- **it never makes you lie**: the AI relies on an inventory of what you can and cannot claim, built with you during onboarding. It only writes in a résumé what you can defend in an interview. Application after application, you refine with it what makes your value and the message you want to convey, until the result truly sounds like you.
+- **it sorts for you**: the alerts your mail client drops off are read in a single pass when you start the triage; a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time; and every follow-up has its date;
+- **it never makes you lie**: the AI relies on an inventory of what you can and cannot claim, built with you during onboarding. It only writes in a résumé what you can defend in an interview. Application after application, you refine with it what makes you valuable and the message you want to convey, until the result truly sounds like you.
 
 ## How it works
 
@@ -43,7 +43,7 @@ The application **calls no AI model**: your agent reads and writes, the applicat
 
 ![Dashboard: offers sorted by date then score, upcoming deadlines, statistics](docs/captures/tableau-de-bord.en.png)
 
-*The dashboard (fictitious data, French interface): offers sorted by date received then by score, deadlines for the next seven days, applications by stage.*
+*The dashboard (fictitious data): offers sorted by date received then by score, deadlines for the next seven days, applications by stage.*
 
 ![Offer details: score breakdown criterion by criterion](docs/captures/detail-offre.en.png)
 
@@ -97,11 +97,11 @@ Onboarding takes two sessions of about half an hour each.
 
 ## Automating alert intake
 
-The AI processes the alerts found in the workspace's `emails/` folder, as `.eml` files. You can drag the e-mails there by hand from your mail client, but the simplest is a filter that does it each time mail is fetched.
+The AI processes the alerts found in the workspace's `emails/` folder, as `.eml` files. You can drag the e-mails there by hand from your mail client, but the simplest way is a filter that does it each time mail is fetched.
 
 1. Create **alerts** on the job sites you use (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…), with your keywords.
 2. Set up your mail client to **save each alert received as an `.eml` file in `emails/`**, then move it to a separate folder.
-3. Then ask your AI to "traiter les e-mails" (process the e-mails), or click "Traiter les e-mails" in the dashboard, with Claude Code. Processed files are deleted from `emails/`.
+3. Then ask your AI to "process the e-mails", or, with Claude Code, click "Process N e-mails" in the dashboard. Processed files are deleted from `emails/`.
 
 ### Example with Thunderbird and FiltaQuilla
 
@@ -145,7 +145,7 @@ npm install -g vigie-emploi          # or a permanently installed command
 
 Command written by `init` into `.mcp.json` and into the workspace instructions:
 
-- run through `npx`: `npx -y vigie-emploi@<version>` (on Windows, `cmd /c npx …` for the MCP server). The npx cache can be cleared, so its path is never written. The version is pinned so that the database and the application stay in step; if needed, npx downloads it again (connection required). The application instructions (`AGENTS.md`, or `AGENTS.en.md` for an English workspace) are copied into `procedures/application.md`. To change versions, replace the number in `.mcp.json` and in the instructions, or switch to a global installation;
+- run through `npx`: `npx -y vigie-emploi@<version>` (on Windows, `cmd /c npx …` for the MCP server). The npx cache can be cleared, so its path is never written. The version is pinned so that the database and the application stay in sync; if needed, npx downloads it again (connection required). The application instructions (`AGENTS.md`, or `AGENTS.en.md` for an English workspace) are copied into `procedures/application.md`. To change versions, replace the number in `.mcp.json` and in the instructions, or switch to a global installation;
 - installed (`npm install -g`, or from the repository): `node <path>/bin/vigie-emploi.js`, with the absolute path of the installation.
 
 From the repository (contributors):
@@ -168,7 +168,7 @@ Working names from before publication (`postuler-juste`, `cap-emploi`): their `P
 vigie-emploi init <folder> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]
 ```
 
-The folder must be new or empty. `init` copies the workspace template into it (`scaffold/`: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`templates/cv/plain/`) and the sample grid, then writes `vigie-emploi.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
+The folder must be new or empty. `init` copies the workspace template into it (`scaffold/`, or `scaffold-en/` in English: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`templates/cv/plain/`) and the sample grid, then writes `vigie-emploi.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
 
 To try it without touching an existing installation: another folder, another port and another MCP server name (`--port 4411 --mcp-name vigie-emploi-test`).
 
@@ -184,7 +184,7 @@ Building the extension (for a GitHub release): `npm run mcpb` builds the applica
 vigie-emploi cv "cv/<name>.md" [--template <folder>]
 ```
 
-Converts a Markdown résumé into an A4 PDF (headless Chrome, Edge or Chromium; `VIGIE_EMPLOI_BROWSER` to force a path), written next to the `.md`, and prints the page count (target: 2). The template is a folder (`gabarit.css`, fonts, optional `portrait.jpg|png|webp`): `--template`, otherwise the workspace's `cv/gabarit/`, otherwise the application's. The expected Markdown structure is described in `scaffold/cv/LISEZMOI.md`.
+Converts a Markdown résumé into an A4 PDF (headless Chrome, Edge or Chromium; `VIGIE_EMPLOI_BROWSER` to force a path), written next to the `.md`, and prints the page count (target: 2). The template is a folder (`gabarit.css`, fonts, optional `portrait.jpg|png|webp`): `--template`, otherwise the workspace's `cv/gabarit/`, otherwise the application's. The expected Markdown structure is described in `scaffold-en/cv/LISEZMOI.md` (French: `scaffold/cv/LISEZMOI.md`).
 
 ### Data folder configuration
 
@@ -193,9 +193,9 @@ The data folder holds the database and the inbox:
 ```
 <folder>/
   data/vigie-emploi.sqlite   database (created on first run)
-  emails/                  .eml files to ingest (deleted once processed)
-  candidatures/            optional history to import (see import-history)
-  profil/grille.json       scoring grid (vigie-emploi rubric --init copies the sample)
+  emails/                    .eml files to ingest (deleted once processed)
+  candidatures/              optional history to import (see import-history)
+  profil/grille.json         scoring grid (vigie-emploi rubric --init copies the sample)
 ```
 
 To designate it, in order of precedence:
@@ -226,7 +226,7 @@ All commands accept `--json` (stable output for an AI), `--data` and `--config`.
 |---|---|
 | `vigie-emploi ingest [--keep] [--no-fetch] [--emails <folder>]` | Reads the `.eml` files, adds new offers (`new`, or `dismissed` with the reason for excluded titles), then **deletes the processed e-mails** (unless `--keep`). Summary: new, duplicates, discarded, to read |
 | `vigie-emploi import-history` | Imports `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` and the "Suivi" sections of `candidatures/*/dossier-candidature.md` (journal, see below); read-only, idempotent, with a report of unrecognised lines. A `_SUIVI.md` generated by vigie-emploi is not re-read |
-| `vigie-emploi list [filters]` | Paginated list: `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (received), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order`; multi-level sort: `--sort received_at:desc,note:desc` |
+| `vigie-emploi list [filters]` | Paginated list: `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (received), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order`; multi-level sort: `--sort received_at:desc,score:desc` |
 | `vigie-emploi show <id>` | Details: description, scores, status history, tags, application |
 | `vigie-emploi to-read [--limit N] [--full]` | Offers to process without a score, with the URL to read, or the description already extracted |
 | `vigie-emploi score <id> --json '{…}'` | Records a score for an offer |
@@ -241,7 +241,7 @@ All commands accept `--json` (stable output for an AI), `--data` and `--config`.
 | `vigie-emploi application <id> [--folder] [--cv] [--channel] [--sent-at] [--message] [--next-action]` | Records the application (`""` clears a field); with `--sent-at`, the offer moves to `sent` |
 | `vigie-emploi next-action <id> "text"` | Next action of the application (`-` to clear it) |
 | `vigie-emploi link <id> <url or ->` | Offer link |
-| `vigie-emploi event <id> --type <type> [--at "DD/MM/YYYY HH:MM"] --summary "…" [--direction sent\|received] [--channel] [--contacts] [--details] [--amount 3000 --unit "€ HT"] [--days 6] [--file <path>]… [--done\|--no-done]` | Adds an event to the journal (types: `message`, `interview`, `test`, `proposal`, `decision`, `score`). `--at`: DD/MM/YYYY, YYYY-MM-DD, optional time, `demain`, `+3`; defaults to now. Dated in the future, it is not done: it is a deadline |
+| `vigie-emploi event <id> --type <type> [--at "DD/MM/YYYY HH:MM"] --summary "…" [--direction sent\|received] [--channel] [--contacts] [--details] [--amount 3000 --unit "€ HT"] [--days 6] [--file <path>]… [--done\|--no-done]` | Adds an event to the journal (types: `message`, `interview`, `test`, `proposal`, `decision`, `note`). `--at`: DD/MM/YYYY, YYYY-MM-DD, optional time, `tomorrow`, `+3`; defaults to now. Dated in the future, it is not done: it is a deadline |
 | `vigie-emploi journal <id>` | Application journal: deadlines first (overdue on top), then newest to oldest |
 | `vigie-emploi deadlines [--days 7]` | Overdue deadlines and those in the next N days, across all offers |
 | `vigie-emploi done <event_id> [--no-done]` | Marks a deadline as done (or reopens it) |
@@ -251,15 +251,15 @@ All commands accept `--json` (stable output for an AI), `--data` and `--config`.
 | `vigie-emploi mcp` | MCP server (stdio) for an AI |
 | `vigie-emploi serve [--port 4410] [--idle <minutes>]` | Starts the dashboard on http://localhost:4410; with `--idle`, it stops by itself after that long without a visit (`GET /api/health` gives the remaining time) |
 
-Statuses: `new`, `to-read`, `scored`, `dismissed`, `go`, `sent`, `followed-up`, `interview`, `rejected`, `closed`, `withdrawn`. "Mes candidatures" (my applications) groups `sent` and the following ones.
+Statuses: `new`, `to-read`, `scored`, `dismissed`, `go`, `sent`, `followed-up`, `interview`, `rejected`, `closed`, `withdrawn`. "My applications" groups `sent` and the statuses after it.
 
 Score format (the batch format):
 
 ```json
 {
   "source": "linkedin", "url": "https://www.linkedin.com/jobs/view/1234567890/",
-  "title": "…", "company": "…", "location": "…", "contract": "CDI", "compensation": "50-60 K€",
-  "remote": "hybride", "published": "NC", "stack": "PHP, API",
+  "title": "…", "company": "…", "location": "…", "contract": "Permanent", "compensation": "€50k–60k",
+  "remote": "hybrid", "published": "NC", "stack": "PHP, API",
   "criteria": {
     "technique": { "score": 8, "justification": "PHP, REST API; gap: PostgreSQL" },
     "role": { "score": 7, "justification": "…" },
@@ -272,7 +272,7 @@ Score format (the batch format):
 }
 ```
 
-With `criteria` (or `inputs`, `blockers`), the score is **computed** with the grid; a `score` field provided is ignored and reported in `warnings`. The response contains the score, the exact value and the breakdown. Without `criteria`, it is an overall score from the old grid (`score`, `raw_score`, `penalties`), which stays frozen. Optional fields: `id` (instead of `url`), `description`, `tags`. Descriptive fields only fill in what is missing; the latest score prevails.
+With `criteria` (or `inputs`, `blockers`), the score is **computed** with the grid; a `score` field, if provided, is ignored and reported in `warnings`. The response contains the score, the exact value and the breakdown. Without `criteria`, it is an overall score from the old grid (`score`, `raw_score`, `penalties`), which stays frozen. Optional fields: `id` (instead of `url`), `description`, `tags`. Descriptive fields only fill in what is missing; the latest score prevails. `NC` (not stated), like an empty value, means unknown.
 
 ### Scoring grid
 
@@ -280,15 +280,15 @@ The grid lives in `<data>/profil/grille.json` (generic template: [`examples/rubr
 
 - **weighted criteria** (7 at most) scored from 0 to 10: by the AI (`source: "ai"`, with an instruction in `description`) or by the application (`source: "computation"`, `computation: "remote"` or `"compensation"`); relative weights, normalised to 100%;
 - **scales**: remote work (sub-score for 0 to 5 days on site, "unknown" value); pay (salary in K€/year and day rate in €/day: floor = 5, high target = 10, below the floor = 0, linear in between; optional full-remote floor; middle, low or high end of the range);
-- **blocking rules**: identifier, label, effect `zero` or `cap` (cap) + value, active or not;
+- **blocking rules**: identifier, label, effect `zero` or `cap` (with its value), active or not;
 - **skills inventory** (technology → strong / medium / light / none), read by the AI for the technical criterion;
-- **"worth a look" threshold** (quick view "Notées ≥ …");
+- **"worth a look" threshold** (quick view "Scored ≥ …");
 - **reference examples** (offers scored criterion by criterion, with justification) to calibrate the AI;
 - general **instructions** for the AI.
 
 Computation: weighted average of the sub-scores → blocking rules (zero, cap) → rounded to the half point for display and filters (the exact value is kept). Missing data (criterion not scored, remote work or salary unknown): neutral value 5 and a **flag** on the offer. Days on site and salary come from `inputs`, otherwise from the offer's remote-work and pay fields.
 
-Each save (panel, CLI, MCP, or file edited by hand) creates a **version** (number, date, author, summary) and **recomputes all criterion-based scores**, without re-reading any offer. Old overall scores stay as they are ("ancienne grille" badge). You can go back to a previous version (it becomes a new version).
+Each save (panel, CLI, MCP, or file edited by hand) creates a **version** (number, date, author, summary) and **recomputes all criterion-based scores**, without re-reading any offer. Old overall scores stay as they are ("old grid" badge). You can go back to a previous version (it becomes a new version).
 
 ### Dashboard
 
@@ -296,14 +296,14 @@ Each save (panel, CLI, MCP, or file edited by hand) creates a **version** (numbe
 
 Without a terminal (Claude Desktop): ask the AI to open the dashboard. The `open_dashboard` MCP tool starts it in the background if it is not already running (a separate process that survives an MCP server restart and stops after 60 minutes without activity), on the workspace's port or the next free one, and returns the address to click; `open: true` opens it in the default browser. It needs an installed `node` (24 or later); otherwise it runs inside the MCP server process, as long as Claude Desktop stays open.
 
-- Server-side paginated table (25 to 500 rows per page), Thunderbird-style column sorting (the last header clicked becomes the primary sort, the previous one becomes secondary: click Note then Reçue le to sort by date, then by score for equal dates; the URL keeps the levels), hideable columns.
+- Server-side paginated table (25 to 500 rows per page), Thunderbird-style column sorting (the last header clicked becomes the primary sort, the previous one becomes secondary: click Score then Received to sort by date, then by score for equal dates; the URL keeps the levels), hideable columns.
 - Filters: score, received and published dates, source, status, contract, remote work, tags, full-text search (accent-insensitive). Filters live in the URL: you can bookmark it.
 - Quick views: to process, scored ≥ grid threshold (4.5 by default), my applications.
-- **Score settings** (header button): weight sliders (normalised total shown), threshold, remote-work and pay scales, blocking rules (enable, effect, cap, add, delete), inventory (add, edit, delete, filter), reference examples recomputed live; **preview before saving** (offers whose score changes, offers crossing the threshold, clickable); mandatory change summary; version history and restore.
-- **Work for the agent**, above the filters, only when there is some: "Traiter N e-mails" (`.eml` files waiting in the inbox) and "Préparer N candidatures" (offers in `go` without a folder). Each button opens a terminal in the data folder with the agent and the `/traiter-emails` or `/preparer-go` command (provided by the data folder, for example as Claude Code skills); the rest happens in that terminal. See [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
-- **Live updates**: the server notifies the page (Server-Sent Events, `/api/stream`) when the database changes, whatever the origin of the write (CLI, agent, another tab), and when the inbox changes; the page then reloads its data. The "Rafraîchir" (refresh) button remains available.
-- **À venir** (upcoming) banner above the table: overdue deadlines and those in the next 7 days, each opening its offer; **Statistiques** button (applications by stage, reply delay).
-- Details panel: description, link to the offer (editable), **score breakdown** (criterion by criterion: sub-score, weight, contribution, justification, origin; rules applied; flags; exact value and grid version), "ancienne grille" badge for an overall score, **sub-score correction** (AI criteria, days on site, salary, rules; the score is recomputed and added to the history), old-style overall score, **application** (next action, sending date, channel), **journal** (deadlines first, overdue in red; add, edit, delete an event, mark a deadline as done; link a file from the folder chosen from a list), **folder files** (links that open them), status history, editable tags, status change, **Candidater** button (copies `apply <id>` to the clipboard and moves the offer to `go`).
+- **Scoring settings** (header button): weight sliders (normalised total shown), threshold, remote-work and pay scales, blocking rules (enable, effect, cap, add, delete), inventory (add, edit, delete, filter), reference examples recomputed live; **preview before saving** (offers whose score changes, offers crossing the threshold, clickable); mandatory change summary; version history and restore.
+- **Work for the agent**, above the filters, only when there is some: "Process N e-mails" (`.eml` files waiting in the inbox) and "Prepare N applications" (offers in `go` without a folder). Each button opens a terminal in the data folder with the agent and the `/traiter-emails` or `/preparer-go` command (provided by the data folder, for example as Claude Code skills); the rest happens in that terminal. See [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
+- **Live updates**: the server notifies the page (Server-Sent Events, `/api/stream`) when the database changes, whatever the origin of the write (CLI, agent, another tab), and when the inbox changes; the page then reloads its data. The "Refresh the data" button remains available.
+- **Coming up** banner above the table: overdue deadlines and those in the next 7 days, each opening its offer; **Statistics** button (applications by stage, reply delay).
+- Details panel: description, link to the offer (editable), **score breakdown** (criterion by criterion: sub-score, weight, contribution, justification, origin; rules applied; flags; exact value and grid version), "old grid" badge for an overall score, **sub-score correction** (AI criteria, days on site, salary, rules; the score is recomputed and added to the history), old-style overall score, **application** (next action, sending date, channel), **journal** (deadlines first, overdue in red; add, edit, delete an event, mark a deadline as done; link a file from the folder chosen from a list), **folder files** (links that open them), status history, editable tags, status change, **Apply** button (copies `apply <id>` to the clipboard and moves the offer to `go`).
 - Files: served read-only through `/api/file/<path>`, only inside the data folder (no `..`, no hidden files, neither `data/` nor `emails/`, symbolic links resolved); Markdown rendered as simple HTML without scripts (CSP), `?raw=1` for raw text, PDFs and images as they are. The server rejects requests whose host is not `localhost` / `127.0.0.1`, and writes coming from another origin (non-local `Origin` header or `Sec-Fetch-Site: cross-site`).
 - Language (header selector), light / dark / system theme and palettes, text size (remembered in the browser), keyboard navigation (Enter opens an offer, Escape closes the panel). On a phone, the filters open in a drawer.
 
@@ -321,9 +321,9 @@ The database prevails: the file is regenerated, never read back. If you import a
 
 **The database knows what happened and when; the Markdown folder keeps the documents.** An event has a type, a date (or date-time), a summary, and if needed: direction (sent / received), channel, contacts, amount + unit, days, details, files (paths relative to the data folder). A future date not done is a deadline; past and not done, it is overdue.
 
-Import (`import-history`): the "Suivi" sections of active folders (`candidatures/*/dossier-candidature.md`, not `_archives/`) become events with origin `import`: Date | Event table rows, dated bullets "- 13/10/2026 — …", dated checked boxes "- [x] Envoyée le : 13/10/2026". Unchecked boxes (to do) are not imported. Guessed type (message, interview, test, offer, decision; `score` by default, listed in the report), relative Markdown links and backquoted paths to existing files. Idempotent: one fingerprint per line; a line removed from the folder removes the imported event if it has not been modified since. A folder that no application points to is attached to the application without a folder whose company appears in its name (if unique).
+Import (`import-history`): the "Suivi" sections of active folders (`candidatures/*/dossier-candidature.md`, not `_archives/`) become events with origin `import`: Date | Event table rows, dated bullets "- 13/10/2026 — …", dated checked boxes "- [x] Envoyée le : 13/10/2026". Unchecked boxes (to do) are not imported. Guessed type (message, interview, test, proposal, decision; `note` by default, listed in the report); relative Markdown links and backticked paths to existing files become linked files. Idempotent: one fingerprint per line; a line removed from the folder removes the imported event if it has not been modified since. A folder that no application points to is attached to the application without a folder whose company appears in its name (if unique).
 
-An offer already being followed (`go` and beyond) seen again in an e-mail alert, a scored batch or the register no longer changes status; the alert leaves a trace in the journal ("Revue le …", one per day).
+An offer already being followed (`go` and beyond) seen again in an e-mail alert, a scored batch or the register no longer changes status; the alert leaves a trace in the journal ("Seen again on …", one per day).
 
 ### Development
 
@@ -348,7 +348,7 @@ Layout:
 bin/vigie-emploi.js   command entry point (TypeScript from src/ in the repository, JavaScript from dist/ in the npm package)
 migrations/           versioned SQL schema (PRAGMA user_version)
 src/core/             configuration, links, normalisation, offer operations, queries,
-                      scoring grid (grille.ts: pure schema and computation; rubric-storage.ts: file, versions, re-scoring)
+                      scoring grid (rubric.ts: pure schema and computation; rubric-storage.ts: file, versions, re-scoring)
 src/db/               database opening and migrations
 src/ingest/           .eml reading, JSON-LD, ingestion
 src/import/           import of a Markdown / JSON history (including folder journals)
@@ -367,7 +367,7 @@ mcpb/, scripts/       Claude Desktop extension (manifest, build); scripts/demo/:
 docs/adr/             architecture decisions (in French)
 ```
 
-See also [`AGENTS.en.md`](AGENTS.en.md) (driving by an AI; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server), [`docs/ajouter-une-langue.md`](docs/ajouter-une-langue.md) (adding a language) and the architecture decisions in [`docs/adr/`](docs/adr/) (all in French).
+See also [`AGENTS.en.md`](AGENTS.en.md) (how an AI drives the application; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server), [`docs/ajouter-une-langue.md`](docs/ajouter-une-langue.md) (adding a language) and the architecture decisions in [`docs/adr/`](docs/adr/) (all in French).
 
 ## License
 

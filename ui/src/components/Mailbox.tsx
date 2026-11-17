@@ -1,6 +1,6 @@
 // "Mailbox" panel: IMAP connection to the folder where a filter files the job alerts (for users without a terminal).
 // The typed password goes to the local server, which hands it to the system keychain; it never comes back.
-import { X } from 'lucide-react';
+import { ExternalLink, KeyRound, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type InputMail, type ProviderMail, type StateMail } from '../api.ts';
@@ -157,19 +157,27 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
         <input id={`${id}-address`} className="field" type="email" autoComplete="email" value={address} onChange={(e) => setAddress(e.target.value)} />
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400" aria-live="polite">
           {address.includes('@') && (provider ? t('mail.provider', { name: provider.name }) : t('mail.providerUnknown'))}{' '}
-          {provider?.auth === 'app-password' && (
-            <>
-              {t('mail.appPassword', { name: provider.name })}{' '}
-              {provider.help && (
-                <a className="underline" href={provider.help} target="_blank" rel="noreferrer">
-                  {t('mail.appPasswordLink')}
-                </a>
-              )}
-            </>
-          )}
           {provider?.auth === 'password' && t('mail.plainPassword')}
         </p>
-        {oauth && <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">{t('mail.oauth', { name: provider!.name })}</p>}
+        {provider?.auth === 'app-password' && (
+          <div role="note" className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100">
+            <KeyRound className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <div className="space-y-2">
+              <p className="font-semibold">{t('mail.appPassword', { name: provider.name })}</p>
+              {provider.help && (
+                <a className="button-primary inline-flex items-center gap-1" href={provider.help} target="_blank" rel="noreferrer">
+                  {t('mail.appPasswordLink')} <ExternalLink className="size-4" aria-hidden="true" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+        {oauth && (
+          <div role="note" className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100">
+            <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <p className="font-semibold">{t('mail.oauth', { name: provider!.name })}</p>
+          </div>
+        )}
       </div>
       <details open={advanced} onToggle={(e) => setAdvanced((e.target as HTMLDetailsElement).open)}>
         <summary className="cursor-pointer text-sm">{t('mail.advanced')}</summary>

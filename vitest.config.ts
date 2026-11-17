@@ -8,6 +8,8 @@ export default defineConfig({
     // the locale variable here, the locale Node reports in tests/setup.ts. The tests of the detection pass their own.
     env: { LC_ALL: 'fr_FR.UTF-8' },
     setupFiles: ['tests/setup.ts'],
+    // Tests answer in milliseconds here, but the Windows CI runner is about fifteen times slower: the default 5 s was exceeded.
+    testTimeout: 30_000,
     // `npm run coverage`: the server code (src/). The interface has no component tests yet, it is left out of the figure.
     coverage: {
       provider: 'v8',

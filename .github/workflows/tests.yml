@@ -32,4 +32,8 @@ jobs:
       - run: npm run lint
       # Build before the tests: one of them loads the compiled package (dist/).
       - run: npm run build
+      # Coverage on one system only: under it, the tests that start processes time out on the Windows runner.
       - run: npm run coverage
+        if: matrix.os == 'ubuntu-latest'
+      - run: npm test
+        if: matrix.os != 'ubuntu-latest'

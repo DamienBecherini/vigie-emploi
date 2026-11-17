@@ -10,7 +10,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 1. **Premier lancement** (`_CONTEXTE.md` encore à trous) : suivre [`DEMARRAGE.md`](DEMARRAGE.md), rien d'autre.
 2. Sinon, lire **[`_CONTEXTE.md`](_CONTEXTE.md)** avant toute analyse d'offre ou rédaction : positionnement, faits, ce qui est revendicable ou non, interdits.
 3. **Démarrage fait, nouvelle session sans demande précise** : fais le point en une ligne et propose l'action utile, sans attendre qu'on te la demande : des `.eml` dans `emails/` → les traiter ; des offres en `go` sans dossier → préparer les candidatures ; des échéances en retard ou proches (`deadlines`) → les rappeler.
-4. Quand tu crées ou modifies un document que l'utilisateur doit lire, valider ou envoyer (CV, dossier de candidature, message), donne-lui son **lien cliquable** en chemin absolu (`file:///…`) ; pour un CV, le PDF et le Markdown (`generate_cv` les renvoie dans `liens`).
+4. Quand tu crées ou modifies un document que l'utilisateur doit lire, valider ou envoyer (CV, dossier de candidature, message), donne-lui son **lien cliquable** en chemin absolu (`file:///…`) ; pour un CV, le PDF et le Markdown (`generate_cv` les renvoie dans `links`).
 5. L'état des offres et des candidatures est dans la base : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
 
 ## Procédures
@@ -45,7 +45,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 0. Déjà vue ? `list_offers` avec `text` (ou `{{CMD}} list --text "…" --json`).
 1. Analyser le fit contre l'inventaire de `_CONTEXTE.md` : ce qui colle, les écarts à assumer, un verdict sur 10, les conditions (rémunération, télétravail, trajet).
-2. S'il dit « go » : `apply`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `save_application` et `generate_tracker` (`remplacer: true`).
+2. S'il dit « go » : `apply`, puis créer `candidatures/<entreprise>-<poste>/dossier-candidature.md` d'après [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), puis `save_application` et `generate_tracker` (`replace: true`).
 3. **Lire le formulaire de candidature avant d'écrire** : CV seul, message (et sa limite de caractères), questions, lettre exigée ou non. Une lettre de motivation ne s'écrit que si le formulaire l'exige : une page, même matière que le message.
 4. Messages : respecter la limite du canal, les enregistrer dans le dossier, **version envoyée comprise**.
 5. CV ciblé si l'offre le justifie : [`procedures/cv-cible.md`](procedures/cv-cible.md). Contrôler **2 pages bien remplies** (`generate_cv` ou `{{CMD}} cv <fichier.md>` : nombre de pages, remplissage de chacune, avertissements).

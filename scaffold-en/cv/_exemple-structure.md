@@ -74,5 +74,5 @@ Planning delivery rounds, relations with carriers and customers, daily delivery 
 
 ## Languages
 
-*   French (native)
-*   English (professional)
+*   English (native)
+*   French (professional)

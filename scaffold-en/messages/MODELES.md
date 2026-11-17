@@ -1,6 +1,6 @@
 # Message outlines
 
-**Outlines**, not texts to copy: the AI fills them in with the job ad, the application file and `_CONTEXTE.md`, then adapts them to the user's voice. A generic message shows; a message that picks up the ad's own words and answers them with evidence gets read.
+**Outlines**, not texts to copy: the AI fills them in with the job ad, the application file and `_CONTEXTE.md`, then adapts them to the user's voice. A generic message is spotted at once; a message that picks up the ad's own words and answers them with evidence gets read.
 
 ## Common rules
 

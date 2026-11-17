@@ -5,14 +5,14 @@ This folder is the workspace of someone looking for a job or freelance work. You
 - Workspace: `{{WORKSPACE}}`
 - vigie-emploi application: `{{APP}}`; its instructions: `{{DOC_APP}}`
 
-The file and folder names of the workspace stay in French because the application expects them: `_CONTEXTE.md` (context), `_A-FAIRE.md` (to-do list), `_JOURNAL-DECISIONS.md` (decision log), `DEMARRAGE.md` (onboarding), `a-deposer/` (drop folder), `candidatures/` (applications), `procedures/`, `profils-publics/` (public profiles), `profil/grille.json` (scoring grid). The same goes for the names of the commands, MCP tools and statuses (`dismissed` = discarded, `sent` = sent, `interview` = interview, `rejected` = rejected…): they are identifiers, not text to translate.
+The file and folder names of the workspace stay in French because the application expects them: `_CONTEXTE.md` (context), `_A-FAIRE.md` (to-do list), `_JOURNAL-DECISIONS.md` (decision log), `DEMARRAGE.md` (onboarding), `a-deposer/` (drop folder), `candidatures/` (applications), `procedures/`, `profils-publics/` (public profiles), `profil/grille.json` (scoring grid). The same goes for the names of the commands, MCP tools and statuses (`dismissed`, `sent`, `interview`, `rejected`…): they are identifiers, not text to translate.
 
 ## First things first
 
 1. **First run** (`_CONTEXTE.md` still full of gaps): follow [`DEMARRAGE.md`](DEMARRAGE.md) and nothing else.
 2. Otherwise, read **[`_CONTEXTE.md`](_CONTEXTE.md)** before analysing any job ad or writing anything: positioning, facts, what can and cannot be claimed, things never to write.
 3. **Onboarding done, new session without a specific request**: give a one-line status and suggest the useful action, without waiting to be asked: `.eml` files in `emails/` → process them; ads in `go` without an application folder → prepare the applications; overdue or upcoming deadlines (`deadlines`) → remind the user.
-4. When you create or change a document the user must read, approve or send (CV, application file, message), give them its **clickable link** as an absolute path (`file:///…`); for a CV, both the PDF and the Markdown (`generate_cv` returns them in `liens`).
+4. When you create or change a document the user must read, approve or send (CV, application file, message), give them its **clickable link** as an absolute path (`file:///…`); for a CV, both the PDF and the Markdown (`generate_cv` returns them in `links`).
 5. The state of the job ads and applications lives in the database, which is the source of truth. `candidatures/_SUIVI.md` is generated from it: never edit it by hand.
 
 ## Procedures
@@ -47,7 +47,7 @@ The file and folder names of the workspace stay in French because the applicatio
 
 0. Seen before? `list_offers` with `text` (or `{{CMD}} list --text "…" --json`).
 1. Assess the fit against the inventory in `_CONTEXTE.md`: what matches, the gaps to own up to, a verdict out of 10, the conditions (pay, remote work, commute).
-2. If they say "go": `apply`, then create `candidatures/<company>-<role>/dossier-candidature.md` from [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), then `save_application` and `generate_tracker` (`remplacer: true`).
+2. If they say "go": `apply`, then create `candidatures/<company>-<role>/dossier-candidature.md` from [`candidatures/_MODELE-dossier-candidature.md`](candidatures/_MODELE-dossier-candidature.md), then `save_application` and `generate_tracker` (`replace: true`).
 3. **Read the application form before writing anything**: CV only, a message (and its character limit), questions, whether a cover letter is required. Only write a cover letter if the form requires one: one page, same material as the message.
 4. Messages: stay within the channel's limit and save them in the application file, **including the version actually sent**.
 5. A targeted CV if the ad warrants it: [`procedures/cv-cible.md`](procedures/cv-cible.md). Check for **2 well-filled pages** (`generate_cv` or `{{CMD}} cv <file.md>`: page count, how full each page is, warnings).

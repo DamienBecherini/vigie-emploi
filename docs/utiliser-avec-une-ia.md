@@ -31,7 +31,7 @@ Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon
 | `mark_done` | Marque une échéance comme faite (ou la rouvre) |
 | `folder_files` | Fichiers du dossier de candidature (chemins à citer dans un événement) |
 | `ingest_emails` | Lit les `.eml` puis les supprime (sauf `keep: true`) |
-| `generate_tracker` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `remplacer: true` |
+| `generate_tracker` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `replace: true` |
 
 Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) :
 

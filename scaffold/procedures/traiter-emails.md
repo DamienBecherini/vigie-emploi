@@ -13,7 +13,7 @@ Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les off
 
 `ingest_emails`. Donner en une phrase : nouvelles offres, doublons, écartées sur l'intitulé, à lire. Puis transmettre à l'utilisateur ce que dit `to_tell` : **les `.eml` traités ont été supprimés de `emails/`** (il doit le savoir), et chaque erreur d'ingestion (`errors` : description non lue, page sans données « JSON-LD », lien illisible…), avec l'offre concernée ; une description non lue n'empêche pas de lire l'offre dans le navigateur.
 
-**Accusés de réception de candidature** (`confirmations` du résultat : « Confirmation de votre candidature », « votre candidature a été envoyée »…) : ce ne sont pas des offres. Pour chacun, vérifier que la candidature est enregistrée comme envoyée (`offres_connues`) ; sinon le signaler à l'utilisateur et l'enregistrer avec lui (`save_application` avec `sent_at`). Ne jamais les présenter comme de nouvelles offres. **E-mails non supprimés** (erreur « e-mail lu mais non supprimé ») : le signaler, ils reviendraient au lot suivant.
+**Accusés de réception de candidature** (`confirmations` du résultat : « Confirmation de votre candidature », « votre candidature a été envoyée »…) : ce ne sont pas des offres. Pour chacun, vérifier que la candidature est enregistrée comme envoyée (`known_offers`) ; sinon le signaler à l'utilisateur et l'enregistrer avec lui (`save_application` avec `sent_at`). Ne jamais les présenter comme de nouvelles offres. **E-mails non supprimés** (erreur « e-mail lu mais non supprimé ») : le signaler, ils reviendraient au lot suivant.
 
 ## 2. Inventaire du lot
 

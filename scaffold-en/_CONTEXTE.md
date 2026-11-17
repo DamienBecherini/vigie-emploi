@@ -36,7 +36,7 @@
 ## 4. Selling points
 
 <!-- The story in one sentence (the hook), the two or three pieces of evidence to put forward depending on the target,
-     the angles that set them apart (sector, dual skill set, client's eye view…), and for each flagship project
+     the angles that set them apart (sector, dual skill set, a client's perspective…), and for each flagship project
      the nuances not to distort (what they did themselves, what the team did, what was not done). -->
 
 ## 5. Recruitment risks and answers

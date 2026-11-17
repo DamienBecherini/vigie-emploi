@@ -159,8 +159,6 @@ npm link           # makes the `vigie-emploi` command available everywhere (opti
 
 Without `npm link`, replace `vigie-emploi` with `node <path>/bin/vigie-emploi.js`. In the repository, `bin/vigie-emploi.js` runs the TypeScript in `src/` directly; without `src/` (npm package), it loads the compiled JavaScript from `dist/`, because Node refuses to run TypeScript located under `node_modules`. `npm pack` and `npm publish` rebuild everything (`prepack`).
 
-Working names from before publication (`postuler-juste`, `cap-emploi`): their `POSTULER_JUSTE_*` / `CAP_EMPLOI_*` variables, `*.config.json` files and `data/*.sqlite` databases are still recognised, after the vigie-emploi ones.
-
 ### Creating your workspace
 
 ```sh

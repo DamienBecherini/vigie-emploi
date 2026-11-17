@@ -157,8 +157,6 @@ npm link           # rend la commande `vigie-emploi` disponible partout (faculta
 
 Sans `npm link`, remplacez `vigie-emploi` par `node <chemin>/bin/vigie-emploi.js`. Dans le dépôt, `bin/vigie-emploi.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
 
-Noms de travail d'avant la publication (`postuler-juste`, `cap-emploi`) : leurs variables `POSTULER_JUSTE_*` / `CAP_EMPLOI_*`, fichiers `*.config.json` et bases `data/*.sqlite` restent reconnus, après ceux de vigie-emploi.
-
 ### Créer son espace de travail
 
 ```sh

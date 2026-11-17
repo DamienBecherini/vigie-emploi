@@ -59,13 +59,12 @@ describe('import-history', () => {
 
   it('source without a candidatures/ folder: error', async () => {
     const r = await run('import-history', '--source', `${tmp.root()}/nowhere`, '--json');
-    // Only the exit code and the JSON form are pinned: the message is not translated yet (src/import/history.ts).
     expect(r.code).toBe(1);
-    expect(JSON.parse(r.err).ok).toBe(false);
-    // Not a user error: in text mode the stack is printed.
+    expect(JSON.parse(r.err)).toMatchObject({ ok: false, code: 'not-found' });
+    // An expected error: in text mode the message alone, no stack.
     const text = await run('import-history', '--source', `${tmp.root()}/nowhere`);
     expect(text.code).toBe(1);
-    expect(text.err).toMatch(/^Error: Error: [\s\S]*\n {4}at /);
+    expect(text.err).toMatch(/^Error: No candidatures\/ folder in .+nowhere\n$/);
   });
 });
 

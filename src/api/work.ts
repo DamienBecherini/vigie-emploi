@@ -6,6 +6,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from '../db/database.ts';
 import { LANGUAGE_DEFAULT, tl, type Language } from '../i18n/index.ts';
+import { AppError } from '../core/errors.ts';
 
 /** Actions that can be launched from the interface, and the prompt passed to the agent (command of the data folder). */
 export const ACTIONS_AGENT = {
@@ -86,7 +87,7 @@ export function launcherTerminal(
   const chosen = scaffold ?? (platform === 'win32' ? TERMINAL_WINDOWS : null);
   return (action, dataDir) => {
     if (!chosen?.length) {
-      return Promise.reject(new Error(tl(language, 'api.withoutTerminal', { prompt: ACTIONS_AGENT[action], folder: dataDir })));
+      return Promise.reject(new AppError('invalid', tl(language, 'api.withoutTerminal', { prompt: ACTIONS_AGENT[action], folder: dataDir })));
     }
     const [program, ...args] = commandTerminal(chosen, dataDir, action);
     return new Promise((resolve, reject) => {
@@ -97,7 +98,7 @@ export function launcherTerminal(
         stdio: 'ignore',
         windowsHide: false,
       });
-      p.once('error', (e) => reject(new Error(tl(language, 'api.terminalImpossible', { program, message: e.message }))));
+      p.once('error', (e) => reject(new AppError('invalid', tl(language, 'api.terminalImpossible', { program, message: e.message }))));
       p.once('spawn', () => {
         p.unref();
         resolve();

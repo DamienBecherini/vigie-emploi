@@ -21,6 +21,7 @@ import {
 import { recompute } from './offers.ts';
 import { now } from './text.ts';
 import { LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export const AUTHORS_RUBRIC = ['interface', 'cli', 'mcp', 'file'] as const;
 export type AuthorRubric = (typeof AUTHORS_RUBRIC)[number];
@@ -61,9 +62,9 @@ export function readFileRubric(path: string): { rubric: Rubric; summary: string 
   try {
     raw = JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')) as Record<string, unknown>;
   } catch (e) {
-    throw new Error(t('core.rubricUnreadable', { path, message: (e as Error).message }));
+    throw new AppError('invalid', t('core.rubricUnreadable', { path, message: (e as Error).message }));
   }
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error(t('core.rubricObject', { path }));
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new AppError('invalid', t('core.rubricObject', { path }));
   const content = { ...raw };
   for (const k of META_FILE) delete content[k];
   return {
@@ -101,7 +102,7 @@ export function lastVersion(db: Database): VersionRubric | null {
 
 export function versionRubric(db: Database, version: number): VersionRubric {
   const l = db.prepare('SELECT * FROM rubrics WHERE version = ?').get(version) as LineRubric | undefined;
-  if (!l) throw new Error(t('core.versionNotFound', { version }));
+  if (!l) throw new AppError('not-found', t('core.versionNotFound', { version }));
   return lineVersion(l);
 }
 
@@ -112,7 +113,7 @@ export function historyRubric(db: Database): InfoVersion[] {
 
 function insertVersion(db: Database, rubric: Rubric, author: AuthorRubric, summary: string): VersionRubric {
   const r = summary.trim();
-  if (!r) throw new Error(t('core.summaryChange'));
+  if (!r) throw new AppError('invalid', t('core.summaryChange'));
   const previous = (db.prepare('SELECT MAX(version) AS v FROM rubrics').get() as { v: number | null }).v ?? 0;
   const v: VersionRubric = { version: previous + 1, at: now(), author, summary: r, rubric };
   db.prepare('INSERT INTO rubrics (version, content, at, author, summary) VALUES (?, ?, ?, ?, ?)').run(
@@ -158,7 +159,7 @@ export function rubricCurrent(db: Database, dataDir: string): VersionRubric | nu
 export function rubricRequired(db: Database, dataDir: string): VersionRubric {
   const g = rubricCurrent(db, dataDir);
   if (!g) {
-    throw new Error(t('core.notOfRubric', { path: pathRubric(dataDir) }));
+    throw new AppError('not-found', t('core.notOfRubric', { path: pathRubric(dataDir) }));
   }
   return g;
 }
@@ -298,7 +299,7 @@ export function saveRubric(
 ): { version: VersionRubric; impact: Impact } {
   const rubric = validateRubric(raw);
   const before = rubricCurrent(db, dataDir);
-  if (before && canonical(before.rubric) === canonical(rubric)) throw new Error(t('core.noneChange'));
+  if (before && canonical(before.rubric) === canonical(rubric)) throw new AppError('invalid', t('core.noneChange'));
   const r = transaction(db, () => {
     const v = insertVersion(db, rubric, o.author, o.summary);
     return { version: v, impact: rescoreWith(db, v, before?.rubric.threshold ?? null) };

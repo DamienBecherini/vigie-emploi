@@ -6,6 +6,7 @@ import type { Database } from '../db/database.ts';
 import { now } from './text.ts';
 import { TYPES_EVENT, type OriginEvent, type Direction, type TypeEvent } from './statuses.ts';
 import { t as tr } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export { LABELS_TYPES, ORIGINS_EVENT, DIRECTION_MESSAGE, TYPES_EVENT } from './statuses.ts';
 export type { OriginEvent, Direction, TypeEvent } from './statuses.ts';
@@ -106,14 +107,14 @@ export function readDateEvent(text: string, nowAt: Date = new Date()): string {
     [a, m, j] = [Number(iso[1]), Number(iso[2]), Number(iso[3])];
     rest = iso[4];
   } else {
-    throw new Error(tr('core.dateFormat', { text }));
+    throw new AppError('invalid', tr('core.dateFormat', { text }));
   }
-  if (!dateValid(a, m, j)) throw new Error(tr('core.dateInvalid', { text }));
+  if (!dateValid(a, m, j)) throw new AppError('invalid', tr('core.dateInvalid', { text }));
   const day = `${a}-${two(m)}-${two(j)}`;
   const r = rest.trim().replace(/^(t|à|a)\s*/, '');
   if (!r) return day;
   const h = r.match(/^(\d{1,2})\s*(?:h|:)\s*(\d{2})?(?::\d{2}(?:\.\d+)?)?\s*(?:z|[+-]\d{2}:?\d{2})?$/);
-  if (!h || Number(h[1]) > 23 || Number(h[2] ?? 0) > 59) throw new Error(tr('core.hourInvalid', { text }));
+  if (!h || Number(h[1]) > 23 || Number(h[2] ?? 0) > 59) throw new AppError('invalid', tr('core.hourInvalid', { text }));
   return `${day}T${two(Number(h[1]))}:${h[2] ?? '00'}`;
 }
 
@@ -135,7 +136,7 @@ export function dateEventFr(at: string): string {
 
 function textOrNull(v: unknown, name: string): string | null {
   if (v === null || v === undefined) return null;
-  if (typeof v !== 'string') throw new Error(tr('core.textExpected', { name }));
+  if (typeof v !== 'string') throw new AppError('invalid', tr('core.textExpected', { name }));
   const t = v.trim();
   return t === '' ? null : t;
 }
@@ -150,7 +151,7 @@ function numberOrNull(v: unknown, name: string): number | null {
             .replace(/[\s  ]/g, '')
             .replace(',', '.'),
         );
-  if (!Number.isFinite(n)) throw new Error(tr('core.numberExpected', { name, value: String(v) }));
+  if (!Number.isFinite(n)) throw new AppError('invalid', tr('core.numberExpected', { name, value: String(v) }));
   return n;
 }
 
@@ -163,24 +164,24 @@ export function pathRelative(v: string): string {
     .trim()
     .replace(/\\/g, '/')
     .replace(/^\.\/+/, '');
-  if (!t) throw new Error(tr('core.pathEmpty'));
-  if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new Error(tr('core.pathAbsolute', { path: v }));
+  if (!t) throw new AppError('invalid', tr('core.pathEmpty'));
+  if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new AppError('invalid', tr('core.pathAbsolute', { path: v }));
   // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what this check refuses
-  if (/[\u0000-\u001f]/.test(t)) throw new Error(tr('core.pathInvalid', { path: v }));
+  if (/[\u0000-\u001f]/.test(t)) throw new AppError('invalid', tr('core.pathInvalid', { path: v }));
   const segments = t.split('/').filter((s) => s !== '' && s !== '.');
-  if (segments.some((s) => s === '..' || s.startsWith('.'))) throw new Error(tr('core.pathRefused', { path: v }));
+  if (segments.some((s) => s === '..' || s.startsWith('.'))) throw new AppError('invalid', tr('core.pathRefused', { path: v }));
   return segments.join('/');
 }
 
 function filesValid(v: unknown): string[] {
   if (v === null || v === undefined) return [];
-  if (!Array.isArray(v)) throw new Error(tr('core.filesList'));
+  if (!Array.isArray(v)) throw new AppError('invalid', tr('core.filesList'));
   return [...new Set(v.map((f) => pathRelative(String(f))))];
 }
 
 function typeValid(v: unknown): TypeEvent {
   if (typeof v !== 'string' || !(TYPES_EVENT as readonly string[]).includes(v)) {
-    throw new Error(tr('core.typeEventUnknown', { type: String(v), types: TYPES_EVENT.join(', ') }));
+    throw new AppError('invalid', tr('core.typeEventUnknown', { type: String(v), types: TYPES_EVENT.join(', ') }));
   }
   return v as TypeEvent;
 }
@@ -191,7 +192,7 @@ function directionValid(v: unknown): Direction | null {
   const n = t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   if (n === 'sent' || n === 'envoye') return 'sent';
   if (n === 'received' || n === 'recu') return 'received';
-  throw new Error(tr('core.directionUnknown', { direction: t }));
+  throw new AppError('invalid', tr('core.directionUnknown', { direction: t }));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -222,7 +223,7 @@ export function eventById(db: Database, id: number): JournalEvent | undefined {
 
 export function eventOrError(db: Database, id: number): JournalEvent {
   const e = Number.isInteger(id) ? eventById(db, id) : undefined;
-  if (!e) throw new Error(tr('core.eventNotFound', { id }));
+  if (!e) throw new AppError('not-found', tr('core.eventNotFound', { id }));
   return e;
 }
 
@@ -254,7 +255,7 @@ export interface Deadlines {
 /** Deadlines: overdue (past date, not done) and upcoming over `days` days (today included). */
 export function deadlines(db: Database, o: { days?: number; now?: Date } = {}): Deadlines {
   const days = o.days ?? 7;
-  if (!Number.isInteger(days) || days < 0 || days > 3660) throw new Error(tr('core.daysInvalid', { days }));
+  if (!Number.isInteger(days) || days < 0 || days > 3660) throw new AppError('invalid', tr('core.daysInvalid', { days }));
   const ref = o.now ?? new Date();
   const today = dayLocal(ref);
   const until = dayLocal(ref, days);
@@ -292,10 +293,10 @@ function touchOffer(db: Database, offerId: number): void {
  * (it is a deadline) and to true otherwise. `at` defaults to now.
  */
 export function addEvent(db: Database, offerId: number, s: EventInput, origin: OriginEvent, opts: { importKey?: string; now?: Date } = {}): JournalEvent {
-  if (!db.prepare('SELECT 1 FROM offers WHERE id = ?').get(offerId)) throw new Error(tr('core.offerNotFound', { id: offerId }));
+  if (!db.prepare('SELECT 1 FROM offers WHERE id = ?').get(offerId)) throw new AppError('not-found', tr('core.offerNotFound', { id: offerId }));
   const type = typeValid(s.type);
   const summary = textOrNull(s.summary, 'summary');
-  if (!summary) throw new Error(tr('core.summaryEvent'));
+  if (!summary) throw new AppError('invalid', tr('core.summaryEvent'));
   const ref = opts.now ?? new Date();
   const at = s.at === undefined || s.at === null || String(s.at).trim() === '' ? instantLocal(ref) : readDateEvent(String(s.at), ref);
   const done = s.done === undefined || s.done === null ? !isFuture(at, ref) : Boolean(s.done);
@@ -342,7 +343,7 @@ export function updateEvent(db: Database, id: number, s: EventInput, opts: { now
   if (s.done !== undefined) set('done', s.done ? 1 : 0);
   if (s.summary !== undefined) {
     const r = textOrNull(s.summary, 'summary');
-    if (!r) throw new Error(tr('core.summaryEvent'));
+    if (!r) throw new AppError('invalid', tr('core.summaryEvent'));
     set('summary', r);
   }
   for (const k of ['details', 'channel', 'contacts', 'unit'] as const) if (s[k] !== undefined) set(k, textOrNull(s[k], k));

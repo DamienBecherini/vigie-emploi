@@ -8,6 +8,7 @@ import { marked, type Token, type Tokens } from 'marked';
 import { APP_ROOT, variable } from '../core/config.ts';
 import { capturePages } from './pages.ts';
 import { LANGUAGE_DEFAULT, languageCurrent, t, type Language } from '../i18n/index.ts';
+import { AppError } from '../core/errors.ts';
 
 /** Template shipped with the application. */
 export const TEMPLATE_DEFAULT = join(APP_ROOT, 'templates', 'cv', 'plain');
@@ -328,10 +329,10 @@ export interface ResultCv {
 /** Generates the PDF of a Markdown CV with the given template (folder containing gabarit.css). */
 export function generateCv(markdown: string, folderTemplate: string, browser: string, o: { capture?: boolean } = {}): ResultCv {
   const md = resolve(markdown);
-  if (!existsSync(md)) throw Object.assign(new Error(t('core.cv.notFound', { path: md })), { user: true });
+  if (!existsSync(md)) throw new AppError('not-found', t('core.cv.notFound', { path: md }));
   const template = resolve(folderTemplate);
   if (!existsSync(join(template, 'gabarit.css'))) {
-    throw Object.assign(new Error(t('core.cv.templateIncomplete', { path: join(template, 'gabarit.css') })), { user: true });
+    throw new AppError('invalid', t('core.cv.templateIncomplete', { path: join(template, 'gabarit.css') }));
   }
   const name = basename(md).replace(/\.md$/i, '');
   const preview = join(template, 'apercu');
@@ -412,7 +413,7 @@ export function chooseTemplate(workspace: string, name: string): { folder: strin
     const names = listTemplates()
       .map((g) => g.name)
       .join(', ');
-    throw Object.assign(new Error(t('core.cv.templateUnknown', { name, list: names })), { user: true });
+    throw new AppError('invalid', t('core.cv.templateUnknown', { name, list: names }));
   }
   const target = join(workspace, 'cv', 'gabarit');
   let old: string | null = null;

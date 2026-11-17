@@ -313,6 +313,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'api.fieldText': 'Champ {field} : texte attendu',
   'api.pathBadlyEncode': 'Chemin mal encodé',
   'api.routeUnknown': 'Route inconnue',
+  'api.internalError': "Erreur interne de l'application : {message}",
   'api.notCompiled': 'Interface non compilée : lancer « npm run build » dans le dossier de vigie-emploi.',
   'api.withoutTerminal':
     'Pas de terminal configuré pour cette plateforme : ajouter "terminal" dans vigie-emploi.config.json, ou lancer « claude {prompt} » dans {folder}.',
@@ -471,6 +472,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.rubric.afterChange': 'après changement',
   'core.penaltiesIgnored': 'Champ « penalties » ignoré : les règles bloquantes passent par « blockers »',
   'core.import': 'apply (reprise après « {status} »)',
+  'core.import.withoutFolder': 'Dossier candidatures/ introuvable dans {folder}',
   'core.sentAt': 'envoyée le {date}',
   'core.ingest.box': 'Boîte de réception introuvable : {folder}',
   'core.mail.error.no-password': 'aucun mot de passe enregistré pour cette boîte (réglages du tableau de bord, ou vigie-emploi mail setup).',

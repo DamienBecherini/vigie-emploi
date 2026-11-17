@@ -11,13 +11,14 @@ import type { Inputs } from './rubric.ts';
 import { STATUSES_TO_PROCESS, type Status } from './statuses.ts';
 import { dateFr } from './text.ts';
 import { t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 /** Statuses before sending: a sent application or "apply" moves them forward. */
 export const STATUSES_BEFORE_GO: Status[] = ['new', 'to-read', 'scored', 'dismissed'];
 
 export function offerOrError(db: Database, id: number): Offer {
   const o = Number.isInteger(id) ? offerById(db, id) : undefined;
-  if (!o) throw new Error(t('core.offerNotFound', { id }));
+  if (!o) throw new AppError('not-found', t('core.offerNotFound', { id }));
   return o;
 }
 
@@ -103,7 +104,7 @@ export interface OptionsScore {
 
 /** Saves scores in the batch format (in a transaction: all or nothing). */
 export function scoreOffers(db: Database, inputs: InputBatch[], origin: string, o: OptionsScore = {}): ResultScoring[] {
-  if (!inputs.length) throw new Error(t('core.noneScore'));
+  if (!inputs.length) throw new AppError('invalid', t('core.noneScore'));
   const rubric = inputs.some(isCriteriaScore) ? (o.rubric?.() ?? null) : null;
   const score = () =>
     inputs.map((e) => {

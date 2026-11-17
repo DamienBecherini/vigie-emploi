@@ -6,7 +6,7 @@ Deux façons de piloter : les **outils MCP** (`vigie-emploi mcp`, à privilégie
 
 ## Règles
 
-- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "error": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
+- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "error": "…", "code": "not-found"}` ; le code vaut `not-found`, `invalid`, `forbidden`… pour une erreur attendue) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
 - `_SUIVI.md` se génère depuis la base (`generate_tracker` / `vigie-emploi generate-tracker`)  : ne pas l'éditer à la main (s'il remplace un ancien suivi tenu à la main, comparer d'abord avec l'aperçu). Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `replace` seulement si l'utilisateur le demande.
 - Le dossier de données vient de `VIGIE_EMPLOI_DATA`, de `--data` ou de `vigie-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
 - Boîte mail : ne jamais demander le mot de passe dans la conversation. L'utilisateur connecte sa boîte lui-même, dans le tableau de bord (bouton « Boîte mail ») ou avec `vigie-emploi mail setup` ; le mot de passe va dans le trousseau du système.

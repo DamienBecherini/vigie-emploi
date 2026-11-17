@@ -6,7 +6,7 @@ Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the 
 
 ## Rules
 
-- CLI: always pass `--json`: the output is stable and unambiguous. Errors go to stderr (`{"ok": false, "error": "…"}`) with a non-zero exit code. MCP: an error comes back as an error result (`isError`), and the server keeps running.
+- CLI: always pass `--json`: the output is stable and unambiguous. Errors go to stderr (`{"ok": false, "error": "…", "code": "not-found"}`; the code is `not-found`, `invalid`, `forbidden`… for an expected error) with a non-zero exit code. MCP: an error comes back as an error result (`isError`), and the server keeps running.
 - `_SUIVI.md` (the tracker) is generated from the database (`generate_tracker` / `vigie-emploi generate-tracker`): do not edit it by hand (if it replaces a tracker kept by hand, compare with the preview first). By default it writes the preview `candidatures/_SUIVI.genere.md`; use `replace` only if the user asks for it.
 - The data folder comes from `VIGIE_EMPLOI_DATA`, `--data` or `vigie-emploi.config.json`. Never write personal data into the application's repository.
 - Mailbox: never ask for the password in the conversation. The user connects their mailbox themselves, in the dashboard ("Mailbox" button) or with `vigie-emploi mail setup`; the password goes to the system keychain.

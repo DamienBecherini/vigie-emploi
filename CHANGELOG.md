@@ -20,6 +20,11 @@
 - The reference (installation, configuration, commands, scoring grid, dashboard) moved from the README to `docs/reference.md`.
 - Guides renamed: `docs/mcp.md` (was `docs/utiliser-avec-une-ia.md`) and `docs/adding-a-language.md` (was `docs/ajouter-une-langue.md`), each with its `.fr.md` version; architecture decisions (`docs/adr/`) and this changelog translated to English.
 
+### Errors
+
+- The API answers with the status of the error: 404 for what does not exist (it was 400), 400 for a wrong input, 403 for a refused access, and 500 for a defect of the program (it was 400 too), whose stack goes to the error output. Each error answer carries a `code` (`not-found`, `invalid`, `forbidden`…) next to its message.
+- The command line gives the same `code` in its JSON errors (`--json`), and `import-history` without a `candidatures/` folder now says so in one translated line instead of a stack.
+
 ### Development
 
 - Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.

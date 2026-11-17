@@ -5,6 +5,7 @@ import { readCompensation, now, sanitize } from './text.ts';
 import { journal, type EventJournal } from './events.ts';
 import type { Breakdown, Input } from './rubric.ts';
 import { t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export type Origin = 'email' | 'import-batch' | 'import-register' | 'import-tracker' | 'manual';
 
@@ -149,7 +150,7 @@ export function offerByUrl(db: Database, url: string): Offer | undefined {
 export function updateLink(db: Database, id: number, url: string | null): void {
   const clean = url?.trim() || null;
   if (clean !== null && !/^https?:\/\/\S+$/i.test(clean)) {
-    throw new Error(t('core.linkInvalid', { link: clean }));
+    throw new AppError('invalid', t('core.linkInvalid', { link: clean }));
   }
   db.prepare('UPDATE offers SET canonical_url = ?, updated_at = ? WHERE id = ?').run(clean, now(), id);
 }
@@ -264,7 +265,7 @@ export interface OptionsStatus {
 }
 
 export function addStatus(db: Database, offerId: number, status: string, opts: OptionsStatus = {}): boolean {
-  if (!isStatus(status)) throw new Error(t('core.statusUnknown', { status }));
+  if (!isStatus(status)) throw new AppError('invalid', t('core.statusUnknown', { status }));
   const comment = sanitize(opts.comment) ?? null;
   const origin = opts.origin ?? 'cli';
   if (opts.ifMissing) {
@@ -314,8 +315,8 @@ export interface InputScore {
 function numberOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
-  if (!Number.isFinite(n)) throw new Error(t('core.scoreInvalid', { score: String(v) }));
-  if (n < 0 || n > 10) throw new Error(t('core.scoreScale', { score: n }));
+  if (!Number.isFinite(n)) throw new AppError('invalid', t('core.scoreInvalid', { score: String(v) }));
+  if (n < 0 || n > 10) throw new AppError('invalid', t('core.scoreScale', { score: n }));
   return n;
 }
 
@@ -454,7 +455,7 @@ export function companyOffers(db: Database, company: string, exceptId?: number):
 export function mergeOffers(db: Database, target: number, duplicate: number): void {
   if (target === duplicate) return;
   const d = offerById(db, duplicate);
-  if (!d || !offerById(db, target)) throw new Error(t('core.mergeImpossible', { target, duplicate }));
+  if (!d || !offerById(db, target)) throw new AppError('invalid', t('core.mergeImpossible', { target, duplicate }));
   db.prepare('UPDATE scores SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);
   db.prepare('UPDATE statuses SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);
   db.prepare('UPDATE OR IGNORE events SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);

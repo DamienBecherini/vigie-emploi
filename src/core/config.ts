@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isLanguage, LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, NAMES_LANGUAGES, type Language } from '../i18n/tool.ts';
 import { tl } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export interface Config {
   /** The user's data folder (contains data/, emails/, candidatures/…). */
@@ -156,12 +157,10 @@ function compiler(patterns: string[] | undefined): RegExp[] {
  * - `file-not-found`: the requested configuration file is missing;
  * - `language-unknown`: language value refused.
  */
-export class ErrorConfig extends Error {
-  readonly code: 'not-configured' | 'file-not-found' | 'language-unknown';
-  constructor(code: ErrorConfig['code'], message: string) {
-    super(message);
+export class ErrorConfig extends AppError {
+  constructor(code: 'not-configured' | 'file-not-found' | 'language-unknown', message: string) {
+    super(code, message);
     this.name = 'ErrorConfig';
-    this.code = code;
   }
 }
 

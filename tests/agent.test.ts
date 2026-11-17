@@ -6,6 +6,7 @@ import { openDatabase } from '../src/db/database.ts';
 import { addStatus, saveApplication, saveOffer } from '../src/core/offers.ts';
 import { createApp } from '../src/api/server.ts';
 import { Idle } from '../src/api/idle.ts';
+import { AppError } from '../src/core/errors.ts';
 import { Broadcast, group, watchChanges, type Notification } from '../src/api/broadcast.ts';
 import { commandTerminal, countEmails, environmentClean, stateWork, launcherTerminal, type ActionAgent } from '../src/api/work.ts';
 
@@ -116,7 +117,7 @@ describe('launch of the agent', () => {
   it('an error of the launcher comes back to the interface', async () => {
     const { folder, db } = data();
     const app = createApp(db, { dataDir: folder }, new Idle(0), {
-      launcher: () => Promise.reject(new Error('wt.exe absent')),
+      launcher: () => Promise.reject(new AppError('invalid', 'wt.exe absent')),
     });
     const r = await app.request('/api/work/prepare-go', POST_JSON);
     expect(r.status).toBe(400);

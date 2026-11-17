@@ -16,6 +16,7 @@ import { BINARY } from '../init/init.ts';
 import { notInitializedMessage, type StateMcp } from './state.ts';
 import { on } from './results.ts';
 import { tm, tu } from './texts.ts';
+import { AppError } from '../core/errors.ts';
 
 /** Automatic stop of the dashboard launched by the AI, in minutes without activity. */
 export const IDLE_MIN = 60;
@@ -134,7 +135,7 @@ export async function openDashboard(config: Config, options: { open?: boolean } 
     if (!s && free === null) free = port;
   }
   if (free === null) {
-    throw new Error(tm('dashboard.openDashboard', { port: String(config.port), p2: String(config.port + PORTS_TRIED - 1) }));
+    throw new AppError('invalid', tm('dashboard.openDashboard', { port: String(config.port), p2: String(config.port + PORTS_TRIED - 1) }));
   }
 
   const node = dep.node();
@@ -148,7 +149,8 @@ export async function openDashboard(config: Config, options: { open?: boolean } 
     const s = await dep.probe(free);
     if (s?.service === 'vigie-emploi' && s.folder && sameFolder(s.folder, folder)) return end(free, false, 'detached');
   }
-  throw new Error(
+  throw new AppError(
+    'invalid',
     tm('dashboard.openDashboard2', { free: String(free), p2: String(PENDING_ONBOARDING_MS / 1000), p3: String(slash(node)), p4: String(slash(folder)) }),
   );
 }
@@ -165,7 +167,7 @@ export function saveToolDashboard(server: McpServer, state: StateMcp): void {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     on(async ({ open }: { open?: boolean }) => {
-      if (!state.db) throw new Error(notInitializedMessage(state));
+      if (!state.db) throw new AppError('not-configured', notInitializedMessage(state));
       return openDashboard(state.config, { open });
     }),
   );

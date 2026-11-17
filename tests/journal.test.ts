@@ -250,7 +250,7 @@ describe('API: journal, deadlines, files', () => {
     expect(((await error.json()) as { error: string }).error).toMatch(/Résumé/);
     const sup = await app.request(`/api/events/${e.id}`, { method: 'DELETE' });
     expect(((await sup.json()) as typeof d).events.some((x) => x.id === e.id)).toBe(false);
-    expect((await app.request('/api/events/99999', { method: 'DELETE' })).status).toBe(400);
+    expect((await app.request('/api/events/99999', { method: 'DELETE' })).status).toBe(404);
   });
 
   it('files: Markdown rendered without script, plain text, traversal refused', async () => {

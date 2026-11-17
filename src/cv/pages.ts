@@ -6,6 +6,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { t } from '../i18n/index.ts';
+import { AppError } from '../core/errors.ts';
 
 export interface PageFilled {
   page: number;
@@ -39,7 +40,7 @@ interface Box {
  * bottom margin = the same (the templates have similar top and bottom margins).
  */
 export async function analyzePages(data: Uint8Array): Promise<AnalysisPages> {
-  if (!data.length) throw new Error(t('core.pages.pdfEmpty'));
+  if (!data.length) throw new AppError('invalid', t('core.pages.pdfEmpty'));
   const { getDocumentProxy } = await import('unpdf');
   const pdf = await getDocumentProxy(new Uint8Array(data));
   const boxes: { height: number; text: Box | null }[] = [];

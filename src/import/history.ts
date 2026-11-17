@@ -23,6 +23,8 @@ import { dateFr, fingerprint, isEmpty, now, withoutMarkdown, findCompensation } 
 import { split, linksMarkdown, linesTables, type LineTable } from './markdown.ts';
 import { MARKER_TRACKER_GENERATED } from '../export/tracker.ts';
 import { importJournals, type ReportJournal } from './journal.ts';
+import { AppError } from '../core/errors.ts';
+import { t } from '../i18n/index.ts';
 
 export interface UnrecognizedLine {
   file: string;
@@ -510,7 +512,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
 export function importHistory(db: Database, dataDir: string): ReportImport {
   const report = reportEmpty() as ReportImport;
   if (!existsSync(join(dataDir, 'candidatures'))) {
-    throw new Error(`Dossier candidatures/ introuvable dans ${dataDir}`);
+    throw new AppError('not-found', t('core.import.withoutFolder', { folder: dataDir }));
   }
   importBatches(db, dataDir, report);
   importRegister(db, dataDir, report);

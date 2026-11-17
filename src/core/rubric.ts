@@ -6,6 +6,7 @@
 // average, applies the rules (zero, cap) and rounds to the half point. The AI never gives the final score.
 import { z } from 'zod';
 import { decimal, languageCurrent, t, t as tr } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export const LEVELS = ['strong', 'medium', 'light', 'zero'] as const;
 export type Level = (typeof LEVELS)[number];
@@ -226,7 +227,7 @@ export function messageZod(e: z.ZodError, prefix = ''): string {
 /** Validates a rubric (JSON object); throws an Error with a readable message. */
 export function validateRubric(raw: unknown, origin = 'rubric'): Rubric {
   const r = schemaRubric.safeParse(raw);
-  if (!r.success) throw new Error(t('core.rubric.invalid', { origin, message: messageZod(r.error) }));
+  if (!r.success) throw new AppError('invalid', t('core.rubric.invalid', { origin, message: messageZod(r.error) }));
   return r.data;
 }
 
@@ -523,14 +524,15 @@ export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}
  */
 export function checkInput(rubric: Rubric, raw: unknown): Input {
   const r = schemaInput.safeParse(raw);
-  if (!r.success) throw new Error(t('core.input.invalid', { message: messageZod(r.error) }));
+  if (!r.success) throw new AppError('invalid', t('core.input.invalid', { message: messageZod(r.error) }));
   const s = r.data;
   const ai = rubric.criteria.filter((c) => c.source === 'ai').map((c) => c.id);
   for (const k of Object.keys(s.criteria)) {
     const c = rubric.criteria.find((x) => x.id === k);
-    if (!c) throw new Error(t('core.input.criterionUnknown', { id: k, list: ai.join(', ') }));
+    if (!c) throw new AppError('invalid', t('core.input.criterionUnknown', { id: k, list: ai.join(', ') }));
     if (c.source === 'computation') {
-      throw new Error(
+      throw new AppError(
+        'invalid',
         t('core.input.criterionComputed', {
           id: k,
           fields: c.computation === 'remote' ? 'inputs.onsite_days' : 'inputs.salary_min / salary_max / unit',
@@ -540,7 +542,7 @@ export function checkInput(rubric: Rubric, raw: unknown): Input {
   }
   const rules = rubric.rules.map((x) => x.id);
   for (const b of s.blockers) {
-    if (!rules.includes(b)) throw new Error(t('core.input.ruleUnknown', { id: b, list: rules.join(', ') || t('core.noneFeminine') }));
+    if (!rules.includes(b)) throw new AppError('invalid', t('core.input.ruleUnknown', { id: b, list: rules.join(', ') || t('core.noneFeminine') }));
   }
   return s;
 }
@@ -620,7 +622,7 @@ export type Change = z.infer<typeof schemaChange>;
 /** Applies a partial change to a rubric and returns the new validated rubric. */
 export function applyChange(rubric: Rubric, raw: unknown): Rubric {
   const r = schemaChange.safeParse(raw);
-  if (!r.success) throw new Error(t('core.change.invalid', { message: messageZod(r.error) }));
+  if (!r.success) throw new AppError('invalid', t('core.change.invalid', { message: messageZod(r.error) }));
   const ch = r.data;
   const g = structuredClone(rubric) as Rubric;
   if (ch.name !== undefined) g.name = ch.name;
@@ -628,12 +630,12 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
   if (ch.instructions !== undefined) g.instructions = ch.instructions;
   for (const [id, p] of Object.entries(ch.weight ?? {})) {
     const c = g.criteria.find((x) => x.id === id);
-    if (!c) throw new Error(t('core.change.criterionUnknownList', { id, list: g.criteria.map((x) => x.id).join(', ') }));
+    if (!c) throw new AppError('invalid', t('core.change.criterionUnknownList', { id, list: g.criteria.map((x) => x.id).join(', ') }));
     c.weight = p;
   }
   for (const m of ch.criteria ?? []) {
     const c = g.criteria.find((x) => x.id === m.id);
-    if (!c) throw new Error(t('core.change.criterionUnknown', { id: m.id }));
+    if (!c) throw new AppError('invalid', t('core.change.criterionUnknown', { id: m.id }));
     if (m.label !== undefined) c.label = m.label;
     if (m.description !== undefined) c.description = m.description;
     if (m.weight !== undefined) c.weight = m.weight;
@@ -660,7 +662,7 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
       if (m.threshold !== undefined) r0.threshold = m.threshold;
       if (m.active !== undefined) r0.active = m.active;
     } else {
-      if (!m.label || !m.effect) throw new Error(t('core.change.newRule', { id: m.id }));
+      if (!m.label || !m.effect) throw new AppError('invalid', t('core.change.newRule', { id: m.id }));
       g.rules.push({
         id: m.id,
         label: m.label,
@@ -674,7 +676,7 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
     }
   }
   for (const id of ch.remove_rules ?? []) {
-    if (!g.rules.some((x) => x.id === id)) throw new Error(t('core.change.ruleUnknown', { id }));
+    if (!g.rules.some((x) => x.id === id)) throw new AppError('invalid', t('core.change.ruleUnknown', { id }));
     g.rules = g.rules.filter((x) => x.id !== id);
     for (const e of g.examples) e.blockers = e.blockers.filter((b) => b !== id);
   }
@@ -684,7 +686,7 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
   for (const t of ch.inventory?.remove ?? []) {
     const before = g.inventory.length;
     g.inventory = g.inventory.filter((x) => key(x.technology) !== key(t));
-    if (g.inventory.length === before) throw new Error(tr('core.change.technologyMissing', { technology: t }));
+    if (g.inventory.length === before) throw new AppError('invalid', tr('core.change.technologyMissing', { technology: t }));
   }
   for (const t of ch.inventory?.add ?? []) {
     const i = g.inventory.findIndex((x) => key(x.technology) === key(t.technology));
@@ -697,8 +699,9 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
   for (const x of ch.examples?.remove ?? []) {
     const { title, company } = typeof x === 'string' ? { title: x, company: undefined } : x;
     const found = g.examples.filter((e) => sameExample(e, title, company));
-    if (!found.length) throw new Error(t('core.change.exampleAbsent', { title, list: g.examples.map((e) => e.title).join(' ; ') || t('core.none') }));
-    if (found.length > 1) throw new Error(t('core.change.examplesHomonyms', { title }));
+    if (!found.length)
+      throw new AppError('invalid', t('core.change.exampleAbsent', { title, list: g.examples.map((e) => e.title).join(' ; ') || t('core.none') }));
+    if (found.length > 1) throw new AppError('invalid', t('core.change.examplesHomonyms', { title }));
     g.examples = g.examples.filter((e) => e !== found[0]);
   }
   for (const e of ch.examples?.add ?? []) {

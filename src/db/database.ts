@@ -29,7 +29,7 @@ export function migrate(db: Database): number[] {
       applied.push(m.version);
     } catch (e) {
       db.exec('ROLLBACK');
-      throw new Error(`Migration ${m.file} en échec : ${(e as Error).message}`);
+      throw new Error(`Migration ${m.file} failed: ${(e as Error).message}`);
     }
   }
   return applied;

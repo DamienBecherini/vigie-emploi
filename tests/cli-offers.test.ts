@@ -186,7 +186,7 @@ describe('show', () => {
     const j = await run('show', '999', '--json');
     expect(j.code).toBe(1);
     expect(j.out).toBe('');
-    expect(JSON.parse(j.err)).toEqual({ ok: false, error: 'Offer 999 not found' });
+    expect(JSON.parse(j.err)).toEqual({ ok: false, error: 'Offer 999 not found', code: 'not-found' });
   });
 
   it('invalid id', async () => {

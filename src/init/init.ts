@@ -8,6 +8,7 @@ import { exampleRubric } from '../core/rubric-storage.ts';
 import { commandNode } from '../core/node.ts';
 import { FOLDER_TEMPLATES, TEMPLATE_DEFAULT, listTemplates, findBrowser } from '../cv/cv.ts';
 import { isLanguage, LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, tl, type Language } from '../i18n/index.ts';
+import { AppError } from '../core/errors.ts';
 
 export const SCAFFOLD = join(APP_ROOT, 'scaffold');
 
@@ -105,7 +106,7 @@ export interface ResultInit {
 const slash = (p: string) => p.replace(/\\/g, '/');
 
 function errorUser(message: string): never {
-  throw Object.assign(new Error(message), { user: true });
+  throw new AppError('invalid', message);
 }
 
 /** Replaces the {{…}} markers of the text files copied from the template. */

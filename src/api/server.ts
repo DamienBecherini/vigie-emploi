@@ -10,6 +10,7 @@ import type { Database } from '../db/database.ts';
 import { routesMail } from './mail.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { transaction } from '../db/database.ts';
+import { AppError, HTTP_STATUS } from '../core/errors.ts';
 import { listOffers, meta, type OptionsList } from '../core/queries.ts';
 import { addStatus, FIELDS_APPLICATION, detailOffer, updateLink, updateTags, offerById, tagsOffer, type FieldsApplication } from '../core/offers.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
@@ -139,7 +140,14 @@ export function createApp(
   const language = config.language ?? LANGUAGE_DEFAULT;
   const m = (key: KeyServer, params?: Params) => tl(language, key, params);
 
-  app.onError((err, c) => c.json({ ok: false, error: err.message }, 400));
+  // An expected error answers with the status of its code; an unreadable JSON body is a wrong input.
+  // Anything else is a defect of the program: 500, with the stack on the error output.
+  app.onError((err, c) => {
+    if (err instanceof AppError) return c.json({ ok: false, error: err.message, code: err.code }, HTTP_STATUS[err.code]);
+    if (err instanceof SyntaxError) return c.json({ ok: false, error: err.message, code: 'invalid' }, 400);
+    process.stderr.write(`${err.stack ?? err.message}\n`);
+    return c.json({ ok: false, error: m('api.internalError', { message: err.message }), code: 'internal' }, 500);
+  });
 
   // Local server: only requests addressed to localhost / 127.0.0.1 are served (protection against
   // "DNS rebinding": a third-party web page cannot read the API nor the folder's files).
@@ -412,8 +420,8 @@ export function createApp(
     try {
       file = safeFile(config.dataDir, path);
     } catch (e) {
-      const message = (e as Error).message;
-      return c.text(message, /introuvable|not found/i.test(message) ? 404 : 403);
+      if (!(e instanceof AppError)) throw e;
+      return c.text(e.message, e.code === 'not-found' ? 404 : 403);
     }
     const p = pageFile(file.absolute, file.relative, { raw: c.req.query('raw') === '1' });
     return c.body(p.body, 200, p.headers);

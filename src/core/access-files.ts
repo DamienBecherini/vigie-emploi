@@ -5,6 +5,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync, type Stats } from 'node:fs';
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 /** Forbidden first segment: the SQLite database and its files. */
 const FOLDERS_FORBIDDEN = new Set(['data']);
@@ -17,7 +18,7 @@ export const SIZE_MAX_BINARY = 15 * 1024 * 1024;
 const INPUTS_MAX = 500;
 
 export function refuse(message: string): never {
-  throw Object.assign(new Error(message), { user: true });
+  throw new AppError('invalid', message);
 }
 
 const slash = (p: string) => p.split(sep).join('/');

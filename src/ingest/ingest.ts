@@ -14,6 +14,7 @@ import { extractJsonLd, downloadPage, type DetailJsonLd, type Downloader } from 
 import { t } from '../i18n/index.ts';
 import { fetchMailPerConfig, MailError, type MailErrorKind, type MailFetch } from '../mail/fetch.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
+import { AppError } from '../core/errors.ts';
 
 export interface OptionsIngest {
   folderEmails: string;
@@ -101,7 +102,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
       .filter((f) => f.toLowerCase().endsWith('.eml'))
       .sort();
   } catch {
-    throw new Error(t('core.ingest.box', { folder: o.folderEmails }));
+    throw new AppError('not-found', t('core.ingest.box', { folder: o.folderEmails }));
   }
   summary.files = files.length;
 
@@ -244,7 +245,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
     for (const path of read) {
       try {
         unlinkSync(path);
-        if (existsSync(path)) throw new Error(t('core.ingest.alwaysPresent'));
+        if (existsSync(path)) throw new AppError('invalid', t('core.ingest.alwaysPresent'));
         summary.files_deleted++;
       } catch (e) {
         summary.errors.push({ file: basename(path), message: t('core.ingest.notDeleted', { message: (e as Error).message }) });

@@ -42,6 +42,7 @@ import {
   presentIngestion,
   withoutEmpty,
 } from './presentation.ts';
+import { AppError } from '../core/errors.ts';
 
 const ORIGIN = 'mcp';
 
@@ -110,7 +111,7 @@ function buildSchemas() {
 type Schemas = ReturnType<typeof buildSchemas>;
 
 function normalizeInput(e: z.infer<Schemas['inputBatch']>): InputBatch {
-  if (e.id === undefined && !e.url) throw new Error(tm('server.normalizeInput'));
+  if (e.id === undefined && !e.url) throw new AppError('invalid', tm('server.normalizeInput'));
   return e as InputBatch;
 }
 
@@ -125,7 +126,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   const reading = { readOnlyHint: true, openWorldHint: false };
   /** Database of the workspace; clear error as long as the workspace is not initialized. */
   const database = (): Database => {
-    if (!state.db) throw new Error(notInitializedMessage(state));
+    if (!state.db) throw new AppError('not-configured', notInitializedMessage(state));
     return state.db;
   };
   const data = (): string => {
@@ -329,8 +330,8 @@ export function createServerMcp(state: StateMcp): McpServer {
         const r = restoreRubric(database(), data(), restore_version, { author: ORIGIN, summary });
         return { ok: true, saved: true, version: r.version.version, impact: impactCapped(r.impact) };
       }
-      if (!change) throw new Error(tm('server.update_rubric'));
-      if (!dry_run && !summary?.trim()) throw new Error(tm('server.update_rubric_2'));
+      if (!change) throw new AppError('invalid', tm('server.update_rubric'));
+      if (!dry_run && !summary?.trim()) throw new AppError('invalid', tm('server.update_rubric_2'));
       const r = updateRubric(database(), data(), change, { author: ORIGIN, summary: summary ?? '', dry_run });
       return {
         ok: true,

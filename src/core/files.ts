@@ -6,6 +6,7 @@ import type { Database } from '../db/database.ts';
 import { applicationOf } from './offers.ts';
 import { pathRelative } from './events.ts';
 import { t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export interface FileFolder {
   /** Path relative to the data folder (forward slashes): the one to put in an event. */
@@ -43,15 +44,15 @@ function forbidden(firstSegment: string): boolean {
 
 export function safeFile(dataDir: string, path: string): { absolute: string; relative: string } {
   const rel = pathRelative(path);
-  if (forbidden(rel.split('/')[0])) throw new Error(t('core.accessRefused', { path }));
+  if (forbidden(rel.split('/')[0])) throw new AppError('forbidden', t('core.accessRefused', { path }));
   const root = realpathSync(resolve(dataDir));
   const target = resolve(root, ...rel.split('/'));
-  if (!existsSync(target)) throw new Error(t('core.fileNotFound', { path: rel }));
+  if (!existsSync(target)) throw new AppError('not-found', t('core.fileNotFound', { path: rel }));
   const real = realpathSync(target);
-  if (real !== root && !real.startsWith(root + sep)) throw new Error(t('core.accessRefused', { path }));
+  if (real !== root && !real.startsWith(root + sep)) throw new AppError('forbidden', t('core.accessRefused', { path }));
   // Checked again once links are resolved: a symbolic link inside the folder may lead to data/ or emails/.
-  if (forbidden(relative(root, real).split(sep)[0])) throw new Error(t('core.accessRefused', { path }));
-  if (!statSync(real).isFile()) throw new Error(t('core.notOneFile', { path: rel }));
+  if (forbidden(relative(root, real).split(sep)[0])) throw new AppError('forbidden', t('core.accessRefused', { path }));
+  if (!statSync(real).isFile()) throw new AppError('invalid', t('core.notOneFile', { path: rel }));
   return { absolute: real, relative: rel };
 }
 
@@ -61,13 +62,13 @@ export function safeFile(dataDir: string, path: string): { absolute: string; rel
  */
 export function safeFolder(dataDir: string, folder: string): string {
   const rel = pathRelative(folder);
-  if (FOLDERS_FORBIDDEN.has(rel.split('/')[0].toLowerCase())) throw new Error(t('core.accessRefused', { path: folder }));
+  if (FOLDERS_FORBIDDEN.has(rel.split('/')[0].toLowerCase())) throw new AppError('forbidden', t('core.accessRefused', { path: folder }));
   const root = realpathSync(resolve(dataDir));
   const target = resolve(root, ...rel.split('/'));
-  if (!existsSync(target)) throw new Error(t('core.fileNotFound', { path: rel }));
+  if (!existsSync(target)) throw new AppError('not-found', t('core.fileNotFound', { path: rel }));
   const real = realpathSync(target);
-  if (!real.startsWith(root + sep)) throw new Error(t('core.accessRefused', { path: folder }));
-  if (!statSync(real).isDirectory()) throw new Error(t('core.notOneFolder', { path: rel }));
+  if (!real.startsWith(root + sep)) throw new AppError('forbidden', t('core.accessRefused', { path: folder }));
+  if (!statSync(real).isDirectory()) throw new AppError('invalid', t('core.notOneFolder', { path: rel }));
   return real;
 }
 
@@ -78,7 +79,7 @@ export function listFiles(dataDir: string, folder: string): { exists: boolean; f
   const dir = resolve(root, ...rel.split('/'));
   if (!existsSync(dir) || !statSync(dir).isDirectory()) return { exists: false, files: [], truncated: false };
   const realDatabase = realpathSync(dir);
-  if (!realDatabase.startsWith(root + sep)) throw new Error(t('core.accessRefused', { path: folder }));
+  if (!realDatabase.startsWith(root + sep)) throw new AppError('forbidden', t('core.accessRefused', { path: folder }));
   const files: FileFolder[] = [];
   let truncated = false;
   const walk = (dir: string, depth: number) => {

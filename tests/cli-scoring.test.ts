@@ -93,7 +93,7 @@ describe('score', () => {
     expect(none).toMatchObject({ code: 1, err: "Error: score: --json '{...}' or --file lot.json expected\n" });
     const two = await run('score', '3', '--json', '[{"score":1},{"score":2}]');
     expect(two.code).toBe(1);
-    expect(JSON.parse(two.err)).toEqual({ ok: false, error: 'score <id>: a single score expected' });
+    expect(JSON.parse(two.err)).toEqual({ ok: false, error: 'score <id>: a single score expected', code: 'invalid' });
     const unknown = await run('score', '999', '--json', '{"score":5}');
     expect(unknown.code).toBe(1);
     expect(JSON.parse(unknown.err).ok).toBe(false);

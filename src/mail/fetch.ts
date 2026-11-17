@@ -8,6 +8,7 @@ import { ImapFlow, type ImapFlowOptions } from 'imapflow';
 import type { Database } from '../db/database.ts';
 import type { MailConfig } from '../core/config.ts';
 import { now } from '../core/text.ts';
+import { AppError } from '../core/errors.ts';
 import type { SecretStore } from './secret.ts';
 
 /** Most messages fetched in one go (the next ones come with the next fetch). */
@@ -15,10 +16,10 @@ export const MAX_PER_FETCH = 200;
 
 export type MailErrorKind = 'no-password' | 'authentication' | 'folder' | 'connection' | 'other';
 
-export class MailError extends Error {
+export class MailError extends AppError {
   readonly kind: MailErrorKind;
   constructor(kind: MailErrorKind, message: string) {
-    super(message);
+    super('invalid', message);
     this.name = 'MailError';
     this.kind = kind;
   }

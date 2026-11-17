@@ -7,11 +7,12 @@ import { providerOf } from '../mail/providers.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { mailState, messageMailError, saveMailSettings } from '../mail/settings.ts';
 import { t } from '../i18n/index.ts';
+import { AppError } from '../core/errors.ts';
 
 type Values = Record<string, string | boolean | string[] | undefined>;
 
 function userError(message: string): Error {
-  return Object.assign(new Error(message), { user: true });
+  return new AppError('invalid', message);
 }
 
 async function ask(question: string, fallback = ''): Promise<string> {

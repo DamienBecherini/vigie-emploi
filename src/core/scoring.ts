@@ -9,6 +9,7 @@ import { dateFr, dateIso, fingerprint, isEmpty } from './text.ts';
 import { computeScore, summaryRules, checkInput, type Breakdown, type Inputs } from './rubric.ts';
 import type { VersionRubric } from './rubric-storage.ts';
 import { decimal, t } from '../i18n/index.ts';
+import { AppError } from './errors.ts';
 
 export interface InputBatch {
   id?: number;
@@ -85,13 +86,13 @@ export function offerForInput(
   };
   if (e.id !== undefined) {
     const o = offerById(db, Number(e.id));
-    if (!o) throw new Error(t('core.offerNotFound', { id: e.id }));
+    if (!o) throw new AppError('not-found', t('core.offerNotFound', { id: e.id }));
     saveOffer(db, o.source, o.site_id, fields, origin);
     return { id: o.id, created: false };
   }
-  if (!e.url) throw new Error(t('core.inputWithoutId'));
+  if (!e.url) throw new AppError('invalid', t('core.inputWithoutId'));
   // Same rule as updateLink: only http(s) addresses (the link is clickable in the dashboard).
-  if (!/^https?:\/\/\S+$/i.test(e.url)) throw new Error(t('core.linkInvalid', { link: e.url }));
+  if (!/^https?:\/\/\S+$/i.test(e.url)) throw new AppError('invalid', t('core.linkInvalid', { link: e.url }));
   const ident = canonicalize(e.url);
   const source = ident?.source ?? (e.source || 'manual');
   const siteId = ident?.siteId ?? `url-${fingerprint(e.url)}`;
@@ -122,7 +123,7 @@ export function scoreInput(
   const hasCriteria = isCriteriaScore(e);
   const rubric = opts.rubric ?? null;
   if (hasCriteria && !rubric) {
-    throw new Error(t('core.withoutRubric'));
+    throw new AppError('invalid', t('core.withoutRubric'));
   }
   const input = hasCriteria ? checkInput(rubric!.rubric, { criteria: e.criteria, inputs: e.inputs, blockers: e.blockers }) : null;
   const target = offerForInput(db, e, opts.originOffer ?? 'manual', { receivedAt: opts.receivedAt })!;
@@ -194,5 +195,5 @@ export function batchInputs(json: unknown): InputBatch[] {
     if (Array.isArray(o.offers)) return o.offers as InputBatch[];
     return [json as InputBatch];
   }
-  throw new Error(t('core.batchUnreadable'));
+  throw new AppError('invalid', t('core.batchUnreadable'));
 }

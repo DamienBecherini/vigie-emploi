@@ -39,6 +39,7 @@ import { analyzePages } from '../cv/pages.ts';
 import { commandMail } from './mail.ts';
 import { messageMailError } from '../mail/settings.ts';
 import { MailError } from '../mail/fetch.ts';
+import { AppError, isExpected } from '../core/errors.ts';
 
 function help(): string {
   return t('cli.help', { statuses: STATUSES.join(', '), types: TYPES_EVENT.join('|') });
@@ -47,7 +48,11 @@ function help(): string {
 type Values = Record<string, string | boolean | string[] | undefined>;
 
 function error(message: string): never {
-  throw Object.assign(new Error(message), { user: true });
+  throw new AppError('invalid', message);
+}
+
+function notFound(message: string): never {
+  throw new AppError('not-found', message);
 }
 
 function json(x: unknown): void {
@@ -216,10 +221,12 @@ function lineJournal(e: EventJournal): string {
   return `  #${String(e.id).padEnd(5)} ${dateEvent(e.at).padEnd(19)} ${state}${e.type.padEnd(11)}${direction} ${truncate(e.summary, 90)}${amount}${files}`;
 }
 
+/** Runs a call whose failures are the user's to read: an error that is not an AppError yet becomes one (message alone, no stack). */
 function withoutError<T>(fn: () => T): T {
   try {
     return fn();
   } catch (e) {
+    if (e instanceof AppError) throw e;
     error((e as Error).message);
   }
 }
@@ -413,7 +420,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { v, pos } = analyze(args, {});
     const { db } = context(v);
     const d = detailOffer(db, whole(pos[0], 'id'));
-    if (!d) error(t('cli.offerNotFound', { id: pos[0] }));
+    if (!d) notFound(t('cli.offerNotFound', { id: pos[0] }));
     if (v.json) return json(d);
     console.log(showDetail(d));
   },
@@ -571,7 +578,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const id = whole(pos[0], 'id');
     const status = pos[1];
     if (!status || !isStatus(status)) error(t('cli.statusExpected', { statuses: STATUSES.join(', ') }));
-    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    if (!offerById(db, id)) notFound(t('cli.offerNotFound', { id }));
     addStatus(db, id, status, { comment: (v.comment as string | undefined) ?? null, origin: 'cli' });
     const o = offerById(db, id)!;
     if (v.json) return json({ ok: true, id, status: o.status });
@@ -590,7 +597,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     const { db } = context(opts);
     const id = whole(rest[0], 'id');
-    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    if (!offerById(db, id)) notFound(t('cli.offerNotFound', { id }));
     const additions = rest
       .slice(1)
       .filter((x) => x.startsWith('+'))
@@ -610,7 +617,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { v, pos } = analyze(args, {});
     const { db } = context(v);
     const id = whole(pos[0], 'id');
-    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    if (!offerById(db, id)) notFound(t('cli.offerNotFound', { id }));
     if (pos[1] === undefined) error(t('cli.link.expected'));
     try {
       updateLink(db, id, pos[1] === '-' ? null : pos[1]);
@@ -715,7 +722,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = context(v);
     const id = whole(pos[0], 'id');
     const o = offerById(db, id);
-    if (!o) error(t('cli.offerNotFound', { id }));
+    if (!o) notFound(t('cli.offerNotFound', { id }));
     const j = journal(db, id);
     if (v.json) return json({ ok: true, id, events: j });
     console.log(`#${id} ${o.title}${o.company ? ` — ${o.company}` : ''}`);
@@ -751,7 +758,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { v, pos } = analyze(args, {});
     const { config, db } = context(v);
     const id = whole(pos[0], 'id');
-    if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
+    if (!offerById(db, id)) notFound(t('cli.offerNotFound', { id }));
     const r = filesFolder(db, config.dataDir, id);
     if (v.json) return json({ ok: true, ...r });
     if (!r.folder) return console.log(t('cli.files.withoutFolder', { id }));
@@ -932,9 +939,11 @@ export async function main(argv: string[]): Promise<number> {
     await fn(args);
     return 0;
   } catch (e) {
-    const err = e as Error & { user?: boolean; code?: string };
-    const message = err.code?.startsWith('ERR_PARSE_ARGS') || err.user ? err.message : (err.stack ?? err.message);
-    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, error: err.message })}\n`);
+    const err = e as Error;
+    // An expected error (wrong input, missing file, unknown option) shows its message; anything else is a defect: its stack.
+    const message = isExpected(err) ? err.message : (err.stack ?? err.message);
+    const code = err instanceof AppError ? err.code : undefined;
+    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, error: err.message, code })}\n`);
     else process.stderr.write(`${t('cli.error', { message })}\n`);
     return 1;
   }

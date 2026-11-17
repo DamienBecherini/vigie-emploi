@@ -342,7 +342,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.pathRefused': 'Chemin refusé : {path}',
   'core.filesList': 'files : liste de chemins attendue',
   'core.typeEventUnknown': "Type d'événement inconnu : {type} ({types})",
-  'core.directionUnknown': 'Sens inconnu : {direction} (envoye ou recu)',
+  'core.directionUnknown': 'Sens inconnu : {direction} (sent ou received)',
   'core.eventNotFound': 'Événement {id} introuvable',
   'core.daysInvalid': 'Nombre de jours invalide : {days}',
   'core.offerNotFound': 'Offre {id} introuvable',
@@ -473,7 +473,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
     "Remarque : dernière page ({page}) remplie à {pc} %, il reste environ {empty} % de page vide ; acceptable, mais de la place pour un élément utile à l'offre s'il en manque.",
   'core.pages.percent': '{pc} %',
   'core.config.notConfigure':
-    'Dossier de données non configuré : définir VIGIE_EMPLOI_DATA, passer --data <dossier> ou créer {file} avec "dossierDonnees" (voir vigie-emploi.config.example.json).',
+    'Dossier de données non configuré : définir VIGIE_EMPLOI_DATA, passer --data <dossier> ou créer {file} avec "dataDir" (voir vigie-emploi.config.example.json).',
   'core.config.notFound': 'Fichier de configuration introuvable : {path}',
   'core.config.language': 'Langue inconnue : {language} ({languages} ; VIGIE_EMPLOI_LANGUAGE ou "language" de {file})',
 

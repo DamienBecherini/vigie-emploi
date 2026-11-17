@@ -10,7 +10,7 @@ export const en: Record<KeyServer, MessageText> = {
 Usage: vigie-emploi <command> [options]
 
 Command and option names, statuses and event types are the same in every language (they are typed by the AI):
-for example « list --status sent », « event 12 --type interview ».
+for example "list --status sent", "event 12 --type interview".
 
 Commands
   init <folder> [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
@@ -18,7 +18,7 @@ Commands
                         and prints the starting prompt to give the AI; --language: language of the dashboard,
                         the CLI and the tracking file (fr by default)
   count <file>          Character count of each copy-paste message in the file (blocks between
-                        « ──── début … » and « ──── fin … »), or of the whole file if it has none
+                        "──── start …" and "──── end …"), or of the whole file if it has none
   templates             Bundled résumé templates (plain, modern, compact…)
   template <name>       Installs this template in the workspace's cv/gabarit (the old one is kept next to it)
   cv <cv.md>… [--template <folder>] [--capture]
@@ -40,8 +40,8 @@ Commands
                         Offers to process without a score, with the URL to read (or the description already extracted)
   score <id> --json '{"criteria": {"technique": {"score": 8, "justification": "…"}, …}, "inputs": {…}, "blockers": [], "fit": "…"}'
   score --file lot.json [--dry-run]
-                        Records scores (batch format). With « criteria », the score is computed with the
-                        grid (see « rubric »); without, it is an overall score (old grid).
+                        Records scores (batch format). With "criteria", the score is computed with the
+                        grid (see "rubric"); without, it is an overall score (old grid).
                         --dry-run: computes and prints without saving anything
   rubric [--instructions] [--json]
                         Current scoring grid: criteria, weights, scales, rules, inventory, examples
@@ -53,11 +53,11 @@ Commands
                         Statuses: {statuses}
   tag <id> +add -remove
   link <id> <url|->     Records (or clears with -) the offer link
-  apply <id>            Moves the offer to « go » and prints everything needed to prepare the application
+  apply <id>            Moves the offer to "go" and prints everything needed to prepare the application
   application <id> [--folder d] [--cv f] [--channel c] [--sent-at DD/MM/YYYY] [--message m]
                    [--next-action "…"]
                         Records the application (empty option "" clears a field);
-                        with --sent-at, the offer moves to « sent »
+                        with --sent-at, the offer moves to "sent"
   next-action <id> "text"
                         Next action of the application ("" or - to clear it)
   event <id> --type {types} [--at "DD/MM/YYYY HH:MM"] --summary "…"
@@ -65,7 +65,7 @@ Commands
                    [--amount 3000 --unit "€"] [--days 6] [--file candidatures/x/quote.md]…
                    [--done | --no-done]
                         Adds an event to the application journal; dated in the future (and not done),
-                        it is a deadline. --at defaults to now; « demain » (tomorrow), « +3 » accepted
+                        it is a deadline. --at defaults to now; "tomorrow" and "+3" accepted
   journal <id>          Application journal (deadlines first, then newest to oldest)
   deadlines [--days 7]  Overdue deadlines and those due within N days
   done <event_id> [--no-done]
@@ -85,7 +85,7 @@ General options
   --config <file>       Configuration file
   --json                JSON output (all commands)
 
-Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_LANGUAGE variable.
+Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_LANGUAGE variable.
 `,
 
   'cli.error': 'Error: {message}',
@@ -122,7 +122,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'cli.breakdown.withoutEffect': ' (no effect)',
   'cli.breakdown.ignored': 'Rule ignored (unknown or disabled): {rule}',
   'cli.breakdown.score': 'Score: {exact} → {score}',
-  'cli.impact.summary': '{recalculated} criterion-based offer(s) recomputed, {changed} change score.',
+  'cli.impact.summary': '{recalculated} criterion-based offer(s) recomputed, {changed} with a changed score.',
   'cli.impact.rising': 'Now above the threshold {threshold} ({n}):',
   'cli.impact.falling': 'Back below the threshold {threshold} ({n}):',
 
@@ -131,7 +131,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'cli.journal.empty': '  (empty journal)',
 
   'cli.ingest.summary':
-    '{files} e-mail(s), {offers} offer(s): {added} new ({withDescription} with a description, {toRead} to read in the browser), {duplicates} duplicate(s), {dismissed} discarded on the title.',
+    '{files} e-mail(s), {offers} offer(s): {added} new ({withDescription} with a description, {toRead} to read in the browser), {duplicates} duplicate(s), {dismissed} discarded by title.',
   'cli.ingest.kept': 'E-mails kept (--keep).',
   'cli.ingest.deleted': '{n} e-mail(s) deleted.',
   'cli.ingest.dismissed': '  discarded #{id} {title} ({pattern})',
@@ -192,7 +192,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
 
   'cli.tag.prefix': 'tag: prefix each tag with + or - ({tags})',
   'cli.tag.none': '(no tag)',
-  'cli.link.expected': 'lien: URL expected (or - to clear)',
+  'cli.link.expected': 'link: URL expected (or - to clear)',
   'cli.link.none': '(no link)',
   'cli.apply.folder': 'Suggested folder: {folder}',
   'cli.application.option': 'application: at least one option expected (--folder, --channel…)',
@@ -298,7 +298,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'init.notCompile': 'Dashboard not built: run “npm run build” in {app} before “vigie-emploi serve”.',
   'init.withoutBrowser':
     'No Chrome, Edge or Chromium found: generating PDF résumés will not work. Install Chrome or Edge, or set the browser path in VIGIE_EMPLOI_BROWSER.',
-  'init.scaffoldFrench': 'The AI instructions (workspace templates) are in French for now; an English version will come later. Your AI can still talk to you in English.',
+  'init.scaffoldFrench': 'No workspace template in this language yet: the AI instructions are in French. Your AI can still talk to you in your language.',
 
   // ---------------------------------------------------------------------------------------------
   // Core (src/core, ingestion, CV): errors and messages returned to the CLI, the API and the MCP server
@@ -323,7 +323,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'core.pathRefused': 'Path refused: {path}',
   'core.filesList': 'files: a list of paths is expected',
   'core.typeEventUnknown': 'Unknown event type: {type} ({types})',
-  'core.directionUnknown': 'Unknown direction: {direction} (envoye or recu)',
+  'core.directionUnknown': 'Unknown direction: {direction} (sent or received)',
   'core.eventNotFound': 'Event {id} not found',
   'core.daysInvalid': 'Invalid number of days: {days}',
   'core.offerNotFound': 'Job ad {id} not found',
@@ -348,7 +348,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'core.step.folder': 'Create the folder {folder} with the ad, the fit, the gaps and the messages',
   'core.step.save':
     'Record the application (folder, CV, channel, next action): save_application or vigie-emploi application {id} --folder {folder}',
-  'core.step.send': 'Once it is sent: record the date sent (sent_at); the job ad moves to "sent" (sent)',
+  'core.step.send': 'Once it is sent: record the date sent (sent_at); the job ad moves to "sent"',
   'core.rubricUnreadable': 'Unreadable grid ({path}): {message}',
   'core.rubricObject': 'Unreadable grid ({path}): JSON object expected',
   'core.versionNotFound': 'Grid version {version} not found',
@@ -358,8 +358,8 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'core.notOfRubric': 'No scoring grid: create {path} (template: examples/rubric.en.json, or "vigie-emploi rubric --init")',
   'core.noneChange': 'No change compared with the current version',
   'core.backVersion': 'Back to version {version}',
-  'core.rubric.computationExpected': 'criterion {id}: "calcul" expected ({computations})',
-  'core.rubric.computationReserved': 'criterion {id}: "calcul" is reserved for calculated criteria',
+  'core.rubric.computationExpected': 'criterion {id}: "computation" expected ({computations})',
+  'core.rubric.computationReserved': 'criterion {id}: "computation" is reserved for computed criteria',
   'core.rubric.targetHigh': 'the high target must be above the floor',
   'core.rubric.targetHighFullRemote': 'the high target must be above the fully remote floor',
   'core.rubric.targetLow': 'the low target is above the high target',
@@ -447,12 +447,12 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'core.pages.jumpBadlyPlaced':
     'Page {page} is only {pc}% full although another page follows: badly placed page break (unbreakable block too high, forced break); tighten or move content to fill the page.',
   'core.pages.lastEmpty':
-    'Last page ({page}) is {pc}% full: a lot of empty space; add true content that is useful for the job ad, or condense to fit on one page fewer.',
+    'Last page ({page}) is {pc}% full: a lot of empty space; add content that is genuinely useful for the job ad, or condense to fit on one page fewer.',
   'core.pages.lastRemark':
     'Note: last page ({page}) is {pc}% full, leaving about {empty}% of the page empty; acceptable, but there is room for something useful for the job ad if anything is missing.',
   'core.pages.percent': '{pc}%',
   'core.config.notConfigure':
-    'Data folder not configured: set VIGIE_EMPLOI_DATA, pass --data <folder> or create {file} with "dossierDonnees" (see vigie-emploi.config.example.json).',
+    'Data folder not configured: set VIGIE_EMPLOI_DATA, pass --data <folder> or create {file} with "dataDir" (see vigie-emploi.config.example.json).',
   'core.config.notFound': 'Configuration file not found: {path}',
   'core.config.language': 'Unknown language: {language} ({languages}; VIGIE_EMPLOI_LANGUAGE or "language" in {file})',
 

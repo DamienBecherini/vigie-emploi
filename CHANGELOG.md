@@ -1,42 +1,42 @@
-# Nouveautés
+# Changelog
 
-## 0.6.1 — à venir
+## 0.6.1 — unreleased
 
-### Sécurité
+### Security
 
-- Boîte mail sans TLS direct (port 143) : le chiffrement (STARTTLS) est désormais exigé avant l'envoi du mot de passe ; un serveur qui ne le propose pas est refusé au lieu de recevoir le mot de passe en clair. Seul un serveur sur la machine même (passerelle locale) peut s'en passer.
-- Tableau de bord : un lien symbolique placé dans l'espace ne donne plus accès à `data/` ni à `emails/`.
-- Notation d'une offre par son adresse : seules les adresses http(s) sont acceptées, comme pour la modification du lien.
-- CV : la page HTML rendue par Chrome pour le PDF interdit tout script, toute connexion et tout cadre (un texte d'annonce recopié dans un CV ne peut rien exécuter).
+- Mailbox without direct TLS (port 143): encryption (STARTTLS) is now required before the password is sent; a server that does not offer it is refused instead of receiving the password in clear text. Only a server on the same machine (local gateway) can do without it.
+- Dashboard: a symbolic link placed in the workspace no longer gives access to `data/` or `emails/`.
+- Scoring an offer by its address: only http(s) addresses are accepted, as when editing the link.
+- Résumés: the HTML page rendered by Chrome for the PDF forbids any script, any connection and any frame (a job ad text copied into a résumé cannot run anything).
 
 ### Documentation
 
-- Guides `docs/` en anglais (`utiliser-avec-une-ia.en.md`, `ajouter-une-langue.en.md`).
+- `docs/` guides in English (`utiliser-avec-une-ia.en.md`, `ajouter-une-langue.en.md`).
 
-## 0.6.0 — novembre 2026 (première version publique)
+## 0.6.0 — November 2026 (first public release)
 
-Première version publiée : tout ce qui suit est nouveau pour qui l'installe.
+First published version: everything below is new for anyone installing it.
 
-### Alertes d'offres
+### Job alerts
 
-- **Relève intégrée de la boîte mail (IMAP)** : l'application relève elle-même le dossier où un filtre de la messagerie range les alertes d'offres, sous Windows, macOS et Linux, sans logiciel de messagerie. Lecture seule (messages marqués comme lus au plus, rien de supprimé ni de déplacé), chaque message relevé une fois, première relève limitée aux 14 derniers jours.
-- Mot de passe de la boîte gardé par le système, jamais dans l'espace de travail : DPAPI sous Windows, trousseau de macOS, Secret Service sous Linux (à défaut, un fichier lisible par l'utilisateur seul) ; `VIGIE_EMPLOI_MAIL_PASSWORD` pour les scripts et l'extension Claude Desktop.
-- Messageries reconnues d'après l'adresse : Gmail, Yahoo, iCloud (mot de passe d'application) ; Orange, Free, SFR, La Poste, GMX (mot de passe habituel). Outlook.com et Microsoft 365 ne sont pas encore gérés (Microsoft impose sa propre connexion) : faire suivre les alertes vers une autre boîte en attendant.
-- `vigie-emploi mail setup|status|fetch|forget` ; `ingest` relève d'abord la boîte (`--no-mail` pour s'en passer) ; l'outil MCP `ingest_emails` dit ce qui a été relevé, ou pourquoi la boîte ne l'a pas été.
-- Tableau de bord : panneau « Boîte mail » (connexion, liste des dossiers, relève immédiate, oubli) et bouton « Relever la boîte mail ».
-- Les `.eml` déposés dans `emails/` (à la main, par Thunderbird et FiltaQuilla, ou par toute autre règle) restent lus.
+- **Built-in mailbox fetching (IMAP)**: the application itself fetches the folder where a mail filter files the job alerts, on Windows, macOS and Linux, without any mail client. Read-only (messages marked as read at most, nothing deleted or moved), each message fetched once, first fetch limited to the last 14 days.
+- Mailbox password kept by the system, never in the workspace: DPAPI on Windows, macOS keychain, Secret Service on Linux (failing that, a file readable by the user only); `VIGIE_EMPLOI_MAIL_PASSWORD` for scripts and the Claude Desktop extension.
+- Mail providers recognised from the address: Gmail, Yahoo, iCloud (app password); Orange, Free, SFR, La Poste, GMX (usual password). Outlook.com and Microsoft 365 are not supported yet (Microsoft imposes its own sign-in): forward the alerts to another mailbox in the meantime.
+- `vigie-emploi mail setup|status|fetch|forget`; `ingest` fetches the mailbox first (`--no-mail` to skip it); the MCP tool `ingest_emails` says what was fetched, or why the mailbox was not.
+- Dashboard: "Mailbox" panel (connection, list of folders, immediate fetch, forget) and "Fetch the mailbox" button.
+- `.eml` files dropped into `emails/` (by hand, by Thunderbird and FiltaQuilla, or by any other rule) are still read.
 
 ### Installation
 
-- `init` sans dossier crée `~/vigie-emploi` (`~` compris aussi sous PowerShell) ; l'extension Claude Desktop et le serveur MCP prennent le même dossier par défaut.
-- Un seul prompt à coller dans Claude Code installe l'application et lance le démarrage dans la même session.
-- Extension Claude Desktop (`.mcpb`) : un clic, ni terminal ni Node à installer.
+- `init` without a folder creates `~/vigie-emploi` (`~` also understood in PowerShell); the Claude Desktop extension and the MCP server use the same folder by default.
+- A single prompt pasted into Claude Code installs the application and starts the onboarding in the same session.
+- Claude Desktop extension (`.mcpb`): one click, no terminal and no Node to install.
 
-### Le reste
+### Everything else
 
-- Tri des offres par l'IA avec une grille de notation transparente et réglable : critères pondérés, barèmes télétravail et rémunération, règles bloquantes, inventaire de compétences, exemples de référence, versions et restauration ; l'application calcule la note, l'IA ne note que les critères.
-- Candidatures, journal et échéances ; suivi généré (`candidatures/_SUIVI.md`) ; statistiques.
-- CV en Markdown → PDF A4 de deux pages, trois gabarits (`plain`, `modern`, `compact`).
-- Tableau de bord web, CLI à sortie JSON stable, serveur MCP (33 outils, 4 prompts) utilisable sans accès aux fichiers (Claude Desktop).
-- Français et anglais partout (interface, CLI, textes MCP montrés à l'utilisateur, consignes de l'IA, modèle de l'espace).
-- Tests sous Linux, Windows et macOS (GitHub Actions).
+- Offer triage by the AI with a transparent and adjustable scoring grid: weighted criteria, remote-work and pay scales, blocking rules, skills inventory, reference examples, versions and restoring; the application computes the score, the AI only scores the criteria.
+- Applications, journal and deadlines; generated tracker (`candidatures/_SUIVI.md`); statistics.
+- Résumés in Markdown → two-page A4 PDF, three templates (`plain`, `modern`, `compact`).
+- Web dashboard, CLI with stable JSON output, MCP server (33 tools, 4 prompts) usable without file access (Claude Desktop).
+- French and English everywhere (interface, CLI, MCP texts shown to the user, AI instructions, workspace template).
+- Tests on Linux, Windows and macOS (GitHub Actions).

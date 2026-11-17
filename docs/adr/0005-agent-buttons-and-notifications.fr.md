@@ -1,5 +1,7 @@
 # ADR 0005 — Boutons « agent » et notifications poussées
 
+[English](0005-agent-buttons-and-notifications.md) · **Français**
+
 Date : 12/11/2026 · Statut : accepté
 
 ## Contexte

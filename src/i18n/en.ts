@@ -402,7 +402,7 @@ Language: « language » key of vigie-emploi.config.json (fr or en) or VIGIE_EMP
   'core.instructions.criteria': 'Score each of these criteria from 0 to 10, with a short justification ("criteria" field): {list}.',
   'core.instructions.computed': p('Do not score {list}: it is calculated from the scale. ', 'Do not score {list}: they are calculated from the scale. '),
   'core.instructions.inputs':
-    'Fill in "inputs" when the job ad gives them: onsite_days (days on site: 0 = fully remote, 5 = fully on site), salary_min / salary_max as plain amounts in the grid\'s currency, and unit (an = per year, mois = per month, jour = per day, heure = per hour). ' +
+    'Fill in "inputs" when the job ad gives them: onsite_days (days on site: 0 = fully remote, 5 = fully on site), salary_min / salary_max as plain amounts in the grid\'s currency, and unit (year, month, day or hour). ' +
     'Otherwise the application infers them from the job ad\'s remote work and pay fields; when unknown, they take the neutral value with a flag.',
   'core.instructions.blockers': 'List in "blockers" the ids of the rules that apply to the job ad (active rules: {list}).',
   'core.instructions.technique':

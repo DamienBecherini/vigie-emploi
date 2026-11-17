@@ -333,7 +333,7 @@ export function generateCv(markdown: string, folderTemplate: string, browser: st
     throw Object.assign(new Error(t('core.cv.templateIncomplete', { path: join(template, 'gabarit.css') })), { user: true });
   }
   const name = basename(md).replace(/\.md$/i, '');
-  const preview = join(template, 'preview');
+  const preview = join(template, 'apercu');
   mkdirSync(preview, { recursive: true });
   const html = join(preview, `${name}.html`);
   const pdf = join(dirname(md), `${name}.pdf`);

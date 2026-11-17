@@ -5,7 +5,7 @@ Workspace created by **vigie-emploi**: an AI (Claude Code, Cursor, Codex…) hel
 ## Getting started
 
 1. Drop your CV and the PDF export of your LinkedIn profile into [`a-deposer/`](a-deposer/) (the drop folder).
-2. Open your AI in this folder and paste the start-up prompt shown at installation, or simply: "Read AGENTS.md and DEMARRAGE.md, then start the onboarding."
+2. Open your AI in this folder and paste the starting prompt printed when the workspace was created, or simply: "Read AGENTS.md and DEMARRAGE.md, then start the onboarding."
 3. Answer its questions: it fills in your context, your job-ad scoring grid and a first CV, which you approve.
 
 ## What is in here

@@ -4,7 +4,7 @@ Déclencheurs : « prépare mes candidatures », « prépare les go », bouton �
 
 ## 1. Trouver les offres
 
-`list_offers` avec `statuses: ["go"]`. Garder celles sans dossier (`folder_files` : `existe: false`). Les autres sont déjà prêtes : les rappeler à la fin si elles ne sont pas envoyées. Aucune : le dire et s'arrêter.
+`list_offers` avec `statuses: ["go"]`. Garder celles sans dossier (`folder_files` : `exists: false`). Les autres sont déjà prêtes : les rappeler à la fin si elles ne sont pas envoyées. Aucune : le dire et s'arrêter.
 
 ## 2. Avant de rédiger
 
@@ -23,6 +23,6 @@ Déclencheurs : « prépare mes candidatures », « prépare les go », bouton �
 
 ## 4. Fin
 
-`generate_tracker` avec `remplacer: true`. Si l'espace est versionné : commit (un par offre ou un pour le lot).
+`generate_tracker` avec `replace: true`. Si l'espace est versionné : commit (un par offre ou un pour le lot).
 
 Puis, pour chaque candidature à envoyer : où envoyer (URL complète), le dossier et le CV (chemins complets), les messages à copier au format « texte à copier-coller » d'`AGENTS.md`, et les pièges du formulaire (CV pré-rempli à remplacer, questions). Terminer par : « Dis-moi ce qui est envoyé : je passerai chaque offre en envoyée avec une relance. »

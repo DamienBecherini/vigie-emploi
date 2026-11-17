@@ -21,14 +21,13 @@ Without a terminal (MCP-only client), the `generate_cv` tool does the same thing
 4. `## Summary`, then the sections in the order you want.
 5. `## Experience`: one job = `### dates · location`, then a first line in **bold** (the job title), then text or a list.
 6. Sections whose title contains *skills*, *competencies*, *education*, *certifications* or *languages* are laid out in two columns: keep their lists short. The section titles must be in English (Summary, Skills, Experience, Education & Certifications, Languages…): the converter recognises them and labels the PDF as English.
-7. Manual page break, if the split falls badly: a line `<!-- saut-de-page -->` just before the `##` title of the section to push onto page 2. Then check it still fits on 2 pages.
+7. Manual page break, if the split falls badly: a line `<!-- page-break -->` just before the `##` title of the section to push onto page 2. Then check it still fits on 2 pages.
 
 ## Template
 
-The template is in [`template/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
+The template is in [`gabarit/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
 
 - pick another bundled template: `{{CMD}} templates` (tool `list_templates`) lists them ("plain", serif; "modern", with a coloured band; "compact", single column), `{{CMD}} template <name>` (tool `choose_template`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
-
 - ask the AI: "adapt `cv/gabarit/gabarit.css` to this design", giving it a screenshot or a PDF of the look you want; it edits the stylesheet, regenerates the CV and checks the 2 pages;
 - or edit `gabarit.css` yourself (accent colour, font, margins).
 

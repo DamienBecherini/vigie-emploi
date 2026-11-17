@@ -331,6 +331,9 @@ An offer already being followed (`go` and beyond) seen again in an e-mail alert,
 npm test            # Vitest (fictitious fixtures in tests/fixtures)
 npm run typecheck   # TypeScript (server + interface)
 npm run build       # typecheck + interface build
+npm run lint        # Biome: lint and formatting check (npm run format rewrites)
+npm run coverage    # tests with the coverage of src/
+npm run check       # everything the CI runs: typecheck, lint, build, tests
 npm run mcpb        # Claude Desktop extension: build/vigie-emploi-<version>.mcpb
 ```
 

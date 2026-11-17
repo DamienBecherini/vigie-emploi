@@ -54,7 +54,7 @@
     "build:js": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "mcpb": "node scripts/mcpb.mjs",
-    "lint": "biome check .",
+    "lint": "biome check --diagnostic-level=error .",
     "format": "biome format --write .",
     "coverage": "vitest run --coverage",
     "check": "npm run typecheck && npm run lint && npm run build && npm test"

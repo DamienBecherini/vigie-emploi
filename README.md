@@ -329,6 +329,9 @@ Une offre déjà suivie (`go` et au-delà) revue dans une alerte e-mail, un lot 
 npm test            # Vitest (fixtures fictives dans tests/fixtures)
 npm run typecheck   # TypeScript (serveur + interface)
 npm run build       # typecheck + compilation de l'interface
+npm run lint        # Biome : lint et contrôle de la mise en forme (npm run format réécrit)
+npm run coverage    # tests avec la couverture de src/
+npm run check       # tout ce que lance la CI : typecheck, lint, build, tests
 npm run mcpb        # extension Claude Desktop : build/vigie-emploi-<version>.mcpb
 ```
 

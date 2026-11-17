@@ -77,6 +77,16 @@ describe('texte', () => {
     expect(lireRemuneration('26,6-54,6 K€')).toEqual({ min: 26600, max: 54600, unite: 'an' });
     expect(lireRemuneration('NC')).toEqual({ min: null, max: null, unite: null });
   });
+  it('lireRemuneration : milliers séparés par une virgule ou un point (offres en anglais)', () => {
+    expect(lireRemuneration('€52,000–58,000')).toEqual({ min: 52000, max: 58000, unite: 'an' });
+    expect(lireRemuneration('£45,000 - £55,000 a year')).toEqual({ min: 45000, max: 55000, unite: 'an' });
+    expect(lireRemuneration('$120,000')).toEqual({ min: 120000, max: 120000, unite: 'an' });
+    expect(lireRemuneration('52.000-58.000 €')).toEqual({ min: 52000, max: 58000, unite: 'an' });
+    expect(lireRemuneration('1,250,000 €')).toEqual({ min: 1250000, max: 1250000, unite: 'an' });
+    // Virgule décimale française inchangée
+    expect(lireRemuneration('45,5 K€')).toEqual({ min: 45500, max: 45500, unite: 'an' });
+    expect(lireRemuneration('12,50 €/h')).toEqual({ min: 12.5, max: 12.5, unite: 'heure' });
+  });
   it('trouverRemuneration ignore les pourcentages et les arrondissements', () => {
     expect(trouverRemuneration('100 % télétravail, Paris 5e, 50-60 K€')).toBe('50-60 K€');
     expect(trouverRemuneration('Freelance full télétravail, 200-300 €/j')).toBe('200-300 €/j');

@@ -25,7 +25,9 @@ function nombre(s: string): number {
   return Number(s.replace(/[\s  ]/g, '').replace(',', '.'));
 }
 
-const NB = String.raw`\d{1,3}(?:[ .]\d{3})+|\d+(?:[.,]\d+)?`;
+// Séparateurs de milliers : espace, point, virgule (« 52,000 », à l'anglaise). Une virgule suivie d'autre chose
+// que des groupes de trois chiffres reste décimale (« 26,6 K€ »).
+const NB = String.raw`\d{1,3}(?:[ .,]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)?`;
 const DEVISE = String.raw`(?:k\s*€|k\s*eur|€|eur\b|euros?\b|k\b)`;
 const RE_FOURCHETTE = new RegExp(
   String.raw`(?:${NB})\s*(?:k\s*)?(?:€\s*)?(?:-|–|à|to)\s*(?:${NB})\s*${DEVISE}[^,;·(]*`,
@@ -57,7 +59,7 @@ export function lireRemuneration(texte: string | null | undefined): Remuneration
   const re = new RegExp(String.raw`(${NB})\s*(k)?`, 'gi');
   const valeurs: { v: number; k: boolean }[] = [];
   for (const m of t.matchAll(re)) {
-    const brut = m[1].includes('.') && /\.\d{3}$/.test(m[1]) ? m[1].replace(/\./g, '') : m[1];
+    const brut = /^\d{1,3}(?:[.,]\d{3})+$/.test(m[1]) ? m[1].replace(/[.,]/g, '') : m[1];
     const v = nombre(brut);
     if (!Number.isFinite(v) || v === 0) continue;
     valeurs.push({ v, k: Boolean(m[2]) });

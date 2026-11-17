@@ -129,7 +129,8 @@ function importBatches(db: Database, folder: string, report: ReportImport): void
     const date = f.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? statSync(path).mtime.toISOString().slice(0, 10);
     let inputs: InputBatch[];
     try {
-      inputs = batchInputs(JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')));
+      // Batches of an earlier history are taken as they are: their fields are not validated like a new score.
+      inputs = batchInputs(JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, ''))) as InputBatch[];
     } catch (e) {
       report.batches.errors.push({ file: f, line: 0, reason: (e as Error).message, excerpt: '' });
       continue;

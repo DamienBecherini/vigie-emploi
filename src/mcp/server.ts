@@ -15,20 +15,20 @@ import { transaction } from '../db/database.ts';
 import { listOffers } from '../core/queries.ts';
 import { addStatus, detailOffer, updateLink, updateTags } from '../core/offers.ts';
 import { scoreOffers, offerOrError, offersToRead, prepareApplication, trackApplication } from '../core/actions.ts';
-import type { InputBatch } from '../core/scoring.ts';
+import { schemaInputBatch, type InputBatchReceived } from '../core/scoring.ts';
 import { COLUMNS_SORT, STATUSES } from '../core/statuses.ts';
 import { ingestPerConfig } from '../ingest/ingest.ts';
 import { writeTracker } from '../export/tracker.ts';
 import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, TYPES_EVENT } from '../core/events.ts';
 import { filesFolder } from '../core/files.ts';
-import { instructionsAi, computedExamples, schemaChange, UNITS } from '../core/rubric.ts';
+import { instructionsAi, computedExamples, schemaChange } from '../core/rubric.ts';
 import { pathRubric, rubricCurrent, rubricRequired, historyRubric, updateRubric, rescore, restoreRubric, versionRubric } from '../core/rubric-storage.ts';
 import { defineLanguage } from '../i18n/index.ts';
 import { notInitializedMessage, openState, type StateMcp } from './state.ts';
 import { saveToolsWorkspace } from './workspace.ts';
 import { saveToolDashboard } from './dashboard.ts';
 import { on } from './results.ts';
-import { languageNameEn, tm, tu } from './texts.ts';
+import { languageNameEn, tm, tu, type KeyMcp } from './texts.ts';
 import {
   TO_READ_DEFAULT,
   TO_READ_MAX,
@@ -46,73 +46,49 @@ import { AppError } from '../core/errors.ts';
 
 const ORIGIN = 'mcp';
 
+/** Documentation of the fields of a score, read by the AI (the schema itself is the core's: schemaInputBatch). */
+const DOCS_SCORE: Record<string, KeyMcp> = {
+  id: 'server.inputBatch.id',
+  url: 'server.inputBatch.url',
+  source: 'server.fieldsDescriptive.source',
+  title: 'server.fieldsDescriptive.title',
+  company: 'server.fieldsDescriptive.company',
+  contract: 'server.fieldsDescriptive.contract',
+  compensation: 'server.fieldsDescriptive.compensation',
+  remote: 'server.fieldsDescriptive.remote',
+  published: 'server.fieldsDescriptive.published',
+  stack: 'server.fieldsDescriptive.stack',
+  description: 'server.fieldsDescriptive.description',
+  criteria: 'server.fieldsScore.criteria',
+  'criteria.score': 'server.fieldsScore.criteria.score',
+  'criteria.justification': 'server.fieldsScore.criteria.justification',
+  inputs: 'server.fieldsScore.inputs',
+  'inputs.onsite_days': 'server.fieldsScore.inputs.onsite_days',
+  'inputs.salary_min': 'server.fieldsScore.inputs.salary_min',
+  'inputs.salary_max': 'server.fieldsScore.inputs.salary_max',
+  'inputs.unit': 'server.fieldsScore.inputs.unit',
+  blockers: 'server.fieldsScore.blockers',
+  score: 'server.fieldsScore.score',
+  raw_score: 'server.fieldsScore.raw_score',
+  penalties: 'server.fieldsScore.penalties',
+  fit: 'server.fieldsScore.fit',
+  gaps: 'server.fieldsScore.gaps',
+  read: 'server.fieldsScore.read',
+  tags: 'server.fieldsScore.tags',
+};
+
 /** Parameter schemas, built in the current language (descriptions included). */
 function buildSchemas() {
   const id = z.number().int().positive().describe(tm('server.id'));
-  const numberScore = (d: string) =>
-    z
-      .union([z.number().min(0).max(10), z.string()])
-      .nullable()
-      .optional()
-      .describe(d);
-
   /** A score in the batch format (candidatures/_lots/*.json files). */
-  const fieldsScore = {
-    criteria: z
-      .record(
-        z.string(),
-        z.object({
-          score: z.union([z.number().min(0).max(10), z.string()]).describe(tm('server.fieldsScore.criteria.score')),
-          justification: z.string().optional().describe(tm('server.fieldsScore.criteria.justification')),
-        }),
-      )
-      .optional()
-      .describe(tm('server.fieldsScore.criteria')),
-    inputs: z
-      .object({
-        onsite_days: z.number().int().min(0).max(5).nullable().optional().describe(tm('server.fieldsScore.inputs.onsite_days')),
-        salary_min: z.number().positive().nullable().optional().describe(tm('server.fieldsScore.inputs.salary_min')),
-        salary_max: z.number().positive().nullable().optional().describe(tm('server.fieldsScore.inputs.salary_max')),
-        unit: z.enum(UNITS).nullable().optional().describe(tm('server.fieldsScore.inputs.unit')),
-      })
-      .optional()
-      .describe(tm('server.fieldsScore.inputs')),
-    blockers: z.array(z.string()).optional().describe(tm('server.fieldsScore.blockers')),
-    score: numberScore(tm('server.fieldsScore.score')),
-    raw_score: numberScore(tm('server.fieldsScore.raw_score')),
-    penalties: z.string().optional().describe(tm('server.fieldsScore.penalties')),
-    fit: z.string().optional().describe(tm('server.fieldsScore.fit')),
-    gaps: z.string().optional().describe(tm('server.fieldsScore.gaps')),
-    read: z.boolean().optional().describe(tm('server.fieldsScore.read')),
-    tags: z.array(z.string()).optional().describe(tm('server.fieldsScore.tags')),
-  };
-  const fieldsDescriptive = {
-    source: z.string().optional().describe(tm('server.fieldsDescriptive.source')),
-    title: z.string().optional().describe(tm('server.fieldsDescriptive.title')),
-    company: z.string().optional().describe(tm('server.fieldsDescriptive.company')),
-    location: z.string().optional(),
-    contract: z.string().optional().describe(tm('server.fieldsDescriptive.contract')),
-    compensation: z.string().optional().describe(tm('server.fieldsDescriptive.compensation')),
-    remote: z.string().optional().describe(tm('server.fieldsDescriptive.remote')),
-    published: z.string().optional().describe(tm('server.fieldsDescriptive.published')),
-    stack: z.string().optional().describe(tm('server.fieldsDescriptive.stack')),
-    description: z.string().optional().describe(tm('server.fieldsDescriptive.description')),
-  };
-  const inputBatch = z.object({
-    id: id.optional().describe(tm('server.inputBatch.id')),
-    url: z.string().optional().describe(tm('server.inputBatch.url')),
-    ...fieldsDescriptive,
-    ...fieldsScore,
-  });
+  const inputBatch = schemaInputBatch((field) => (DOCS_SCORE[field] ? tm(DOCS_SCORE[field]) : undefined));
   const textOptional = (d: string) => z.string().nullable().optional().describe(d);
   return { id, inputBatch, textOptional };
 }
 
-type Schemas = ReturnType<typeof buildSchemas>;
-
-function normalizeInput(e: z.infer<Schemas['inputBatch']>): InputBatch {
+function normalizeInput(e: InputBatchReceived): InputBatchReceived {
   if (e.id === undefined && !e.url) throw new AppError('invalid', tm('server.normalizeInput'));
-  return e as InputBatch;
+  return e;
 }
 
 export function createServerMcp(state: StateMcp): McpServer {

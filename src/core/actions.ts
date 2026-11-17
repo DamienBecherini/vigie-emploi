@@ -4,7 +4,7 @@ import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers } from './queries.ts';
 import { addStatus, detailOffer, saveApplication, updateTags, offerById, type FieldsApplication, type DetailOffer, type Offer } from './offers.ts';
-import { isCriteriaScore, scoreInput, type InputBatch, type ResultScoring } from './scoring.ts';
+import { checkInputBatch, isCriteriaScore, scoreInput, type InputBatch, type ResultScoring } from './scoring.ts';
 import { scoresOffer } from './offers.ts';
 import type { VersionRubric } from './rubric-storage.ts';
 import type { Inputs } from './rubric.ts';
@@ -103,8 +103,10 @@ export interface OptionsScore {
 }
 
 /** Saves scores in the batch format (in a transaction: all or nothing). */
-export function scoreOffers(db: Database, inputs: InputBatch[], origin: string, o: OptionsScore = {}): ResultScoring[] {
-  if (!inputs.length) throw new AppError('invalid', t('core.noneScore'));
+export function scoreOffers(db: Database, received: unknown[], origin: string, o: OptionsScore = {}): ResultScoring[] {
+  if (!received.length) throw new AppError('invalid', t('core.noneScore'));
+  // The one place where a score coming from outside (command line, API, MCP server) is validated.
+  const inputs: InputBatch[] = received.map(checkInputBatch);
   const rubric = inputs.some(isCriteriaScore) ? (o.rubric?.() ?? null) : null;
   const score = () =>
     inputs.map((e) => {

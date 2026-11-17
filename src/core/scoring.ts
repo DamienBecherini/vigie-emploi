@@ -6,38 +6,104 @@ import { canonicalize } from './links.ts';
 import { addScore, addStatus, saveOffer, offerById, type Origin } from './offers.ts';
 import { STATUSES_TO_PROCESS } from './statuses.ts';
 import { dateFr, dateIso, fingerprint, isEmpty } from './text.ts';
-import { computeScore, summaryRules, checkInput, type Breakdown, type Inputs } from './rubric.ts';
+import { z } from 'zod';
+import { computeScore, summaryRules, checkInput, messageZod, UNITS, type Breakdown } from './rubric.ts';
 import type { VersionRubric } from './rubric-storage.ts';
 import { decimal, t } from '../i18n/index.ts';
 import { AppError } from './errors.ts';
 
-export interface InputBatch {
-  id?: number;
-  source?: string;
-  url?: string;
-  title?: string;
-  company?: string;
-  location?: string;
-  contract?: string;
-  compensation?: string;
-  remote?: string;
-  published?: string;
-  stack?: string;
-  description?: string;
-  raw_score?: number | string | null;
-  penalties?: string;
-  score?: number | string | null;
-  fit?: string;
-  gaps?: string;
-  read?: boolean;
-  rubric_version?: string;
-  tags?: string[];
-  /** Sub-scores of the criteria scored by the AI: { technique: { score: 8, justification: "…" }, … }. */
+/** Text a front end attaches to a field of a schema: the MCP server describes each field to the AI. */
+export type Describe = (field: string) => string | undefined;
+
+/**
+ * A score in the batch format: the one definition of what the command line, the API and the MCP server accept.
+ * `describe` gives the documentation of a field ("criteria", "criteria.score", "inputs.unit"…), for the front ends
+ * that publish the schema. A text field may be null (an AI often writes null for what the offer does not say).
+ */
+export function schemaInputBatch(describe: Describe = () => undefined) {
+  const doc = <T extends z.ZodType>(schema: T, field: string): T => {
+    const text = describe(field);
+    return text ? (schema.describe(text) as T) : schema;
+  };
+  const text = (field: string) => doc(z.string().nullable().optional(), field);
+  const score = (field: string) =>
+    doc(
+      z
+        .union([z.number().min(0).max(10), z.string()])
+        .nullable()
+        .optional(),
+      field,
+    );
+  return z.object({
+    id: doc(z.number().int().positive().optional(), 'id'),
+    url: text('url'),
+    source: text('source'),
+    title: text('title'),
+    company: text('company'),
+    location: text('location'),
+    contract: text('contract'),
+    compensation: text('compensation'),
+    remote: text('remote'),
+    published: text('published'),
+    stack: text('stack'),
+    description: text('description'),
+    /** Sub-scores of the criteria scored by the AI: { technique: { score: 8, justification: "…" }, … }. */
+    criteria: doc(
+      z
+        .record(
+          z.string(),
+          z.object({
+            score: doc(z.union([z.number().min(0).max(10), z.string()]), 'criteria.score'),
+            justification: doc(z.string().optional(), 'criteria.justification'),
+          }),
+        )
+        .optional(),
+      'criteria',
+    ),
+    /** Inputs of the computed criteria (days on site, salary), when the offer gives them. */
+    inputs: doc(
+      z
+        .object({
+          onsite_days: doc(z.number().int().min(0).max(5).nullable().optional(), 'inputs.onsite_days'),
+          salary_min: doc(z.number().positive().nullable().optional(), 'inputs.salary_min'),
+          salary_max: doc(z.number().positive().nullable().optional(), 'inputs.salary_max'),
+          unit: doc(z.enum(UNITS).nullable().optional(), 'inputs.unit'),
+        })
+        .optional(),
+      'inputs',
+    ),
+    /** Ids of the blocking rules that apply (stage, defense…). */
+    blockers: doc(z.array(z.string()).optional(), 'blockers'),
+    score: score('score'),
+    raw_score: score('raw_score'),
+    penalties: text('penalties'),
+    fit: text('fit'),
+    gaps: text('gaps'),
+    read: doc(z.boolean().optional(), 'read'),
+    tags: doc(z.array(z.string()).optional(), 'tags'),
+  });
+}
+
+/** What a front end receives (validated by schemaInputBatch). */
+export type InputBatchReceived = z.infer<ReturnType<typeof schemaInputBatch>>;
+
+/**
+ * A score as the application handles it: what was received, plus what only the application writes:
+ * the version of the old rubric (batches imported from an earlier history) and who gave each sub-score
+ * (a correction typed in the dashboard).
+ */
+export type InputBatch = Omit<InputBatchReceived, 'criteria'> & {
+  rubric_version?: string | null;
   criteria?: Record<string, { score: number | string; justification?: string; origin?: 'ai' | 'interface' }>;
-  /** Inputs of the computed criteria (days on site, salary), when the offer gives them. */
-  inputs?: Inputs;
-  /** Ids of the blocking rules that apply (stage, defense…). */
-  blockers?: string[];
+};
+
+const SCHEMA_INPUT_BATCH = schemaInputBatch();
+
+/** Validates a score received from outside (command line, API); throws an error that names the wrong field. */
+export function checkInputBatch(raw: unknown): InputBatchReceived {
+  const r = SCHEMA_INPUT_BATCH.safeParse(raw);
+  if (!r.success) throw new AppError('invalid', t('core.input.invalid', { message: messageZod(r.error) }));
+  return r.data;
 }
 
 /** The input is a criteria-based score (new rubric) rather than an overall score. */
@@ -59,7 +125,7 @@ export interface ResultScoring {
   warnings?: string[];
 }
 
-function datePublished(v: string | undefined): string | null {
+function datePublished(v: string | null | undefined): string | null {
   if (!v || isEmpty(v)) return null;
   return dateFr(v) ?? dateIso(v);
 }
@@ -188,12 +254,12 @@ export function scoreInput(
 }
 
 /** Normalizes the content of a batch file: array, single object or { offers: [...] }. */
-export function batchInputs(json: unknown): InputBatch[] {
-  if (Array.isArray(json)) return json as InputBatch[];
+export function batchInputs(json: unknown): unknown[] {
+  if (Array.isArray(json)) return json;
   if (json && typeof json === 'object') {
     const o = json as { offers?: unknown };
-    if (Array.isArray(o.offers)) return o.offers as InputBatch[];
-    return [json as InputBatch];
+    if (Array.isArray(o.offers)) return o.offers;
+    return [json];
   }
   throw new AppError('invalid', t('core.batchUnreadable'));
 }

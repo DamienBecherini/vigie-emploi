@@ -9,7 +9,7 @@ import { ingestPerConfig } from '../ingest/ingest.ts';
 import { importHistory } from '../import/history.ts';
 import { listOffers, type OptionsList } from '../core/queries.ts';
 import { addStatus, detailOffer, updateLink, updateTags, offerById, type FieldsApplication, type DetailOffer } from '../core/offers.ts';
-import { batchInputs, type InputBatch } from '../core/scoring.ts';
+import { batchInputs } from '../core/scoring.ts';
 import { scoreOffers, offersToRead, prepareApplication, trackApplication } from '../core/actions.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
 import { writeTracker } from '../export/tracker.ts';
@@ -443,16 +443,16 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
   score(args) {
     const { v, pos } = analyze(args, { file: { type: 'string' }, json: { type: 'string' }, dry_run: { type: 'boolean' } });
     const { config, db } = context(v);
-    let inputs: InputBatch[];
+    let inputs: unknown[];
     if (v.file) {
       inputs = batchInputs(JSON.parse(readFileSync(v.file as string, 'utf8').replace(/^﻿/, '')));
     } else {
       if (typeof v.json !== 'string') error(t('cli.score.expected'));
-      const e = JSON.parse(v.json) as InputBatch | InputBatch[];
+      const e = JSON.parse(v.json) as unknown;
       inputs = Array.isArray(e) ? e : [e];
       if (pos[0]) {
         if (inputs.length !== 1) error(t('cli.score.oneSingle'));
-        inputs[0] = { ...inputs[0], id: whole(pos[0], 'id') };
+        inputs[0] = { ...(inputs[0] as object), id: whole(pos[0], 'id') };
       }
     }
     const results = withoutError(() => scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: Boolean(v.dry_run) }));

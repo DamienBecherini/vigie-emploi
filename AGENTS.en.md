@@ -22,7 +22,7 @@ Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the 
 5. **Apply** on their "go": `apply` (full job ad, data folder, `suggested_folder`, steps). Prepare the application file, the CV and the messages following their instructions (in the data folder).
 6. **Record the application**: `save_application` with `folder`, `cv`, `channel`, `message`, `next_action`; once sent, `sent_at` (the job ad moves to `sent`). After that: `change_status` (`followed-up`, `interview`, `rejected`, `closed`, `withdrawn`) and `save_application` for the next action.
 7. **Keep the log** (see below): each exchange becomes an event, and what comes next a deadline.
-8. **Generate the tracker**: `generate_tracker` → `candidatures/_SUIVI.genere.md` (sections In progress, Sent with no reply, Closed; the next action comes from the next deadline).
+8. **Generate the tracker**: `generate_tracker` → `candidatures/_SUIVI.genere.md` (sections In progress, Sent without reply, Closed; the next action comes from the next deadline).
 
 ## Scoring with the grid
 

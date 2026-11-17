@@ -4,9 +4,9 @@
   "name": "Sample grid",
   "threshold": 4.5,
   "instructions": [
-    "Generic example: replace the targets, the inventory, the scales and the examples with your own (scoring settings in the dashboard, or this file).",
+    "Generic example: replace the targets, the inventory, the scales and the examples with your own (the dashboard's Scoring settings, or this file).",
     "Targets: back-end web development (PHP, APIs, integration), any contract type.",
-    "Flag in \"ecarts\" any pay below the floor, a long commute, or a spoken foreign language required at interview."
+    "Flag in \"gaps\" any pay below the floor, a long commute, or a spoken foreign language required at interview."
   ],
   "criteria": [
     {

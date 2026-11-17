@@ -218,6 +218,8 @@ describe('standalone MCP server (stdio, end to end)', () => {
     const info = JSON.parse(r.content[0].text!) as Record<string, unknown>;
     expect(info).toMatchObject({ ok: true, pdf: 'cv/_exemple-structure.pdf', pages: 2, exceeded_2_pages: false, pdf_existed: false, template: 'cv/gabarit' });
     expect(existsSync(join(workspace, 'cv', '_exemple-structure.pdf'))).toBe(true);
+    // Intermediate renders in cv/gabarit/apercu/ (French name, ignored by the workspace's .gitignore).
+    expect(existsSync(join(workspace, 'cv', 'gabarit', 'apercu', '_exemple-structure.html'))).toBe(true);
     // Fill measured on the real PDF: one value in % per page.
     expect(info.fill).toHaveLength(2);
     for (const p of info.fill as string[]) expect(p).toMatch(/^page \d: \d{1,3}%$/);

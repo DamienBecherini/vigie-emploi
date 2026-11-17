@@ -13,8 +13,8 @@ Command and option names, statuses and event types are the same in every languag
 for example "list --status sent", "event 12 --type interview".
 
 Commands
-  init <folder> [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
-                        Creates a workspace (templates, résumé template, sample grid, config, .mcp.json)
+  init [folder] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
+                        Creates a workspace (~/vigie-emploi when no folder is given; templates, résumé template, sample grid, config, .mcp.json)
                         and prints the starting prompt to give the AI; --language: language of the dashboard,
                         the CLI and the tracking file (fr by default)
   count <file>          Character count of each copy-paste message in the file (blocks between
@@ -84,7 +84,7 @@ Commands
   serve [--port 4410] [--idle <minutes>]
                         Starts the dashboard (http://localhost:4410); --idle: stops by itself after that idle time
   mcp                   MCP server (stdio transport) to drive vigie-emploi from an AI; without a configured
-                        folder: ~/ma-recherche, created if needed by the initialize_workspace tool
+                        folder: ~/vigie-emploi, created if needed by the initialize_workspace tool
 
 General options
   --data <folder>       Data folder (else VIGIE_EMPLOI_DATA or vigie-emploi.config.json)
@@ -256,7 +256,7 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'cli.stats.timeout': 'Average delay before the first reply: {days} d (over {n} application(s)).',
   'cli.tracker.summary': '{file}: {inProgress} in progress, {noFollowUp} sent without reply, {closes} closed.',
 
-  'cli.init.usage': 'Usage: vigie-emploi init <folder> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]',
+  'cli.init.usage': 'Usage: vigie-emploi init [folder, ~/vigie-emploi by default] [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]',
   'cli.init.created': 'Workspace created: {folder}',
   'cli.init.config': '  configuration: {config} (port {port}, language {language})',
   'cli.init.mcp': '  MCP server “{name}”: {mcp}',

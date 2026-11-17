@@ -3,7 +3,6 @@
 // process.execPath then points to claude.exe, which would open the application instead of running a script.
 // So process.execPath is only used if it really is node; otherwise, the system's node (PATH).
 import { spawnSync } from 'node:child_process';
-import { basename } from 'node:path';
 
 /** Minimum Node version: node:sqlite without a flag (22.13), and the engines of package.json (24). */
 export const NODE_MINIMUM = { major: 24, minor: 0 };
@@ -17,7 +16,9 @@ export function versionSufficient(version: string): boolean {
 
 /** true if the current executable is a real node (and not an Electron application that embeds Node). */
 export function isNodeStandalone(execPath: string = process.execPath, versions: NodeJS.ProcessVersions = process.versions): boolean {
-  return !('electron' in versions) && /^node(\.exe)?$/i.test(basename(execPath));
+  // Both separators, whatever the system: a Windows path is also recognised on Linux and macOS (tests, logs).
+  const name = execPath.split(/[\\/]/).pop() ?? '';
+  return !('electron' in versions) && /^node(\.exe)?$/i.test(name);
 }
 
 /** "node" command to write into the configuration of another MCP client: the path of the current node, otherwise "node". */

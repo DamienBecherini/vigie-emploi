@@ -1,6 +1,7 @@
 // Creation of a workspace: copy of the template (scaffold/), of the CV template and of the sample rubric,
 // configuration of the application and of the MCP server, then onboarding prompt to give to the AI.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { NAME_FILE_CONFIG, APP_ROOT } from '../core/config.ts';
 import { exampleRubric } from '../core/rubric-storage.ts';
@@ -126,12 +127,22 @@ export function promptOnboarding(workspace: string, language: Language = LANGUAG
   return tl(language, 'init.prompt', { workspace });
 }
 
+/** Folder created by `init` without an argument: vigie-emploi in the user's home folder (Windows, macOS, Linux). */
+export function defaultWorkspace(home = homedir()): string {
+  return join(home, 'vigie-emploi');
+}
+
+/** "~", "~/x" and "~\x" brought to the home folder (PowerShell does not expand ~ in the arguments of a program). */
+export function expandHome(folder: string, home = homedir()): string {
+  return folder === '~' ? home : /^~[\\/]/.test(folder) ? join(home, folder.slice(2)) : folder;
+}
+
 export function initializeWorkspace(o: OptionsInit): ResultInit {
   const language = o.language ?? LANGUAGE_DEFAULT;
   if (!isLanguage(language)) errorUser(tl(LANGUAGE_DEFAULT, 'init.languageUnknown', { language: String(language), languages: LANGUAGES.join(', ') }));
   const m = (key: Parameters<typeof tl>[1], params?: Parameters<typeof tl>[2]) => tl(language, key, params);
   if (!o.folder) errorUser(m('init.folderExpected'));
-  const folder = resolve(o.folder);
+  const folder = resolve(expandHome(o.folder));
   if (existsSync(folder)) {
     if (!statSync(folder).isDirectory()) errorUser(m('init.notOneFolder', { folder }));
     if (readdirSync(folder).length) errorUser(m('init.notEmpty', { folder }));

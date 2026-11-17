@@ -4,13 +4,13 @@
 
 Le serveur suffit aussi à un client **sans accès aux fichiers ni au terminal** (Claude Desktop) : il crée l'espace de travail, expose les consignes de l'espace en prompts, lit et écrit les fichiers de l'espace et génère les CV en PDF (voir « Claude Desktop » plus bas).
 
-Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `VIGIE_EMPLOI_DATA`, sinon `vigie-emploi.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/ma-recherche`** (`C:\Users\<nom>\ma-recherche` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialize_workspace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
+Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon `VIGIE_EMPLOI_DATA`, sinon `vigie-emploi.config.json` (dossier courant, dossier de données ou racine de l'application), sinon, pour le serveur MCP seulement, le dossier par défaut **`~/vigie-emploi`** (`C:\Users\<nom>\vigie-emploi` sous Windows). Si ce dossier n'existe pas ou est vide, le serveur démarre quand même : les outils de données répondent « espace non initialisé » et l'outil `initialize_workspace` le crée. Le serveur garde la base ouverte tant que le client tourne ; la CLI et le tableau de bord peuvent s'en servir en même temps (attente de 5 s sur un verrou).
 
 ## Outils
 
 | Outil | Rôle |
 |---|---|
-| `list_offers` | Liste paginée, mêmes filtres que `vigie-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `received_at:desc,note:desc`) |
+| `list_offers` | Liste paginée, mêmes filtres que `vigie-emploi list` (statuts, note min / max, sans note, sources, tags, texte, dates, contrat, télétravail, candidatures, tri sur un ou plusieurs niveaux : `received_at:desc,score:desc`) |
 | `read_offer` | Détail complet : description, notes, historique des statuts, tags, candidature |
 | `offers_to_read` | Offres à traiter sans note, avec `reading` = `description`, `browser` ou `human` |
 | `rubric` | Grille de notation courante : critères et poids, barèmes, règles bloquantes, inventaire, exemples (avec leur note calculée), seuil, consignes de notation |
@@ -30,7 +30,7 @@ Le dossier de données est résolu comme pour la CLI : `--data <dossier>`, sinon
 | `deadlines` | Échéances en retard et à venir sur N jours (7 par défaut), toutes offres |
 | `mark_done` | Marque une échéance comme faite (ou la rouvre) |
 | `folder_files` | Fichiers du dossier de candidature (chemins à citer dans un événement) |
-| `ingest_emails` | Lit les `.eml` puis les supprime (sauf `keep: true`) |
+| `ingest_emails` | Relève d'abord la boîte mail si elle est configurée (voir le README), puis lit les `.eml` de `emails/` et les supprime (sauf `keep: true`) ; `to_tell` dit ce qui a été relevé, ou pourquoi la boîte ne l'a pas été |
 | `generate_tracker` | Écrit `candidatures/_SUIVI.genere.md` (aperçu), ou `_SUIVI.md` avec `replace: true` |
 
 Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) :
@@ -41,7 +41,7 @@ Espace, fichiers et CV (pour un client sans accès aux fichiers ni au terminal) 
 | `initialize_workspace` | Crée l'espace (comme `vigie-emploi init`) dans le dossier du serveur ou celui choisi par l'utilisateur, puis s'y installe |
 | `list_files` | Contenu d'un dossier de l'espace, sur 1 à 4 niveaux |
 | `read_file` | Texte tel quel ; PDF : texte extrait page par page ; Word (`.docx`) : texte ; image : contenu `image` |
-| `write_file` | Crée ou remplace un fichier texte (`.md`, `.txt`, `.json`, `.csv`, `.yml`, `.css`), dossiers parents compris ; renvoie `existait` ; `create_only: true` refuse d'écraser |
+| `write_file` | Crée ou remplace un fichier texte (`.md`, `.txt`, `.json`, `.csv`, `.yml`, `.css`), dossiers parents compris ; renvoie `existed` ; `create_only: true` refuse d'écraser |
 | `move_file` | Déplace ou renomme un fichier, sans jamais écraser |
 | `generate_cv` | CV Markdown → PDF à côté, avec le gabarit de l'espace ; nombre de pages, `pdf_existed` ; `capture: true` joint l'image PNG du rendu |
 | `count` | Caractères et mots de chaque bloc à copier-coller d'un texte ou d'un fichier |
@@ -77,7 +77,7 @@ Fichier `.mcp.json` à la racine du dossier de données (ou du projet où l'on t
 }
 ```
 
-Testé sous Windows 11 avec Claude Code 2.1.314 et la commande installée par `npm link` : les trois formes ci-dessous se connectent et exposent les outils (22 en version 0.4, 32 avec les outils d'espace, de fichiers et de CV).
+`init` écrit ce fichier lui-même. Testé sous Windows 11 avec Claude Code : les trois formes ci-dessous se connectent et exposent les 33 outils.
 
 | Forme | `command` / `args` | Quand l'utiliser |
 |---|---|---|
@@ -99,7 +99,7 @@ Claude Desktop n'a ni accès aux fichiers ni terminal : tout passe par le serveu
 
 **1. Installer** : double-clic sur `vigie-emploi-<version>.mcpb` (ou le glisser dans la fenêtre de Claude Desktop, ou Paramètres → Extensions → Paramètres avancés → Installer une extension…). Claude Desktop affiche les outils et demande deux réglages :
 
-- **Dossier de l'espace** : par défaut `ma-recherche` dans votre dossier personnel. Il peut ne pas exister encore. Évitez un dossier synchronisé (OneDrive, Dropbox…) : la base SQLite s'y abîme facilement ;
+- **Dossier de l'espace** : par défaut `vigie-emploi` dans votre dossier personnel. Il peut ne pas exister encore. Évitez un dossier synchronisé (OneDrive, Dropbox…) : la base SQLite s'y abîme facilement ;
 - **Langue** : `fr` ou `en` (consignes de l'IA, tableau de bord, suivi).
 
 Pour les changer ensuite : Paramètres → Extensions → vigie-emploi → Configurer.
@@ -126,17 +126,19 @@ Construire l'extension : `npm run mcpb` dans le dépôt (voir le README).
     "vigie-emploi": {
       "command": "node",
       "args": ["C:/chemin/vigie-emploi/bin/vigie-emploi.js", "mcp"],
-      "env": { "VIGIE_EMPLOI_DATA": "C:/Users/vous/ma-recherche" }
+      "env": { "VIGIE_EMPLOI_DATA": "C:/Users/vous/vigie-emploi" }
     }
   }
 }
 ```
 
-`command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/vigie-emploi.js` de l'application, avec des barres obliques. `env.VIGIE_EMPLOI_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/ma-recherche`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
+`command` : `node` doit être trouvé dans le `PATH` ; sinon, son chemin complet (`C:/Program Files/nodejs/node.exe`, `/usr/local/bin/node` ou `/opt/homebrew/bin/node` sur macOS). `args` : le chemin du `bin/vigie-emploi.js` de l'application, avec des barres obliques. `env.VIGIE_EMPLOI_DATA` : le dossier de votre espace de travail ; sans lui, le serveur prend `~/vigie-emploi`. Le dossier courant de Claude Desktop n'est pas fiable : indiquez toujours le dossier par `env` (ou `"--data", "<dossier>"` dans `args`). Redémarrez Claude Desktop (quitter complètement, pas seulement fermer la fenêtre) après chaque modification.
 
 **2. Démarrer** : dans une nouvelle conversation, bouton « + » → vigie-emploi → prompt **`onboarding`**. Si l'espace n'existe pas encore, l'IA propose de le créer (`initialize_workspace`, dans le dossier configuré ou celui que vous choisissez), puis vous demande de déposer votre CV et l'export PDF de votre profil LinkedIn dans `a-deposer/` avec l'explorateur de fichiers. Si vous choisissez un autre dossier que celui de la configuration, reportez-le dans le réglage « Dossier de l'espace » de l'extension (ou dans `VIGIE_EMPLOI_DATA`) : sinon la session suivante repartira du dossier configuré.
 
-**3. Ensuite** : prompts `process-emails`, `prepare-go` et `targeted-cv`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generate_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
+**3. Les alertes** : pour que l'application relève elle-même vos alertes d'offres, demandez « ouvre mon tableau de bord », puis bouton **« Boîte mail »** : adresse, mot de passe (tapé dans la page, jamais dans la conversation), dossier des alertes. Voir « Automatiser la réception des alertes » dans le README.
+
+**4. Ensuite** : prompts `process-emails`, `prepare-go` et `targeted-cv`, ou simplement vos demandes en clair (« traite les e-mails », « reprends le démarrage »). Les CV se génèrent par `generate_cv` ; l'IA voit le rendu (capture) et vous donne le chemin du PDF. C'est vous qui envoyez les candidatures.
 
 **Tableau de bord sans terminal** : demandez « ouvre mon tableau de bord ». L'outil `open_dashboard` vérifie `/api/health` sur le port de l'espace (4410 par défaut) ; si le tableau de bord de cet espace ne tourne pas, il le démarre (`vigie-emploi serve --idle 60`) dans un processus séparé, détaché du serveur MCP : il survit à un redémarrage du serveur et s'arrête seul après 60 minutes sans activité. Port pris par autre chose : il essaie les neuf suivants. L'outil renvoie l'adresse à cliquer ; avec `open: true`, il l'ouvre dans le navigateur par défaut. Il faut pour cela un `node` 24 ou plus dans le `PATH` (le Node intégré de Claude Desktop ne peut pas lancer de processus séparé) ; sans lui, le tableau de bord tourne dans le processus du serveur MCP et s'arrête avec Claude Desktop.
 

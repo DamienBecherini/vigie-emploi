@@ -19,7 +19,7 @@ Espace de travail créé par **vigie-emploi** : une IA (Claude Code, Cursor, Cod
 | `profil/grille.json` | Ta grille de notation des offres (critères, poids, plancher de rémunération…). |
 | `cv/` | Tes CV en Markdown et leurs PDF ; `cv/gabarit/` = la mise en page. |
 | `candidatures/` | Un dossier par offre (annonce, fit, messages, suivi) et `_SUIVI.md`, généré. |
-| `emails/` | Les e-mails d'alertes d'offres (`.eml`) à trier. |
+| `emails/` | Les e-mails d'alertes d'offres (`.eml`) à trier : relevés dans ta boîte mail si tu l'as connectée, ou déposés à la main. |
 | `profils-publics/` | L'état de tes profils publics (LinkedIn, Malt…). |
 | `messages/` | Trames de messages : candidature, mission freelance, recruteur, relance, remerciement. |
 | `procedures/` | Les procédures que suit l'IA (tri des e-mails, préparation des candidatures, CV ciblé). |
@@ -33,7 +33,8 @@ La commande de l'application (à lancer depuis ce dossier) :
 {{CMD}} serve      tableau de bord dans le navigateur
 {{CMD}} cv "cv/<nom>.md"
                    CV en PDF (affiche le nombre de pages)
-{{CMD}} ingest     lit les e-mails d'alertes de emails/
+{{CMD}} mail setup connecte ta boîte mail (dossier des alertes ; aussi par le bouton « Boîte mail » du tableau de bord)
+{{CMD}} ingest     relève la boîte mail, puis lit les e-mails d'alertes de emails/
 ```
 
 Conseil : versionne ce dossier avec git (`git init`), pour retrouver une ancienne version d'un CV ou d'un message.

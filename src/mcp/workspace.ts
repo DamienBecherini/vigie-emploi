@@ -1,7 +1,7 @@
 // Tools, prompts and resource of the MCP server for a client without access to files nor to a terminal (Claude Desktop…):
 // creation of the workspace, workspace instructions as prompts, files confined to the data folder, CV as PDF, counting.
 import { pathToFileURL } from 'node:url';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -20,6 +20,15 @@ import { bi, bt, languageNameEn, tm, tu, type Bilingual, type KeyMcp } from './t
 import { LANGUAGES, type Language } from '../i18n/index.ts';
 
 const slash = (p: string) => p.replace(/\\/g, '/');
+
+/**
+ * Path relative to the workspace, both sides with their symbolic links resolved: the file paths of the tools are
+ * real paths (access-files.ts), and on macOS the temporary folders /var/… are links to /private/var/….
+ */
+function relativeWorkspace(workspace: string, p: string): string {
+  const real = (x: string) => (existsSync(x) ? realpathSync(x) : x);
+  return slash(relative(real(workspace), real(p)));
+}
 
 /** Image passed to the AI: beyond this, most clients refuse it. */
 const IMAGE_MAX = 5 * 1024 * 1024;
@@ -378,7 +387,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       const pdfBefore = c.absolute.replace(/\.md$/i, '.pdf');
       const pdfExisted = existsSync(pdfBefore);
       const r = generateCv(c.absolute, template, browser, { capture: Boolean(capture) });
-      const rel = (p: string) => slash(relative(workspace, p));
+      const rel = (p: string) => relativeWorkspace(workspace, p);
       const layout = await analyzePages(readFileSync(r.pdf)).catch((e: Error) => ({
         pages: [],
         warnings: [tm('workspace.generate_cv.warnings', { message: String(e.message) })],
@@ -450,7 +459,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
     on(({ name }) => {
       const workspace = data();
       const r = chooseTemplate(workspace, name);
-      return { ok: true, folder: slash(relative(workspace, r.folder)), old: r.old ? slash(relative(workspace, r.old)) : null };
+      return { ok: true, folder: relativeWorkspace(workspace, r.folder), old: r.old ? relativeWorkspace(workspace, r.old) : null };
     }),
   );
 

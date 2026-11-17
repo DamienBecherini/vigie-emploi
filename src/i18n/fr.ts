@@ -12,8 +12,8 @@ export const fr = {
 Usage : vigie-emploi <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
-                        Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
+  init [dossier] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
+                        Crée un espace de travail (~/vigie-emploi sans dossier donné ; modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA ; --language : langue de l'interface,
                         de la CLI et du suivi (fr par défaut)
   count <fichier>       Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
@@ -83,7 +83,7 @@ Commandes
   serve [--port 4410] [--idle <minutes>]
                         Lance le tableau de bord (http://localhost:4410) ; --idle : s'arrête seul après ce temps sans visite
   mcp                   Serveur MCP (transport stdio) pour piloter vigie-emploi depuis une IA ; sans dossier
-                        configuré : ~/ma-recherche, créé au besoin par l'outil initialize_workspace
+                        configuré : ~/vigie-emploi, créé au besoin par l'outil initialize_workspace
 
 Options générales
   --data <dossier>      Dossier de données (sinon VIGIE_EMPLOI_DATA ou vigie-emploi.config.json)
@@ -267,7 +267,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'cli.tracker.summary': '{file} : {inProgress} en cours, {noFollowUp} envoyée(s) sans suite, {closes} close(s).',
 
   // CLI : init
-  'cli.init.usage': 'Usage : vigie-emploi init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]',
+  'cli.init.usage': 'Usage : vigie-emploi init [dossier, ~/vigie-emploi par défaut] [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]',
   'cli.init.created': 'Espace de travail créé : {folder}',
   'cli.init.config': '  configuration : {config} (port {port}, langue {language})',
   'cli.init.mcp': '  serveur MCP « {name} » : {mcp}',

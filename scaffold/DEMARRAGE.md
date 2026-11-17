@@ -5,9 +5,11 @@ Tu mènes le premier entretien avec l'utilisateur. But : remplir `_CONTEXTE.md`,
 - **session 1** : étapes 0 à 5 (outils, lecture, profils, questions, `_CONTEXTE.md`) ;
 - **session 2** : étapes 6 à 9 (grille, CV, alertes, bilan).
 
-Annonce ce découpage dès ton premier message, tel quel (pas « je vais préparer ta grille » en session 1). À la fin de la session 1, dis à l'utilisateur d'ouvrir une nouvelle conversation et d'écrire « reprends le démarrage ». L'état est dans les fichiers (étape 0).
+Annonce ce découpage dès ton premier message, tel quel (pas « je vais préparer ta grille » en session 1). À la fin de la session 1, dis à l'utilisateur d'ouvrir une nouvelle conversation **dans l'espace de travail** et d'écrire « reprends le démarrage » (voir « Session lancée hors de l'espace » ci-dessous). L'état est dans les fichiers (étape 0).
 
 Espace de travail : `{{WORKSPACE}}` · application : `{{APP}}` · commande : `{{CMD}}`
+
+**Session lancée hors de l'espace** (installation par un prompt, depuis un autre dossier) : le serveur MCP et les consignes de l'espace ne sont pas encore chargés. Utilise des chemins absolus (`{{WORKSPACE}}/…`) et la CLI avec l'espace en option : `{{CMD}} <commande> --data {{WORKSPACE}}`. Pour les sessions suivantes, donne-lui la marche à suivre, en une fois et telle quelle : ouvrir un terminal, `cd {{WORKSPACE}}`, lancer `claude`, accepter le serveur MCP « vigie-emploi » quand Claude Code le propose.
 
 ## Principes
 
@@ -101,4 +103,4 @@ Explique comment alimenter le tri des offres :
 
 ## 9. Fin
 
-Résume ce qui est en place et ce qui reste dans `_A-FAIRE.md`, puis explique en quatre lignes la boucle de tous les jours : les alertes arrivent dans `emails/` → tu les tries et les notes → il donne ses « go » → tu prépares dossier, CV ciblé et message, **il envoie** → il te raconte la suite (envoi, réponse, entretien) et tu tiens le suivi et les relances. Termine par l'action suivante concrète (en général : traiter les e-mails), pas par « demande-moi plus tard ». S'il versionne l'espace avec git, propose un premier commit.
+Résume ce qui est en place et ce qui reste dans `_A-FAIRE.md`, puis explique en quatre lignes la boucle de tous les jours : les alertes arrivent (relevées dans sa boîte mail, ou déposées dans `emails/`) → tu les tries et les notes → il donne ses « go » → tu prépares dossier, CV ciblé et message, **il envoie** → il te raconte la suite (envoi, réponse, entretien) et tu tiens le suivi et les relances. Termine par l'action suivante concrète (en général : traiter les e-mails), pas par « demande-moi plus tard ». S'il versionne l'espace avec git, propose un premier commit. Si la session a été lancée hors de l'espace, redonne la marche à suivre pour les prochaines fois (ouvrir Claude Code dans `{{WORKSPACE}}`).

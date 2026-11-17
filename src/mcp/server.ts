@@ -712,7 +712,7 @@ export function openStateTolerant(options: OptionsConfig = {}): StateMcp {
 
 /**
  * Starts the server on stdio. The data folder comes from --data, VIGIE_EMPLOI_DATA or the config file,
- * otherwise from the default folder (~/ma-recherche); if it does not exist yet, the server starts anyway
+ * otherwise from the default folder (~/vigie-emploi); if it does not exist yet, the server starts anyway
  * (initialize_workspace tool).
  */
 export async function startMcp(options: OptionsConfig = {}): Promise<void> {

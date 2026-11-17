@@ -138,3 +138,14 @@ describe('CV templates', () => {
     expect(() => chooseTemplate(workspace, 'unknown')).toThrow(/inconnu/);
   });
 });
+
+describe('default folder', () => {
+  it('~/vigie-emploi without a folder; ~ expanded by init itself', async () => {
+    const { defaultWorkspace, expandHome } = await import('../src/init/init.ts');
+    expect(defaultWorkspace('/home/ana')).toBe(join('/home/ana', 'vigie-emploi'));
+    expect(expandHome('~', '/home/ana')).toBe('/home/ana');
+    expect(expandHome('~/recherche', '/home/ana')).toBe(join('/home/ana', 'recherche'));
+    expect(expandHome('~\\recherche', 'C:\\Users\\ana')).toBe(join('C:\\Users\\ana', 'recherche'));
+    expect(expandHome('/tmp/~x', '/home/ana')).toBe('/tmp/~x');
+  });
+});

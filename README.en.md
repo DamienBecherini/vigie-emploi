@@ -24,7 +24,7 @@ vigie-emploi is a local kit to look for a permanent job or freelance assignments
 
 The name means "job lookout" (*vigie*, the sailor in the crow's nest who spots what matters and calls it out). Two promises:
 
-- **it sorts for you**: the alerts your mail client drops off are read in a single pass when you start the triage; a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time; and every follow-up has its date;
+- **it sorts for you**: the job alerts in your mailbox are fetched and read in a single pass when you start the triage; a transparent, adjustable scoring grid (weights, pay floor, remote work, blocking rules) only shows you the offers worth your time; and every follow-up has its date;
 - **it never makes you lie**: the AI relies on an inventory of what you can and cannot claim, built with you during onboarding. It only writes in a résumé what you can defend in an interview. Application after application, you refine with it what makes you valuable and the message you want to convey, until the result truly sounds like you.
 
 ## How it works
@@ -35,7 +35,7 @@ e-mail alerts (.eml)  →  triage and scoring by the AI (your grid)  →  your "
 ```
 
 1. **Guided onboarding**: you drop your résumé (and the PDF export of your LinkedIn profile) into `a-deposer/`. The AI reads them, looks at your public pages if it can, then asks you small batches of questions: targets, background, evidence, what sets you apart, risks, things never to claim, conditions. From this it writes your **context** (`_CONTEXTE.md`), your **grid** and a first **résumé**, which you approve.
-2. **Alert triage**: a mail filter saves the alerts (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) into `emails/` (see [Automating alert intake](#automating-alert-intake)). The AI ingests them, discards off-target ones, scores the rest criterion by criterion (the application computes the score) and shows you the best offers.
+2. **Alert triage**: a mail filter files the alerts (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) in a folder that the application fetches itself (see [Automating alert intake](#automating-alert-intake)). The AI ingests them, discards off-target ones, scores the rest criterion by criterion (the application computes the score) and shows you the best offers.
 3. **Applications**: on your "go", the AI prepares the application file, a tailored résumé that fits on two pages, and the message adapted to the form and its character limit. **You do the sending.**
 4. **Follow-up**: you tell it what happened ("sent yesterday", "interview Thursday at 2 pm"); the AI keeps the journal, the deadlines and the tracking table.
 
@@ -74,26 +74,24 @@ Résumés are written in Markdown and rendered as two-page A4 PDFs, with three t
 
 1. Download the `vigie-emploi-<version>.mcpb` file (the repository's [Releases](https://github.com/DamienBecherini/vigie-emploi/releases) page).
 2. Double-click it (or drag it into the Claude Desktop window, or **Settings → Extensions → Advanced settings → Install Extension…**), then click **Install**.
-3. Choose the **workspace folder** (by default `ma-recherche` in your home folder; it does not need to exist) and the **language**: type `en`.
+3. Choose the **workspace folder** (by default `vigie-emploi` in your home folder; it does not need to exist) and the **language**: type `en`.
 4. In a new conversation, ask "create my vigie-emploi workspace", or **+** button → vigie-emploi → **`onboarding`** prompt. Claude creates the workspace, asks you to drop your résumé into `a-deposer/`, then runs the onboarding.
 
 No terminal and no Node to install: the extension contains the application and uses the Node built into Claude Desktop. To browse your job ads in the dashboard, ask Claude to open it (`open_dashboard` tool). Details (in French): [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
 ### With Claude Code or another agent
 
-```sh
-npx vigie-emploi init ~/my-search --language en
+Open Claude Code (or your agent) in any folder and paste this prompt, without changing anything:
+
+```text
+Install vigie-emploi for my job search (https://github.com/DamienBecherini/vigie-emploi): run "npx -y vigie-emploi@latest init --language en", which creates the vigie-emploi folder in my home folder, then read AGENTS.md and DEMARRAGE.md in that folder and run the onboarding with me. If Node.js 24 is missing, explain how to install it.
 ```
 
-Nothing to clone or build: npx downloads the application and runs `init`. The workspace remembers the version used (`npx -y vigie-emploi@<version>`, in `.mcp.json` and in the AI instructions). For a permanently installed command: `npm install -g vigie-emploi`, then `vigie-emploi init ~/my-search`. To contribute, install from the repository (see [Installation](#installation)).
+The agent creates your workspace in `~/vigie-emploi` (your home folder, on Windows, macOS and Linux), then starts the onboarding: it asks you to drop your résumé in `~/vigie-emploi/a-deposer/` and asks its questions. For another folder, add its path after `init` in the prompt (`… init D:/job-search --language en`). Onboarding takes two sessions of about half an hour each; for the second one and the following ones, open Claude Code in the workspace folder (`cd ~/vigie-emploi` then `claude`) and accept the "vigie-emploi" MCP server.
 
-`init` creates your workspace (`--template modern` or `compact` to change the résumé template; `--language en` for English AI instructions, grid, dashboard and CLI, French being the default) and prints the starting prompt to give your AI. Then:
+By hand, without a prompt: `npx vigie-emploi init --language en` (or `npx vigie-emploi init <folder> --language en`) creates the workspace and prints the onboarding prompt; then open your AI in that folder and paste it. The workspace keeps the version used (`npx -y vigie-emploi@<version>`, in `.mcp.json` and in the AI's instructions). For a permanently installed command: `npm install -g vigie-emploi`, then `vigie-emploi init --language en`. To contribute, install from the repository (see [Installation](#installation)).
 
-1. drop your résumé into `~/my-search/a-deposer/`;
-2. open your AI in `~/my-search` (Claude Code: `cd ~/my-search` then `claude`, and accept the MCP server);
-3. paste the prompt printed by `init`.
-
-Onboarding takes two sessions of about half an hour each.
+`init` options: `--template modern` or `compact` to change the résumé template; `--language en` for everything in English (AI instructions and workspace templates, sample grid, MCP server, dashboard and CLI; command and status names are the same in every language, the workspace's file names stay in French).
 
 ## Automating alert intake
 
@@ -140,7 +138,7 @@ Requirement: Node.js 24 or later (SQLite is built into Node through `node:sqlite
 From npm (the package contains the code compiled to JavaScript and the built interface):
 
 ```sh
-npx vigie-emploi init ~/my-search    # without installing
+npx vigie-emploi init --language en     # without installing: creates ~/vigie-emploi
 npm install -g vigie-emploi          # or a permanently installed command
 ```
 
@@ -164,10 +162,10 @@ Without `npm link`, replace `vigie-emploi` with `node <path>/bin/vigie-emploi.js
 ### Creating your workspace
 
 ```sh
-vigie-emploi init <folder> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]
+vigie-emploi init [folder] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
 ```
 
-The folder must be new or empty. `init` copies the workspace template into it (`scaffold/`, or `scaffold-en/` in English: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`templates/cv/plain/`) and the sample grid, then writes `vigie-emploi.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
+Without a folder, `init` creates `~/vigie-emploi` (home folder; `~` is understood under PowerShell too). The folder must be new or empty. `init` copies the workspace template into it (`scaffold/`, or `scaffold-en/` in English: AI instructions, context to fill in, guided onboarding, `a-deposer/` folder, application file template), the résumé template (`templates/cv/plain/`) and the sample grid, then writes `vigie-emploi.config.json` and `.mcp.json` (MCP server started with this data folder). It checks that Chrome, Edge or Chromium is available for PDFs, and prints the starting prompt to give the AI.
 
 To try it without touching an existing installation: another folder, another port and another MCP server name (`--port 4411 --mcp-name vigie-emploi-test`).
 
@@ -175,7 +173,7 @@ To try it without touching an existing installation: another folder, another por
 
 The MCP server (`vigie-emploi mcp`) is enough for an AI with no access to your files and no terminal, such as Claude Desktop: it creates the workspace (`initialize_workspace`), provides the instructions as prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), reads the documents you drop in, writes the context, application files and résumés, generates the PDFs and starts the dashboard (`open_dashboard`). With Claude Desktop, the simplest route is the `.mcpb` extension ([One-click install](#one-click-install-claude-desktop)); you can also declare the server by hand in `claude_desktop_config.json`, with your workspace folder in `VIGIE_EMPLOI_DATA` and `VIGIE_EMPLOI_LANGUAGE` set to `en`. Details: [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
-Building the extension (for a GitHub release): `npm run mcpb` builds the application, prepares `build/mcpb/vigie-emploi/` (compiled JavaScript, interface, templates, production `node_modules` only), validates `mcpb/manifest.json` and packs everything into `build/vigie-emploi-<version>.mcpb` (about 5 MB) with the official `@anthropic-ai/mcpb` tool. Attach that file to the release.
+Building the extension (for a GitHub release): `npm run mcpb` builds the application, prepares `build/mcpb/vigie-emploi/` (compiled JavaScript, interface, templates, production `node_modules` only), validates `mcpb/manifest.json` and packs everything into `build/vigie-emploi-<version>.mcpb` (about 7 MB) with the official `@anthropic-ai/mcpb` tool. Attach that file to the release.
 
 ### PDF résumés
 
@@ -213,9 +211,10 @@ To designate it, in order of precedence:
 | `excludedTitles` | Regular expressions (case-insensitive): titles discarded without reading | `[]` |
 | `rejectedEmployers` | Regular expressions: refused employers (title, company, start of description) | `[]` |
 | `terminal` | Command opening a terminal with the agent (dashboard buttons); `{folder}` and `{prompt}` are substituted | Windows: `["wt.exe", "-d", "{folder}", "claude", "{prompt}"]`; elsewhere: none |
+| `mail` | Mailbox fetched over IMAP: `user`, `host`, `port`, `secure`, `folder`, `sinceDays`, `markSeen` (written by the "Mailbox" panel or `vigie-emploi mail setup`; the password is never there) | none |
 | `language` | Language of the dashboard, the CLI messages, the MCP server texts shown to the user (what only the AI reads is in English) and the generated tracking file: `fr` or `en` (written by `init --language`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser. Another language can be added without touching the logic: [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) (in French) | `fr` |
 
-Environment variables also recognised: `VIGIE_EMPLOI_CONFIG` (config file), `VIGIE_EMPLOI_DATABASE` (database), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`.
+Environment variables also recognised: `VIGIE_EMPLOI_CONFIG` (config file), `VIGIE_EMPLOI_DATABASE` (database), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`, `VIGIE_EMPLOI_MAIL_PASSWORD` (mailbox password, instead of the keychain), `VIGIE_EMPLOI_BROWSER` (browser for the PDFs).
 
 ### Commands
 
@@ -223,7 +222,7 @@ All commands accept `--json` (stable output for an AI), `--data` and `--config`.
 
 | Command | Effect |
 |---|---|
-| `vigie-emploi mail [setup|status|fetch|forget]` | Mailbox fetched over IMAP (see [Automating alert intake](#automating-alert-intake)): `setup` asks for the address, password and folder (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`); `fetch` fetches without ingesting; `forget` removes the settings and the password |
+| `vigie-emploi mail [setup\|status\|fetch\|forget]` | Mailbox fetched over IMAP (see [Automating alert intake](#automating-alert-intake)): `setup` asks for the address, password and folder (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`); `fetch` fetches without ingesting; `forget` removes the settings and the password |
 | `vigie-emploi ingest [--keep] [--no-fetch] [--no-mail] [--emails <folder>]` | Fetches the mailbox first when one is configured (unless `--no-mail`), then reads the `.eml` files, adds new offers (`new`, or `dismissed` with the reason for excluded titles), then **deletes the processed e-mails** (unless `--keep`). Summary: new, duplicates, discarded, to read |
 | `vigie-emploi import-history` | Imports `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` and the "Suivi" sections of `candidatures/*/dossier-candidature.md` (journal, see below); read-only, idempotent, with a report of unrecognised lines. A `_SUIVI.md` generated by vigie-emploi is not re-read |
 | `vigie-emploi list [filters]` | Paginated list: `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (received), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order`; multi-level sort: `--sort received_at:desc,score:desc` |
@@ -300,7 +299,8 @@ Without a terminal (Claude Desktop): ask the AI to open the dashboard. The `open
 - Filters: score, received and published dates, source, status, contract, remote work, tags, full-text search (accent-insensitive). Filters live in the URL: you can bookmark it.
 - Quick views: to process, scored ≥ grid threshold (4.5 by default), my applications.
 - **Scoring settings** (header button): weight sliders (normalised total shown), threshold, remote-work and pay scales, blocking rules (enable, effect, cap, add, delete), inventory (add, edit, delete, filter), reference examples recomputed live; **preview before saving** (offers whose score changes, offers crossing the threshold, clickable); mandatory change summary; version history and restore.
-- **Work for the agent**, above the filters, only when there is some: "Process N e-mails" (`.eml` files waiting in the inbox) and "Prepare N applications" (offers in `go` without a folder). Each button opens a terminal in the data folder with the agent and the `/traiter-emails` or `/preparer-go` command (provided by the data folder, for example as Claude Code skills); the rest happens in that terminal. See [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
+- **Mailbox** (header button): connection to the mailbox fetched over IMAP (provider recognised from the address, app-password help, choice of the folder), fetch now, forget the mailbox.
+- **Work for the agent**, above the filters: "Fetch the mailbox" (when a mailbox is connected and nothing is waiting), "Process N e-mails" (`.eml` files waiting in the inbox) and "Prepare N applications" (offers in `go` without a folder). Each button opens a terminal in the data folder with the agent and the `/traiter-emails` or `/preparer-go` command (provided by the data folder, for example as Claude Code skills); the rest happens in that terminal. See [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
 - **Live updates**: the server notifies the page (Server-Sent Events, `/api/stream`) when the database changes, whatever the origin of the write (CLI, agent, another tab), and when the inbox changes; the page then reloads its data. The "Refresh the data" button remains available.
 - **Coming up** banner above the table: overdue deadlines and those in the next 7 days, each opening its offer; **Statistics** button (applications by stage, reply delay).
 - Details panel: description, link to the offer (editable), **score breakdown** (criterion by criterion: sub-score, weight, contribution, justification, origin; rules applied; flags; exact value and grid version), "old grid" badge for an overall score, **sub-score correction** (AI criteria, days on site, salary, rules; the score is recomputed and added to the history), old-style overall score, **application** (next action, sending date, channel), **journal** (deadlines first, overdue in red; add, edit, delete an event, mark a deadline as done; link a file from the folder chosen from a list), **folder files** (links that open them), status history, editable tags, status change, **Apply** button (copies `apply <id>` to the clipboard and moves the offer to `go`).
@@ -351,6 +351,7 @@ src/core/             configuration, links, normalisation, offer operations, que
                       scoring grid (rubric.ts: pure schema and computation; rubric-storage.ts: file, versions, re-scoring)
 src/db/               database opening and migrations
 src/ingest/           .eml reading, JSON-LD, ingestion
+src/mail/             IMAP fetch, password in the system keychain, known providers
 src/import/           import of a Markdown / JSON history (including folder journals)
 src/cli/              commands
 src/api/              HTTP server (Hono): JSON API, data folder file reading, built interface

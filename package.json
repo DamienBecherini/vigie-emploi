@@ -1,6 +1,6 @@
 {
   "name": "vigie-emploi",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Recherche d'emploi et de missions pilotée par une IA : tri des offres avec une grille transparente, candidatures et CV honnêtes, suivi. Base SQLite, tableau de bord web, CLI et serveur MCP.",
   "keywords": [
     "recherche-emploi",

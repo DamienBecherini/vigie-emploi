@@ -2,6 +2,8 @@
 
 Date : 02/11/2026 · Statut : accepté
 
+> Les noms d'outils, de champs et de commandes cités sont ceux de l'époque, en français ; le code et l'API sont depuis en anglais (par exemple `ajouter_evenement` → `add_event`, `noter_lot` → `score_batch`, `grille` → `rubric`).
+
 ## Contexte
 
 Sprint 2 : brancher vigie-emploi sur une IA sans passer par la CLI, éditer notes et candidatures depuis le tableau de bord, et faire de la base la source du suivi des candidatures (`_SUIVI.md`), tenu à la main jusqu'ici. Reprendre aussi deux défauts de la reprise du sprint 1 (lignes groupées du registre, doublons suivi / registre).

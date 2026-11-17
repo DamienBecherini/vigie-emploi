@@ -22,7 +22,7 @@ vigie-emploi est un kit local pour chercher un CDI ou des missions freelance ave
 
 Une vigie, c'est le guetteur en haut du mât : il repère ce qui compte et le signale. Deux promesses :
 
-- **elle trie pour vous** : les alertes que votre messagerie dépose sont lues d'un seul passage quand vous lancez le tri, une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup, et chaque relance a sa date ;
+- **elle trie pour vous** : les alertes d'offres de votre boîte mail sont relevées et lues d'un seul passage quand vous lancez le tri, une grille de notation transparente et réglable (poids, plancher de rémunération, télétravail, règles bloquantes) ne vous présente que les offres qui valent le coup, et chaque relance a sa date ;
 - **elle ne vous fait jamais mentir** : l'IA s'appuie sur un inventaire de ce que vous pouvez revendiquer ou non, construit avec vous au démarrage. Elle n'écrit dans un CV que ce que vous pouvez défendre en entretien. Au fil des candidatures, vous affinez avec elle ce qui fait votre valeur et le message que vous voulez faire passer, jusqu'à ce que le résultat vous ressemble vraiment.
 
 ## Comment ça marche
@@ -33,7 +33,7 @@ alertes e-mail (.eml)  →  tri et notation par l'IA (votre grille)  →  vos «
 ```
 
 1. **Démarrage guidé** : vous déposez votre CV (et l'export PDF de votre profil LinkedIn) dans `a-deposer/`. L'IA les lit, consulte vos pages publiques si elle le peut, puis vous interroge par petits groupes de questions : cibles, parcours, preuves, ce qui vous distingue, risques, interdits, conditions. Elle en tire votre **contexte** (`_CONTEXTE.md`), votre **grille** et un premier **CV**, que vous validez.
-2. **Tri des alertes** : un filtre de votre messagerie enregistre les alertes (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) dans `emails/` (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)). L'IA les ingère, écarte le hors-cible, note le reste critère par critère (l'application calcule la note) et vous présente les meilleures offres.
+2. **Tri des alertes** : un filtre de votre messagerie range les alertes (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…) dans un dossier que l'application relève elle-même (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)). L'IA les ingère, écarte le hors-cible, note le reste critère par critère (l'application calcule la note) et vous présente les meilleures offres.
 3. **Candidatures** : sur votre « go », l'IA prépare le dossier, un CV ciblé qui tient en deux pages et le message adapté au formulaire et à sa limite de caractères. **C'est vous qui envoyez.**
 4. **Suivi** : vous racontez (« envoyé hier », « entretien jeudi à 14 h ») ; l'IA tient le journal, les échéances et le tableau de suivi.
 
@@ -54,7 +54,7 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 <div align="center">
 <a href="docs/exemples/CV-damien-becherini-plain.pdf"><img src="docs/captures/cv-plain.png" alt="CV de l'auteur, gabarit `plain` (page 1 du PDF)" width="32%"></a>
 <a href="docs/exemples/CV-damien-becherini-modern.pdf"><img src="docs/captures/cv-modern.png" alt="CV de l'auteur, gabarit `modern` (page 1 du PDF)" width="32%"></a>
-<a href="docs/exemples/CV-damien-becherini-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV de l'auteur, gabarit « compact » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV de l'auteur, gabarit `compact` (page 1 du PDF)" width="32%"></a>
 
 <em>Mon propre CV, écrit avec vigie-emploi et rendu avec chacun des trois gabarits (première page ; cliquez pour ouvrir le PDF complet). Source Markdown : <a href="docs/exemples/CV-damien-becherini.md">docs/exemples/CV-damien-becherini.md</a>.</em>
 </div>
@@ -72,26 +72,24 @@ Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois ga
 
 1. Téléchargez le fichier `vigie-emploi-<version>.mcpb` (page [Releases](https://github.com/DamienBecherini/vigie-emploi/releases) du dépôt).
 2. Double-cliquez dessus (ou glissez-le dans la fenêtre de Claude Desktop, ou **Paramètres → Extensions → Paramètres avancés → Installer une extension…**), puis cliquez sur **Installer**.
-3. Choisissez le **dossier de l'espace** (par défaut `ma-recherche` dans votre dossier personnel ; il n'a pas besoin d'exister) et la **langue** (`fr` ou `en`).
+3. Choisissez le **dossier de l'espace** (par défaut `vigie-emploi` dans votre dossier personnel ; il n'a pas besoin d'exister) et la **langue** (`fr` ou `en`).
 4. Dans une nouvelle conversation, demandez « crée mon espace vigie-emploi », ou bouton **+** → vigie-emploi → prompt **`onboarding`**. Claude crée l'espace, vous demande de déposer votre CV dans `a-deposer/`, puis mène le démarrage.
 
 Pas de terminal ni de Node à installer : l'extension contient l'application et utilise le Node intégré à Claude Desktop. Pour parcourir vos offres dans le tableau de bord, demandez à Claude de l'ouvrir (outil `open_dashboard`). Détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
 ### Avec Claude Code ou un autre agent
 
-```sh
-npx vigie-emploi init ~/ma-recherche
+Ouvrez Claude Code (ou votre agent) dans n'importe quel dossier et collez ce prompt, sans rien modifier :
+
+```text
+Installe vigie-emploi pour ma recherche d'emploi (https://github.com/DamienBecherini/vigie-emploi) : lance « npx -y vigie-emploi@latest init », qui crée le dossier vigie-emploi dans mon dossier personnel, puis lis AGENTS.md et DEMARRAGE.md dans ce dossier et mène le démarrage avec moi. S'il manque Node.js 24, explique-moi comment l'installer.
 ```
 
-Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
+L'agent crée votre espace de travail dans `~/vigie-emploi` (votre dossier personnel, sur Windows, macOS et Linux), puis commence le démarrage : il vous demande de déposer votre CV dans `~/vigie-emploi/a-deposer/` et vous pose ses questions. Pour un autre dossier, ajoutez son chemin à la fin de la commande dans le prompt (`… init D:/recherche`). Le démarrage se fait en deux sessions d'environ une demi-heure chacune ; pour la seconde et les suivantes, ouvrez Claude Code dans le dossier de l'espace (`cd ~/vigie-emploi` puis `claude`) et acceptez le serveur MCP « vigie-emploi ».
 
-`init` crée votre espace de travail (`--template modern` ou `compact` pour changer de gabarit de CV, `--language en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes et de statuts sont les mêmes dans toutes les langues, ceux des fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
+À la main, sans prompt : `npx vigie-emploi init` (ou `npx vigie-emploi init <dossier>`) crée l'espace et affiche le prompt de démarrage ; ouvrez ensuite votre IA dans ce dossier et collez-le. L'espace retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
-1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
-2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
-3. collez le prompt affiché par `init`.
-
-Le démarrage se fait en deux sessions d'environ une demi-heure chacune.
+Options de `init` : `--template modern` ou `compact` pour changer de gabarit de CV ; `--language en` pour tout en anglais (consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes et de statuts sont les mêmes dans toutes les langues, ceux des fichiers de l'espace restent en français).
 
 ## Automatiser la réception des alertes
 
@@ -138,7 +136,7 @@ Prérequis : Node.js 24 ou plus (SQLite est intégré à Node via `node:sqlite`,
 Depuis npm (le paquet contient le code compilé en JavaScript et l'interface compilée) :
 
 ```sh
-npx vigie-emploi init ~/ma-recherche    # sans installation
+npx vigie-emploi init                   # sans installation : crée ~/vigie-emploi
 npm install -g vigie-emploi             # ou commande installée à demeure
 ```
 
@@ -162,18 +160,18 @@ Sans `npm link`, remplacez `vigie-emploi` par `node <chemin>/bin/vigie-emploi.js
 ### Créer son espace de travail
 
 ```sh
-vigie-emploi init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--language fr|en]
+vigie-emploi init [dossier] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
 ```
 
-Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`scaffold/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`templates/cv/plain/`) et la grille d'exemple, puis écrit `vigie-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
+Sans dossier, `init` crée `~/vigie-emploi` (dossier personnel ; `~` est compris aussi sous PowerShell). Le dossier doit être neuf ou vide. `init` y copie le modèle d'espace (`scaffold/` : consignes de l'IA, contexte à remplir, démarrage guidé, dossier `a-deposer/`, modèle de dossier de candidature), le gabarit de CV (`templates/cv/plain/`) et la grille d'exemple, puis écrit `vigie-emploi.config.json` et `.mcp.json` (serveur MCP lancé avec ce dossier de données). Il vérifie qu'un Chrome, Edge ou Chromium est disponible pour les PDF, et affiche le prompt de démarrage à donner à l'IA.
 
 Pour essayer sans toucher à une installation existante : un autre dossier, un autre port et un autre nom de serveur MCP (`--port 4411 --mcp-name vigie-emploi-test`).
 
 ### Avec Claude Desktop ou un autre client MCP
 
-Le serveur MCP (`vigie-emploi mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialize_workspace`, sans passer par `init`), fournit les consignes en prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`open_dashboard`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `VIGIE_EMPLOI_DATA` (par défaut `~/ma-recherche`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+Le serveur MCP (`vigie-emploi mcp`) suffit à une IA qui n'a ni accès à vos fichiers ni terminal, comme Claude Desktop : il crée l'espace de travail (`initialize_workspace`, sans passer par `init`), fournit les consignes en prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), lit vos documents déposés (texte, PDF, Word, images), écrit le contexte, les dossiers et les CV dans l'espace, et génère les PDF en montrant le rendu à l'IA ; il démarre aussi le tableau de bord (`open_dashboard`). Avec Claude Desktop, le plus simple est l'extension `.mcpb` ([Installation en un clic](#installation-en-un-clic-claude-desktop)) ; on peut aussi déclarer le serveur à la main dans `claude_desktop_config.json`, avec le dossier de votre espace dans `VIGIE_EMPLOI_DATA` (par défaut `~/vigie-emploi`). Configuration et détails : [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
 
-Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/vigie-emploi/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/vigie-emploi-<version>.mcpb` (environ 5 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
+Construire l'extension (pour une release GitHub) : `npm run mcpb` compile l'application, prépare `build/mcpb/vigie-emploi/` (JavaScript compilé, interface, modèles, gabarits, `node_modules` de production seulement), valide `mcpb/manifest.json` et emballe le tout dans `build/vigie-emploi-<version>.mcpb` (environ 7 Mo) avec l'outil officiel `@anthropic-ai/mcpb`. Joindre ce fichier à la release.
 
 ### CV en PDF
 
@@ -211,9 +209,10 @@ Pour le désigner, au choix (du plus prioritaire au moins prioritaire) :
 | `excludedTitles` | Expressions régulières (sans casse) : intitulés écartés sans lecture | `[]` |
 | `rejectedEmployers` | Expressions régulières : employeurs refusés (intitulé, entreprise, début de la description) | `[]` |
 | `terminal` | Commande qui ouvre un terminal avec l'agent (boutons du tableau de bord) ; `{folder}` et `{prompt}` y sont remplacés | Windows : `["wt.exe", "-d", "{folder}", "claude", "{prompt}"]` ; ailleurs : aucune |
+| `mail` | Boîte mail relevée en IMAP : `user`, `host`, `port`, `secure`, `folder`, `sinceDays`, `markSeen` (écrite par le panneau « Boîte mail » ou `vigie-emploi mail setup` ; le mot de passe n'y est jamais) | aucune |
 | `language` | Langue du tableau de bord, des messages de la CLI, des textes du serveur MCP montrés à l'utilisateur (ce que seule l'IA lit est en anglais) et du suivi généré : `fr` ou `en` (écrite par `init --language`, qui choisit aussi la langue des consignes de l'IA) ; le sélecteur de l'en-tête du tableau de bord l'emporte, pour ce navigateur. Une autre langue s'ajoute sans toucher à la logique : [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) | `fr` |
 
-Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_DATABASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`.
+Variables d'environnement reconnues aussi : `VIGIE_EMPLOI_CONFIG` (fichier de config), `VIGIE_EMPLOI_DATABASE` (base), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`, `VIGIE_EMPLOI_MAIL_PASSWORD` (mot de passe de la boîte mail, à la place du trousseau), `VIGIE_EMPLOI_BROWSER` (navigateur des PDF).
 
 ### Commandes
 
@@ -221,7 +220,7 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 
 | Commande | Effet |
 |---|---|
-| `vigie-emploi mail [setup|status|fetch|forget]` | Boîte mail relevée en IMAP (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)) : `setup` demande adresse, mot de passe et dossier (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`) ; `fetch` relève sans ingérer ; `forget` efface réglages et mot de passe |
+| `vigie-emploi mail [setup\|status\|fetch\|forget]` | Boîte mail relevée en IMAP (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)) : `setup` demande adresse, mot de passe et dossier (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`) ; `fetch` relève sans ingérer ; `forget` efface réglages et mot de passe |
 | `vigie-emploi ingest [--keep] [--no-fetch] [--no-mail] [--emails <dossier>]` | Relève d'abord la boîte mail si elle est configurée (sauf `--no-mail`), puis lit les `.eml`, ajoute les nouvelles offres (`new`, ou `dismissed` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
 | `vigie-emploi import-history` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par vigie-emploi n'est pas relu |
 | `vigie-emploi list [filtres]` | Liste paginée : `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (réception), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order` ; tri sur plusieurs niveaux : `--sort received_at:desc,score:desc` |
@@ -298,7 +297,8 @@ Sans terminal (Claude Desktop) : demandez à l'IA d'ouvrir le tableau de bord. L
 - Filtres : note, dates de réception et de publication, source, statut, contrat, télétravail, tags, recherche plein texte (accents ignorés). Les filtres sont dans l'URL : on peut la garder en favori.
 - Vues rapides : à traiter, notées ≥ seuil de la grille (4,5 par défaut), mes candidatures.
 - **Réglages de la note** (bouton de l'en-tête) : curseurs des poids (total normalisé affiché), seuil, barèmes télétravail et rémunération, règles bloquantes (activer, effet, plafond, ajout, suppression), inventaire (ajout, modification, suppression, filtre), exemples de référence recalculés en direct ; **aperçu avant d'enregistrer** (offres dont la note change, offres qui franchissent le seuil, cliquables) ; résumé du changement obligatoire ; historique des versions et restauration.
-- **Travail pour l'agent**, au-dessus des filtres, seulement s'il y en a : « Traiter N e-mails » (des `.eml` attendent dans la boîte de réception) et « Préparer N candidatures » (offres en `go` sans dossier). Chaque bouton ouvre un terminal dans le dossier de données avec l'agent et la commande `/traiter-emails` ou `/preparer-go` (à fournir par le dossier de données, par exemple sous forme de skills Claude Code) ; la suite se passe dans ce terminal. Voir [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
+- **Boîte mail** (bouton de l'en-tête) : connexion à la boîte relevée en IMAP (messagerie reconnue d'après l'adresse, aide au mot de passe d'application, choix du dossier), relève immédiate, oubli de la boîte.
+- **Travail pour l'agent**, au-dessus des filtres : « Relever la boîte mail » (si une boîte est connectée et que rien n'attend), « Traiter N e-mails » (des `.eml` attendent dans la boîte de réception) et « Préparer N candidatures » (offres en `go` sans dossier). Chaque bouton ouvre un terminal dans le dossier de données avec l'agent et la commande `/traiter-emails` ou `/preparer-go` (à fournir par le dossier de données, par exemple sous forme de skills Claude Code) ; la suite se passe dans ce terminal. Voir [ADR 0005](docs/adr/0005-boutons-agent-et-notifications.md).
 - **Mise à jour en direct** : le serveur prévient la page (Server-Sent Events, `/api/stream`) quand la base change, quelle que soit l'origine de l'écriture (CLI, agent, autre onglet), et quand la boîte de réception change ; la page recharge alors ses données. Le bouton « Rafraîchir » reste disponible.
 - Bandeau **À venir** au-dessus du tableau : échéances en retard et des 7 prochains jours, chacune ouvre son offre ; bouton **Statistiques** (candidatures par étape, délai de réponse).
 - Panneau de détail : description, lien vers l'offre (modifiable), **décomposition de la note** (critère par critère : sous-note, poids, apport, justification, origine ; règles appliquées ; drapeaux ; valeur exacte et version de la grille), badge « ancienne grille » pour une note globale, **correction des sous-notes** (critères IA, jours sur site, salaire, règles ; la note est recalculée et s'ajoute à l'historique), note globale à l'ancienne, **candidature** (prochaine action, date d'envoi, canal), **journal** (échéances en tête, retards en rouge ; ajouter, modifier, supprimer un événement, marquer une échéance faite ; lier un fichier du dossier choisi dans une liste), **fichiers du dossier** (liens qui les ouvrent), historique des statuts, tags éditables, changement de statut, bouton **Candidater** (copie `apply <id>` dans le presse-papiers et passe l'offre en `go`).
@@ -349,6 +349,7 @@ src/core/             configuration, liens, normalisation, opérations sur les o
                       grille de notation (rubric.ts : schéma et calcul purs ; rubric-storage.ts : fichier, versions, renotation)
 src/db/               ouverture de la base et migrations
 src/ingest/           lecture des .eml, JSON-LD, ingestion
+src/mail/             relève IMAP, mot de passe dans le trousseau du système, messageries connues
 src/import/           reprise d'un historique Markdown / JSON (dont les journaux des dossiers)
 src/cli/              commandes
 src/api/              serveur HTTP (Hono) : API JSON, lecture des fichiers du dossier, interface compilée
@@ -369,4 +370,4 @@ Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-
 
 ## Licence
 
-Code sous licence MIT (voir `LICENSE`). Polices des gabarits de CV sous licence SIL Open Font License : Amiri (gabarit `plain`) et Source Sans 3 (gabarits `modern` et `compact` ») ; texte de la licence dans le dossier `fonts/` de chaque gabarit.
+Code sous licence MIT (voir `LICENSE`). Polices des gabarits de CV sous licence SIL Open Font License : Amiri (gabarit `plain`) et Source Sans 3 (gabarits `modern` et `compact`) ; texte de la licence dans le dossier `fonts/` de chaque gabarit.

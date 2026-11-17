@@ -26,8 +26,26 @@ export interface Config {
   terminal: string[] | null;
   /** Language of the interface, of the CLI and of the generated tracker ("fr" by default, or "en"). */
   language: Language;
-  /** Fichier de configuration lu, s'il y en a un. */
+  /** Mailbox read over IMAP before each ingestion (null: e-mails dropped in emails/ by hand or by a mail client). */
+  mail: MailConfig | null;
+  /** Configuration file read, if there is one. */
   file: string | null;
+}
+
+/** IMAP mailbox; the password is not here (system keychain, see mail/secret.ts). */
+export interface MailConfig {
+  /** Login, usually the e-mail address. */
+  user: string;
+  host: string;
+  port: number;
+  /** TLS from the start (port 993); false: STARTTLS when the server offers it. */
+  secure: boolean;
+  /** Folder (or Gmail label) where a filter of the mailbox files the job alerts. */
+  folder: string;
+  /** First fetch: messages of the last N days only. */
+  sinceDays: number;
+  /** Mark the fetched messages as read in the mailbox. */
+  markSeen: boolean;
 }
 
 interface ConfigFile {
@@ -40,6 +58,7 @@ interface ConfigFile {
   rejectedEmployers?: string[];
   terminal?: string[];
   language?: string;
+  mail?: Partial<MailConfig>;
 }
 
 export const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -88,6 +107,25 @@ function configOfFolder(folder: string): string[] {
 function readJson(path: string): ConfigFile {
   const text = readFileSync(path, 'utf8').replace(/^﻿/, '');
   return JSON.parse(text) as ConfigFile;
+}
+
+/** Mailbox settings of the file; null when the address, server or folder is missing. */
+export function mailOf(raw: Partial<MailConfig> | undefined): MailConfig | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const user = typeof raw.user === 'string' ? raw.user.trim() : '';
+  const host = typeof raw.host === 'string' ? raw.host.trim() : '';
+  const folder = typeof raw.folder === 'string' ? raw.folder.trim() : '';
+  if (!user || !host || !folder) return null;
+  const secure = raw.secure !== false;
+  return {
+    user,
+    host,
+    port: Number.isInteger(raw.port) && raw.port! > 0 ? raw.port! : secure ? 993 : 143,
+    secure,
+    folder,
+    sinceDays: Number.isInteger(raw.sinceDays) && raw.sinceDays! > 0 ? raw.sinceDays! : 14,
+    markSeen: raw.markSeen !== false,
+  };
 }
 
 function compiler(patterns: string[] | undefined): RegExp[] {
@@ -197,6 +235,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
     rejectedEmployers: compiler(raw.rejectedEmployers),
     terminal: Array.isArray(raw.terminal) && raw.terminal.length ? raw.terminal.map(String) : null,
     language: languageOf(env, raw, file),
+    mail: mailOf(raw.mail),
     file,
   };
 }

@@ -21,6 +21,7 @@ import { Detail } from './components/Detail.tsx';
 import { Upcoming } from './components/Upcoming.tsx';
 import { ActionsAgent, useNotifications } from './components/ActionsAgent.tsx';
 import { Settings } from './components/Settings.tsx';
+import { Mailbox } from './components/Mailbox.tsx';
 import { ChoiceTheme, type Mode } from './components/Theme.tsx';
 import {
   applyPalette,
@@ -51,6 +52,7 @@ import {
   X,
   ZoomIn,
   ZoomOut,
+  Mail,
 } from 'lucide-react';
 
 const SIZES = [25, 50, 100, 200, 500];
@@ -296,6 +298,7 @@ export function App() {
   }, [narrow, drawerFilters]);
   const [ad, setAd] = useState('');
   const [settings, setSettings] = useState(false);
+  const [mailbox, setMailbox] = useState(false);
   const rubric = useQuery({ queryKey: ['rubric'], queryFn: api.rubric });
   useNotifications();
   const threshold = String(rubric.data?.rubric?.threshold ?? 4.5);
@@ -541,6 +544,9 @@ export function App() {
               </button>
             ))}
           </nav>
+          <button type="button" className="button" onClick={() => setMailbox(true)} aria-haspopup="dialog">
+            <Mail className="size-4" aria-hidden="true" /> {t('header.mail')}
+          </button>
           <button type="button" className="button" onClick={() => setSettings(true)} aria-haspopup="dialog">
             <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('header.settings')}
           </button>
@@ -698,6 +704,7 @@ export function App() {
       </div>
 
       {offerChosen !== null && <Detail id={offerChosen} close={close} announce={announce} />}
+      {mailbox && <Mailbox close={() => setMailbox(false)} announce={announce} />}
       {settings && (
         <Settings
           close={() => setSettings(false)}

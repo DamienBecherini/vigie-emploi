@@ -1,7 +1,7 @@
 // "Pending work for the agent" buttons (above the filters) and listening to the server's notifications.
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FilePenLine, Mail } from 'lucide-react';
+import { FilePenLine, Inbox, Mail } from 'lucide-react';
 import { api, type ActionAgent } from '../api.ts';
 import { t, type KeyUi } from '../i18n/index.ts';
 
@@ -51,9 +51,22 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
     onError: () => setMessage(''),
   });
 
+  const client = useQueryClient();
+  const mail = useQuery({ queryKey: ['mail'], queryFn: api.mail });
+  const box = mail.data?.state.configured && mail.data.state.password ? mail.data.state : null;
+  const fetchMail = useMutation({
+    mutationFn: api.fetchMail,
+    onSuccess: (r) => {
+      setMessage(r.ok ? (r.fetched ? t('mail.fetched', { n: r.fetched }) : t('mail.fetchedNone', { folder: r.folder })) : r.error);
+      client.invalidateQueries({ queryKey: ['work'] });
+      client.invalidateQueries({ queryKey: ['mail'] });
+    },
+    onError: (e) => setMessage((e as Error).message),
+  });
+
   const emails = work.data?.emails ?? 0;
   const go = work.data?.go_to_prepare ?? [];
-  if (!emails && !go.length && !message && !launch.isError) return null;
+  if (!emails && !go.length && !box && !message && !launch.isError) return null;
 
   return (
     <section aria-label={t('agent.section')} className={`flex flex-col gap-2 ${className}`}>
@@ -66,6 +79,17 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
           title={t('agent.emailsTitle')}
         >
           <Mail className="size-4" aria-hidden="true" /> {t('agent.emails', { n: emails })}
+        </button>
+      )}
+      {box && emails === 0 && (
+        <button
+          type="button"
+          className="button justify-center"
+          disabled={fetchMail.isPending}
+          onClick={() => fetchMail.mutate()}
+          title={t('agent.fetchMailTitle', { folder: box.folder })}
+        >
+          <Inbox className="size-4" aria-hidden="true" /> {t('agent.fetchMail')}
         </button>
       )}
       {go.length > 0 && (

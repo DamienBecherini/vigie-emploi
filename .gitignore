@@ -7,8 +7,6 @@ coverage/
 *.sqlite-shm
 # Configuration locale (chemin du dossier de données, listes d'exclusion personnelles)
 vigie-emploi.config.json
-postuler-juste.config.json
-cap-emploi.config.json
 .env
 # Extension Claude Desktop construite par npm run mcpb
 build/

@@ -102,6 +102,8 @@ L'IA traite les alertes d'offres qui arrivent dans l'application. Le plus simple
 3. Connectez la boîte : bouton **« Boîte mail »** du tableau de bord, ou `vigie-emploi mail setup` dans un terminal. Adresse, mot de passe, choix du dossier.
 4. Demandez ensuite à votre IA de « traiter les e-mails » : elle relève le dossier, puis trie et note les nouvelles offres.
 
+![Panneau « Boîte mail » du tableau de bord : adresse Gmail reconnue, encart du mot de passe d'application](docs/captures/boite-mail.png)
+
 L'application ne fait que lire : rien n'est supprimé ni déplacé dans la boîte, les messages relevés sont seulement marqués comme lus (`markSeen: false` pour l'éviter). Chaque message n'est relevé qu'une fois ; la première relève se limite aux 14 derniers jours.
 
 | Messagerie | Mot de passe à saisir |
@@ -156,8 +158,6 @@ npm link           # rend la commande `vigie-emploi` disponible partout (faculta
 ```
 
 Sans `npm link`, remplacez `vigie-emploi` par `node <chemin>/bin/vigie-emploi.js`. Dans le dépôt, `bin/vigie-emploi.js` exécute directement le TypeScript de `src/` ; sans `src/` (paquet npm), il charge le JavaScript compilé de `dist/`, car Node refuse d'exécuter du TypeScript situé sous `node_modules`. `npm pack` et `npm publish` recompilent tout (`prepack`).
-
-Noms de travail d'avant la publication (`postuler-juste`, `cap-emploi`) : leurs variables `POSTULER_JUSTE_*` / `CAP_EMPLOI_*`, fichiers `*.config.json` et bases `data/*.sqlite` restent reconnus, après ceux de vigie-emploi.
 
 ### Créer son espace de travail
 
@@ -336,7 +336,7 @@ Captures du README et CV d'exemple (données fictives, en français et en anglai
 
 ```sh
 node scripts/demo/demo.ts ../demo-fr fr                  # espace de démonstration (14 offres, candidatures, échéances)
-node scripts/demo/captures.mjs ../demo-fr fr             # docs/captures/tableau-de-bord.png, detail-offre.png (après npm run build)
+node scripts/demo/captures.mjs ../demo-fr fr             # docs/captures/tableau-de-bord.png, detail-offre.png, boite-mail.png (après npm run build)
 bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf et docs/captures/cv-*.png (pypdfium2 requis)
 ```
 

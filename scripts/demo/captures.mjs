@@ -1,7 +1,7 @@
 // Captures du tableau de bord pour le README (Chrome ou Edge sans interface, protocole DevTools, sans dépendance).
 //   node scripts/demo/captures.mjs <espace-de-démo> fr|en [dossier-de-sortie=docs/captures]
 // L'espace vient de scripts/demo/demo.ts ; l'interface doit être compilée (npm run build).
-// Sortie : tableau-de-bord.png et detail-offre.png (fr), tableau-de-bord.en.png et detail-offre.en.png (en).
+// Sortie : tableau-de-bord.png, detail-offre.png et boite-mail.png (fr), mêmes noms en .en.png (en).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -69,6 +69,24 @@ const evaluer = async (expression) => (await cdp('Runtime.evaluate', { expressio
 const vues = [
   { fichier: `tableau-de-bord${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc', largeur: 1440, hauteur: 860 },
   { fichier: `detail-offre${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc&offer=4', largeur: 1440, hauteur: 1000 },
+  // Panneau « Boîte mail » ouvert, adresse Gmail saisie : messagerie reconnue et encart du mot de passe d'application.
+  {
+    fichier: `boite-mail${suffixe}.png`,
+    chemin: '/?sort=received_at:desc,score:desc',
+    largeur: 1440,
+    hauteur: 900,
+    action: `(async () => {
+      const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+      [...document.querySelectorAll('header button')].find((b) => /Boîte mail|Mailbox/.test(b.textContent)).click();
+      await pause(800);
+      const champ = document.querySelector('[role=dialog] input[type=email]');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(champ, '${langue === 'fr' ? 'votre.adresse' : 'your.name'}@gmail.com');
+      champ.dispatchEvent(new Event('input', { bubbles: true }));
+      await pause(500);
+      champ.blur();
+      return true;
+    })()`,
+  },
 ];
 try {
   await cdp('Page.enable');
@@ -81,6 +99,10 @@ try {
     await cdp('Emulation.setDeviceMetricsOverride', { width: v.largeur, height: v.hauteur, deviceScaleFactor: 1, mobile: false });
     await cdp('Page.navigate', { url: base + v.chemin });
     await attendre(3500);
+    if (v.action) {
+      await evaluer(v.action);
+      await attendre(800);
+    }
     const lang = await evaluer('document.documentElement.lang');
     const img = await cdp('Page.captureScreenshot', { format: 'png' });
     writeFileSync(join(sortie, v.fichier), Buffer.from(img.result.data, 'base64'));

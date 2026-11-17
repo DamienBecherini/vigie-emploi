@@ -123,40 +123,6 @@ describe('cv: Markdown -> HTML', () => {
   });
 });
 
-describe('former names (postuler-juste, cap-emploi) still recognized', () => {
-  it('reads postuler-juste.config.json, POSTULER_JUSTE_DATA and data/postuler-juste.sqlite', () => {
-    const old = join(root, 'old-pj');
-    mkdirSync(join(old, 'data'), { recursive: true });
-    writeFileSync(join(old, 'postuler-juste.config.json'), JSON.stringify({ dataDir: '.', port: 4501 }));
-    writeFileSync(join(old, 'data', 'postuler-juste.sqlite'), '');
-    const byConfig = loadConfig({ cwd: old, env: {} });
-    expect(byConfig.port).toBe(4501);
-    expect(byConfig.database).toBe(join(old, 'data', 'postuler-juste.sqlite'));
-    const byVariable = loadConfig({ cwd: root, env: { POSTULER_JUSTE_DATA: old } });
-    expect(byVariable.dataDir).toBe(old);
-  });
-
-  it('reads cap-emploi.config.json, CAP_EMPLOI_DATA and data/cap-emploi.sqlite', () => {
-    const old = join(root, 'old');
-    mkdirSync(join(old, 'data'), { recursive: true });
-    writeFileSync(join(old, 'cap-emploi.config.json'), JSON.stringify({ dataDir: '.', port: 4500 }));
-    writeFileSync(join(old, 'data', 'cap-emploi.sqlite'), '');
-    const byConfig = loadConfig({ cwd: old, env: {} });
-    expect(byConfig.port).toBe(4500);
-    expect(byConfig.database).toBe(join(old, 'data', 'cap-emploi.sqlite'));
-    const byVariable = loadConfig({ cwd: root, env: { CAP_EMPLOI_DATA: old } });
-    expect(byVariable.dataDir).toBe(old);
-  });
-
-  it('prefers the new database when it exists', () => {
-    const fresh = join(root, 'neuf');
-    mkdirSync(join(fresh, 'data'), { recursive: true });
-    writeFileSync(join(fresh, 'data', 'cap-emploi.sqlite'), '');
-    writeFileSync(join(fresh, 'data', 'vigie-emploi.sqlite'), '');
-    expect(loadConfig({ cwd: root, env: { VIGIE_EMPLOI_DATA: fresh } }).database).toBe(join(fresh, 'data', 'vigie-emploi.sqlite'));
-  });
-});
-
 describe('CV templates', () => {
   it('lists the shipped templates and installs one, keeping the old one and the photo', async () => {
     const { listTemplates, chooseTemplate } = await import('../src/cv/cv.ts');

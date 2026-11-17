@@ -9,15 +9,6 @@
     <script>
       // Theme, palette, zoom and chosen language applied before rendering (no flash).
       try {
-        // Settings saved under the application's former names (postuler-juste, cap-emploi), copied once without overwriting the new ones.
-        ['postuler-juste:', 'cap-emploi:'].forEach(function (old) {
-          for (var i = localStorage.length - 1; i >= 0; i--) {
-            var key = localStorage.key(i);
-            if (!key || key.indexOf(old) !== 0) continue;
-            var renamed = 'vigie-emploi:' + key.slice(old.length);
-            if (localStorage.getItem(renamed) === null) localStorage.setItem(renamed, localStorage.getItem(key));
-          }
-        });
         var t = localStorage.getItem('vigie-emploi:theme') || 'system';
         var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', dark);

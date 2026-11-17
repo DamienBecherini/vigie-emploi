@@ -705,7 +705,7 @@ export function openStateTolerant(options: OptionsConfig = {}): StateMcp {
     if (!(e instanceof ErrorConfig && e.code === 'language-unknown') || !variable(env, 'LANGUAGE')) throw e;
     process.stderr.write(`vigie-emploi: ${e.message}\n`);
     const withoutLanguage = { ...env };
-    for (const prefix of ['VIGIE_EMPLOI', 'POSTULER_JUSTE', 'CAP_EMPLOI']) delete withoutLanguage[`${prefix}_LANGUAGE`];
+    delete withoutLanguage.VIGIE_EMPLOI_LANGUAGE;
     return openState({ ...options, env: withoutLanguage });
   }
 }

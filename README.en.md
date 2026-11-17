@@ -104,6 +104,8 @@ The AI processes the job alerts that reach the application. The simplest way: **
 3. Connect the mailbox: **"Mailbox"** button of the dashboard, or `vigie-emploi mail setup` in a terminal. Address, password, choice of the folder.
 4. Then ask your AI to "process the e-mails": it fetches the folder, then sorts and scores the new offers.
 
+![Dashboard "Mailbox" panel: Gmail address recognised, app-password callout](docs/captures/boite-mail.en.png)
+
 The application only reads: nothing is deleted or moved in the mailbox, the fetched messages are only marked as read (`markSeen: false` to avoid it). Each message is fetched once; the first fetch is limited to the last 14 days.
 
 | Provider | Password to type |
@@ -158,8 +160,6 @@ npm link           # makes the `vigie-emploi` command available everywhere (opti
 ```
 
 Without `npm link`, replace `vigie-emploi` with `node <path>/bin/vigie-emploi.js`. In the repository, `bin/vigie-emploi.js` runs the TypeScript in `src/` directly; without `src/` (npm package), it loads the compiled JavaScript from `dist/`, because Node refuses to run TypeScript located under `node_modules`. `npm pack` and `npm publish` rebuild everything (`prepack`).
-
-Working names from before publication (`postuler-juste`, `cap-emploi`): their `POSTULER_JUSTE_*` / `CAP_EMPLOI_*` variables, `*.config.json` files and `data/*.sqlite` databases are still recognised, after the vigie-emploi ones.
 
 ### Creating your workspace
 
@@ -338,7 +338,7 @@ README screenshots and sample résumés (fictitious data, French and English):
 
 ```sh
 node scripts/demo/demo.ts ../demo-en en                  # demo workspace (14 offers, applications, deadlines)
-node scripts/demo/captures.mjs ../demo-en en             # docs/captures/tableau-de-bord.en.png, detail-offre.en.png (after npm run build)
+node scripts/demo/captures.mjs ../demo-en en             # docs/captures/tableau-de-bord.en.png, detail-offre.en.png, boite-mail.en.png (after npm run build)
 bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf and docs/captures/cv-*.png (needs pypdfium2)
 ```
 

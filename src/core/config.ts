@@ -63,13 +63,8 @@ interface ConfigFile {
 
 export const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const NAME_FILE_CONFIG = 'vigie-emploi.config.json';
-/** Former names of the application (postuler-juste, and cap-emploi before it): config files, databases and variables still recognized. */
-export const OLD_NAMES = ['postuler-juste', 'cap-emploi'] as const;
-export const OLD_FILES_CONFIG = OLD_NAMES.map((n) => `${n}.config.json`);
-const PREFIXES_VARIABLES = ['VIGIE_EMPLOI_', 'POSTULER_JUSTE_', 'CAP_EMPLOI_'];
-
 /**
- * Environment variable VIGIE_EMPLOI_<name>, or its former names POSTULER_JUSTE_<name> and CAP_EMPLOI_<name>.
+ * Environment variable VIGIE_EMPLOI_<name>.
  * An empty value, or one left as `${…}` (setting of a Claude Desktop extension left empty, not substituted),
  * counts as absent.
  */
@@ -78,11 +73,7 @@ export function variable(env: NodeJS.ProcessEnv, name: string): string | undefin
     const t = v?.trim();
     return t && !/^\$\{[^}]*\}$/.test(t) ? t : undefined;
   };
-  for (const prefix of PREFIXES_VARIABLES) {
-    const v = useful(env[`${prefix}${name}`]);
-    if (v) return v;
-  }
-  return undefined;
+  return useful(env[`VIGIE_EMPLOI_${name}`]);
 }
 
 /**
@@ -99,9 +90,9 @@ export function normalizeLanguage(v: string): string {
   return byName ?? ALIAS_LANGUAGE[b] ?? b;
 }
 
-/** This folder's config file, under its current name or the former ones. */
+/** This folder's config file. */
 function folderConfig(folder: string): string[] {
-  return [NAME_FILE_CONFIG, ...OLD_FILES_CONFIG].map((f) => join(folder, f));
+  return [join(folder, NAME_FILE_CONFIG)];
 }
 
 function readJson(path: string): ConfigFile {
@@ -193,8 +184,6 @@ export interface OptionsConfig {
  * 1. --data option, otherwise the VIGIE_EMPLOI_DATA variable, otherwise "dataDir" of the config file;
  * 2. config file: --config, VIGIE_EMPLOI_CONFIG, ./vigie-emploi.config.json, <data>/vigie-emploi.config.json,
  *    then the one at the application's root.
- * The former names (POSTULER_JUSTE_* and CAP_EMPLOI_*, postuler-juste.config.json and cap-emploi.config.json, their databases
- * data/postuler-juste.sqlite and data/cap-emploi.sqlite) are still recognized.
  */
 export function loadConfig(opts: OptionsConfig = {}): Config {
   const env = opts.env ?? process.env;
@@ -230,11 +219,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
     throw new ErrorConfig('not-configured', tl(messageLanguage(env, raw), 'core.config.notConfigure', { file: NAME_FILE_CONFIG }));
   }
   const relative = (p: string | undefined, fallback: string) => (p ? (isAbsolute(p) ? p : join(folder, p)) : fallback);
-  // Default database: data/vigie-emploi.sqlite, or the first existing former database (postuler-juste, cap-emploi)
-  // as long as the new one does not exist.
-  const databaseNew = join(folder, 'data', 'vigie-emploi.sqlite');
-  const databaseOld = OLD_NAMES.map((n) => join(folder, 'data', `${n}.sqlite`)).find((b) => existsSync(b));
-  const databaseDefault = !existsSync(databaseNew) && databaseOld ? databaseOld : databaseNew;
+  const databaseDefault = join(folder, 'data', 'vigie-emploi.sqlite');
   return {
     dataDir: folder,
     database: relative(variable(env, 'DATABASE') ?? raw.database, databaseDefault),

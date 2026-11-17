@@ -1,35 +1,34 @@
-# CV
+# CVs
 
-Les CV s'écrivent en Markdown, un fichier par CV, puis se convertissent en PDF A4 :
+CVs are written in Markdown, one file per CV, then converted into an A4 PDF:
 
 ```
-{{CMD}} cv "cv/<nom>.md"
+{{CMD}} cv "cv/<name>.md"
 ```
 
-Sans terminal (client MCP seul), l'outil `generate_cv` fait la même chose. Le PDF est écrit à côté du `.md` ; la commande affiche le nombre de pages et le remplissage de chacune, mesuré sur le PDF (`PAGES : 2 (remplissage : 96 %, 58 %)`), avec un avertissement si une page suivie d'une autre est remplie à moins de 80 % (saut de page mal placé) ou si la dernière l'est à moins de 50 %. **Cible : 2 pages bien remplies.** S'il y en a 3, couper du texte plutôt que réduire la police.
+Without a terminal (MCP-only client), the `generate_cv` tool does the same thing. The PDF is written next to the `.md`; the command shows the page count and how full each page is, measured on the PDF (`PAGES : 2 (fill: 96%, 58%)`), with a warning if a page followed by another is less than 80% full (badly placed page break) or if the last one is less than 50% full. **Target: 2 well-filled pages.** If there are 3, cut text rather than shrinking the font.
 
-- `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : le CV générique validé au démarrage.
-- `cv/<Prénom>_<NOM>_CV-cible-<Entreprise>-<Poste>.md` : un CV ciblé par offre, quand l'offre le justifie.
-- Ne jamais écraser un PDF déjà envoyé : nouvelle version avec le suffixe « V2 ».
-- [`_exemple-structure.md`](_exemple-structure.md) : un CV fictif qui montre la structure attendue.
+- `cv/<FirstName>_<LASTNAME>_CV-<JobTitle>.md`: the generic CV approved during onboarding.
+- `cv/<FirstName>_<LASTNAME>_CV-for-<Company>-<Role>.md`: a CV targeted at one job ad, when the ad warrants it.
+- Never overwrite a PDF that has already been sent: new version with the suffix "V2".
+- [`_exemple-structure.md`](_exemple-structure.md): a fictitious CV showing the expected structure.
 
-## Structure attendue
+## Expected structure
 
-1. `# Prénom NOM`
-2. Le titre visé en `**gras**` (reprendre les mots de l'offre), puis un sous-titre en `*(italique)*`.
-3. Les coordonnées, une à quatre lignes, éléments séparés par « · » : disponibilité, e-mail, téléphone, site ; puis la ville ; puis les profils (`[LinkedIn](…) · [GitHub](…)`). Le convertisseur les range seul en trois rangées : contacts, adresse, profils.
-4. `## Résumé`, puis les sections dans l'ordre voulu.
-5. `## Expérience Professionnelle` : un poste = `### dates · lieu`, puis une première ligne en **gras** (l'intitulé du poste), puis le texte ou une liste.
-6. Les sections dont le titre contient *compétences*, *formations*, *certifications* ou *langues* (ou *skills*, *education*, *languages*) passent en deux colonnes : y mettre des listes courtes.
-7. Saut de page manuel, si la coupure tombe mal : une ligne `<!-- saut-de-page -->` juste avant le titre `##` de la section à renvoyer en page 2. Vérifier ensuite qu'on reste à 2 pages.
+1. `# FirstName LASTNAME`
+2. The target job title in `**bold**` (use the ad's wording), then a subtitle in `*(italics)*`.
+3. Contact details, one to four lines, items separated by " · ": availability, e-mail, phone, website; then the city; then the profiles (`[LinkedIn](…) · [GitHub](…)`). The converter sorts them into three rows by itself: contacts, address, profiles.
+4. `## Summary`, then the sections in the order you want.
+5. `## Experience`: one job = `### dates · location`, then a first line in **bold** (the job title), then text or a list.
+6. Sections whose title contains *skills*, *competencies*, *education*, *certifications* or *languages* are laid out in two columns: keep their lists short. The section titles must be in English (Summary, Skills, Experience, Education & Certifications, Languages…): the converter recognises them and labels the PDF as English.
+7. Manual page break, if the split falls badly: a line `<!-- page-break -->` just before the `##` title of the section to push onto page 2. Then check it still fits on 2 pages.
 
-## Gabarit
+## Template
 
-Le gabarit est dans [`template/`](gabarit/) : `gabarit.css`, les polices, et une photo facultative (`portrait.jpg`, `.png` ou `.webp`). Pour changer l'apparence :
+The template is in [`gabarit/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
 
-- choisir un autre gabarit livré : `{{CMD}} templates` (outil `list_templates`) les liste (`plain`, sobre, à empattements ; `modern`, avec bandeau de couleur ; `compact` sur une colonne), `{{CMD}} template <nom>` (outil `choose_template`) l'installe ; l'ancien est gardé dans `cv/gabarit-<date>/` et la photo est reprise ;
+- pick another bundled template: `{{CMD}} templates` (tool `list_templates`) lists them ("plain", serif; "modern", with a coloured band; "compact", single column), `{{CMD}} template <name>` (tool `choose_template`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
+- ask the AI: "adapt `cv/gabarit/gabarit.css` to this design", giving it a screenshot or a PDF of the look you want; it edits the stylesheet, regenerates the CV and checks the 2 pages;
+- or edit `gabarit.css` yourself (accent colour, font, margins).
 
-- demander à l'IA : « adapte `cv/gabarit/gabarit.css` à ce modèle » en lui donnant une capture ou un PDF du rendu voulu ; elle modifie la feuille, régénère le CV et vérifie les 2 pages ;
-- ou modifier `gabarit.css` soi-même (couleur d'accent, police, marges).
-
-Contrôle visuel : `--capture` (outil : `capture: true`) produit une image PNG des vraies pages du PDF, l'une sous l'autre (dans `cv/gabarit/apercu/`).
+Visual check: `--capture` (tool: `capture: true`) produces a PNG image of the actual pages of the PDF, one below the other (in `cv/gabarit/apercu/`).

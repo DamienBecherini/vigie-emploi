@@ -84,7 +84,7 @@ describe('Claude Desktop extension (mcpb/manifest.json)', () => {
   it('passes the folder and the language chosen at install time', () => {
     expect(m.server.mcp_config.env).toEqual({ VIGIE_EMPLOI_DATA: '${user_config.folder}', VIGIE_EMPLOI_LANGUAGE: '${user_config.language}' });
     expect(m.user_config.folder).toMatchObject({ type: 'directory', default: '${HOME}/vigie-emploi' });
-    expect(m.user_config.language).toMatchObject({ type: 'string', default: 'fr' });
+    expect(m.user_config.language).toMatchObject({ type: 'string', default: '' });
   });
 
   it('requires the same Node as package.json (node:sqlite)', () => {

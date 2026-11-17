@@ -1,17 +1,20 @@
-// Adding a language (docs/ajouter-une-langue.md): each language declared in LANGUAGES must have all its
+// Adding a language (docs/adding-a-language.md): each language declared in LANGUAGES must have all its
 // resources. The keys of the dictionaries (CLI, interface, MCP server) are checked by the compiler; this test covers the
 // files (workspace template, instructions, sample rubric, README) and the texts left empty or still in French.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LANGUAGE_DEFAULT, LANGUAGES, LOCALES, NAMES_LANGUAGES, translate } from '../src/i18n/tool.ts';
+import { LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, LOCALES, NAMES_LANGUAGES, translate } from '../src/i18n/tool.ts';
 import { DICTIONARIES } from '../src/i18n/index.ts';
 import { DICTIONARIES_UI } from '../ui/src/i18n/index.ts';
 import { DICTIONARIES_MCP_USER } from '../src/mcp/texts.ts';
 import { normalizeLanguage } from '../src/core/config.ts';
 import { APP_ROOT } from '../src/core/config.ts';
 
+/** Languages whose dictionaries are compared with the French ones (the reference of the texts). */
 const OTHERS = LANGUAGES.filter((l) => l !== LANGUAGE_DEFAULT);
+/** Languages that need their own files: every one but English, whose files carry no suffix. */
+const TRANSLATED = LANGUAGES.filter((l) => l !== LANGUAGE_REFERENCE);
 
 function files(folder: string): string[] {
   const output: string[] = [];
@@ -36,14 +39,16 @@ describe('declared languages', () => {
     }
   });
 
-  it.each(OTHERS)('%s: complete workspace template (same files as scaffold/)', (l) => {
+  it.each(TRANSLATED)('%s: complete workspace template (same files as scaffold/)', (l) => {
     const translated = join(APP_ROOT, `scaffold-${l}`);
     expect(existsSync(translated), `scaffold-${l}/ missing`).toBe(true);
     expect(files(translated)).toEqual(files(join(APP_ROOT, 'scaffold')));
   });
 
-  it.each(OTHERS)('%s: instructions, sample rubric and README translated', (l) => {
-    for (const f of [`AGENTS.${l}.md`, `examples/rubric.${l}.json`, `README.${l}.md`]) {
+  it.each(TRANSLATED)('%s: instructions, sample rubric, README and guides translated', (l) => {
+    const guides = readdirSync(join(APP_ROOT, 'docs')).filter((n) => /^[a-z-]+\.md$/.test(n));
+    expect(guides.length).toBeGreaterThan(0);
+    for (const f of [`AGENTS.${l}.md`, `examples/rubric.${l}.json`, `README.${l}.md`, ...guides.map((g) => `docs/${g.replace(/\.md$/, `.${l}.md`)}`)]) {
       expect(existsSync(join(APP_ROOT, f)), `${f} missing`).toBe(true);
     }
   });

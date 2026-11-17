@@ -156,7 +156,7 @@ describe('MCP server (stdio)', () => {
 
   it('rubric: read, criteria-based scoring, change (dry run then save), rescore, history', async () => {
     expect((await call('rubric')).error).toMatch(/Pas de grille/);
-    cpSync(join(ROOT, 'examples', 'rubric.json'), join(folder, 'profil', 'grille.json'));
+    cpSync(join(ROOT, 'examples', 'rubric.fr.json'), join(folder, 'profil', 'grille.json'));
     const g = (await call('rubric')) as unknown as { version: number; instructions_ai: string[]; computed_examples: { score: number }[] };
     expect(g.version).toBe(1);
     expect(g.instructions_ai.join(' ')).toMatch(/Ne donne pas la note finale/);

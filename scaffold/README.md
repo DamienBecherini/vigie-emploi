@@ -1,40 +1,42 @@
-# Ma recherche d'emploi
+# My job search
 
-Espace de travail créé par **vigie-emploi** : une IA (Claude Code, Cursor, Codex…) t'y aide à trier les offres, à préparer des candidatures honnêtes et à suivre tes échanges.
+Workspace created by **vigie-emploi**: an AI (Claude Code, Cursor, Codex…) helps you here to sort job ads, prepare honest applications and keep track of your exchanges.
 
-## Pour commencer
+## Getting started
 
-1. Glisse ton CV et l'export PDF de ton profil LinkedIn dans [`a-deposer/`](a-deposer/).
-2. Ouvre ton IA dans ce dossier et colle-lui le prompt de démarrage affiché à l'installation, ou simplement : « Lis AGENTS.md et DEMARRAGE.md, puis lance le démarrage. »
-3. Réponds à ses questions : elle remplit ton contexte, ta grille de notation des offres et un premier CV, que tu valides.
+1. Drop your CV and the PDF export of your LinkedIn profile into [`a-deposer/`](a-deposer/) (the drop folder).
+2. Open your AI in this folder and paste the starting prompt printed when the workspace was created, or simply: "Read AGENTS.md and DEMARRAGE.md, then start the onboarding."
+3. Answer its questions: it fills in your context, your job-ad scoring grid and a first CV, which you approve.
 
-## Ce qu'il y a ici
+## What is in here
 
-| Chemin | Rôle |
+The file and folder names stay in French: the application expects them.
+
+| Path | Purpose |
 |---|---|
-| `_CONTEXTE.md` | Ce que l'IA sait de toi : positionnement, faits, ce que tu peux revendiquer ou non. Point d'entrée de l'IA. |
-| `_A-FAIRE.md`, `_JOURNAL-DECISIONS.md` | Tâches en attente, historique des décisions. |
-| `AGENTS.md` (et `CLAUDE.md`) | Consignes de travail de l'IA. |
-| `a-deposer/` | Tes documents de départ (CV, export LinkedIn…). |
-| `profil/grille.json` | Ta grille de notation des offres (critères, poids, plancher de rémunération…). |
-| `cv/` | Tes CV en Markdown et leurs PDF ; `cv/gabarit/` = la mise en page. |
-| `candidatures/` | Un dossier par offre (annonce, fit, messages, suivi) et `_SUIVI.md`, généré. |
-| `emails/` | Les e-mails d'alertes d'offres (`.eml`) à trier : relevés dans ta boîte mail si tu l'as connectée, ou déposés à la main. |
-| `profils-publics/` | L'état de tes profils publics (LinkedIn, Malt…). |
-| `messages/` | Trames de messages : candidature, mission freelance, recruteur, relance, remerciement. |
-| `procedures/` | Les procédures que suit l'IA (tri des e-mails, préparation des candidatures, CV ciblé). |
-| `data/` | La base des offres et candidatures. |
+| `_CONTEXTE.md` | What the AI knows about you: positioning, facts, what you can and cannot claim. The AI's entry point. |
+| `_A-FAIRE.md`, `_JOURNAL-DECISIONS.md` | Pending tasks, decision log. |
+| `AGENTS.md` (and `CLAUDE.md`) | The AI's working instructions; `DEMARRAGE.md`: the onboarding. |
+| `a-deposer/` | Your starting documents (CV, LinkedIn export…). |
+| `profil/grille.json` | Your job-ad scoring grid (criteria, weights, pay floor…). |
+| `cv/` | Your CVs in Markdown and their PDFs; `cv/gabarit/` = the layout. |
+| `candidatures/` | One folder per job ad (ad, fit, messages, follow-up) and `_SUIVI.md`, the generated tracker. |
+| `emails/` | Job alert e-mails (`.eml`) to sort: fetched from your mailbox if you connected it, or dropped by hand. |
+| `profils-publics/` | The state of your public profiles (LinkedIn, Malt…). |
+| `messages/` | Message outlines: application, freelance bid, recruiter, follow-up, thank-you. |
+| `procedures/` | The procedures the AI follows (sorting e-mails, preparing applications, targeted CV). |
+| `data/` | The database of job ads and applications. |
 
-## Commandes utiles
+## Useful commands
 
-La commande de l'application (à lancer depuis ce dossier) :
+The application's command (run it from this folder):
 
 ```
-{{CMD}} serve      tableau de bord dans le navigateur
-{{CMD}} cv "cv/<nom>.md"
-                   CV en PDF (affiche le nombre de pages)
-{{CMD}} mail setup connecte ta boîte mail (dossier des alertes ; aussi par le bouton « Boîte mail » du tableau de bord)
-{{CMD}} ingest     relève la boîte mail, puis lit les e-mails d'alertes de emails/
+{{CMD}} serve      dashboard in the browser
+{{CMD}} cv "cv/<name>.md"
+                   CV as a PDF (shows the page count)
+{{CMD}} mail setup connects your mailbox (folder of the alerts; also with the "Mailbox" button of the dashboard)
+{{CMD}} ingest     fetches the mailbox, then reads the job alert e-mails in emails/
 ```
 
-Conseil : versionne ce dossier avec git (`git init`), pour retrouver une ancienne version d'un CV ou d'un message.
+Tip: put this folder under version control with git (`git init`), so you can get back an earlier version of a CV or a message.

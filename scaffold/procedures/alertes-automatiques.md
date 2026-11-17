@@ -1,40 +1,40 @@
-# Automatiser l'arrivée des alertes
+# Automating the arrival of alerts
 
-But : que chaque alerte d'offre reçue (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work, Welcome to the Jungle…) arrive toute seule dans l'application. L'utilisateur n'a plus qu'à demander de « traiter les e-mails ».
+Goal: every job alert received (LinkedIn, Indeed, Glassdoor, Reed, Otta, Welcome to the Jungle…) reaches the application by itself. The user then only has to ask you to "process the e-mails".
 
-Méthode recommandée : **l'application relève elle-même un dossier de sa boîte mail** (IMAP), sur Windows, macOS ou Linux, sans logiciel de messagerie. Elle ne fait que lire : rien n'est supprimé ni déplacé dans la boîte, les messages relevés sont seulement marqués comme lus. La relève a lieu à chaque ingestion (`ingest_emails`, `vigie-emploi ingest`) et depuis le tableau de bord.
+Recommended method: **the application fetches a folder of their mailbox itself** (IMAP), on Windows, macOS or Linux, without a mail client. It only reads: nothing is deleted or moved in the mailbox, the fetched messages are only marked as read. The fetch happens at each ingestion (`ingest_emails`, `vigie-emploi ingest`) and from the dashboard.
 
-Demande d'abord quelle messagerie il utilise (son adresse suffit : Gmail, Orange, Free, SFR, Yahoo, Outlook.com…), puis guide-le pas à pas, une étape à la fois, en vérifiant avec lui que chaque étape a marché.
+First ask which mail provider they use (their address is enough: Gmail, Yahoo, iCloud, Outlook.com…), then guide them step by step, one step at a time, checking with them that each step worked.
 
-**Ne demande jamais son mot de passe dans la conversation** : il le tape lui-même dans le tableau de bord ou dans le terminal, et l'application le confie au trousseau du système (jamais dans l'espace de travail).
+**Never ask for their password in the conversation**: they type it themselves in the dashboard or in the terminal, and the application hands it to the system keychain (never in the workspace).
 
-## 1. Un dossier et un filtre dans sa messagerie
+## 1. A folder and a filter in their mailbox
 
-Dans sa messagerie web, il crée un dossier (un **libellé** dans Gmail), par exemple « Alertes emploi », et un **filtre** qui y range les alertes. Condition du filtre : **l'expéditeur** contient l'adresse d'envoi des alertes de chaque site (il la relève en ouvrant une alerte reçue).
+In their webmail, they create a folder (a **label** in Gmail), for example "Job alerts", and a **filter** that files the alerts in it. Filter condition: **the sender** contains the sending address of each site's alerts (they find it by opening an alert they received).
 
-- **Gmail** : ⚙ → Voir tous les paramètres → Filtres et adresses bloquées → Créer un filtre ; champ « De » : les adresses séparées par `OR` ; puis « Appliquer le libellé » (nouveau libellé « Alertes emploi ») et cocher « Appliquer également le filtre aux conversations correspondantes ». « Ignorer la boîte de réception » est facultatif.
-- **Orange, Free, SFR, La Poste, Yahoo** : paramètres de la messagerie → « Filtres » ou « Règles » ; action « Déplacer vers le dossier » « Alertes emploi ».
-- Les libellés exacts changent selon les versions : si l'utilisateur ne trouve pas un menu, demande-lui ce qu'il voit.
+- **Gmail**: ⚙ → See all settings → Filters and Blocked Addresses → Create a new filter; "From" field: the addresses separated by `OR`; then "Apply the label" (new label "Job alerts") and tick "Also apply filter to matching conversations". "Skip the Inbox" is optional.
+- **Yahoo, iCloud, other webmails**: mail settings → "Filters" or "Rules"; action "Move to folder" "Job alerts".
+- The exact labels change with versions: if the user cannot find a menu, ask them what they see.
 
-## 2. Le mot de passe à utiliser
+## 2. The password to use
 
-- **Gmail, Yahoo, iCloud** : un **mot de passe d'application** (16 caractères), pas celui du compte. Il faut d'abord la validation en deux étapes. Gmail : https://myaccount.google.com/apppasswords (nom libre, par exemple « vigie-emploi »).
-- **Orange, Free, SFR, La Poste, GMX** : le mot de passe habituel du compte.
-- **Outlook.com, Hotmail, Live, Microsoft 365** : pas encore géré (Microsoft impose sa propre connexion). En attendant : une règle Outlook qui **transfère** les alertes vers une autre boîte (Gmail…) relevée par l'application, ou le glisser-déposer (plus bas).
-- Autre messagerie : l'aide de son fournisseur donne le serveur IMAP (souvent `imap.<domaine>`, port 993).
+- **Gmail, Yahoo, iCloud**: an **app password** (16 characters), not the account password. Two-step verification must be on first. Gmail: https://myaccount.google.com/apppasswords (any name, for example "vigie-emploi").
+- **Most other providers**: the usual account password.
+- **Outlook.com, Hotmail, Live, Microsoft 365**: not supported yet (Microsoft requires its own sign-in). Meanwhile: an Outlook rule that **forwards** the alerts to another mailbox (Gmail…) fetched by the application, or drag and drop (below).
+- Another provider: its help pages give the IMAP server (often `imap.<domain>`, port 993).
 
-## 3. Connecter la boîte
+## 3. Connect the mailbox
 
-- **Tableau de bord** (le plus simple, et le seul moyen sans terminal) : `open_dashboard`, puis bouton **« Boîte mail »** en haut : adresse, mot de passe, « Se connecter et lister les dossiers », choix du dossier « Alertes emploi », « Enregistrer ».
-- **Terminal** : `vigie-emploi mail setup` (questions posées une à une ; le mot de passe ne s'affiche pas pendant la frappe).
+- **Dashboard** (the simplest, and the only way without a terminal): `open_dashboard`, then the **"Mailbox"** button at the top: address, password, "Connect and list the folders", choose the "Job alerts" folder, "Save".
+- **Terminal**: `vigie-emploi mail setup` (questions asked one by one; the password does not show while typing).
 
-La première relève ne prend que les messages des 14 derniers jours.
+The first fetch only takes the messages of the last 14 days.
 
-## 4. Vérifier
+## 4. Check
 
-Lance l'ingestion (`ingest_emails`) : son `to_tell` dit combien d'e-mails ont été relevés dans le dossier, ou pourquoi la boîte n'a pas pu l'être (mot de passe refusé, dossier introuvable, serveur injoignable). Relaie le message tel quel et aide à corriger.
+Run the ingestion (`ingest_emails`): its `to_tell` says how many e-mails were fetched from the folder, or why the mailbox could not be fetched (password refused, folder not found, server unreachable). Pass the message on as it is and help fix it.
 
-## Autres façons
+## Other ways
 
-- **Thunderbird et FiltaQuilla** (si l'utilisateur utilise déjà Thunderbird) : un filtre avec l'action « Save Message as File » vers `emails/` (action à activer dans les options de FiltaQuilla) ; laisser le filtre s'appliquer à la relève du courrier.
-- **Glisser-déposer** les alertes de la messagerie vers `emails/`, au format `.eml`, reste possible à tout moment ; une fois par jour suffit.
+- **Thunderbird and FiltaQuilla** (if the user already uses Thunderbird): a filter with the "Save Message as File" action to `emails/` (action to enable in FiltaQuilla's options); let the filter run on Getting New Mail.
+- **Dragging** alerts from the mail client into `emails/`, as `.eml` files, is always possible; once a day is enough.

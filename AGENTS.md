@@ -1,122 +1,122 @@
-# Piloter vigie-emploi depuis une IA
+# Driving vigie-emploi from an AI
 
-Ce fichier s'adresse à un agent (Claude Code ou autre) qui aide l'utilisateur à trier ses offres. L'application ne contacte aucun modèle d'IA : c'est l'agent qui lit, note et rend compte, l'application garde l'état.
+This file is for an agent (Claude Code or another) that helps the user sort their job ads. The application contacts no AI model: the agent reads, scores and reports back, and the application keeps the state. Work and write in English with the user; the names of the commands, options, MCP tools, parameters and statuses are identifiers: use them as they are.
 
-Deux façons de piloter : les **outils MCP** (`vigie-emploi mcp`, à privilégier quand le client MCP est branché, voir [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)) ou la **CLI** avec `--json`. Les deux appellent le même noyau.
+Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the MCP client is connected, see [`docs/mcp.md`](docs/mcp.md)) or the **CLI** with `--json`. Both call the same core.
 
-## Règles
+## Rules
 
-- CLI : toujours passer `--json` : la sortie est stable et se lit sans ambiguïté. Les erreurs sortent sur stderr (`{"ok": false, "error": "…"}`) avec un code de retour non nul. MCP : une erreur revient comme résultat d'erreur (`isError`), le serveur continue.
-- `_SUIVI.md` se génère depuis la base (`generate_tracker` / `vigie-emploi generate-tracker`)  : ne pas l'éditer à la main (s'il remplace un ancien suivi tenu à la main, comparer d'abord avec l'aperçu). Par défaut l'aperçu `candidatures/_SUIVI.genere.md` ; `replace` seulement si l'utilisateur le demande.
-- Le dossier de données vient de `VIGIE_EMPLOI_DATA`, de `--data` ou de `vigie-emploi.config.json`. Ne jamais écrire de donnée personnelle dans le dépôt de l'application.
-- Boîte mail : ne jamais demander le mot de passe dans la conversation. L'utilisateur connecte sa boîte lui-même, dans le tableau de bord (bouton « Boîte mail ») ou avec `vigie-emploi mail setup` ; le mot de passe va dans le trousseau du système.
-- Ne pas télécharger LinkedIn, Indeed ni Glassdoor par script : lire ces pages dans le navigateur de l'utilisateur, ou lui demander le texte (Glassdoor bloque les robots). Les descriptions Hellowork et Free-Work sont déjà en base après `ingest`.
-- La grille de notation appartient à l'utilisateur (`profil/grille.json` de son dossier de données) : la lire avant de noter un lot (`rubric` en MCP, `vigie-emploi rubric --instructions --json` en CLI). Ne jamais donner la note finale : noter les critères, l'application calcule.
-- Ne modifier la grille (`update_rubric`, `vigie-emploi rubric --update`) qu'à la demande de l'utilisateur : d'abord un essai (`dry_run: true` / `--dry-run`) dont on lui montre l'impact, puis l'enregistrement avec un résumé.
+- CLI: always pass `--json`: the output is stable and unambiguous. Errors go to stderr (`{"ok": false, "error": "…"}`) with a non-zero exit code. MCP: an error comes back as an error result (`isError`), and the server keeps running.
+- `_SUIVI.md` (the tracker) is generated from the database (`generate_tracker` / `vigie-emploi generate-tracker`): do not edit it by hand (if it replaces a tracker kept by hand, compare with the preview first). By default it writes the preview `candidatures/_SUIVI.genere.md`; use `replace` only if the user asks for it.
+- The data folder comes from `VIGIE_EMPLOI_DATA`, `--data` or `vigie-emploi.config.json`. Never write personal data into the application's repository.
+- Mailbox: never ask for the password in the conversation. The user connects their mailbox themselves, in the dashboard ("Mailbox" button) or with `vigie-emploi mail setup`; the password goes to the system keychain.
+- Do not download LinkedIn, Indeed or Glassdoor pages with a script: read them in the user's browser, or ask them for the text (Glassdoor blocks bots). The Hellowork and Free-Work descriptions are already in the database after `ingest`.
+- The scoring grid belongs to the user (`profil/grille.json` in their data folder): read it before scoring a batch (`rubric` over MCP, `vigie-emploi rubric --instructions --json` on the CLI). Never give the final score: score the criteria, and the application calculates it.
+- Only change the grid (`update_rubric`, `vigie-emploi rubric --update`) when the user asks: first a trial run (`dry_run: true` / `--dry-run`) whose impact you show them, then save it with a summary.
 
-## Flux complet via MCP
+## Full flow over MCP
 
-1. **Ingérer** : `ingest_emails` (`keep: true` pour conserver les `.eml`) ; il relève d'abord la boîte mail si elle est configurée. Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`, et transmettre `to_tell` (e-mails relevés ou erreur de la boîte, e-mails supprimés).
-2. **Lire** : `offers_to_read`. Selon `reading` : texte dans `description` ; `browser` = ouvrir `url` dans le navigateur de l'utilisateur ; `human` = lui demander le texte. `read_offer` pour le détail complet.
-3. **Noter** avec la grille : `rubric` d'abord (critères, poids, barèmes, règles, inventaire, exemples, `instructions_ai`), puis `score_batch` (`{ "offers": [ {id, criteria, inputs, blockers, fit, gaps, read, tags}, … ] }`) ou `score_offer` pour une seule. Voir « Noter avec la grille » ci-dessous. Déjà vue ? `list_offers` avec `text`.
-4. **Résumer** à l'utilisateur : offres notées, celles au-dessus de son seuil (celui de la grille), avec la décomposition (sous-notes, règles, drapeaux « inconnu » à vérifier), conditions, ce qui colle, écarts. Sans « go » : `change_status` → `dismissed` avec la raison en commentaire.
-5. **Candidater** sur son « go » : `apply` (offre complète, dossier de données, `suggested_folder`, étapes). Préparer le dossier, le CV et les messages selon ses consignes (dans le dossier de données).
-6. **Enregistrer la candidature** : `save_application` avec `folder`, `cv`, `channel`, `message`, `next_action` ; à l'envoi, `sent_at` (l'offre passe en `sent`). Ensuite : `change_status` (`followed-up`, `interview`, `rejected`, `closed`, `withdrawn`) et `save_application` pour la prochaine action.
-7. **Tenir le journal** (voir ci-dessous) : chaque échange devient un événement, la suite une échéance.
-8. **Générer le suivi** : `generate_tracker` → `candidatures/_SUIVI.genere.md` (sections En cours, Envoyées sans suite, Closes ; la prochaine action vient de la prochaine échéance).
+1. **Ingest**: `ingest_emails` (`keep: true` to keep the `.eml` files); it fetches the mailbox first when one is configured. Note `added`, `duplicates`, `dismissed` (discarded), `to_read` and `errors`, and pass on `to_tell` (e-mails fetched or mailbox error, e-mails deleted).
+2. **Read**: `offers_to_read`. Depending on `reading`: text in `description`; `browser` = open `url` in the user's browser; `human` = ask them for the text. `read_offer` for the full details.
+3. **Score** with the grid: `rubric` first (criteria, weights, scales, rules, inventory, examples, `instructions_ai`), then `score_batch` (`{ "offers": [ {id, criteria, inputs, blockers, fit, gaps, read, tags}, … ] }`) or `score_offer` for a single one. See "Scoring with the grid" below. Seen before? `list_offers` with `text`.
+4. **Summarise** for the user: job ads scored, those above their threshold (the grid's), with the breakdown (sub-scores, rules, "unknown" flags to check), conditions, what matches, gaps. No "go": `change_status` to `dismissed`, with the reason as the comment.
+5. **Apply** on their "go": `apply` (full job ad, data folder, `suggested_folder`, steps). Prepare the application file, the CV and the messages following their instructions (in the data folder).
+6. **Record the application**: `save_application` with `folder`, `cv`, `channel`, `message`, `next_action`; once sent, `sent_at` (the job ad moves to `sent`). After that: `change_status` (`followed-up`, `interview`, `rejected`, `closed`, `withdrawn`) and `save_application` for the next action.
+7. **Keep the log** (see below): each exchange becomes an event, and what comes next a deadline.
+8. **Generate the tracker**: `generate_tracker` → `candidatures/_SUIVI.genere.md` (sections In progress, Sent without reply, Closed; the next action comes from the next deadline).
 
-## Noter avec la grille
+## Scoring with the grid
 
-1. Lire la grille (`rubric`). Les critères `source: "ai"` sont à noter de 0 à 10 avec une justification courte ; leur `description` dit quoi regarder. Le critère technique se juge contre l'inventaire (`strong` / `medium` / `light` / `zero`) : lister les écarts. Caler ses sous-notes sur les `examples`.
-2. Ne pas noter les critères calculés (`remote`, `compensation`) : remplir `inputs` quand l'offre les donne (`onsite_days` 0 à 5, 0 = full remote ; `salary_min` / `salary_max` en euros ; `unit` year, month, day, hour). Sinon l'application les lit dans les champs de l'offre ; inconnus, ils valent 5 avec un drapeau.
-3. `blockers` : identifiants des règles actives qui s'appliquent (stage, défense…). Une règle inconnue est refusée.
-4. Ne pas envoyer `score` : avec `criteria`, il est ignoré (signalé dans `warnings`). La réponse donne la note calculée, la valeur exacte et la `breakdown`.
-5. Essai possible : `score_batch` avec `dry_run: true` (CLI `score --file lot.json --dry-run`) calcule sans rien enregistrer.
-6. Changer de priorité (« le télétravail compte plus », « 50 K€ me suffisent ») : `update_rubric` en essai, montrer l'impact (`rising`, `falling`), puis enregistrer avec un `summary` ; toutes les notes à critères sont recalculées. Retour arrière : `update_rubric` avec `restore_version`. Historique : `rubric_history`.
+1. Read the grid (`rubric`). Criteria with `source: "ai"` are scored from 0 to 10 with a short justification; their `description` says what to look at. The technical criterion is judged against the inventory (`strong` / `medium` / `light` / `zero`): list the gaps. Calibrate your sub-scores on the `examples`.
+2. Do not score the calculated criteria (`remote`, `compensation`): fill in `inputs` when the job ad gives them (`onsite_days` 0 to 5, 0 = fully remote; `salary_min` / `salary_max` as plain amounts in the grid's currency; `unit`: `year`, `month`, `day` or `hour`). Otherwise the application reads them from the job ad's fields; when unknown, they are worth 5 with a flag.
+3. `blockers`: ids of the active rules that apply (internship, defence…). An unknown rule is refused.
+4. Do not send `score`: with `criteria`, it is ignored (reported in `warnings`). The response gives the calculated score, the exact value and the `breakdown`.
+5. Trial run available: `score_batch` with `dry_run: true` (CLI `score --file lot.json --dry-run`) calculates without saving anything.
+6. Changing priorities ("remote work matters more", "£50K is enough for me"): `update_rubric` as a trial, show the impact (`rising`, `falling`), then save with a `summary`; every criteria-based score is recalculated. Going back: `update_rubric` with `restore_version`. History: `rubric_history`.
 
-Exemple d'entrée :
+Sample entry:
 
 ```json
 { "id": 42,
-  "criteria": { "technique": { "score": 8, "justification": "PHP, API REST ; écart : PostgreSQL (zéro)" },
-                "role": { "score": 7, "justification": "Senior, pas de lead" },
-                "interet": { "score": 6, "justification": "SaaS pour TPE" },
-                "risque": { "score": 7, "justification": "Test sur projet existant" } },
+  "criteria": { "technique": { "score": 8, "justification": "PHP, REST APIs; gap: PostgreSQL (none)" },
+                "role": { "score": 7, "justification": "Senior, no lead role" },
+                "interet": { "score": 6, "justification": "SaaS for small businesses" },
+                "risque": { "score": 7, "justification": "Test on an existing project" } },
   "inputs": { "onsite_days": 2, "salary_min": 55000, "salary_max": 65000, "unit": "year" },
   "blockers": [], "fit": "…", "gaps": "…", "read": true }
 ```
 
-## Journal : quand l'utilisateur raconte un appel, un entretien, un message, un devis
+## Log: when the user reports a call, an interview, a message, a quote
 
-1. **L'événement** : `add_event` (CLI : `vigie-emploi event <id> …`) avec le type (`message`, `interview`, `test`, `proposal`, `decision`, `note`), la date réelle (`at`), un résumé court, et ce qui est connu : `direction` (message envoyé / reçu), `channel`, `contacts`, `amount` + `unit` et `days` pour un devis, `details`.
-2. **Le document éventuel** (compte rendu, devis, fiche d'appel) : l'écrire dans le dossier de candidature (`candidatures/<entreprise-poste>/…`), puis le citer dans `files` (chemin relatif au dossier de données ; `folder_files` liste ceux qui existent). Ne jamais recopier le contenu d'un document dans la base.
-3. **La prochaine échéance** : un second `add_event` daté dans le futur (`done: false`), par exemple « Relancer si sans nouvelles » à J+7, « Entretien technique » à la date prévue.
-4. Une échéance réalisée : `mark_done`, puis l'événement de ce qui s'est passé. Un changement d'étape reste un statut (`change_status` : `followed-up`, `interview`, `rejected`…).
-5. En début de session : `deadlines` (retards et 7 prochains jours) pour dire à l'utilisateur ce qui l'attend.
+1. **The event**: `add_event` (CLI: `vigie-emploi event <id> …`) with the type (`message`, `interview`, `test`, `proposal` = offer or quote, `decision`, `note`), the actual date (`at`), a short summary, and whatever is known: `direction` (`sent` or `received`, for a message), `channel`, `contacts`, `amount` + `unit` and `days` for a quote, `details`.
+2. **Any document** (meeting notes, quote, call sheet): write it in the application folder (`candidatures/<company-role>/…`), then reference it in `files` (path relative to the data folder; `folder_files` lists the existing ones). Never copy a document's content into the database.
+3. **The next deadline**: a second `add_event` dated in the future (`done: false`), for example "Follow up if no news" at D+7, "Technical interview" on the planned date.
+4. A deadline that has been dealt with: `mark_done`, then the event for what happened. A change of stage remains a status (`change_status`: `followed-up`, `interview`, `rejected`…).
+5. At the start of a session: `deadlines` (overdue items and the next 7 days) to tell the user what lies ahead.
 
-Une offre déjà suivie qui réapparaît dans une alerte ou un lot garde son statut : ne pas la renoter ni la changer de statut pour autant.
+A job ad already being followed that reappears in an alert or a batch keeps its status: do not rescore it or change its status because of that.
 
-## Flux « traite les e-mails » (CLI)
+## "Process the e-mails" flow (CLI)
 
-1. `vigie-emploi ingest --json` : relève la boîte mail si elle est configurée (`mail` dans le résultat), lit `<données>/emails/*.eml`, ajoute les nouvelles offres, supprime les e-mails traités. Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`.
-2. `vigie-emploi to-read --json` : offres à traiter sans note. Champ `reading` :
-   - `description` : la description est dans le champ `description` (tronquée à 2 500 caractères ; `--full` pour tout) ;
-   - `browser` : ouvrir `url` dans le navigateur de l'utilisateur ;
-   - `human` : page protégée, demander le texte à l'utilisateur.
-3. Lire la grille (`vigie-emploi rubric --instructions --json`), puis lire chaque offre et noter ses critères.
-4. Écrire un fichier de lot (tableau JSON, format ci-dessous) puis `vigie-emploi score --file lot.json` (`--dry-run` pour vérifier sans enregistrer). Les offres sont retrouvées par `id` ou par `url` ; elles passent en `scored`.
-5. Résumer à l'utilisateur : offres notées, celles au-dessus de son seuil avec conditions, ce qui colle et les écarts.
-6. Selon sa réponse :
-   - « go » : `vigie-emploi apply <id> --json` (passe en `go`, renvoie l'offre complète et un dossier suggéré) ;
-   - pas de go : `vigie-emploi status <id> dismissed --comment "raison"`.
+1. `vigie-emploi ingest --json`: fetches the mailbox when one is configured (`mail` in the result), reads `<data>/emails/*.eml`, adds the new job ads, deletes the processed e-mails. Note `added`, `duplicates`, `dismissed`, `to_read` and `errors`.
+2. `vigie-emploi to-read --json`: job ads to process without a score. `reading` field:
+   - `description`: the description is in the `description` field (truncated at 2,500 characters; `--full` for all of it);
+   - `browser`: open `url` in the user's browser;
+   - `human`: protected page, ask the user for the text.
+3. Read the grid (`vigie-emploi rubric --instructions --json`), then read each job ad and score its criteria.
+4. Write a batch file (JSON array, format below) then `vigie-emploi score --file lot.json` (`--dry-run` to check without saving). Job ads are found by `id` or `url`; they move to `scored`.
+5. Summarise for the user: job ads scored, those above their threshold with conditions, what matches and the gaps.
+6. Depending on their answer:
+   - "go": `vigie-emploi apply <id> --json` (moves to `go`, returns the full job ad and a suggested folder);
+   - no go: `vigie-emploi status <id> dismissed --comment "reason"`.
 
-Format d'une entrée de lot :
+Format of a batch entry:
 
 ```json
 {
   "id": 42,
   "url": "https://www.linkedin.com/jobs/view/1234567890/",
   "title": "…", "company": "…", "location": "…", "contract": "…", "compensation": "…",
-  "remote": "…", "published": "JJ/MM/AAAA ou NC", "stack": "…",
+  "remote": "…", "published": "DD/MM/YYYY or NC", "stack": "…",
   "criteria": { "technique": { "score": 8, "justification": "…" }, "role": { "score": 7 }, "interet": { "score": 6 }, "risque": { "score": 7 } },
   "inputs": { "onsite_days": 3 }, "blockers": [],
   "fit": "…", "gaps": "…", "read": true, "tags": ["wordpress"]
 }
 ```
 
-`id` ou `url` suffit ; les autres champs complètent ce qui manque en base. Ancien format (note globale, sans `criteria`) : `"raw_score": 6.5, "penalties": "…", "score": 6`, encore accepté mais figé.
+`id` or `url` is enough; the other fields fill in what is missing from the database. Old format (overall score, without `criteria`): `"raw_score": 6.5, "penalties": "…", "score": 6`, still accepted but frozen.
 
-## Autres commandes utiles
+## Other useful commands
 
-| Besoin | Commande |
+| Need | Command |
 |---|---|
-| Déjà vue ? | `vigie-emploi list --text "entreprise" --json` |
-| Meilleures offres non traitées | `vigie-emploi list --status scored --score-min 5 --sort score --json` |
-| Par lot reçu, meilleures notes d'abord | `vigie-emploi list --status scored --sort received_at:desc,score:desc --json` |
-| Mes candidatures | `vigie-emploi list --applications --json` |
-| Détail d'une offre | `vigie-emploi show <id> --json` |
-| Candidature (dossier, canal, envoi, prochaine action) | `vigie-emploi application <id> --folder candidatures/x --channel LinkedIn --sent-at 02/11/2026 --next-action "…" --json` |
-| Prochaine action seule | `vigie-emploi next-action <id> "Relancer le 09/11" --json` |
-| Relance, entretien, refus | `vigie-emploi status <id> followed-up --comment "canal, date"` |
-| Suivi des candidatures | `vigie-emploi generate-tracker --json` (aperçu `candidatures/_SUIVI.genere.md`) |
+| Seen before? | `vigie-emploi list --text "company" --json` |
+| Best unprocessed job ads | `vigie-emploi list --status scored --score-min 5 --sort score --json` |
+| By batch received, best scores first | `vigie-emploi list --status scored --sort received_at:desc,score:desc --json` |
+| My applications | `vigie-emploi list --applications --json` |
+| Details of a job ad | `vigie-emploi show <id> --json` |
+| Application (folder, channel, date sent, next action) | `vigie-emploi application <id> --folder candidatures/x --channel LinkedIn --sent-at 02/11/2026 --next-action "…" --json` |
+| Next action only | `vigie-emploi next-action <id> "Follow up on 09/11" --json` |
+| Follow-up, interview, rejection | `vigie-emploi status <id> followed-up --comment "channel, date"` |
+| Application tracker | `vigie-emploi generate-tracker --json` (preview `candidatures/_SUIVI.genere.md`) |
 | Tags | `vigie-emploi tag <id> +a-reprendre -urgent --json` |
-| Événement (appel, devis…) | `vigie-emploi event <id> --type proposal --at 15/10/2026 --summary "Devis envoyé sur Malt" --direction sent --amount 3000 --unit "€ HT" --days 6 --file candidatures/x/devis.md --json` |
-| Échéance | `vigie-emploi event <id> --type message --at +7 --summary "Relancer si sans nouvelles" --json` |
-| Journal, échéances | `vigie-emploi journal <id> --json`, `vigie-emploi deadlines --days 7 --json`, `vigie-emploi done <event_id> --json` |
-| Fichiers du dossier | `vigie-emploi files <id> --json` |
-| Note seule | `vigie-emploi score <id> --json '{"criteria": {"technique": {"score": 8, "justification": "…"}, …}, "fit": "…", "gaps": "…"}'` |
-| Grille, consignes | `vigie-emploi rubric --instructions --json` |
-| Changer un poids (essai, puis pour de vrai) | `vigie-emploi rubric --update '{"weight": {"remote": 30}}' --dry-run --json`, puis `--summary "Télétravail prioritaire"` |
-| Historique, retour arrière | `vigie-emploi rubric --history --json`, `vigie-emploi rubric --restore 2 --json` |
-| Recalculer | `vigie-emploi rescore --json` |
+| Event (call, quote…) | `vigie-emploi event <id> --type proposal --at 15/10/2026 --summary "Quote sent via Upwork" --direction sent --amount 3000 --unit "£" --days 6 --file candidatures/x/quote.md --json` |
+| Deadline | `vigie-emploi event <id> --type message --at +7 --summary "Follow up if no news" --json` |
+| Log, deadlines | `vigie-emploi journal <id> --json`, `vigie-emploi deadlines --days 7 --json`, `vigie-emploi done <event_id> --json` |
+| Files in the folder | `vigie-emploi files <id> --json` |
+| Single score | `vigie-emploi score <id> --json '{"criteria": {"technique": {"score": 8, "justification": "…"}, …}, "fit": "…", "gaps": "…"}'` |
+| Grid, instructions | `vigie-emploi rubric --instructions --json` |
+| Change a weight (trial, then for real) | `vigie-emploi rubric --update '{"weight": {"remote": 30}}' --dry-run --json`, then `--summary "Remote work first"` |
+| History, going back | `vigie-emploi rubric --history --json`, `vigie-emploi rubric --restore 2 --json` |
+| Recalculate | `vigie-emploi rescore --json` |
 
-Les boutons « Traiter N e-mails » et « Préparer N candidatures » du tableau de bord ouvrent un terminal dans le dossier de données et lancent l'agent avec `/traiter-emails` ou `/preparer-go` : ces commandes viennent du dossier de données (consignes de l'utilisateur) ; les suivre comme si l'utilisateur les avait tapées. Le tableau de bord se met à jour seul au fil des écritures.
+The dashboard's "Process N e-mails" and "Prepare N applications" buttons open a terminal in the data folder and start the agent with `/traiter-emails` or `/preparer-go`: these commands come from the data folder (the user's instructions); follow them as if the user had typed them. The dashboard updates itself as things are written.
 
-Le bouton « Candidater » du tableau de bord copie `apply <id>` : quand l'utilisateur colle ce texte, lancer `vigie-emploi apply <id> --json` et préparer la candidature selon ses consignes.
+The dashboard's "Apply" button copies `apply <id>`: when the user pastes that text, run `vigie-emploi apply <id> --json` and prepare the application following their instructions.
 
-## Développer sur ce dépôt
+## Developing on this repository
 
-- `npm test` et `npm run build` doivent passer avant chaque commit.
-- Fixtures uniquement fictives (`tests/fixtures`) : jamais de vrais e-mails ni de vraies offres.
-- Schéma : ajouter une migration `migrations/000N_nom.sql`, ne jamais modifier une migration déjà publiée.
-- Code (identifiants, commentaires, tests) en anglais ; interface et documentation en français, avec leurs versions anglaises (`AGENTS.en.md`, `README.en.md`, `scaffold-en/`, dictionnaires `en.ts`).
+- `npm test` and `npm run build` must pass before each commit.
+- Fictitious fixtures only (`tests/fixtures`): never real e-mails or real job ads.
+- Schema: add a migration `migrations/000N_name.sql`; never change a migration that has already been published.
+- The code (identifiers, comments, tests) is in English; the documentation is written in French, and `AGENTS.en.md`, `README.en.md`, `docs/*.en.md` and `scaffold-en/` are its English versions (the architecture decisions in `docs/adr/` stay in French).

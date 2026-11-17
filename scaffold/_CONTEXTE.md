@@ -1,72 +1,72 @@
-# Contexte — À COMPLÉTER
+# Context — TO BE COMPLETED
 
-<!-- Ce fichier est le point d'entrée de l'IA. Il se remplit pendant le démarrage (DEMARRAGE.md),
-     puis évolue avec la recherche. Il ne contient que les règles en vigueur : l'historique va dans
-     _JOURNAL-DECISIONS.md, les tâches dans _A-FAIRE.md. Les commentaires comme celui-ci disent
-     ce que chaque section doit contenir ; l'IA les retire une fois la section remplie. -->
+<!-- This file is the AI's entry point. It is filled in during onboarding (DEMARRAGE.md),
+     then evolves with the job search. It only holds the rules currently in force: the history goes in
+     _JOURNAL-DECISIONS.md, the tasks in _A-FAIRE.md. Comments like this one say what each section
+     must contain; the AI removes them once the section is filled in. Written in English. -->
 
-## 1. Positionnement
+## 1. Positioning
 
-<!-- En deux ou trois phrases : le métier visé, le type de contrat (CDI, freelance, les deux),
-     le niveau, ce qui distingue cette personne. Puis les cibles, de la plus à la moins prioritaire,
-     et ce qu'elle ne veut plus faire. -->
+<!-- In two or three sentences: the target job, the type of contract (permanent, freelance / contract, both),
+     the seniority, what sets this person apart. Then the targets, from highest to lowest priority,
+     and what they no longer want to do. -->
 
-## 2. Faits d'identité
+## 2. Identity facts
 
-<!-- Registre de l'échange avec l'IA : tutoiement ou vouvoiement.
-     Les faits qui doivent être identiques partout (CV, profils, messages) :
-     nom, ville, mobilité, disponibilité, années d'expérience (avec la façon exacte de les dire),
-     langues et niveau réel, coordonnées publiques, URL des profils (site, LinkedIn, Malt, GitHub…). -->
+<!-- Tone of the exchange with the AI (formal or informal), if they have a preference.
+     The facts that must be identical everywhere (CV, profiles, messages):
+     name, city, willingness to relocate, availability / notice period, years of experience (with the exact wording),
+     languages and actual level, right to work if relevant, public contact details, profile URLs (website, LinkedIn, GitHub…). -->
 
-### Preuves chiffrées
+### Hard evidence
 
-<!-- Chiffres vérifiés, citables tels quels, avec leur date si elle compte
-     (volumes, résultats, notes clients, tests…). Un chiffre non vérifié n'a rien à faire ici. -->
+<!-- Verified figures, quotable as they are, with their date where it matters
+     (volumes, results, client ratings, tests…). An unverified figure has no place here. -->
 
-## 3. Inventaire — ce qui est revendicable ou non
+## 3. Inventory — what can and cannot be claimed
 
-<!-- Une ligne par compétence ou domaine : niveau réel (fort / moyen / léger / zéro),
-     preuve (projet, mission, dépôt public), formulation autorisée sur un CV.
-     C'est la base de l'honnêteté de tous les documents. -->
+<!-- One line per skill or field: actual level (strong / medium / light / none),
+     evidence (project, contract, public repository), wording allowed on a CV.
+     This is the basis of the honesty of every document. -->
 
-| Domaine | Niveau | Preuve | Sur le CV |
+| Field | Level | Evidence | On the CV |
 |---|---|---|---|
 | | | | |
 
-## 4. Arguments qui vendent
+## 4. Selling points
 
-<!-- Le récit en une phrase (l'accroche), les deux ou trois preuves à mettre en avant selon la cible,
-     les angles qui distinguent (secteur, double compétence, regard client…), et pour chaque projet phare
-     les nuances à ne pas déformer (ce qui a été fait soi-même, par l'équipe, ce qui n'a pas été fait). -->
+<!-- The story in one sentence (the hook), the two or three pieces of evidence to put forward depending on the target,
+     the angles that set them apart (sector, dual skill set, a client's perspective…), and for each flagship project
+     the nuances not to distort (what they did themselves, what the team did, what was not done). -->
 
-## 5. Risques en recrutement et parades
+## 5. Recruitment risks and answers
 
-<!-- Ce qui peut coincer et comment y répondre honnêtement : test technique en direct,
-     technologie à monter, anglais oral, trou dans le parcours, poste visé au-dessus du titre actuel,
-     prétentions salariales. -->
+<!-- What could go wrong and how to answer honestly: live technical test,
+     technology to get up to speed on, spoken language, gap in the career history, role above the current title,
+     salary expectations. -->
 
-## 6. Interdits
+## 6. Never write
 
-<!-- Ce qui ne doit jamais être écrit : titres jamais tenus, technologies jamais pratiquées,
-     formations non terminées, formulations fausses déjà repérées, sujets personnels. -->
+<!-- What must never be written: titles never held, technologies never used,
+     unfinished qualifications, false wordings already spotted, personal matters. -->
 
-## 7. Confidentialité
+## 7. Confidentiality
 
-<!-- Clients ou employeurs à ne pas nommer, informations à ne jamais mentionner,
-     code ou documents qui ne sont pas publics. -->
+<!-- Clients or employers not to name, information never to mention,
+     code or documents that are not public. -->
 
 ## 8. Conditions
 
-<!-- Rémunération (plancher et cible, en brut annuel ou TJM), télétravail souhaité,
-     trajet maximal et depuis où, contrats acceptés, date de disponibilité, délai de relance après un envoi. -->
+<!-- Pay (floor and target, as gross annual salary or day rate, with the currency), remote work wanted,
+     maximum commute and from where, contracts accepted, availability date, follow-up delay after a submission. -->
 
-## 9. Canaux
+## 9. Channels
 
-<!-- Plateformes utilisées (LinkedIn, Malt, Free-Work, Indeed, Welcome to the Jungle…),
-     état de chaque profil public, alertes e-mail en place.
-     Navigateur connecté (Claude in Chrome ou autre) : oui / non, et sur quels sites l'utilisateur est connecté. -->
+<!-- Platforms used (LinkedIn, Indeed, Glassdoor, Otta, Reed, Upwork, Malt…),
+     state of each public profile, e-mail alerts in place.
+     Connected browser (Claude in Chrome or other): yes / no, and which sites the user is signed in to. -->
 
-## 10. CV de référence
+## 10. Reference CV
 
-<!-- Le CV générique validé (cv/<nom>.md) et les règles propres à cette personne
-     (photo ou non, sections à mettre en avant, langue). -->
+<!-- The approved generic CV (cv/<name>.md) and this person's own rules
+     (photo or not, sections to highlight, language, spelling: British or American English). -->

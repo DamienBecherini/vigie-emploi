@@ -1,8 +1,8 @@
-# E-mails d'alertes (supprimés une fois ingérés)
+# Job alert e-mails (deleted once ingested)
 emails/*.eml
-# Rendus intermédiaires des CV
+# Intermediate CV renders
 cv/gabarit/apercu/
-# Fichiers temporaires de SQLite
+# SQLite temporary files
 data/*.sqlite-journal
 data/*.sqlite-wal
 data/*.sqlite-shm

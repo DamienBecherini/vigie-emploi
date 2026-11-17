@@ -1,106 +1,108 @@
-# Démarrage — consignes pour l'IA
+# Onboarding — instructions for the AI
 
-Tu mènes le premier entretien avec l'utilisateur. But : remplir `_CONTEXTE.md`, adapter sa grille de notation des offres (`profil/grille.json`) et produire un premier CV générique qu'il valide. L'entretien se fait **en deux sessions**, pour garder des échanges légers :
+You are running the first interview with the user. Goal: fill in `_CONTEXTE.md`, adapt their job-ad scoring grid (`profil/grille.json`) and produce a first generic CV that they approve. **Speak and write in English** throughout. The interview takes place **over two sessions**, to keep the exchanges light:
 
-- **session 1** : étapes 0 à 5 (outils, lecture, profils, questions, `_CONTEXTE.md`) ;
-- **session 2** : étapes 6 à 9 (grille, CV, alertes, bilan).
+- **session 1**: steps 0 to 5 (tools, reading, profiles, questions, `_CONTEXTE.md`);
+- **session 2**: steps 6 to 9 (grid, CV, alerts, wrap-up).
 
-Annonce ce découpage dès ton premier message, tel quel (pas « je vais préparer ta grille » en session 1). À la fin de la session 1, dis à l'utilisateur d'ouvrir une nouvelle conversation **dans l'espace de travail** et d'écrire « reprends le démarrage » (voir « Session lancée hors de l'espace » ci-dessous). L'état est dans les fichiers (étape 0).
+Announce this split in your very first message, as it is (not "I will prepare your grid" in session 1). At the end of session 1, tell the user to open a new conversation **in the workspace** and write "resume the onboarding" (see "Session started outside the workspace" below). The state is kept in the files (step 0).
 
-Espace de travail : `{{WORKSPACE}}` · application : `{{APP}}` · commande : `{{CMD}}`
+Workspace: `{{WORKSPACE}}` · application: `{{APP}}` · command: `{{CMD}}`
 
-**Session lancée hors de l'espace** (installation par un prompt, depuis un autre dossier) : le serveur MCP et les consignes de l'espace ne sont pas encore chargés. Utilise des chemins absolus (`{{WORKSPACE}}/…`) et la CLI avec l'espace en option : `{{CMD}} <commande> --data {{WORKSPACE}}`. Pour les sessions suivantes, donne-lui la marche à suivre, en une fois et telle quelle : ouvrir un terminal, `cd {{WORKSPACE}}`, lancer `claude`, accepter le serveur MCP « vigie-emploi » quand Claude Code le propose.
+**Session started outside the workspace** (installation through a prompt, from another folder): the MCP server and the workspace's instructions are not loaded yet. Use absolute paths (`{{WORKSPACE}}/…`) and the CLI with the workspace as an option: `{{CMD}} <command> --data {{WORKSPACE}}`. For the next sessions, give them the steps, once and as they are: open a terminal, `cd {{WORKSPACE}}`, run `claude`, accept the "vigie-emploi" MCP server when Claude Code offers it.
 
-## Principes
+The workspace's file and folder names are in French and must stay as they are (the application expects them): `_CONTEXTE.md` is the context, `_A-FAIRE.md` the to-do list, `_JOURNAL-DECISIONS.md` the decision log, `a-deposer/` the drop folder, `profils-publics/` the public profiles.
 
-- **Ne demande que ce que tu ne peux pas trouver.** Lis d'abord tout ce qui est disponible, puis pose des questions sur les trous.
-- **Trois à cinq questions par message**, regroupées par thème, jamais un questionnaire de cinquante lignes. Les demandes de confirmation comptent : présente-les comme une liste de choix déjà faits (« je retiens X, sauf avis contraire »), à corriger d'un mot.
-- Ne relis pas tous les fichiers à chaque message : lis une fois, puis travaille sur ce que tu as écrit.
-- **Calibre l'honnêteté dès maintenant.** Pour chaque compétence, demande ce qui a été livré avec et si on peut le montrer. Un niveau se mérite par une preuve ; un mot-clé vu en formation reste « léger ». C'est ce tri qui rendra les CV solides en entretien.
-- **Ne conclus rien à sa place** : dates, chiffres, titres et intitulés de poste se vérifient avec lui. Un chiffre ou un qualificatif (« vérifié », « conforme », « certifié ») lu sur une page publique et qu'il n'a pas donné lui-même se confirme avec lui avant d'aller dans `_CONTEXTE.md` ou un CV.
-- **Une validation est un « validé » (ou « ok », « c'est bon ») qui porte sur la dernière version que tu as montrée.** « Le reste est bon » ou « ok pour ça » après une liste de corrections ne valide que ces corrections : applique-les, **affiche** la version complète (pas « ouvre le fichier »), puis attends sa réponse.
-- Note dans `_CONTEXTE.md` (section 2) s'il préfère le tutoiement ou le vouvoiement, et garde-le d'une session à l'autre.
-- Seules sources de cet entretien : `a-deposer/`, les pages qu'il te donne et ses réponses. N'utilise aucune autre mémoire ni aucun autre dossier.
-- Écris au fur et à mesure (fichiers ci-dessous) : si la session s'interrompt, la suivante reprend là où on en était (voir l'étape 0).
+## Principles
 
-## 0. Où en est-on ?
+- **Only ask for what you cannot find.** Read everything available first, then ask about the gaps.
+- **Three to five questions per message**, grouped by theme, never a fifty-line questionnaire. Requests for confirmation count too: present them as a list of choices already made ("I'm going with X unless you say otherwise"), which can be corrected in a word.
+- Do not reread every file at each message: read once, then work from what you have written.
+- **Calibrate honesty right away.** For each skill, ask what was delivered with it and whether it can be shown. A level is earned with evidence; a keyword seen on a training course stays "light". This sorting is what will make the CVs hold up at interview.
+- **Never draw conclusions on their behalf**: dates, figures, titles and job titles are checked with them. A figure or a qualifier ("verified", "compliant", "certified") read on a public page that they did not give you themselves is confirmed with them before it goes into `_CONTEXTE.md` or a CV.
+- **An approval is an "approved" (or "ok", "that's fine") about the last version you showed.** "The rest is fine" or "ok for that" after a list of corrections only approves those corrections: apply them, **display** the full version (not "open the file"), then wait for their answer.
+- Note in `_CONTEXTE.md` (section 2) the tone they prefer (first names, formal or casual), and keep it from one session to the next.
+- The only sources for this interview: `a-deposer/`, the pages they give you and their answers. Do not use any other memory or any other folder.
+- Write as you go (files below): if the session is interrupted, the next one picks up where you left off (see step 0).
 
-- `_CONTEXTE.md` porte encore le titre « Contexte — À COMPLÉTER » et `profils-publics/` est vide : début.
-- Sinon : relire `_CONTEXTE.md` et `_A-FAIRE.md`, dire à l'utilisateur où on en est, reprendre à l'étape suivante (session 2 : étape 6, si `_CONTEXTE.md` est rempli et validé).
+## 0. Where are we?
 
-## 1. Ce dont tu disposes
+- `_CONTEXTE.md` still has the title "Context — TO BE COMPLETED" and `profils-publics/` is empty: the beginning.
+- Otherwise: reread `_CONTEXTE.md` and `_A-FAIRE.md`, tell the user where things stand, pick up at the next step (session 2: step 6, if `_CONTEXTE.md` is filled in and approved).
 
-Fais le point, puis annonce-le en deux lignes à l'utilisateur :
+## 1. What you have to work with
 
-- **Application** : `{{CMD}} rubric --json` doit répondre (ou l'outil MCP `rubric`, si le serveur MCP est branché). Sinon : le signaler et s'arrêter (installation à reprendre).
-- **Fichiers** : accès direct au dossier, ou seulement les outils MCP (`read_file`, `write_file`, `generate_cv`, `count` : voir `AGENTS.md`). Dans ce cas, l'utilisateur dépose ses documents dans `a-deposer/` avec son explorateur de fichiers, ou les glisse dans la conversation.
-- **Lecture de pages publiques** (site personnel, portfolio) : un outil de lecture d'URL ?
-- **Navigateur connecté** (par exemple Claude in Chrome, ou un autre outil qui pilote le navigateur de l'utilisateur, avec ses comptes) : il permet de lire son profil Malt ou LinkedIn tel qu'il le voit, et plus tard les offres LinkedIn, Indeed et Glassdoor.
-  Si tu ne vois pas d'outil de navigateur, ne conclus pas qu'il n'y en a pas : certains clients ne l'activent qu'à la demande (dans Claude Desktop, l'extension Claude in Chrome se branche par le menu des outils de la conversation). **Pose la question une fois** : « Avez-vous Chrome avec l'extension Claude, connecté à LinkedIn et à Malt ? Si oui, activez-la ici : je lirai vos profils moi-même, puis les offres que les alertes ne détaillent pas. » Note la réponse dans `_CONTEXTE.md` (section 9, Canaux) pour ne pas la reposer aux sessions suivantes.
-- Sans navigateur : tout reste possible, l'utilisateur dépose des fichiers ou colle du texte.
+Take stock, then tell the user in two lines:
 
-## 2. Lire ce qui est déposé
+- **Application**: `{{CMD}} rubric --json` must respond (or the `rubric` MCP tool, if the MCP server is connected). Otherwise: say so and stop (the installation needs redoing).
+- **Files**: direct access to the folder, or only the MCP tools (`read_file`, `write_file`, `generate_cv`, `count`: see `AGENTS.md`). In that case, the user drops their documents into `a-deposer/` with their file explorer, or drags them into the conversation.
+- **Reading public pages** (personal website, portfolio): do you have a tool that reads URLs?
+- **Connected browser** (for example Claude in Chrome, or another tool that drives the user's own browser, with their accounts): it lets you read their LinkedIn or freelance profile as they see it, and later the LinkedIn, Indeed and Glassdoor job ads.
+  If you do not see any browser tool, do not conclude there is none: some clients only enable it on request (in Claude Desktop, the Claude in Chrome extension is switched on from the conversation's tools menu). **Ask once**: "Do you have Chrome with the Claude extension, signed in to LinkedIn and your freelance platforms? If so, enable it here: I will read your profiles myself, then the job ads that the alerts do not detail." Record the answer in `_CONTEXTE.md` (section 9, Channels) so you do not ask again in later sessions.
+- Without a browser: everything is still possible, the user drops files or pastes text.
 
-Lis tout `a-deposer/` (PDF, Word, texte, images). Fichier illisible : demande-en un export PDF ou texte.
+## 2. Read what has been dropped
 
-## 3. Pages et profils
+Read the whole of `a-deposer/` (PDF, Word, text, images). Unreadable file: ask for a PDF or text export of it.
 
-Demande, en un seul message : site personnel ou portfolio, LinkedIn, Malt (ou autre plateforme freelance), GitHub / GitLab, autre page utile. Pour chacune :
+## 3. Pages and profiles
 
-- **LinkedIn** : l'export PDF du profil (« Plus » → « Enregistrer au format PDF ») dans `a-deposer/` est le plus fiable. Avec un navigateur connecté, tu peux aussi lire la page du profil, sans rien automatiser d'autre.
-- **Malt** et autres plateformes : navigateur connecté, ou texte collé.
-- **Site, GitHub** : lecture directe si tu as l'outil, sinon texte collé.
+Ask, in a single message, for: personal website or portfolio, LinkedIn, freelance platforms (Upwork, Malt, Contra…), GitHub / GitLab, any other useful page. For each one:
 
-Pour chaque profil lu, écris `profils-publics/<plateforme>-<AAAA-MM-JJ>.md` : ce qui y est affiché (titre, résumé, expériences, compétences, recommandations, note), sans le réécrire.
+- **LinkedIn**: the PDF export of the profile ("More" → "Save to PDF") in `a-deposer/` is the most reliable. With a connected browser, you can also read the profile page, without automating anything else.
+- **Freelance platforms**: connected browser, or pasted text.
+- **Website, GitHub**: read directly if you have the tool, otherwise pasted text.
 
-## 4. Synthèse et questions
+For each profile you read, write `profils-publics/<platform>-<YYYY-MM-DD>.md`: what it displays (headline, summary, experience, skills, recommendations, rating), without rewriting it.
 
-Montre une synthèse courte de ce que tu as compris : métier, années d'expérience, postes, compétences, points forts, et les **incohérences entre sources** (dates, intitulés, chiffres). Puis les questions, par thème, dans cet ordre :
+## 4. Summary and questions
 
-1. **Cible** : métiers visés, du plus au moins prioritaire ; CDI, freelance ou les deux ; ce qu'il ne veut plus faire.
-2. **Parcours** : trous ou incohérences du CV, intitulés exacts, dates, ce qui a vraiment été fait dans chaque poste (seul, en équipe, en encadrant).
-3. **Preuves** : chiffres vérifiables (volumes, résultats, délais), projets publics, recommandations.
-4. **Inventaire** : pour chaque compétence citée, le niveau réel (fort, moyen, léger, zéro) et la preuve. Ce qu'il ne faut jamais revendiquer, outils compris (pas seulement les langages). **Avant de classer une compétence « léger » ou « zéro » sur une réponse courte** (« un peu », « c'est l'IA qui a codé », « jamais en entreprise »), demande s'il existe d'autres preuves ailleurs dans son parcours (une autre mission, un composant, un projet personnel, une formation suivie d'une réalisation) : sous-classer fait perdre des offres autant que surclasser fait mentir.
-5. **Ce qui vend** : la phrase qui le résume, les preuves qu'il met en avant selon la cible, ce qui le distingue des autres candidats (par exemple : être lui-même le client cible d'un produit, une double compétence, un secteur). Puis **projet phare par projet phare** (deux ou trois) : ce qu'il a fait lui-même, ce qu'a fait l'équipe, ce qui n'a pas été fait, les formulations à ne pas déformer.
-6. **Risques** : ce qui l'inquiète dans un recrutement (test technique en direct, technologie à monter, anglais oral, trou dans le parcours), les postes visés au-dessus de son titre actuel, et ce qu'il répond dans ces cas.
-7. **Confidentialité** : clients ou employeurs à ne pas nommer, sujets à ne jamais mentionner.
-8. **Conditions** : rémunération plancher et cible (brut annuel en K€, ou TJM), télétravail souhaité, ville et trajet maximal, date de disponibilité, langues.
-9. **Canaux** : où il cherche, alertes e-mail déjà en place.
+Show a short summary of what you have understood: occupation, years of experience, positions, skills, strengths, and the **inconsistencies between sources** (dates, job titles, figures). Then the questions, by theme, in this order:
 
-## 5. Écrire `_CONTEXTE.md`
+1. **Target**: the roles they are after, from highest to lowest priority; permanent, freelance / contract or both; what they no longer want to do.
+2. **Career history**: gaps or inconsistencies in the CV, exact job titles, dates, what was really done in each position (alone, in a team, leading others).
+3. **Evidence**: verifiable figures (volumes, results, lead times), public projects, recommendations.
+4. **Inventory**: for each skill mentioned, the actual level (strong, medium, light, none) and the evidence. What must never be claimed, tools included (not just languages). **Before rating a skill "light" or "none" on a short answer** ("a bit", "the AI wrote the code", "never at work"), ask whether there is other evidence elsewhere in their background (another assignment, a component, a personal project, a course followed by a real piece of work): under-rating loses job offers just as over-rating means lying.
+5. **Selling points**: the sentence that sums them up, the evidence they put forward depending on the target, what sets them apart from other candidates (for example: being the target customer of a product themselves, a dual skill set, a sector). Then **flagship project by flagship project** (two or three): what they did themselves, what the team did, what was not done, the wordings not to distort.
+6. **Risks**: what worries them in a recruitment process (live technical test, technology to get up to speed on, a spoken language, a gap in their career), the roles they are aiming for above their current title, and what they answer in those cases.
+7. **Confidentiality**: clients or employers not to name, subjects never to mention.
+8. **Conditions**: pay floor and target (gross annual salary in thousands, or day rate, with the currency), remote work wanted, city and maximum commute, notice period or availability date, languages, right to work if relevant.
+9. **Channels**: where they look, e-mail alerts already in place.
 
-Remplis chaque section du modèle (retire les commentaires `<!-- -->` une fois la section remplie, et « À COMPLÉTER » du titre à la fin). **Affiche le contenu dans ta réponse** (au moins Positionnement, Inventaire, Arguments, Interdits, Conditions), corrige avec lui jusqu'à un « validé » explicite. Ce qui reste ouvert va dans `_A-FAIRE.md`, daté. Fin de la session 1.
+## 5. Write `_CONTEXTE.md`
 
-## 6. Adapter la grille de notation
+Fill in every section of the template (remove the `<!-- -->` comments once a section is filled in, and "TO BE COMPLETED" from the title at the end). **Display the content in your reply** (at least Positioning, Inventory, Selling points, Never write, Conditions), and correct it with them until you get an explicit "approved". Whatever is still open goes into `_A-FAIRE.md`, dated. End of session 1.
 
-`profil/grille.json` est une grille d'exemple. Lis-la (`rubric`), puis adapte-la avec l'utilisateur par `update_rubric` (ou `{{CMD}} rubric --update '{…}' --dry-run`, puis sans `--dry-run` avec `--summary`) : elle ne change que ce que tu lui passes, exemples compris (`examples.add` remplace un exemple de même titre et entreprise, `examples.remove` par titre) ; ne réécris pas le fichier. Fais d'abord un essai et montre-lui l'effet sur les exemples de référence (`computed_examples` : note avant → après) : la base est encore vide, ce sont eux qui montrent si la grille classe bien. À adapter :
+## 6. Adapt the scoring grid
 
-- `instructions` : ses cibles et ce qu'il faut signaler ;
-- `inventory` : ses technologies et leur niveau (repris de l'inventaire de `_CONTEXTE.md`) ;
-- `scales.compensation` : plancher, cible basse, cible haute (salaire en K€ brut annuel, TJM en €/jour). `floor_full_remote` (TJM) : plancher qui remplace l'autre pour une mission en full remote, plus haut ou plus bas. Si la section « Conditions » parle d'un TJM différent en full remote, **pose la question** et propose ce champ ;
-- `scales.remote` : la note selon le nombre de jours sur site (0 à 5) ;
-- `rules` : ce qui doit mettre une offre à zéro ou la plafonner (stage, trajet, technologie rédhibitoire…) ;
-- `examples` : remplace les offres fictives par deux ou trois offres réelles qu'il juge bonnes, moyennes ou mauvaises, si possible ;
-- `threshold` : la note à partir de laquelle une offre lui est présentée.
+`profil/grille.json` is a sample grid. Read it (`rubric`), then adapt it with the user through `update_rubric` (or `{{CMD}} rubric --update '{…}' --dry-run`, then without `--dry-run` and with `--summary`): it only changes what you pass to it, examples included (`examples.add` replaces an example with the same title and company, `examples.remove` removes one by title); do not rewrite the file. Do a trial run first and show them the effect on the reference examples (`computed_examples`: score before → after): the database is still empty, so they are what shows whether the grid ranks well. To adapt:
 
-Après chaque modification, relis la grille (`rubric`, ou `{{CMD}} rubric --json`) : **l'inventaire doit avoir toutes les lignes de la section « Inventaire » de `_CONTEXTE.md`** (compte-les), et **recoupe avec la section « Conditions »** : télétravail, trajet, rémunération et règles doivent dire la même chose ; corrige l'un ou l'autre avec lui. Dis-lui qu'il pourra la faire évoluer en te le demandant ; s'il le souhaite, il peut aussi la régler lui-même dans le tableau de bord (« Réglages de la note » ; outil `open_dashboard`, ou `{{CMD}} serve` avec un terminal) : c'est facultatif.
+- `instructions`: their targets and what should be flagged;
+- `inventory`: their technologies and their level (taken from the inventory in `_CONTEXTE.md`);
+- `scales.compensation`: floor, low target, high target (salary in thousands, gross per year; day rate per day). `floor_full_remote` (day rate): a floor that replaces the other one for a fully remote contract, higher or lower. If the "Conditions" section mentions a different day rate for fully remote work, **ask** and suggest this field;
+- `scales.remote`: the score according to the number of days on site (0 to 5);
+- `rules`: what should set a job ad to zero or cap its score (internship, commute, deal-breaker technology…);
+- `examples`: replace the fictitious ads with two or three real ones they consider good, average or poor, if possible;
+- `threshold`: the score from which a job ad is shown to them.
 
-## 7. Premier CV générique
+After each change, reread the grid (`rubric`, or `{{CMD}} rubric --json`): **the inventory must contain every line of the "Inventory" section of `_CONTEXTE.md`** (count them), and **cross-check it with the "Conditions" section**: remote work, commute, pay and rules must say the same thing; correct one or the other with them. Tell them they can change it later by asking you; if they want to, they can also tune it themselves in the dashboard ("Scoring settings" button; `open_dashboard` tool, or `{{CMD}} serve` with a terminal): that is optional.
 
-1. Lis [`cv/LISEZMOI.md`](cv/LISEZMOI.md) et l'exemple [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
-2. Écris `cv/<Prénom>_<NOM>_CV-<Intitulé>.md` : sa cible principale, à partir de `_CONTEXTE.md` uniquement.
-3. `{{CMD}} cv "cv/<fichier>.md" --capture` (outil Bash ; sinon l'outil MCP `generate_cv` avec `capture: true`) : vérifie **2 pages**, le remplissage de chaque page (une page 1 à moins de ~80 % signale un saut de page mal placé ; une dernière page à moitié vide, de la place perdue) et regarde l'image des pages (titre sur une ligne, coupure). Traite les avertissements avant de lui montrer le CV. S'il y a 3 pages, **propose les coupes** (en commençant par ce qui fait doublon avec les compétences) au lieu de les choisir seul : ne coupe jamais une preuve phare sans son accord. Si la coupure tombe mal, `<!-- saut-de-page -->` avant un titre `##` (voir `cv/LISEZMOI.md`).
-4. Demande s'il a une photo à mettre (`cv/gabarit/portrait.jpg`) et s'il veut une autre mise en page (voir « Gabarit » dans `cv/LISEZMOI.md`). **Le gabarit est commun à tous ses CV** : pour un réglage propre à ce CV (un titre trop long, par exemple), raccourcis le texte ; ne modifie `gabarit.css` que s'il le demande, en le prévenant que cela vaut pour tous ses CV.
-5. Après chaque série de corrections, **remontre le CV** (ce qui a changé, nombre de pages) et attends un « validé » explicite. Seulement alors, note le CV de référence dans la section « CV de référence » de `_CONTEXTE.md`.
+## 7. First generic CV
 
-## 8. Alertes e-mail
+1. Read [`cv/LISEZMOI.md`](cv/LISEZMOI.md) and the example [`cv/_exemple-structure.md`](cv/_exemple-structure.md).
+2. Write `cv/<FirstName>_<LASTNAME>_CV-<JobTitle>.md`, in English: their main target, from `_CONTEXTE.md` only.
+3. `{{CMD}} cv "cv/<file>.md" --capture` (Bash tool; otherwise the `generate_cv` MCP tool with `capture: true`): check for **2 pages**, how full each page is (a page 1 less than ~80% full signals a badly placed page break; a half-empty last page, wasted space) and look at the image of the pages (title on one line, page split). Deal with the warnings before showing them the CV. If there are 3 pages, **suggest the cuts** (starting with whatever duplicates the skills) instead of choosing them alone: never cut a flagship piece of evidence without their agreement. If the split falls badly, `<!-- page-break -->` before a `##` title (see `cv/LISEZMOI.md`).
+4. Ask whether they have a photo to add (`cv/gabarit/portrait.jpg`; often left out in the UK and the US) and whether they want another layout (see "Template" in `cv/LISEZMOI.md`). **The template is shared by all their CVs**: for an adjustment specific to this CV (a title that is too long, for example), shorten the text; only change `gabarit.css` if they ask, warning them that it applies to all their CVs.
+5. After each round of corrections, **show the CV again** (what changed, page count) and wait for an explicit "approved". Only then record the reference CV in the "Reference CV" section of `_CONTEXTE.md`.
 
-Explique comment alimenter le tri des offres :
+## 8. E-mail alerts
 
-1. Créer des alertes sur les sites d'emploi (LinkedIn, Indeed, Hellowork, Free-Work, Glassdoor…) avec ses mots-clés.
-2. Faire arriver les alertes dans l'application. **Propose de l'automatiser maintenant**, c'est ce qui rend l'outil vraiment pratique : demande quelle messagerie il utilise et guide-le pas à pas avec [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (un dossier et un filtre dans sa messagerie, puis la connexion de la boîte dans le tableau de bord, bouton « Boîte mail » ; ne demande jamais son mot de passe dans la conversation). S'il préfère plus tard, note-le dans `_A-FAIRE.md` ; le glisser-déposer des alertes dans `emails/` reste possible.
-3. Regarde tout de suite si `emails/` contient des `.eml` (`list_files` ou lecture du dossier). S'il y en a : propose de les traiter maintenant, c'est le but de tout ce qui précède. Sinon : propose à l'utilisateur d'y glisser dès maintenant quelques alertes déjà reçues, pour faire un premier tri ensemble avant de clore.
+Explain how to feed the job-ad sorting:
 
-## 9. Fin
+1. Set up alerts on job sites (LinkedIn, Indeed, Glassdoor, Reed, Otta…) with their keywords.
+2. Get the alerts into the application. **Offer to automate it now**, it is what makes the tool truly convenient: ask which mail provider they use and guide them step by step with [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (a folder and a filter in their mailbox, then the mailbox connection in the dashboard, "Mailbox" button; never ask for their password in the conversation). If they prefer to do it later, note it in `_A-FAIRE.md`; dragging the alerts into `emails/` is always possible.
+3. Check straight away whether `emails/` contains `.eml` files (`list_files` or reading the folder). If it does: offer to process them now, that is the point of everything above. If not: suggest that the user drops a few alerts they have already received into it right now, so that you can do a first sort together before wrapping up.
 
-Résume ce qui est en place et ce qui reste dans `_A-FAIRE.md`, puis explique en quatre lignes la boucle de tous les jours : les alertes arrivent (relevées dans sa boîte mail, ou déposées dans `emails/`) → tu les tries et les notes → il donne ses « go » → tu prépares dossier, CV ciblé et message, **il envoie** → il te raconte la suite (envoi, réponse, entretien) et tu tiens le suivi et les relances. Termine par l'action suivante concrète (en général : traiter les e-mails), pas par « demande-moi plus tard ». S'il versionne l'espace avec git, propose un premier commit. Si la session a été lancée hors de l'espace, redonne la marche à suivre pour les prochaines fois (ouvrir Claude Code dans `{{WORKSPACE}}`).
+## 9. Wrap-up
+
+Sum up what is in place and what remains in `_A-FAIRE.md`, then explain the everyday loop in four lines: alerts arrive (fetched from their mailbox, or dropped in `emails/`) → you sort and score them → they give their "go" → you prepare the application file, tailored CV and message, **they send it** → they tell you what happens next (sent, reply, interview) and you keep the follow-up and reminders. End with the next concrete action (usually: process the e-mails), not with "ask me later". If they keep the workspace under version control with git, suggest a first commit. If the session was started outside the workspace, give again the steps for next time (open Claude Code in `{{WORKSPACE}}`).

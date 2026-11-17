@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/core/config.ts';
 import { openDatabase } from '../src/db/database.ts';
 import { rubricRequired } from '../src/core/rubric-storage.ts';
-import { COPY_INSTRUCTIONS, initializeWorkspace, launch, SCAFFOLD } from '../src/init/init.ts';
+import { COPY_INSTRUCTIONS, initializeWorkspace, launch, scaffoldForLanguage } from '../src/init/init.ts';
 import { cvToHtml } from '../src/cv/cv.ts';
 
 const root = mkdtempSync(join(tmpdir(), 'vigie-emploi-init-'));
@@ -25,7 +25,7 @@ describe('init: creation of a workspace', () => {
 
   it('copies the template, the CV template and the sample rubric', () => {
     const copies = files(workspace);
-    for (const f of files(SCAFFOLD)) expect(copies).toContain(f === 'gitignore' ? '.gitignore' : f);
+    for (const f of files(scaffoldForLanguage('fr'))) expect(copies).toContain(f === 'gitignore' ? '.gitignore' : f);
     expect(copies).not.toContain('gitignore');
     expect(copies).toContain('.claude/skills/cv-cible/SKILL.md');
     expect(copies).toContain('cv/gabarit/gabarit.css');
@@ -60,7 +60,7 @@ describe('init: creation of a workspace', () => {
   });
 
   it('reads the application’s instructions in place outside npx', () => {
-    expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/ses consignes : `[^`]+\/AGENTS\.md`/);
+    expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/ses consignes : `[^`]+\/AGENTS\.fr\.md`/);
     expect(existsSync(join(workspace, COPY_INSTRUCTIONS))).toBe(false);
   });
 
@@ -97,7 +97,7 @@ describe('init: creation of a workspace', () => {
 });
 
 describe('cv: Markdown -> HTML', () => {
-  const md = readFileSync(join(SCAFFOLD, 'cv', '_exemple-structure.md'), 'utf8');
+  const md = readFileSync(join(scaffoldForLanguage('fr'), 'cv', '_exemple-structure.md'), 'utf8');
   const html = cvToHtml(md, { css: 'gabarit.css', portrait: null });
 
   it('builds the header: name, title, contacts on three rows', () => {

@@ -1,55 +1,55 @@
 {
   "version": 1,
-  "summary": "Grille d'exemple de vigie-emploi (à adapter)",
-  "name": "Grille d'exemple",
+  "summary": "vigie-emploi sample grid (to adapt)",
+  "name": "Sample grid",
   "threshold": 4.5,
   "instructions": [
-    "Exemple générique : remplacer les cibles, l'inventaire, les barèmes et les exemples par les siens (panneau « Réglages de la note » ou ce fichier).",
-    "Cibles : développement web backend (PHP, API, intégration), tout contrat.",
-    "Signaler dans « gaps » une rémunération sous le plancher, un trajet long, un anglais oral exigé."
+    "Generic example: replace the targets, the inventory, the scales and the examples with your own (the dashboard's Scoring settings, or this file).",
+    "Targets: back-end web development (PHP, APIs, integration), any contract type.",
+    "Flag in \"gaps\" any pay below the floor, a long commute, or a spoken foreign language required at interview."
   ],
   "criteria": [
     {
       "id": "technique",
-      "label": "Adéquation technique",
-      "description": "Compétences demandées comparées à l'inventaire : haut si le cœur de l'offre est au niveau fort, bas si la stack principale est au niveau zéro. Lister les écarts dans la justification.",
+      "label": "Technical fit",
+      "description": "Skills asked for compared with the inventory: high if the core of the job is at a strong level, low if the main stack is at level none. List the gaps in the justification.",
       "source": "ai",
       "weight": 35
     },
     {
       "id": "teletravail",
-      "label": "Télétravail et trajet",
-      "description": "Calculé depuis le nombre de jours sur site par semaine.",
+      "label": "Remote work and commute",
+      "description": "Calculated from the number of days on site per week.",
       "source": "computation",
       "computation": "remote",
       "weight": 20
     },
     {
       "id": "remuneration",
-      "label": "Rémunération",
-      "description": "Calculé : salaire en K€ brut annuel ou TJM en €/j, comparé au plancher et à la cible haute.",
+      "label": "Pay",
+      "description": "Calculated: gross annual salary in thousands, or day rate, compared with the floor and the high target.",
       "source": "computation",
       "computation": "compensation",
       "weight": 20
     },
     {
       "id": "role",
-      "label": "Rôle et séniorité",
-      "description": "Niveau du poste cohérent avec l'expérience ; baisser pour un poste junior ou de management imposé.",
+      "label": "Role and seniority",
+      "description": "Level of the role consistent with the experience; lower it for a junior role or for compulsory people management.",
       "source": "ai",
       "weight": 10
     },
     {
       "id": "interet",
-      "label": "Intérêt",
-      "description": "Secteur, produit, client cible, technologies nouvelles à apprendre.",
+      "label": "Interest",
+      "description": "Sector, product, target customer, new technologies to learn.",
       "source": "ai",
       "weight": 10
     },
     {
       "id": "risque",
-      "label": "Risque du processus",
-      "description": "10 = aucun risque. Baisser pour un test technique en direct sur une stack non pratiquée ou une langue étrangère orale exigée.",
+      "label": "Process risk",
+      "description": "10 = no risk. Lower it for a live coding test on an unfamiliar stack, or a spoken foreign language required.",
       "source": "ai",
       "weight": 5
     }
@@ -62,31 +62,31 @@
     "compensation": {
       "reference": "middle",
       "unknown": 5,
-      "salary": { "floor": 40, "target_low": 50, "target_high": 60 },
-      "daily_rate": { "floor": 350, "target_low": 420, "target_high": 450 }
+      "salary": { "floor": 45, "target_low": 55, "target_high": 70 },
+      "daily_rate": { "floor": 400, "target_low": 475, "target_high": 550 }
     }
   },
   "rules": [
     {
       "id": "stage",
-      "label": "Stage ou alternance",
-      "description": "Stage, alternance, apprentissage.",
+      "label": "Internship or apprenticeship",
+      "description": "Internship, graduate placement, apprenticeship.",
       "effect": "zero",
       "active": true
     },
     {
       "id": "sur-site-loin",
-      "label": "Sur site hors de la région, sans télétravail",
-      "description": "Présence sur site demandée loin du domicile, sans télétravail possible.",
+      "label": "On site outside the region, no remote work",
+      "description": "Presence on site required far from home, with no remote work possible.",
       "effect": "cap",
       "value": 3,
       "active": true
     }
   ],
   "inventory": [
-    { "technology": "PHP", "level": "strong", "precision": "PHP 8, programmation objet" },
+    { "technology": "PHP", "level": "strong", "precision": "PHP 8, object-oriented" },
     { "technology": "JavaScript", "level": "strong" },
-    { "technology": "API REST", "level": "strong" },
+    { "technology": "REST APIs", "level": "strong" },
     { "technology": "MySQL / MariaDB", "level": "strong" },
     { "technology": "Linux", "level": "medium" },
     { "technology": "Docker", "level": "medium" },
@@ -97,46 +97,46 @@
   ],
   "examples": [
     {
-      "title": "Développeur PHP senior (exemple)",
-      "company": "Société A (fictive)",
-      "conditions": "CDI, 1 j sur site, 52-58 K€",
+      "title": "Senior PHP Developer (example)",
+      "company": "Company A (fictitious)",
+      "conditions": "Permanent, 1 day on site, 58-65K a year",
       "criteria": {
-        "technique": { "score": 8, "justification": "PHP, API REST, MySQL : niveau fort ; Docker demandé (moyen)" },
-        "role": { "score": 7, "justification": "Développeur senior, pas de management" },
-        "interet": { "score": 6, "justification": "Logiciel métier B2B" },
-        "risque": { "score": 7, "justification": "Test technique sur un projet existant" }
+        "technique": { "score": 8, "justification": "PHP, REST APIs, MySQL: strong level; Docker required (medium)" },
+        "role": { "score": 7, "justification": "Senior developer, no people management" },
+        "interet": { "score": 6, "justification": "B2B business software" },
+        "risque": { "score": 7, "justification": "Technical test on an existing project" }
       },
-      "inputs": { "onsite_days": 1, "salary_min": 52000, "salary_max": 58000, "unit": "year" },
+      "inputs": { "onsite_days": 1, "salary_min": 58000, "salary_max": 65000, "unit": "year" },
       "blockers": [],
-      "comment": "Bonne offre : technique haut, télétravail presque complet, salaire dans la cible."
+      "comment": "Good job ad: strong technical fit, almost fully remote, salary within the target."
     },
     {
-      "title": "Développeur Java (exemple)",
-      "company": "Société B (fictive)",
-      "conditions": "CDI, télétravail (jours NC), salaire NC",
+      "title": "Java Developer (example)",
+      "company": "Company B (fictitious)",
+      "conditions": "Permanent, remote (days not stated), salary not stated",
       "criteria": {
-        "technique": { "score": 1, "justification": "Java, Spring, Kubernetes : stack principale au niveau zéro" },
-        "role": { "score": 5, "justification": "Développeur confirmé" },
-        "interet": { "score": 3, "justification": "Secteur sans intérêt particulier" },
-        "risque": { "score": 4, "justification": "Test Java en direct probable" }
+        "technique": { "score": 1, "justification": "Java, Spring, Kubernetes: main stack at level none" },
+        "role": { "score": 5, "justification": "Mid-level developer" },
+        "interet": { "score": 3, "justification": "Sector of no particular interest" },
+        "risque": { "score": 4, "justification": "Live Java test likely" }
       },
       "inputs": {},
       "blockers": [],
-      "comment": "Hors cible : technique au plus bas, sous le seuil malgré les valeurs neutres."
+      "comment": "Off target: technical fit at the bottom, below the threshold despite the neutral values."
     },
     {
-      "title": "Stage développeur web (exemple)",
-      "company": "Société C (fictive)",
-      "conditions": "Stage, full remote",
+      "title": "Web Developer Internship (example)",
+      "company": "Company C (fictitious)",
+      "conditions": "Internship, fully remote",
       "criteria": {
-        "technique": { "score": 9, "justification": "PHP / JavaScript : stack idéale" },
-        "role": { "score": 1, "justification": "Stage" },
-        "interet": { "score": 5, "justification": "Agence web" },
-        "risque": { "score": 8, "justification": "Pas de risque particulier" }
+        "technique": { "score": 9, "justification": "PHP / JavaScript: ideal stack" },
+        "role": { "score": 1, "justification": "Internship" },
+        "interet": { "score": 5, "justification": "Web agency" },
+        "risque": { "score": 8, "justification": "No particular risk" }
       },
       "inputs": { "onsite_days": 0 },
       "blockers": ["stage"],
-      "comment": "La règle bloquante « stage » met la note à 0."
+      "comment": "The blocking rule \"stage\" (internship) sets the score to 0."
     }
   ]
 }

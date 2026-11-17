@@ -20,7 +20,7 @@ import {
   previewRubric,
   pathRubric,
   saveRubric,
-  EXAMPLE_RUBRIC,
+  exampleRubric,
   rubricCurrent,
   historyRubric,
   initializeRubric,
@@ -34,7 +34,7 @@ import { saveOffer, scoresOffer, offerById } from '../src/core/offers.ts';
 import { updateSubScores, scoreOffers } from '../src/core/actions.ts';
 import { createApp } from '../src/api/server.ts';
 
-const example = (): Rubric => readFileRubric(EXAMPLE_RUBRIC)!.rubric;
+const example = (): Rubric => readFileRubric(exampleRubric('fr'))!.rubric;
 
 /** Simple rubric: technique 50, remote work 25, compensation 25. */
 function rubricTest(): Rubric {

@@ -10,7 +10,7 @@ import { openDatabase, transaction, type Database } from '../src/db/database.ts'
 import { saveOffer } from '../src/core/offers.ts';
 import { offersToRead } from '../src/core/actions.ts';
 import { applyChange, computedExamples } from '../src/core/rubric.ts';
-import { EXAMPLE_RUBRIC, initializeRubric, readFileRubric, updateRubric } from '../src/core/rubric-storage.ts';
+import { exampleRubric, initializeRubric, readFileRubric, updateRubric } from '../src/core/rubric-storage.ts';
 import { fill, THRESHOLD_PAGE_FULL } from '../src/cv/pages.ts';
 import { presentIngestion, REPLY_MAX } from '../src/mcp/presentation.ts';
 import { createServerMcp } from '../src/mcp/server.ts';
@@ -155,7 +155,7 @@ describe('MCP server: responses of reasonable size', () => {
 });
 
 describe('rubric: examples in the partial change', () => {
-  const g = () => readFileRubric(EXAMPLE_RUBRIC)!.rubric;
+  const g = () => readFileRubric(exampleRubric('fr'))!.rubric;
 
   it('adds, replaces (same title and company, case-insensitive) and removes', () => {
     const database = g();

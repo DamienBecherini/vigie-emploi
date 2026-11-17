@@ -16,7 +16,7 @@ Commands
   init [folder] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
                         Creates a workspace (~/vigie-emploi when no folder is given; templates, résumé template, sample grid, config, .mcp.json)
                         and prints the starting prompt to give the AI; --language: language of the dashboard,
-                        the CLI and the tracking file (fr by default)
+                        the CLI and the tracking file (the system's language by default)
   count <file>          Character count of each copy-paste message in the file (blocks between
                         "──── start …" and "──── end …"), or of the whole file if it has none
   templates             Bundled résumé templates (plain, modern, compact…)
@@ -332,7 +332,7 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'init.notCompile': 'Dashboard not built: run “npm run build” in {app} before “vigie-emploi serve”.',
   'init.withoutBrowser':
     'No Chrome, Edge or Chromium found: generating PDF résumés will not work. Install Chrome or Edge, or set the browser path in VIGIE_EMPLOI_BROWSER.',
-  'init.scaffoldFrench': 'No workspace template in this language yet: the AI instructions are in French. Your AI can still talk to you in your language.',
+  'init.scaffoldEnglish': 'No workspace template in this language yet: the AI instructions are in English. Your AI can still talk to you in your language.',
 
   // ---------------------------------------------------------------------------------------------
   // Core (src/core, ingestion, CV): errors and messages returned to the CLI, the API and the MCP server
@@ -388,7 +388,7 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'core.summaryChange': 'A summary of the change is required',
   'core.rubricModifiedFile': 'Changed in the grille.json file',
   'core.rubricInitial': 'Initial version (grille.json file)',
-  'core.notOfRubric': 'No scoring grid: create {path} (template: examples/rubric.en.json, or "vigie-emploi rubric --init")',
+  'core.notOfRubric': 'No scoring grid: create {path} (template: examples/rubric.json, or "vigie-emploi rubric --init")',
   'core.noneChange': 'No change compared with the current version',
   'core.backVersion': 'Back to version {version}',
   'core.rubric.computationExpected': 'criterion {id}: "computation" expected ({computations})',

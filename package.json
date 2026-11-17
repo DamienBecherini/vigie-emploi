@@ -1,18 +1,20 @@
 {
   "name": "vigie-emploi",
   "version": "0.6.0",
-  "description": "Recherche d'emploi et de missions pilotée par une IA : tri des offres avec une grille transparente, candidatures et CV honnêtes, suivi. Base SQLite, tableau de bord web, CLI et serveur MCP.",
+  "description": "AI-driven search for a job or freelance work: job ads sorted with a transparent scoring grid, honest résumés and applications, tracking. SQLite database, web dashboard, CLI and MCP server. English and French.",
   "keywords": [
-    "recherche-emploi",
-    "emploi",
-    "candidature",
+    "job-search",
+    "job-application",
+    "resume",
     "cv",
     "freelance",
     "mcp",
+    "mcp-server",
     "claude-code",
-    "agent-ia",
+    "ai-agent",
     "sqlite",
-    "french"
+    "french",
+    "recherche-emploi"
   ],
   "author": "Damien BECHERINI",
   "license": "MIT",
@@ -33,13 +35,13 @@
     "dist",
     "migrations",
     "scaffold",
-    "scaffold-en",
+    "scaffold-fr",
     "templates",
     "examples",
     "AGENTS.md",
     "AGENTS.*.md",
-    "docs/utiliser-avec-une-ia.md",
-    "docs/utiliser-avec-une-ia.en.md",
+    "docs/mcp.md",
+    "docs/mcp.*.md",
     "vigie-emploi.config.example.json"
   ],
   "engines": {

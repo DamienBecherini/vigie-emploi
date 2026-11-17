@@ -20,7 +20,7 @@ import {
 } from './rubric.ts';
 import { recompute } from './offers.ts';
 import { now } from './text.ts';
-import { LANGUAGE_DEFAULT, t } from '../i18n/index.ts';
+import { LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, t } from '../i18n/index.ts';
 
 export const AUTHORS_RUBRIC = ['interface', 'cli', 'mcp', 'file'] as const;
 export type AuthorRubric = (typeof AUTHORS_RUBRIC)[number];
@@ -38,9 +38,9 @@ export interface VersionRubric extends InfoVersion {
 
 export const EXAMPLE_RUBRIC = join(APP_ROOT, 'examples', 'rubric.json');
 
-/** Sample rubric of the language: examples/rubric.<language>.json if it exists, otherwise the French one. */
+/** Sample rubric of the language: examples/rubric.<language>.json if it exists, otherwise examples/rubric.json (English). */
 export function exampleRubric(language: Language = LANGUAGE_DEFAULT): string {
-  if (language === LANGUAGE_DEFAULT) return EXAMPLE_RUBRIC;
+  if (language === LANGUAGE_REFERENCE) return EXAMPLE_RUBRIC;
   const translated = join(APP_ROOT, 'examples', `rubric.${language}.json`);
   return existsSync(translated) ? translated : EXAMPLE_RUBRIC;
 }

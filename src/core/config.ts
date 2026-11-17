@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isLanguage, LANGUAGE_DEFAULT, LANGUAGES, NAMES_LANGUAGES, type Language } from '../i18n/tool.ts';
+import { isLanguage, LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, NAMES_LANGUAGES, type Language } from '../i18n/tool.ts';
 import { tl } from '../i18n/index.ts';
 
 export interface Config {
@@ -24,7 +24,7 @@ export interface Config {
    * replaced in it. null: Windows Terminal + Claude Code on Windows, nothing elsewhere.
    */
   terminal: string[] | null;
-  /** Language of the interface, of the CLI and of the generated tracker ("fr" by default, or "en"). */
+  /** Language of the interface, of the CLI and of the generated tracker ("fr" or "en"; see languageOf for the default). */
   language: Language;
   /** Mailbox read over IMAP before each ingestion (null: e-mails dropped in emails/ by hand or by a mail client). */
   mail: MailConfig | null;
@@ -90,6 +90,20 @@ export function normalizeLanguage(v: string): string {
   return byName ?? ALIAS_LANGUAGE[b] ?? b;
 }
 
+/**
+ * Language of the system, for what no configuration decides (a new workspace, the help shown outside a workspace):
+ * the first of LC_ALL, LC_MESSAGES, LANG that names a real locale ("C" and "POSIX" do not), otherwise the locale Node
+ * reports. A locale in a language the application does not have gives English.
+ */
+export function systemLanguage(env: NodeJS.ProcessEnv = process.env, localeNode: string = Intl.DateTimeFormat().resolvedOptions().locale): Language {
+  for (const locale of [env.LC_ALL, env.LC_MESSAGES, env.LANG, localeNode]) {
+    const code = (locale ?? '').trim().split(/[_.@-]/)[0].toLowerCase();
+    if (!code || code === 'c' || code === 'posix') continue;
+    return isLanguage(code) ? code : LANGUAGE_REFERENCE;
+  }
+  return LANGUAGE_REFERENCE;
+}
+
 /** This folder's config file. */
 function folderConfig(folder: string): string[] {
   return [join(folder, NAME_FILE_CONFIG)];
@@ -148,18 +162,21 @@ export class ErrorConfig extends Error {
   }
 }
 
-/** Language of the configuration error messages: variable, otherwise file, if they are valid; otherwise French. */
+/** Language of the configuration error messages: variable, otherwise file, if they are valid; otherwise the system's. */
 function messageLanguage(env: NodeJS.ProcessEnv, raw: ConfigFile = {}): Language {
   const v = variable(env, 'LANGUAGE');
   const n = v === undefined ? undefined : normalizeLanguage(v);
   if (isLanguage(n)) return n;
-  return isLanguage(raw.language) ? raw.language : LANGUAGE_DEFAULT;
+  return isLanguage(raw.language) ? raw.language : systemLanguage(env);
 }
 
-/** Language of the VIGIE_EMPLOI_LANGUAGE variable, otherwise of the file, otherwise French; an unknown value is refused. */
+/**
+ * Language of the VIGIE_EMPLOI_LANGUAGE variable, otherwise of the file; a file that names none is a French workspace
+ * (LANGUAGE_DEFAULT), and without a file it is the system's language. An unknown value is refused.
+ */
 function languageOf(env: NodeJS.ProcessEnv, raw: ConfigFile, file: string | null): Language {
   const input = variable(env, 'LANGUAGE');
-  const v = (input === undefined ? undefined : normalizeLanguage(input)) ?? raw.language ?? LANGUAGE_DEFAULT;
+  const v = (input === undefined ? undefined : normalizeLanguage(input)) ?? raw.language ?? (file ? LANGUAGE_DEFAULT : systemLanguage(env));
   if (!isLanguage(v)) {
     const language = messageLanguage(env, raw);
     throw new ErrorConfig(
@@ -233,7 +250,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
 
 /**
  * Configured language, without ever failing (CLI help and errors): the configuration's if it loads,
- * otherwise VIGIE_EMPLOI_LANGUAGE's if it is valid, otherwise French.
+ * otherwise VIGIE_EMPLOI_LANGUAGE's if it is valid, otherwise the system's.
  */
 export function languageConfigured(opts: OptionsConfig = {}): Language {
   try {
@@ -241,6 +258,6 @@ export function languageConfigured(opts: OptionsConfig = {}): Language {
   } catch {
     const v = variable(opts.env ?? process.env, 'LANGUAGE');
     const n = v === undefined ? undefined : normalizeLanguage(v);
-    return isLanguage(n) ? n : LANGUAGE_DEFAULT;
+    return isLanguage(n) ? n : systemLanguage(opts.env ?? process.env);
   }
 }

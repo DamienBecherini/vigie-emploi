@@ -1,10 +1,10 @@
-# À déposer
+# Drop folder
 
-Glisse ici tout ce qui décrit ton parcours. L'IA le lit au démarrage, puis ne te pose des questions que sur ce qui manque.
+Drop in here anything that describes your background. The AI reads it at the start, then only asks you about what is missing.
 
-- Ton CV actuel (PDF, Word, texte), même ancien.
-- L'export PDF de ton profil LinkedIn : sur ton profil, bouton « Plus », puis « Enregistrer au format PDF ».
-- Le texte de ton profil Malt, Free-Work ou autre (copier-coller dans un fichier `.txt` ou `.md`).
-- Des recommandations, des attestations, la description de projets dont tu es fier.
+- Your current CV (PDF, Word, text), even an old one.
+- The PDF export of your LinkedIn profile: on your profile, the "More" button, then "Save to PDF".
+- The text of your Malt, Upwork or other freelance profile (copied and pasted into a `.txt` or `.md` file).
+- Recommendations, references, descriptions of projects you are proud of.
 
-Rien de ce dossier n'est envoyé ailleurs : il reste sur ton ordinateur et n'est lu que par l'IA que tu utilises.
+Nothing in this folder is sent anywhere: it stays on your computer and is only read by the AI you use.

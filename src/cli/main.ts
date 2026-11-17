@@ -3,7 +3,7 @@
 // status names are English identifiers, and the --json outputs do not change with the language.
 import { existsSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { loadConfig, languageConfigured, normalizeLanguage, type Config } from '../core/config.ts';
+import { loadConfig, languageConfigured, normalizeLanguage, systemLanguage, type Config } from '../core/config.ts';
 import { openDatabase, type Database } from '../db/database.ts';
 import { ingestPerConfig } from '../ingest/ingest.ts';
 import { importHistory } from '../import/history.ts';
@@ -900,13 +900,15 @@ function optionRaw(argv: string[], name: string): string | undefined {
 }
 
 /**
- * Language of the messages: init's --language (the workspace being created), otherwise the configuration (--data, --config,
+ * Language of the messages: for init, --language or the system's (the workspace being created); otherwise the configuration (--data, --config,
  * VIGIE_EMPLOI_LANGUAGE, file), otherwise French.
  */
 function messageLanguage(cmd: string | undefined, args: string[]) {
   const raw = cmd === 'init' ? optionRaw(args, 'language') : undefined;
   const requested = raw === undefined ? undefined : normalizeLanguage(raw);
   if (isLanguage(requested)) return requested;
+  // A new workspace takes the system's language (the configuration of the current folder is another workspace's).
+  if (cmd === 'init') return systemLanguage();
   return languageConfigured({ dataDir: optionRaw(args, 'data'), fileConfig: optionRaw(args, 'config') });
 }
 

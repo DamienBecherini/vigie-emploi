@@ -3,12 +3,18 @@
 // Texts carry "{name}" parameters; a plural text is an object { one, other } chosen from
 // the "n" parameter (plural rules of the language: in French, 0 and 1 are singular).
 //
-// Adding a language: docs/ajouter-une-langue.md. Here, add it to LANGUAGES, LOCALES and NAMES_LANGUAGES; the compiler
+// Adding a language: docs/adding-a-language.md. Here, add it to LANGUAGES, LOCALES and NAMES_LANGUAGES; the compiler
 // then reports each text to translate.
 
 export const LANGUAGES = ['fr', 'en'] as const;
 export type Language = (typeof LANGUAGES)[number];
+/** Language of a workspace whose configuration file does not name one (workspaces older than the "language" key). */
 export const LANGUAGE_DEFAULT: Language = 'fr';
+/**
+ * Language of the files shipped without a language suffix (scaffold/, AGENTS.md, examples/rubric.json, README.md, docs/*.md);
+ * the other languages carry theirs (scaffold-fr/, AGENTS.fr.md…). It is also the fallback of a language that has no translation.
+ */
+export const LANGUAGE_REFERENCE: Language = 'en';
 
 /** Locale used for dates and numbers (Intl): day before month in both languages. */
 export const LOCALES: Record<Language, string> = { fr: 'fr-FR', en: 'en-GB' };

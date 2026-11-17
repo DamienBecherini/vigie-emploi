@@ -1,35 +1,35 @@
-# <Entreprise> — <Poste>
+# <Company> — <Role>
 
-- Offre : #<id> (base) · <URL complète>
-- Canal : <LinkedIn, Malt, e-mail, site de l'entreprise…>
-- Statut : à envoyer
+- Job ad: #<id> (database) · <full URL>
+- Channel: <LinkedIn, Indeed, e-mail, company website…>
+- Status: to send
 
-## L'offre
+## The job ad
 
-<!-- Texte de l'annonce (ou l'essentiel), conditions : contrat, rémunération, télétravail, lieu. -->
+<!-- Text of the ad (or the gist of it), conditions: contract, pay, remote work, location. -->
 
-## Ce qui colle
+## What matches
 
-<!-- Les exigences de l'offre en face des preuves de _CONTEXTE.md. -->
+<!-- The ad's requirements set against the evidence in _CONTEXTE.md. -->
 
-## Écarts à assumer
+## Gaps to own up to
 
-<!-- Ce qui manque, et comment le dire honnêtement en entretien. -->
+<!-- What is missing, and how to say so honestly at interview. -->
 
-## Conditions à annoncer
+## Conditions to state
 
-<!-- Rémunération ou TJM, disponibilité, télétravail, trajet. -->
+<!-- Salary or day rate, availability, remote work, commute. -->
 
-## Questions à poser
+## Questions to ask
 
-## Formulaire
+## Application form
 
-<!-- Ce que demande le formulaire : CV, message (limite de caractères), questions, lettre. -->
+<!-- What the form asks for: CV, message (character limit), questions, cover letter. -->
 
 ## Messages
 
-<!-- Chaque message avec sa longueur et la limite du canal. Garder la version envoyée. -->
+<!-- Each message with its length and the channel's limit. Keep the version actually sent. -->
 
-## Suivi
+## Follow-up
 
-- [ ] Envoyé le …
+- [ ] Sent on …

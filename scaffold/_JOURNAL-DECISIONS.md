@@ -1,4 +1,4 @@
-# Journal des décisions
+# Decision log
 
-<!-- Historique des décisions sorties de _CONTEXTE.md : date, décision, raison.
-     Le plus récent en haut. -->
+<!-- History of the decisions taken out of _CONTEXTE.md: date, decision, reason.
+     Most recent at the top. -->

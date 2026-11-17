@@ -1,7 +1,7 @@
 // Texts of the MCP server. What only the AI reads (instructions, tool descriptions, parameters, results, errors,
 // prompt framing) is in English, like the rest of the API: tm(). What is shown to the user verbatim (tool and prompt
 // titles, prompt descriptions, to_tell sentences) follows the user's language (configuration "language" or
-// VIGIE_EMPLOI_LANGUAGE): tu(), bt(). Texts live in src/mcp/i18n/<language>.ts (docs/ajouter-une-langue.md).
+// VIGIE_EMPLOI_LANGUAGE): tu(), bt(). Texts live in src/mcp/i18n/<language>.ts (docs/adding-a-language.md).
 import { languageCurrent, LANGUAGES, type Language } from '../i18n/index.ts';
 import { translate, type Params, type MessageText } from '../i18n/tool.ts';
 import { en, type KeyMcp, type KeyMcpUser } from './i18n/en.ts';

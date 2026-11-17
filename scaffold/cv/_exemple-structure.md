@@ -1,78 +1,78 @@
 # Julie MARCHAND
 
-**RESPONSABLE LOGISTIQUE & AMÉLIORATION CONTINUE — ENTREPÔTS, TRANSPORT, DONNÉES**
-*(CV fictif d'exemple : il montre la structure attendue, pas un contenu à reprendre · pilotage de sites · Lean · tableaux de bord)*
+**LOGISTICS & CONTINUOUS IMPROVEMENT MANAGER — WAREHOUSING, TRANSPORT, DATA**
+*(Fictitious example CV: it shows the expected structure, not content to reuse · site management · Lean · dashboards)*
 
-**Disponible en mars 2027** · julie.marchand@example.com · 06 00 00 00 00
-Portfolio & recommandations : **[julie-marchand.example](https://julie-marchand.example)**
-Ville-Exemple (00) — mobile dans la région, permis B
-[LinkedIn](https://www.linkedin.com/in/exemple) · [GitHub](https://github.com/exemple)
-
----
-
-## Résumé
-
-Responsable logistique — **N ans d'expérience** en entrepôt et en transport, dont N à la tête d'une équipe. Je pilote des sites multi-clients, je mets en place des méthodes d'amélioration continue et je fonde mes décisions sur des **tableaux de bord** que je construis moi-même.
-
-Chez **Entreprise A**, j'ai repris un entrepôt en difficulté : **taux de service passé de X % à Y %** en N mois, sans augmentation d'effectif, grâce à une réorganisation des flux et à un suivi quotidien des indicateurs. *Chaque chiffre du CV doit venir du contexte de l'utilisateur et pouvoir être défendu en entretien.*
-
-Ce qui me distingue : une phrase, tirée de la section « ce qui vend » du contexte. Une seule idée, prouvée plus bas.
+**Available from March 2027** · julie.marchand@example.com · 07700 900000
+Portfolio & recommendations: **[julie-marchand.example](https://julie-marchand.example)**
+Example Town — willing to travel within the region, full driving licence
+[LinkedIn](https://www.linkedin.com/in/example) · [GitHub](https://github.com/example)
 
 ---
 
-## Compétences Techniques
+## Summary
 
-*   **Pilotage d'entrepôt :** réception, stockage, préparation, expédition ; plan de charge, implantation, inventaires tournants.
-*   **Transport :** affrètement, tournées, suivi des transporteurs, litiges, indicateurs de ponctualité.
-*   **Amélioration continue :** Lean, 5S, résolution de problèmes (8D), animation de chantiers avec les équipes.
-*   **Outils :** WMS (nom de l'outil), ERP (nom de l'outil), tableur avancé, outil de tableaux de bord ; un niveau par outil, tel que l'inventaire du contexte le dit.
-*   **Management :** équipe de N personnes, recrutement, intégration, planning, entretiens annuels.
-*   **Qualité & sécurité :** procédures, audits internes, prévention des risques, certification (nom) si elle est réelle.
+Logistics manager — **N years of experience** in warehousing and transport, N of them leading a team. I run multi-client sites, introduce continuous improvement methods and base my decisions on **dashboards** I build myself.
 
----
+At **Company A**, I took over a struggling warehouse: **service level up from X% to Y%** in N months, with no increase in headcount, through reorganised flows and daily monitoring of indicators. *Every figure in the CV must come from the user's context and be defensible in an interview.*
 
-## Réalisations sélectionnées
-
-*   **Réorganisation d'un entrepôt multi-clients** — Entreprise A : nouveaux flux de préparation, implantation revue ; **taux de service de X % à Y %**, délai de préparation réduit de N %. *[Étude de cas](https://julie-marchand.example)*
-*   **Tableau de bord quotidien des indicateurs** — Entreprise A : données du WMS consolidées chaque matin, cinq indicateurs suivis en réunion d'équipe ; décisions prises sur des faits.
-*   **Ouverture d'un site** — Entreprise B : recrutement de N personnes, mise en route des processus, premier inventaire conforme en N semaines.
-*   **Chantier Lean sur les retours clients** — Entreprise B : délai de traitement divisé par deux, procédure écrite avec l'équipe et toujours en usage.
-
-<!-- saut-de-page -->
-
-## Expérience Professionnelle
-
-### 01/2022 – aujourd'hui · Ville-Exemple · Sur site
-**Responsable d'entrepôt** — *Entreprise A (logistique pour la distribution)*
-
-Contexte en deux phrases : taille du site, nombre de clients, situation à l'arrivée et mission confiée.
-
-*   **Organisation :** réorganisation des flux de préparation et de l'implantation ; plan de charge hebdomadaire partagé avec les clients.
-*   **Résultats :** taux de service de X % à Y %, délai de préparation réduit de N %, erreurs de préparation divisées par N.
-*   **Équipe :** encadrement de N personnes et de N chefs d'équipe, recrutement, formation, planning.
-*   **Données :** tableau de bord quotidien construit à partir du WMS ; revue mensuelle des indicateurs avec la direction.
-
-### 06/2018 – 12/2021 · Autre-Ville · Sur site
-**Chef d'équipe logistique, puis adjointe au responsable de site** — *Entreprise B (e-commerce)*
-
-*   **Ouverture de site :** participation au recrutement et à la mise en route des processus ; premier inventaire conforme en N semaines.
-*   **Amélioration continue :** chantiers Lean sur les retours clients et la préparation de commandes.
-*   **Transport :** suivi des transporteurs, traitement des litiges, indicateurs de ponctualité.
-
-### 09/2015 – 05/2018 · Autre-Ville
-**Agente de planification transport** — *Entreprise C*
-
-Planification des tournées, relation avec les transporteurs et les clients, suivi quotidien des livraisons.
+What sets me apart: one sentence, taken from the "what sells" section of the context. A single idea, proven further down.
 
 ---
 
-## Formations & Certifications
+## Technical Skills
 
-*   **Diplôme (intitulé exact)** — Établissement (année)
-*   **Formation Lean** — Organisme (année)
-*   **Certification (intitulé exact)** — Organisme (année), seulement si elle est obtenue
+*   **Warehouse management:** receiving, storage, picking, shipping; workload planning, layout, cycle counts.
+*   **Transport:** freight booking, delivery rounds, carrier monitoring, claims, on-time indicators.
+*   **Continuous improvement:** Lean, 5S, problem solving (8D), running improvement workshops with the teams.
+*   **Tools:** WMS (tool name), ERP (tool name), advanced spreadsheets, a dashboard tool; one level per tool, as stated in the context inventory.
+*   **Management:** team of N people, recruitment, onboarding, scheduling, annual reviews.
+*   **Quality & safety:** procedures, internal audits, risk prevention, certification (name) if it is real.
 
-## Langues
+---
 
-*   Français natif
-*   Anglais professionnel
+## Selected Projects
+
+*   **Reorganisation of a multi-client warehouse** — Company A: new picking flows, revised layout; **service level from X% to Y%**, picking lead time down by N%. *[Case study](https://julie-marchand.example)*
+*   **Daily indicator dashboard** — Company A: WMS data consolidated every morning, five indicators reviewed in the team meeting; decisions based on facts.
+*   **Opening a site** — Company B: recruitment of N people, processes set up, first compliant stock count within N weeks.
+*   **Lean workshop on customer returns** — Company B: processing time halved, procedure written with the team and still in use.
+
+<!-- page-break -->
+
+## Experience
+
+### 01/2022 – present · Example Town · On site
+**Warehouse Manager** — *Company A (retail logistics)*
+
+Context in two sentences: size of the site, number of clients, situation on arrival and the brief given.
+
+*   **Organisation:** reorganised picking flows and layout; weekly workload plan shared with clients.
+*   **Results:** service level from X% to Y%, picking lead time down by N%, picking errors divided by N.
+*   **Team:** managed N people and N team leaders, recruitment, training, scheduling.
+*   **Data:** daily dashboard built from the WMS; monthly review of indicators with senior management.
+
+### 06/2018 – 12/2021 · Other Town · On site
+**Logistics Team Leader, then Deputy Site Manager** — *Company B (e-commerce)*
+
+*   **Site opening:** took part in recruitment and setting up processes; first compliant stock count within N weeks.
+*   **Continuous improvement:** Lean workshops on customer returns and order picking.
+*   **Transport:** carrier monitoring, claims handling, on-time indicators.
+
+### 09/2015 – 05/2018 · Other Town
+**Transport Planner** — *Company C*
+
+Planning delivery rounds, relations with carriers and customers, daily delivery monitoring.
+
+---
+
+## Education & Certifications
+
+*   **Qualification (exact title)** — Institution (year)
+*   **Lean training** — Provider (year)
+*   **Certification (exact title)** — Provider (year), only if obtained
+
+## Languages
+
+*   English (native)
+*   French (professional)

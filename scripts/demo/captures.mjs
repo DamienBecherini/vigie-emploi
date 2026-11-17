@@ -1,19 +1,19 @@
 // Captures du tableau de bord pour le README (Chrome ou Edge sans interface, protocole DevTools, sans dépendance).
-//   node scripts/demo/captures.mjs <espace-de-démo> fr|en [dossier-de-sortie=docs/captures]
+//   node scripts/demo/captures.mjs <espace-de-démo> fr|en [dossier-de-sortie=docs/screenshots]
 // L'espace vient de scripts/demo/demo.ts ; l'interface doit être compilée (npm run build).
-// Sortie : tableau-de-bord.png, detail-offre.png et boite-mail.png (fr), mêmes noms en .en.png (en).
+// Sortie : dashboard.png, offer-detail.png et mailbox.png (en), mêmes noms en .fr.png (fr).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-const [espace, langue = 'fr', sortie = 'docs/captures'] = process.argv.slice(2);
+const [espace, langue = 'fr', sortie = 'docs/screenshots'] = process.argv.slice(2);
 if (!espace || !['fr', 'en'].includes(langue)) {
   console.error('Usage : node scripts/demo/captures.mjs <espace-de-démo> fr|en [dossier-de-sortie]');
   process.exit(2);
 }
 mkdirSync(sortie, { recursive: true });
-const suffixe = langue === 'fr' ? '' : `.${langue}`;
+const suffixe = langue === 'en' ? '' : `.${langue}`;
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const NAVIGATEURS = [
@@ -86,11 +86,11 @@ const cdp = (method, params = {}) =>
 const evaluer = async (expression) => (await cdp('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
 const vues = [
-  { fichier: `tableau-de-bord${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc', largeur: 1440, hauteur: 860 },
-  { fichier: `detail-offre${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc&offer=4', largeur: 1440, hauteur: 1000 },
+  { fichier: `dashboard${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc', largeur: 1440, hauteur: 860 },
+  { fichier: `offer-detail${suffixe}.png`, chemin: '/?sort=received_at:desc,score:desc&offer=4', largeur: 1440, hauteur: 1000 },
   // Panneau « Boîte mail » ouvert, adresse Gmail saisie : messagerie reconnue et encart du mot de passe d'application.
   {
-    fichier: `boite-mail${suffixe}.png`,
+    fichier: `mailbox${suffixe}.png`,
     chemin: '/?sort=received_at:desc,score:desc',
     largeur: 1440,
     hauteur: 900,

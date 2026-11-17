@@ -1,7 +1,7 @@
 ---
 name: preparer-go
 description: >-
-  Prépare les candidatures des offres en « go » qui n'ont pas encore de dossier : dossier de candidature, CV ciblé, messages, enregistrement dans la base, suivi régénéré, puis liste des envois à faire. À charger quand l'utilisateur demande de préparer ses candidatures ou ses go, ou via le bouton « Préparer les candidatures » du tableau de bord.
+  Prepares the applications for the job ads marked "go" that do not have an application file yet: application file, targeted CV, messages, record in the database, regenerated tracker, then the list of applications to send. Load it when the user asks to prepare their applications or their "go" offers, or from the dashboard's "Prepare N applications" button.
 ---
 
-Suivre la procédure [`procedures/preparer-go.md`](../../../procedures/preparer-go.md) de l'espace de travail, après avoir lu `_CONTEXTE.md`. Les procédures sont communes à toutes les IA : ce skill n'en est que le point d'entrée pour Claude Code.
+Follow the workspace procedure [`procedures/preparer-go.md`](../../../procedures/preparer-go.md), after reading `_CONTEXTE.md`. The procedures are shared by every AI: this skill is only their entry point for Claude Code.

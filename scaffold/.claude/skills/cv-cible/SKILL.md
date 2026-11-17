@@ -1,7 +1,7 @@
 ---
 name: cv-cible
 description: >-
-  Rédige un CV ciblé pour une offre et le convertit en PDF de 2 pages avec le gabarit de l'espace. À charger dès qu'on rédige, cible ou convertit un CV.
+  Writes a CV targeted at a job ad and converts it into a 2-page PDF with the workspace's template. Load it as soon as a CV is being written, targeted or converted.
 ---
 
-Suivre la procédure [`procedures/cv-cible.md`](../../../procedures/cv-cible.md) de l'espace de travail, après avoir lu `_CONTEXTE.md`. Les procédures sont communes à toutes les IA : ce skill n'en est que le point d'entrée pour Claude Code.
+Follow the workspace procedure [`procedures/cv-cible.md`](../../../procedures/cv-cible.md), after reading `_CONTEXTE.md`. The procedures are shared by every AI: this skill is only their entry point for Claude Code.

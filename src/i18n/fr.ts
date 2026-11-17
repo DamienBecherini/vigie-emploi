@@ -15,7 +15,7 @@ Commandes
   init [dossier] [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
                         Crée un espace de travail (~/vigie-emploi sans dossier donné ; modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA ; --language : langue de l'interface,
-                        de la CLI et du suivi (fr par défaut)
+                        de la CLI et du suivi (par défaut, celle du système)
   count <fichier>       Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
                         « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
   templates             Gabarits de CV livrés (plain, modern, compact…)
@@ -353,7 +353,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'init.notCompile': 'Tableau de bord non compilé : lancer « npm run build » dans {app} avant « vigie-emploi serve ».',
   'init.withoutBrowser':
     'Aucun Chrome, Edge ou Chromium trouvé : la génération des CV en PDF ne marchera pas. Installer Chrome ou Edge, ou indiquer le chemin du navigateur dans VIGIE_EMPLOI_BROWSER.',
-  'init.scaffoldFrench': "Les consignes de l'IA (modèle de l'espace) sont en français pour l'instant ; leur version anglaise viendra plus tard.",
+  'init.scaffoldEnglish': "Pas encore de modèle d'espace dans cette langue : les consignes de l'IA sont en anglais. Votre IA peut tout de même vous parler dans votre langue.",
 
   // ---------------------------------------------------------------------------------------------
   // Core (src/core, ingestion, CV): errors and messages returned to the CLI, the API and the MCP server
@@ -410,7 +410,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.summaryChange': 'Résumé du changement attendu',
   'core.rubricModifiedFile': 'Modifiée dans le fichier grille.json',
   'core.rubricInitial': 'Version initiale (fichier grille.json)',
-  'core.notOfRubric': 'Pas de grille de notation : créer {path} (modèle : examples/rubric.json, ou « vigie-emploi rubric --init »)',
+  'core.notOfRubric': 'Pas de grille de notation : créer {path} (modèle : examples/rubric.fr.json, ou « vigie-emploi rubric --init »)',
   'core.noneChange': 'Aucun changement par rapport à la version courante',
   'core.backVersion': 'Retour à la version {version}',
   'core.rubric.computationExpected': 'critère {id} : « computation » attendu ({computations})',

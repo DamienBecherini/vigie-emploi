@@ -1,4 +1,4 @@
-// Multilingual (phase B): English workspace template (scaffold-en), English sample rubric, application instructions
+// Multilingual (phase B): English and French workspace templates (scaffold, scaffold-fr), sample rubrics, application instructions
 // in English, MCP server and core messages in the configuration's language.
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -36,15 +36,15 @@ function tree(folder: string): string[] {
   return files.sort();
 }
 
-describe('scaffold-en', () => {
+describe('scaffold-fr', () => {
   it('has exactly the same tree as scaffold (a file added on one side only makes it fail)', () => {
-    expect(tree(join(APP, 'scaffold-en'))).toEqual(tree(join(APP, 'scaffold')));
+    expect(tree(join(APP, 'scaffold-fr'))).toEqual(tree(join(APP, 'scaffold')));
   });
 
-  it('keeps the same {{…}} markers as the French template, file by file', () => {
+  it('keeps the same {{…}} markers as the English template, file by file', () => {
     const markers = (f: string) => [...new Set(readFileSync(f, 'utf8').match(/\{\{\w+\}\}/g) ?? [])].sort();
     for (const f of tree(join(APP, 'scaffold'))) {
-      expect(markers(join(APP, 'scaffold-en', f)), f).toEqual(markers(join(APP, 'scaffold', f)));
+      expect(markers(join(APP, 'scaffold-fr', f)), f).toEqual(markers(join(APP, 'scaffold', f)));
     }
   });
 });
@@ -53,21 +53,21 @@ describe('init --language en', () => {
   const workspace = join(root, 'workspace-en');
   const r = initializeWorkspace({ folder: workspace, language: 'en', env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
 
-  it('copies scaffold-en without a remaining marker, with the .gitignore', () => {
+  it('copies scaffold without a remaining marker, with the .gitignore', () => {
     for (const f of tree(workspace).filter((x) => /\.(md|txt)$/.test(x))) {
       expect(readFileSync(join(workspace, f), 'utf8'), f).not.toMatch(/\{\{\w+\}\}/);
     }
     expect(existsSync(join(workspace, '.gitignore'))).toBe(true);
     expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/^# Instructions for the AI/);
     expect(readFileSync(join(workspace, '_CONTEXTE.md'), 'utf8')).toMatch(/^# Context — TO BE COMPLETED/);
-    expect(r.warnings.join('\n')).not.toMatch(/French/);
+    expect(r.warnings.join('\n')).not.toMatch(/No workspace template in this language/);
   });
 
-  it('points the application’s instructions to AGENTS.en.md', () => {
-    expect(nameInstructionsApp('en')).toBe('AGENTS.en.md');
-    expect(nameInstructionsApp('fr')).toBe('AGENTS.md');
-    expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/its instructions: `[^`]+\/AGENTS\.en\.md`/);
-    expect(readFileSync(join(workspace, 'procedures', 'traiter-emails.md'), 'utf8')).toContain('/AGENTS.en.md');
+  it('points the application’s instructions to AGENTS.md (AGENTS.fr.md for a French workspace)', () => {
+    expect(nameInstructionsApp('en')).toBe('AGENTS.md');
+    expect(nameInstructionsApp('fr')).toBe('AGENTS.fr.md');
+    expect(readFileSync(join(workspace, 'AGENTS.md'), 'utf8')).toMatch(/its instructions: `[^`]+\/AGENTS\.md`/);
+    expect(readFileSync(join(workspace, 'procedures', 'traiter-emails.md'), 'utf8')).toContain('/AGENTS.md');
   });
 
   it('installs the English rubric, valid', () => {

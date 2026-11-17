@@ -1,7 +1,7 @@
 ---
 name: traiter-emails
 description: >-
-  Traite le lot d'e-mails d'alertes d'offres déposé dans emails/ : ingestion, écarts sur l'intitulé, lecture, notation avec la grille, compte rendu des offres au-dessus du seuil en attendant le go. À charger quand l'utilisateur demande de traiter, trier ou regarder les e-mails ou les nouvelles offres, ou via le bouton « Traiter les e-mails » du tableau de bord.
+  Processes the batch of job alert e-mails dropped in emails/: ingestion, discarding by job title, reading, scoring with the grid, then a report on the ads above the threshold, awaiting the user's go. Load it when the user asks to process, sort or look at the e-mails or the new job ads, or from the dashboard's "Process N e-mails" button.
 ---
 
-Suivre la procédure [`procedures/traiter-emails.md`](../../../procedures/traiter-emails.md) de l'espace de travail, après avoir lu `_CONTEXTE.md`. Les procédures sont communes à toutes les IA : ce skill n'en est que le point d'entrée pour Claude Code.
+Follow the workspace procedure [`procedures/traiter-emails.md`](../../../procedures/traiter-emails.md), after reading `_CONTEXTE.md`. The procedures are shared by every AI: this skill is only their entry point for Claude Code.

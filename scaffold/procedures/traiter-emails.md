@@ -1,51 +1,51 @@
-# Procédure : traiter les e-mails d'alertes
+# Procedure: process the job alert e-mails
 
-Déclencheurs : « traite les e-mails », « regarde les nouvelles offres », bouton « Traiter les e-mails » du tableau de bord.
-Référence de l'application : `{{DOC_APP}}`. Cette fiche fige l'ordre et les pièges connus.
+Triggers: "process the e-mails", "look at the new job ads", the dashboard's "Process N e-mails" button.
+The application's reference: `{{DOC_APP}}`. This sheet sets the order and the known pitfalls.
 
-Outils : le serveur MCP de l'application (`ingest_emails`, `offers_to_read`, `rubric`, `score_batch`, `change_status`, `list_offers`, `read_offer`), sinon la CLI `{{CMD}} <commande> --json`. Sans accès aux fichiers : `read_file` pour `_CONTEXTE.md` (voir `AGENTS.md`). Lire la sortie JSON directement, sans la faire passer par un autre programme.
+Tools: the application's MCP server (`ingest_emails`, `offers_to_read`, `rubric`, `score_batch`, `change_status`, `list_offers`, `read_offer`), otherwise the CLI `{{CMD}} <command> --json`. Without file access: `read_file` for `_CONTEXTE.md` (see `AGENTS.md`). Read the JSON output directly, without passing it through another program.
 
-## 0. Navigateur
+## 0. Browser
 
-Un navigateur connecté (Claude in Chrome ou équivalent) permet de lire les offres LinkedIn, Indeed et Glassdoor. Si tu n'en vois pas, regarde d'abord `_CONTEXTE.md` (section 9) : si l'utilisateur a dit en avoir un, demande-lui de l'activer dans cette conversation (Claude Desktop : menu des outils) ; s'il n'a jamais été question, propose-le une fois. S'il n'est pas disponible : le dire tout de suite à l'utilisateur, traiter d'abord les offres dont la description est déjà en base, puis lui demander le texte des autres (ou de relancer avec le navigateur).
+A connected browser (Claude in Chrome or similar) lets you read the LinkedIn, Indeed and Glassdoor job ads. If you do not see one, first check `_CONTEXTE.md` (section 9): if the user said they have one, ask them to enable it in this conversation (Claude Desktop: tools menu); if it has never come up, suggest it once. If none is available: tell the user straight away, deal first with the ads whose description is already in the database, then ask them for the text of the others (or to run the procedure again with the browser).
 
-## 1. Ingérer
+## 1. Ingest
 
-`ingest_emails`. Donner en une phrase : nouvelles offres, doublons, écartées sur l'intitulé, à lire. Puis transmettre à l'utilisateur ce que dit `to_tell` : si une boîte mail est connectée, combien d'e-mails y ont été relevés, ou pourquoi elle n'a pas pu l'être (mot de passe refusé, dossier introuvable : aider à corriger, sans jamais demander le mot de passe dans la conversation) ; **les `.eml` traités ont été supprimés de `emails/`** (il doit le savoir), et chaque erreur d'ingestion (`errors` : description non lue, page sans données « JSON-LD », lien illisible…), avec l'offre concernée ; une description non lue n'empêche pas de lire l'offre dans le navigateur.
+`ingest_emails`. Report in one sentence: new job ads, duplicates, ads discarded by title, ads to read. Then pass on to the user what `to_tell` says: if a mailbox is connected, how many e-mails were fetched from it, or why it could not be (password refused, folder not found: help fix it, never asking for the password in the conversation); **the processed `.eml` files have been deleted from `emails/`** (they need to know), and every ingestion error (`errors`: description not read, page without "JSON-LD" data, unreadable link…), with the job ad concerned; a description that could not be read does not stop you reading the ad in the browser.
 
-**Accusés de réception de candidature** (`confirmations` du résultat : « Confirmation de votre candidature », « votre candidature a été envoyée »…) : ce ne sont pas des offres. Pour chacun, vérifier que la candidature est enregistrée comme envoyée (`known_offers`) ; sinon le signaler à l'utilisateur et l'enregistrer avec lui (`save_application` avec `sent_at`). Ne jamais les présenter comme de nouvelles offres. **E-mails non supprimés** (erreur « e-mail lu mais non supprimé ») : le signaler, ils reviendraient au lot suivant.
+**Application acknowledgements** (`confirmations` in the result: "Your application has been submitted", "Thank you for applying"…): these are not job ads. For each one, check that the application is recorded as sent (`known_offers`); otherwise point it out to the user and record it with them (`save_application` with `sent_at`). Never present them as new job ads. **E-mails not deleted** (error "e-mail read but not deleted"): point it out, they would come back with the next batch.
 
-## 2. Inventaire du lot
+## 2. Take stock of the batch
 
-`offers_to_read` renvoie un résumé par pages de 25 (id, intitulé, entreprise, lieu, `reading`, `length_description`) ; `remaining` > 0 : demander la page suivante (`page`). `reading` vaut `description` (texte déjà en base), `browser` (ouvrir l'URL) ou `human` (demander le texte). Ensuite, lire **offre par offre** avec `read_offer` (id) et noter par paquets. En CLI : `{{CMD}} to-read --json`.
+`offers_to_read` returns a summary in pages of 25 (id, title, company, location, `reading`, `length_description`); if `remaining` > 0, ask for the next page (`page`). `reading` is `description` (text already in the database), `browser` (open the URL) or `human` (ask for the text). Then read **one job ad at a time** with `read_offer` (id) and score them in batches. On the CLI: `{{CMD}} to-read --json`.
 
-## 3. Écarter sur l'intitulé
+## 3. Discard by title
 
-Sans lecture, ce qui est clairement hors cible au regard de `_CONTEXTE.md` (métier, technologie principale au niveau zéro, pays, stage…). `change_status` → `dismissed`, commentaire : `Écartée sur l'intitulé (lot du JJ/MM) : <raison>`.
+Without reading them, whatever is clearly off target given `_CONTEXTE.md` (occupation, main technology at level none, country, internship…). `change_status` → `dismissed`, comment: `Discarded by title (batch of DD/MM): <reason>`.
 
-## 4. Noter
+## 4. Score
 
-1. `rubric` d'abord : critères, barèmes, règles, inventaire, exemples.
-2. Pour chaque offre lue : sous-notes des critères `ai` avec justification courte, `inputs` (jours sur site, salaire ou TJM et son unité), `blockers` (règles de la grille), `fit`, `gaps`, `read: true`. **Ne jamais donner la note finale** : l'application la calcule.
-3. Un seul `score_batch` par paquet d'offres.
-4. Une offre mise à 0 par une règle bloquante passe ensuite en `dismissed`, avec la règle en commentaire.
+1. `rubric` first: criteria, scales, rules, inventory, examples.
+2. For each job ad read: sub-scores for the `ai` criteria with a short justification, `inputs` (days on site, salary or day rate and its unit), `blockers` (the grid's rules), `fit` (what matches), `gaps` (what is missing), `read: true`. **Never give the final score**: the application calculates it.
+3. A single `score_batch` per batch of job ads.
+4. A job ad set to 0 by a blocking rule then goes to `dismissed`, with the rule as the comment.
 
-## 5. Lire dans le navigateur
+## 5. Read in the browser
 
-Un onglet à soi, quelques offres à la fois, la description seule (pas toute la page). Pièges connus :
+A tab of your own, a few ads at a time, the description only (not the whole page). Known pitfalls:
 
-- **LinkedIn** : lisible connecté ; un chargement par script est refusé. Offre « candidatures non acceptées » ou page introuvable : `dismissed` (« offre fermée »), sans la présenter.
-- **Indeed** : préférer l'URL directe `https://fr.indeed.com/viewjob?jk=…` ; le lien de suivi de l'e-mail déclenche une vérification anti-robot.
-- **Glassdoor** : attendre le chargement, garder le texte à partir de « Description ». Page de vérification « human » : ne pas la contourner, demander à l'utilisateur.
-- **Hellowork, Free-Work** : la description est normalement déjà en base.
-- Doublon d'une offre déjà en base : `dismissed` (« doublon de #id »).
+- **LinkedIn**: readable when logged in; loading it with a script is refused. A job ad "no longer accepting applications" or a page not found: `dismissed` ("job closed"), without presenting it.
+- **Indeed**: prefer the direct URL `https://<country>.indeed.com/viewjob?jk=…` (for example `uk.indeed.com`); the tracking link in the e-mail triggers an anti-bot check.
+- **Glassdoor**: wait for the page to load, keep the text from "Description" onwards. A "human" verification page: do not get around it, ask the user.
+- **Hellowork, Free-Work** (French sites): the description is normally already in the database.
+- Duplicate of a job ad already in the database: `dismissed` ("duplicate of #id").
 
-Fermer l'onglet à la fin, puis `score_batch` pour ces offres.
+Close the tab at the end, then `score_batch` for these ads.
 
-## 6. Rendre compte
+## 6. Report back
 
-Tableau des offres au-dessus du seuil de la grille, meilleures d'abord : note, n°, entreprise, intitulé, lieu, rémunération, pourquoi, points à vérifier, **lien complet**. Signaler les notes trompeuses (une offre qui monte seulement grâce au télétravail, par exemple). Une ligne pour celles juste en dessous.
+A table of the job ads above the grid's threshold, best first: score, no., company, title, location, pay, why, points to check, **full link**. Flag misleading scores (an ad that only climbs thanks to remote work, for example). One line for those just below.
 
-Finir par : « Dis-moi sur quelles offres tu dis go ; les autres passeront en écartées. » Sur sa réponse : les offres sans go passent en `dismissed` (raison en commentaire), puis proposer de préparer les candidatures (procédure `prepare-go`).
+End with: "Tell me which job ads get a go; the others will be discarded." On their answer: the ads without a go move to `dismissed` (reason as the comment), then offer to prepare the applications (`prepare-go` procedure).
 
-Si l'espace est versionné avec git : commit de la base (`data/vigie-emploi.sqlite`) avec un message « Lot du JJ/MM : N offres, X écartées, Y notées ».
+If the workspace is under version control with git: commit the database (`data/vigie-emploi.sqlite`) with a message such as "Batch of DD/MM: N job ads, X discarded, Y scored".

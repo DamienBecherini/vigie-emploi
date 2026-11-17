@@ -3,20 +3,20 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { NAME_FILE_CONFIG, APP_ROOT } from '../core/config.ts';
+import { NAME_FILE_CONFIG, APP_ROOT, systemLanguage } from '../core/config.ts';
 import { exampleRubric } from '../core/rubric-storage.ts';
 import { commandNode } from '../core/node.ts';
 import { FOLDER_TEMPLATES, TEMPLATE_DEFAULT, listTemplates, findBrowser } from '../cv/cv.ts';
-import { isLanguage, LANGUAGE_DEFAULT, LANGUAGES, tl, type Language } from '../i18n/index.ts';
+import { isLanguage, LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, tl, type Language } from '../i18n/index.ts';
 
 export const SCAFFOLD = join(APP_ROOT, 'scaffold');
 
 /**
  * Workspace template in the wanted language: scaffold-<language>/ if it exists (translated AI instructions),
- * otherwise scaffold/ (French).
+ * otherwise scaffold/ (English).
  */
 export function scaffoldForLanguage(language: Language, root: string = APP_ROOT): string {
-  if (language === LANGUAGE_DEFAULT) return join(root, 'scaffold');
+  if (language === LANGUAGE_REFERENCE) return join(root, 'scaffold');
   const translated = join(root, `scaffold-${language}`);
   return existsSync(translated) ? translated : join(root, 'scaffold');
 }
@@ -24,9 +24,9 @@ export const BINARY = join(APP_ROOT, 'bin', 'vigie-emploi.js');
 /** The application's instructions for the agent (AGENTS.md at the application's root). */
 export const INSTRUCTIONS_APP = join(APP_ROOT, 'AGENTS.md');
 
-/** Name of the application's instructions in a language: AGENTS.<language>.md if it exists, otherwise AGENTS.md (French). */
+/** Name of the application's instructions in a language: AGENTS.<language>.md if it exists, otherwise AGENTS.md (English). */
 export function nameInstructionsApp(language: Language, root: string = APP_ROOT): string {
-  if (language === LANGUAGE_DEFAULT) return 'AGENTS.md';
+  if (language === LANGUAGE_REFERENCE) return 'AGENTS.md';
   return existsSync(join(root, `AGENTS.${language}.md`)) ? `AGENTS.${language}.md` : 'AGENTS.md';
 }
 const DROP_PUBLIC = 'https://github.com/DamienBecherini/vigie-emploi/blob/main/';
@@ -138,7 +138,7 @@ export function expandHome(folder: string, home = homedir()): string {
 }
 
 export function initializeWorkspace(o: OptionsInit): ResultInit {
-  const language = o.language ?? LANGUAGE_DEFAULT;
+  const language = o.language ?? systemLanguage(o.env);
   if (!isLanguage(language)) errorUser(tl(LANGUAGE_DEFAULT, 'init.languageUnknown', { language: String(language), languages: LANGUAGES.join(', ') }));
   const m = (key: Parameters<typeof tl>[1], params?: Parameters<typeof tl>[2]) => tl(language, key, params);
   if (!o.folder) errorUser(m('init.folderExpected'));
@@ -166,13 +166,13 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
   const launched = launch();
   const { command, app } = launched;
 
-  // Translated template (scaffold-en/…) if it exists; otherwise the French template, reported by a warning.
+  // Translated template (scaffold-fr/…) if it exists; otherwise the English template, reported by a warning.
   const scaffold = scaffoldForLanguage(language);
   cpSync(scaffold, folder, { recursive: true });
   // npm does not ship the .gitignore files of a package: the template keeps it under the name "gitignore".
   if (existsSync(join(folder, 'gitignore'))) renameSync(join(folder, 'gitignore'), join(folder, '.gitignore'));
   // The application's instructions: read in place, except from the npx cache (purgeable) where a copy is made.
-  // Version in the workspace's language (AGENTS.en.md…) if there is one.
+  // Version in the workspace's language (AGENTS.fr.md…) if there is one.
   const instructions = nameInstructionsApp(language);
   let docApp = `${slash(APP_ROOT)}/${instructions}`;
   if (launched.mode === 'npx') {
@@ -194,7 +194,7 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
   writeFileSync(mcp, `${JSON.stringify({ mcpServers: { [mcpName]: server } }, null, 2)}\n`, 'utf8');
 
   const warnings: string[] = [];
-  if (language !== LANGUAGE_DEFAULT && scaffold === SCAFFOLD) warnings.push(m('init.scaffoldFrench'));
+  if (language !== LANGUAGE_REFERENCE && scaffold === SCAFFOLD) warnings.push(m('init.scaffoldEnglish'));
   if (launched.mode === 'npx') warnings.push(m('init.npx', { command }));
   if (!existsSync(join(APP_ROOT, 'dist', 'ui', 'index.html'))) warnings.push(m('init.notCompile', { app }));
   const browser = findBrowser(o.env);

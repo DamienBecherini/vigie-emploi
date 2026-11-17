@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { textPdf } from '../src/core/extraction.ts';
 import { applyChange } from '../src/core/rubric.ts';
-import { EXAMPLE_RUBRIC, readFileRubric } from '../src/core/rubric-storage.ts';
+import { exampleRubric, readFileRubric } from '../src/core/rubric-storage.ts';
 import { APP_ROOT } from '../src/core/config.ts';
 
 describe('dropped PDF: the links are read', () => {
   it('returns the address hidden behind “GitHub” in a CV', async () => {
-    const r = await textPdf(readFileSync(join(APP_ROOT, 'docs', 'exemples', 'CV-damien-becherini-plain.pdf')));
+    const r = await textPdf(readFileSync(join(APP_ROOT, 'docs', 'examples', 'CV-damien-becherini-plain.fr.pdf')));
     expect(r.links).toHaveLength(r.pages);
     expect(r.links[0]).toContain('https://github.com/DamienBecherini');
     expect(r.text[0]).toContain('GitHub');
@@ -17,7 +17,7 @@ describe('dropped PDF: the links are read', () => {
 });
 
 describe('rubric: changing a rule does not touch the others', () => {
-  const g = () => readFileRubric(EXAMPLE_RUBRIC)!.rubric;
+  const g = () => readFileRubric(exampleRubric('fr'))!.rubric;
 
   it('the rules not mentioned stay; only remove_rules deletes some', () => {
     const database = g();

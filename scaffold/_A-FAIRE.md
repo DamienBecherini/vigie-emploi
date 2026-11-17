@@ -1,3 +1,3 @@
-# À faire
+# To do
 
-<!-- Actions et corrections en attente, une par ligne, datées. Les retirer une fois faites. -->
+<!-- Pending actions and corrections, one per line, dated. Remove them once done. -->

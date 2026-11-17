@@ -1,3 +1,3 @@
-# Profils publics
+# Public profiles
 
-L'IA range ici l'état des profils publics qu'elle a lus ou rédigés (LinkedIn, Malt, site personnel…), un fichier par profil, daté. Cela permet de garder les profils cohérents avec le contexte et les CV.
+The AI keeps here the state of the public profiles it has read or written (LinkedIn, Malt, Upwork, personal website…), one dated file per profile. This keeps the profiles consistent with the context and the CVs.

@@ -1,10 +1,10 @@
-# Procédure : CV ciblé
+# Procedure: targeted CV
 
-Le **contenu** vient de l'offre, du dossier de candidature et de `_CONTEXTE.md`. La **mise en page** est décrite dans [`../cv/LISEZMOI.md`](../cv/LISEZMOI.md).
+The **content** comes from the job ad, the application file and `_CONTEXTE.md`. The **layout** is described in [`../cv/LISEZMOI.md`](../cv/LISEZMOI.md).
 
-1. Partir de l'annonce et du dossier, pas d'un autre CV : ne jamais transposer le discours d'un CV ciblé vers une autre cible. Le CV de référence (section « CV de référence » de `_CONTEXTE.md`) sert de base de faits.
-2. Écrire `cv/<Prénom>_<NOM>_CV-cible-<Entreprise>-<Poste>.md` : titre avec les mots de l'annonce, résumé et compétences réordonnés selon ce que l'offre demande, réalisations qui y répondent. Une mission freelance met en avant les preuves clients ; un CDI, les compétences et réalisations.
-3. Vérifier chaque ligne contre l'inventaire et les interdits de `_CONTEXTE.md`. Une compétence prouvée s'écrit sans précaution ; ce qui n'est pas revendicable n'apparaît pas, même reformulé.
-4. `{{CMD}} cv "cv/<fichier>.md" --capture` (ou `generate_cv` avec `capture: true`) : **2 pages**, le remplissage de chaque page et ses avertissements (saut de page mal placé, dernière page trop vide) à corriger, puis regarder l'image des pages. Au-delà de 2 pages, couper du texte ; ne pas réduire la police ni toucher au gabarit.
-5. Ne jamais écraser un PDF déjà envoyé : nouvelle version avec le suffixe « V2 ».
-6. **Le gabarit (`cv/gabarit/gabarit.css`) est commun à tous les CV** : ne le modifier qu'à la demande de l'utilisateur, en le prévenant que le changement vaut pour tous ses CV.
+1. Start from the ad and the application file, not from another CV: never carry the pitch of one targeted CV over to another target. The reference CV ("Reference CV" section of `_CONTEXTE.md`) is the source of facts.
+2. Write `cv/<FirstName>_<LASTNAME>_CV-for-<Company>-<Role>.md`: a title using the ad's wording, a summary and skills reordered to match what the ad asks for, achievements that answer it. A freelance contract puts client evidence first; a permanent role, skills and achievements.
+3. Check every line against the inventory and the restrictions in `_CONTEXTE.md`. A proven skill is written without hedging; anything that cannot be claimed does not appear, however it is rephrased.
+4. `{{CMD}} cv "cv/<file>.md" --capture` (or `generate_cv` with `capture: true`): **2 pages**; deal with the fill warnings (badly placed page break, last page too empty), then look at the image of the pages. Beyond 2 pages, cut text; do not shrink the font or touch the template.
+5. Never overwrite a PDF that has already been sent: new version with the suffix "V2".
+6. **The template (`cv/gabarit/gabarit.css`) is shared by all the CVs**: only change it when the user asks, warning them that the change applies to all their CVs.

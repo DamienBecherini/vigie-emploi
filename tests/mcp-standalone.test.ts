@@ -148,13 +148,13 @@ describe('standalone MCP server (in memory)', () => {
   });
 
   it('reads the text of a dropped PDF and returns an image as an image', async () => {
-    copyFileSync(join(ROOT, 'docs', 'exemples', 'CV-damien-becherini-plain.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
+    copyFileSync(join(ROOT, 'docs', 'examples', 'CV-damien-becherini-plain.fr.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
     const pdf = text(await call('read_file', { path: 'a-deposer/CV.pdf' }));
     expect(pdf).toMatch(/PDF, 2 page\(s\), extracted text/);
     expect(pdf).toContain('Damien BECHERINI');
     expect(pdf).toContain('----- page 2 / 2 -----');
 
-    copyFileSync(join(ROOT, 'docs', 'captures', readdirPng()), join(workspace, 'a-deposer', 'capture.png'));
+    copyFileSync(join(ROOT, 'docs', 'screenshots', readdirPng()), join(workspace, 'a-deposer', 'capture.png'));
     const img = (await call('read_file', { path: 'a-deposer/capture.png' })) as Result;
     expect(img.content.map((c) => c.type)).toEqual(['text', 'image']);
     expect(img.content[1].mimeType).toBe('image/png');
@@ -175,9 +175,9 @@ describe('standalone MCP server (in memory)', () => {
   });
 });
 
-/** A PNG capture shipped in docs/captures. */
+/** A PNG capture shipped in docs/screenshots. */
 function readdirPng(): string {
-  return readdirSync(join(ROOT, 'docs', 'captures')).find((n) => n.endsWith('.png'))!;
+  return readdirSync(join(ROOT, 'docs', 'screenshots')).find((n) => n.endsWith('.png'))!;
 }
 
 describe('standalone MCP server (stdio, end to end)', () => {

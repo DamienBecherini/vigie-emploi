@@ -9,7 +9,7 @@ import { translate, type MessageText } from '../src/i18n/tool.ts';
 import { labelStatus, messageFlag } from '../src/i18n/labels.ts';
 import { STATUSES } from '../src/core/statuses.ts';
 import { DICTIONARIES_UI } from '../ui/src/i18n/index.ts';
-import { loadConfig } from '../src/core/config.ts';
+import { loadConfig, systemLanguage } from '../src/core/config.ts';
 import { initializeWorkspace, SCAFFOLD, scaffoldForLanguage } from '../src/init/init.ts';
 import { openDatabase } from '../src/db/database.ts';
 import { importHistory } from '../src/import/history.ts';
@@ -94,29 +94,57 @@ describe('init --language en', () => {
     expect(loadConfig({ cwd: workspace, env: {} }).language).toBe('en');
   });
 
-  it('onboarding prompt and warnings in English; English template (scaffold-en/)', () => {
+  it('onboarding prompt and warnings in English; English template (scaffold/)', () => {
     expect(r.prompt).toMatch(/^You are going to help me with my job search/);
     expect(r.prompt).toContain(`${r.folder}/DEMARRAGE.md`);
     expect(r.warnings.join('\n')).toMatch(/No Chrome, Edge or Chromium found/);
-    expect(r.warnings.join('\n')).not.toMatch(/in French for now/);
+    expect(r.warnings.join('\n')).not.toMatch(/No workspace template in this language/);
     expect(readFileSync(join(workspace, 'DEMARRAGE.md'), 'utf8')).toMatch(/^# Onboarding/);
   });
 
-  it('without --language: “fr” written into the configuration', () => {
-    const fr = initializeWorkspace({ folder: join(root, 'workspace-fr'), env: { VIGIE_EMPLOI_BROWSER: '/nulle/part' } });
+  it('without --language: the system’s language, written into the configuration', () => {
+    const fr = initializeWorkspace({ folder: join(root, 'workspace-fr'), env: { VIGIE_EMPLOI_BROWSER: '/nulle/part', LANG: 'fr_FR.UTF-8' } });
     expect(fr.language).toBe('fr');
     expect(fr.prompt).toMatch(/^Tu vas m'aider/);
-    expect(fr.warnings.join('\n')).not.toMatch(/in French for now/);
+    expect(fr.warnings.join('\n')).not.toMatch(/Pas encore de modèle/);
+    expect(JSON.parse(readFileSync(join(root, 'workspace-fr', 'vigie-emploi.config.json'), 'utf8')).language).toBe('fr');
+    const de = initializeWorkspace({ folder: join(root, 'workspace-de'), env: { VIGIE_EMPLOI_BROWSER: '/nulle/part', LC_ALL: 'de_DE.UTF-8' } });
+    expect(de.language).toBe('en');
+  });
+
+  it('system language: LC_ALL, LC_MESSAGES, LANG in that order, then the locale Node reports; English when the language is not available', () => {
+    expect(systemLanguage({ LANG: 'fr_FR.UTF-8' }, 'en-US')).toBe('fr');
+    expect(systemLanguage({ LC_ALL: 'en_GB.UTF-8', LANG: 'fr_FR.UTF-8' }, 'fr-FR')).toBe('en');
+    expect(systemLanguage({ LC_MESSAGES: 'fr_CA', LANG: 'en_US' }, 'en-US')).toBe('fr');
+    // "C" and "POSIX" name no language: the next source decides.
+    expect(systemLanguage({ LC_ALL: 'C', LANG: 'C.UTF-8' }, 'fr-FR')).toBe('fr');
+    expect(systemLanguage({ LANG: 'POSIX' }, 'en-US')).toBe('en');
+    expect(systemLanguage({}, 'fr')).toBe('fr');
+    expect(systemLanguage({ LANG: 'es_ES.UTF-8' }, 'fr-FR')).toBe('en');
+    expect(systemLanguage({}, 'ja-JP')).toBe('en');
+  });
+
+  it('configuration: a file without “language” is a French workspace; without a file, the system’s language', () => {
+    const old = join(root, 'workspace-old');
+    mkdirSync(old, { recursive: true });
+    writeFileSync(join(old, 'vigie-emploi.config.json'), JSON.stringify({ dataDir: '.' }));
+    expect(loadConfig({ cwd: old, env: { LANG: 'en_GB.UTF-8' } }).language).toBe('fr');
+    const bare = join(root, 'workspace-bare');
+    mkdirSync(bare, { recursive: true });
+    expect(loadConfig({ cwd: bare, dataDir: bare, env: { LANG: 'en_GB.UTF-8' } }).language).toBe('en');
+    expect(loadConfig({ cwd: bare, dataDir: bare, env: { LANG: 'fr_FR.UTF-8' } }).language).toBe('fr');
   });
 
   it('copies scaffold-<language>/ when it exists', () => {
     const app = join(root, 'app');
     mkdirSync(join(app, 'scaffold'), { recursive: true });
-    expect(scaffoldForLanguage('en', app)).toBe(join(app, 'scaffold'));
-    mkdirSync(join(app, 'scaffold-en'));
-    expect(scaffoldForLanguage('en', app)).toBe(join(app, 'scaffold-en'));
+    // No translation yet: the English template (scaffold/) is copied.
     expect(scaffoldForLanguage('fr', app)).toBe(join(app, 'scaffold'));
-    expect(scaffoldForLanguage('en')).toBe(join(SCAFFOLD, '..', 'scaffold-en'));
+    mkdirSync(join(app, 'scaffold-fr'));
+    expect(scaffoldForLanguage('fr', app)).toBe(join(app, 'scaffold-fr'));
+    expect(scaffoldForLanguage('en', app)).toBe(join(app, 'scaffold'));
+    expect(scaffoldForLanguage('fr')).toBe(join(SCAFFOLD, '..', 'scaffold-fr'));
+    expect(scaffoldForLanguage('en')).toBe(SCAFFOLD);
   });
 });
 
@@ -257,7 +285,7 @@ Backend developer.
   it('language of the document deduced from the titles (en / fr), without depending on the configuration', () => {
     expect(cvLanguage(md)).toBe('en');
     expect(html).toContain('<html lang="en">');
-    const fr = readFileSync(join(SCAFFOLD, 'cv', '_exemple-structure.md'), 'utf8');
+    const fr = readFileSync(join(scaffoldForLanguage('fr'), 'cv', '_exemple-structure.md'), 'utf8');
     expect(cvLanguage(fr)).toBe('fr');
     expect(cvToHtml(fr, { css: 'g.css' })).toContain('<html lang="fr">');
   });

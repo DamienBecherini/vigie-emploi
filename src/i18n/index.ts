@@ -6,7 +6,7 @@ import { fr, type KeyServer } from './fr.ts';
 import { LANGUAGE_DEFAULT, LOCALES, translate, type Language, type Params, type MessageText } from './tool.ts';
 
 export type { KeyServer };
-export { LANGUAGE_DEFAULT, LANGUAGES, LOCALES, isLanguage, type Language } from './tool.ts';
+export { LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, LOCALES, isLanguage, type Language } from './tool.ts';
 
 export const DICTIONARIES: Record<Language, Record<KeyServer, MessageText>> = { fr, en };
 

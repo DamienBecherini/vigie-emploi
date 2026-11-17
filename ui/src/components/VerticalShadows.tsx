@@ -3,7 +3,7 @@
 import { useEffect, useState, type RefObject } from 'react';
 
 /** Content hidden at the top / bottom of the area (followed on scroll and on size changes). */
-export function useShadowsVertical(ref: RefObject<HTMLElement | null>, active = true) {
+export function useVerticalShadows(ref: RefObject<HTMLElement | null>, active = true) {
   const [shadows, setShadows] = useState({ high: false, low: false });
   useEffect(() => {
     const el = ref.current;
@@ -31,7 +31,7 @@ export function useShadowsVertical(ref: RefObject<HTMLElement | null>, active = 
 }
 
 /** The two shadows, to place after the scrolling area, in its `relative` parent (rounding of the area: rounded-md). */
-export function ShadowsVertical({ high, low }: { high: boolean; low: boolean }) {
+export function VerticalShadows({ high, low }: { high: boolean; low: boolean }) {
   const shadow =
     'pointer-events-none absolute inset-x-px h-4 from-slate-900/15 to-transparent transition-opacity duration-200 dark:from-black/60';
   return (

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
  * really stuck to the left edge, that is when the scrolling goes beyond its natural position). That column
  * then displays its own shadow (`group-data-[stuck=true]/scroll:…`); `shadowLeft={false}` removes the left edge shadow.
  */
-export function ScrollHorizontal({
+export function HorizontalScroll({
   className,
   shadowLeft = true,
   refContainer,

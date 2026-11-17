@@ -332,6 +332,14 @@ npm run build       # typecheck + compilation de l'interface
 npm run mcpb        # extension Claude Desktop : build/vigie-emploi-<version>.mcpb
 ```
 
+Captures du README et CV d'exemple (données fictives, en français et en anglais) :
+
+```sh
+node scripts/demo/demo.ts ../demo-fr fr                  # espace de démonstration (14 offres, candidatures, échéances)
+node scripts/demo/captures.mjs ../demo-fr fr             # docs/captures/tableau-de-bord.png, detail-offre.png (après npm run build)
+bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf et docs/captures/cv-*.png (pypdfium2 requis)
+```
+
 Arborescence :
 
 ```
@@ -353,7 +361,7 @@ ui/                   interface React 19 + Vite + Tailwind CSS v4 + TanStack Tab
 modele/, modele-en/   modèle d'espace de travail copié par init (consignes de l'IA, démarrage, exemple de CV)
 gabarits/cv/          gabarits de CV (« sobre », « moderne », « compact »)
 exemples/             grilles de notation d'exemple (française et anglaise)
-mcpb/, scripts/       extension Claude Desktop (manifeste, construction)
+mcpb/, scripts/       extension Claude Desktop (manifeste, construction) ; scripts/demo/ : espace de démo, captures, CV d'exemple
 docs/adr/             décisions d'architecture
 ```
 

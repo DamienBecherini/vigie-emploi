@@ -41,11 +41,11 @@ e-mail alerts (.eml)  →  triage and scoring by the AI (your grid)  →  your "
 
 The application **calls no AI model**: your agent reads and writes, the application keeps the state (SQLite database, web dashboard, CLI, MCP server).
 
-![Dashboard: offers sorted by date then score, upcoming deadlines, statistics](docs/captures/tableau-de-bord.png)
+![Dashboard: offers sorted by date then score, upcoming deadlines, statistics](docs/captures/tableau-de-bord.en.png)
 
 *The dashboard (fictitious data, French interface): offers sorted by date received then by score, deadlines for the next seven days, applications by stage.*
 
-![Offer details: score breakdown criterion by criterion](docs/captures/detail-offre.png)
+![Offer details: score breakdown criterion by criterion](docs/captures/detail-offre.en.png)
 
 *Offer details: each criterion, its sub-score, its weight and its contribution to the final score, with the AI's justification.*
 
@@ -334,6 +334,14 @@ npm run build       # typecheck + interface build
 npm run mcpb        # Claude Desktop extension: build/vigie-emploi-<version>.mcpb
 ```
 
+README screenshots and sample résumés (fictitious data, French and English):
+
+```sh
+node scripts/demo/demo.ts ../demo-en en                  # demo workspace (14 offers, applications, deadlines)
+node scripts/demo/captures.mjs ../demo-en en             # docs/captures/tableau-de-bord.en.png, detail-offre.en.png (after npm run build)
+bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf and docs/captures/cv-*.png (needs pypdfium2)
+```
+
 Layout:
 
 ```
@@ -355,7 +363,7 @@ ui/                   React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query
 modele/, modele-en/   workspace template copied by init (AI instructions, onboarding, sample résumé)
 gabarits/cv/          résumé templates ("sobre", "moderne", "compact")
 exemples/             sample scoring grids (French and English)
-mcpb/, scripts/       Claude Desktop extension (manifest, build)
+mcpb/, scripts/       Claude Desktop extension (manifest, build); scripts/demo/: demo workspace, screenshots, sample résumés
 docs/adr/             architecture decisions (in French)
 ```
 

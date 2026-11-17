@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 
 // Hide the "experimental" warnings of node:sqlite and of TypeScript loading, without hiding the others.
 const emit = process.emitWarning;
-process.emitWarning = function (warning, ...rest) {
+process.emitWarning = (warning, ...rest) => {
   const type = typeof rest[0] === 'string' ? rest[0] : rest[0]?.type;
   const text = String(warning?.message ?? warning);
   if (type === 'ExperimentalWarning' && /SQLite|Type Stripping|type stripping/i.test(text)) return;

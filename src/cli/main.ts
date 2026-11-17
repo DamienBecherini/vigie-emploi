@@ -375,7 +375,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
       tags: list(v.tag),
       scoreMin: number(v['score-min'], 'score-min'),
       scoreMax: number(v['score-max'], 'score-max'),
-      unscored: v['unscored'] === true ? true : v['unscored'] === false ? false : undefined,
+      unscored: v.unscored === true ? true : v.unscored === false ? false : undefined,
       receivedFrom: v.from as string | undefined,
       receivedUntil: v.until as string | undefined,
       publishedFrom: v['published-from'] as string | undefined,

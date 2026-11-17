@@ -23,6 +23,7 @@ export function HorizontalScroll({
   const internal = useRef<HTMLDivElement>(null);
   const ref = refContainer ?? internal;
   const [edges, setEdges] = useState({ left: false, right: false, stuck: false });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: set up once: the ref object does not change for the life of the component
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

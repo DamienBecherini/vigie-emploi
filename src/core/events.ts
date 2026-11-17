@@ -155,7 +155,7 @@ export function pathRelative(v: string): string {
   const t = v.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
   if (!t) throw new Error(tr('core.pathEmpty'));
   if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new Error(tr('core.pathAbsolute', { path: v }));
-  // eslint-disable-next-line no-control-regex
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what this check refuses
   if (/[\u0000-\u001f]/.test(t)) throw new Error(tr('core.pathInvalid', { path: v }));
   const segments = t.split('/').filter((s) => s !== '' && s !== '.');
   if (segments.some((s) => s === '..' || s.startsWith('.'))) throw new Error(tr('core.pathRefused', { path: v }));

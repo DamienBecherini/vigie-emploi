@@ -128,6 +128,7 @@ export function ChoiceTheme(props: {
   ];
   // Portal: the header (sticky, blurred) would trap a fixed position.
   return createPortal(
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop, a click outside closes the panel; Escape does the same from the keyboard
     <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4 sm:pt-16" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div
         role="dialog"
@@ -148,6 +149,7 @@ export function ChoiceTheme(props: {
             <legend className="label">{t('theme.mode')}</legend>
             <div role="radiogroup" className="flex flex-wrap gap-2">
               {modes.map(([m, label, Icon]) => (
+                // biome-ignore lint/a11y/useSemanticElements: buttons of a radio group, styled as the other buttons of the panel
                 <button
                   key={m}
                   type="button"

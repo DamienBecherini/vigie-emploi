@@ -53,7 +53,11 @@
     "vigie-emploi": "node bin/vigie-emploi.js",
     "build:js": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "mcpb": "node scripts/mcpb.mjs"
+    "mcpb": "node scripts/mcpb.mjs",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "coverage": "vitest run --coverage",
+    "check": "npm run typecheck && npm run lint && npm run build && npm test"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",
@@ -68,6 +72,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^2.1.2",
+    "@biomejs/biome": "2.6.8",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.104.5",
     "@tanstack/react-table": "^8.21.3",
@@ -75,6 +80,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.1.0",
     "hoodiecrow-imap": "3.3.1",
     "lucide-react": "^1.67.0",
     "react": "^19.2.9",
@@ -82,6 +88,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.3.5",
-    "vitest": "^5.0.4"
+    "vitest": "^5.1.0"
   }
 }

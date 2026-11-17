@@ -123,6 +123,7 @@ function Scales({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =
       <div className="flex flex-wrap gap-2">
         {tt.onsite_days.map((v, j) => (
           <FieldNumber
+            // biome-ignore lint/suspicious/noArrayIndexKey: six fixed positions (days on site, 0 to 5)
             key={j}
             className="w-20"
             label={j === 0 ? t('scales.fullRemote') : t('scales.days', { n: j })}
@@ -432,6 +433,7 @@ function Examples({ g }: { g: Rubric }) {
         {g.examples.map((e, i) => {
           const d = scoreExample(g, e);
           return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: read-only list, redrawn as a whole
             <li key={i} className="rounded-md bg-slate-50 p-2 text-sm dark:bg-slate-800/60">
               <p className="flex flex-wrap items-center gap-2">
                 <BadgeScore score={d.score} />
@@ -530,7 +532,7 @@ function History({ current, restore }: { current: number | null; restore: (v: nu
   );
 }
 
-export function Settings({ close, choose, announce: announce }: { close: () => void; choose: (id: number) => void; announce: (m: string) => void }) {
+export function Settings({ close, choose, announce }: { close: () => void; choose: (id: number) => void; announce: (m: string) => void }) {
   const client = useQueryClient();
   const title = useId();
   const header = useRef<HTMLHeadingElement>(null);
@@ -605,6 +607,7 @@ export function Settings({ close, choose, announce: announce }: { close: () => v
   });
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop, a click outside closes the panel; Escape does the same from the keyboard
     <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/40" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <aside
         role="dialog"

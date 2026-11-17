@@ -1,0 +1,65 @@
+// Lint and formatting (Biome). `npm run lint` checks, `npm run format` rewrites.
+// Scope: the code only (TypeScript, the scripts, the entry point). Markdown, JSON, CSS and the workspace templates are left alone.
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["src/**/*.ts", "ui/src/**/*.ts", "ui/src/**/*.tsx", "tests/**/*.ts", "scripts/**/*.mjs", "scripts/**/*.ts", "bin/**/*.js", "*.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    // The width the code was already written to: the one that rewrote the fewest files when the formatter was introduced.
+    "lineWidth": 160
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        // Two deliberate idioms: `updated((x) => void (x.threshold = n))` in the settings panel, and
+        // `if ((m = url.match(…)))` in the link recognition.
+        "noAssignInExpressions": "off"
+      },
+      "style": {
+        // Reported, not blocking: each `!` is a place where the type does not say what the code knows.
+        "noNonNullAssertion": "warn"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // Tests assert on values they have just created, and quote `${…}` placeholders as plain text.
+      "includes": ["tests/**"],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "off" },
+          "suspicious": { "noTemplateCurlyInString": "off" }
+        }
+      }
+    }
+  ],
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  }
+}

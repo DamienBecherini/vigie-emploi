@@ -29,7 +29,7 @@ export function formatScore(n: number | null): string {
 }
 
 export function BadgeScore({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-slate-500 dark:text-slate-400" aria-label={t('badge.unscored')}>—</span>;
+  if (score === null) return <span className="text-slate-500 dark:text-slate-400" role="img" aria-label={t('badge.unscored')}>—</span>;
   const c =
     score >= 6
       ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-slate-950'

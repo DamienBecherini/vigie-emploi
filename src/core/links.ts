@@ -29,6 +29,7 @@ export function decodeLink(href: string): string {
     } catch {
       continue;
     }
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: a decoded tracking link ends at the first control character
     const m = text.match(/https?:\/\/[^\s"\\\x00-\x1f]+/);
     if (m) return m[0];
   }

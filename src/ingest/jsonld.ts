@@ -66,7 +66,7 @@ export function extractCollective(page: string): DetailJsonLd | null {
   } catch {
     return null;
   }
-  if (!p || !p.name) return null;
+  if (!p?.name) return null;
   const text = (h: unknown) => (h ? textHtmlLines(String(h)) : '');
   const profile = text(p.profileWanted);
   const description = [text(p.description), profile && `Profil recherché\n${profile}`].filter(Boolean).join('\n\n');

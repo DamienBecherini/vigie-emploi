@@ -87,7 +87,7 @@ export function launcherTerminal(
 ): Launcher {
   const chosen = scaffold ?? (platform === 'win32' ? TERMINAL_WINDOWS : null);
   return (action, dataDir) => {
-    if (!chosen || !chosen.length) {
+    if (!chosen?.length) {
       return Promise.reject(
         new Error(
           tl(language, 'api.withoutTerminal', { prompt: ACTIONS_AGENT[action], folder: dataDir }),

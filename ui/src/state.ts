@@ -22,7 +22,9 @@ export type KeyFilter = (typeof KEYS_FILTERS)[number];
 export type KeyUrl = KeyFilter | 'page' | 'size' | 'sort' | 'order' | 'offer';
 
 const listeners = new Set<() => void>();
-const notify = () => listeners.forEach((f) => f());
+const notify = () => {
+  for (const f of listeners) f();
+};
 if (typeof window !== 'undefined') window.addEventListener('popstate', notify);
 
 function subscribe(f: () => void) {

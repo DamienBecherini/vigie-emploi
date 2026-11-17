@@ -5,7 +5,7 @@ import { join, posix } from 'node:path';
 import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { canonicalize } from '../core/links.ts';
-import { batchInputs, scoreInput } from '../core/scoring.ts';
+import { batchInputs, scoreInput, type InputBatch } from '../core/scoring.ts';
 import {
   addScore,
   addStatus,
@@ -132,7 +132,7 @@ function importBatches(db: Database, folder: string, report: ReportImport): void
     report.batches.files++;
     const path = join(dir, f);
     const date = f.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? statSync(path).mtime.toISOString().slice(0, 10);
-    let inputs;
+    let inputs: InputBatch[];
     try {
       inputs = batchInputs(JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')));
     } catch (e) {

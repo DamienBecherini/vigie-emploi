@@ -46,12 +46,12 @@ const offres: O[] = [
 ];
 const db = openDatabase(join(dossier, 'data', 'vigie-emploi.sqlite'));
 const i = fr ? 0 : 1;
-offres.forEach(([source, titre, entreprise, lieu, rem, tele, recue], n) =>
+offres.forEach(([source, titre, entreprise, lieu, rem, tele, recue], n) => {
   saveOffer(db, source, `demo-${n + 1}`, {
     canonical_url: `https://exemple.test/demo-${n + 1}`,
     title: titre[i], company: entreprise[i], location: lieu[i], compensation: rem?.[i], remote: tele[i], received_at: recue,
-  }, 'manual'),
-);
+  }, 'manual');
+});
 db.close();
 
 // 2. Notes (critères de la grille d'exemple ; la note finale est calculée par l'application)

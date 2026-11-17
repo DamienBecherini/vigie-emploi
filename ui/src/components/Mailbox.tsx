@@ -107,6 +107,7 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
     if (unknown) setAdvanced(true);
   }, [unknown]);
   // Another mailbox: its folders must be listed again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: address, host and port are the triggers
   useEffect(() => setFolders(null), [address, host, port]);
 
   const sameAccount = state.configured && state.password && address.trim() === state.user && host.trim() === state.host;
@@ -287,6 +288,7 @@ export function Mailbox({ close, announce }: { close: () => void; announce: (m: 
   const state = q.data?.state;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop, a click outside closes the panel; Escape does the same from the keyboard
     <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/40" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <aside
         role="dialog"

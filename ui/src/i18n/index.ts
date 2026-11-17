@@ -37,7 +37,7 @@ function apply(l: Language) {
   // globalThis: this module is also loaded by the tests (Node, without DOM).
   const doc = (globalThis as { document?: { documentElement: { lang: string } } }).document;
   if (doc) doc.documentElement.lang = l;
-  listeners.forEach((f) => f());
+  for (const f of listeners) f();
 }
 
 /** Language chosen in the header, if it was remembered. */

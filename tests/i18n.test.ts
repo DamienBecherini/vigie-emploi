@@ -1,6 +1,6 @@
 // Multilingual (phase A): French / English dictionaries, choice of the language (config, init --language),
 // CLI, API, generated tracker and CV with English titles.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -128,8 +128,14 @@ describe('CLI in English', () => {
     output.length = 0;
   });
   const capture = () => {
-    vi.spyOn(process.stdout, 'write').mockImplementation((x) => (output.push(String(x)), true));
-    vi.spyOn(process.stderr, 'write').mockImplementation((x) => (output.push(String(x)), true));
+    vi.spyOn(process.stdout, 'write').mockImplementation((x) => {
+      output.push(String(x));
+      return true;
+    });
+    vi.spyOn(process.stderr, 'write').mockImplementation((x) => {
+      output.push(String(x));
+      return true;
+    });
     vi.spyOn(console, 'log').mockImplementation((...x) => void output.push(`${x.join(' ')}\n`));
   };
 

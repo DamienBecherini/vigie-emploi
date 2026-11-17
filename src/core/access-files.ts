@@ -2,7 +2,7 @@
 // list, read, write, move, always inside the data folder.
 // Security: relative paths (or absolute but inside the workspace), without ".." nor hidden segment, never in data/
 // (the database), and which stay inside the workspace once symbolic links are resolved. No deletion.
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync, type Stats } from 'node:fs';
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { t } from '../i18n/index.ts';
 
@@ -54,7 +54,7 @@ export interface SafePath {
  */
 export function pathInWorkspace(rootWorkspace: string, path: string): SafePath {
   const raw = String(path ?? '').trim();
-  // eslint-disable-next-line no-control-regex
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what this check refuses
   if (/[\u0000-\u001f]/.test(raw)) refuse(t('core.pathInvalid', { path: raw }));
   const root = realpathSync(resolve(rootWorkspace));
   let rel = raw.replace(/\\/g, '/');
@@ -108,7 +108,7 @@ export function listWorkspace(rootWorkspace: string, folder = '.', depth = 1): {
         truncated = true;
         return;
       }
-      let st;
+      let st: Stats;
       try {
         st = statSync(child);
         if (!isIn(root, realpathSync(child))) continue;

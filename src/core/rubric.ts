@@ -480,7 +480,7 @@ export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}
   const ignored: string[] = [];
   for (const id of [...new Set(input.blockers)]) {
     const r = rubric.rules.find((x) => x.id === id);
-    if (!r || !r.active) {
+    if (!r?.active) {
       ignored.push(id);
       continue;
     }

@@ -67,6 +67,7 @@ export function StickyHeader({
   }, [tableRef]);
 
   // Horizontal scrolling: the copy follows the table; its container also takes data-stuck (shadow of the job title).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: widths is a trigger: the copy is redrawn, its scroll position is aligned again
   useEffect(() => {
     const source = scrollRef.current;
     const clip = clipRef.current;
@@ -96,6 +97,7 @@ export function StickyHeader({
           <table className="table-fixed border-collapse text-sm" style={{ width: widths.table }}>
             <colgroup>
               {widths.columns.map((l, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: columns are identified by their position
                 <col key={i} style={{ width: l }} />
               ))}
             </colgroup>

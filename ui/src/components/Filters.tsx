@@ -13,9 +13,9 @@ function FieldText(props: { key: KeyUrl; value: string; update: Update; label: s
   const [local, setLocal] = useState(props.value);
   const deferred = useDebounce(local, props.type === 'date' ? 0 : 350);
   useEffect(() => setLocal(props.value), [props.value]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the debounced input changes, not when the URL does (it would write the old value back)
   useEffect(() => {
     if (deferred !== props.value) props.update({ [props.key]: deferred || null, page: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deferred]);
   return (
     <div>

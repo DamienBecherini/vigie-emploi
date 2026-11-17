@@ -20,7 +20,7 @@ const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:
 
 const marked = new Marked({ gfm: true, breaks: false });
 
-function escape(s: string): string {
+function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
 
@@ -54,8 +54,8 @@ export function pageFile(absolute: string, relative: string, o: { raw?: boolean 
     const html = marked.parse(source, { async: false });
     const page = `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(name)}</title><style>${STYLE}</style></head>
-<body><main><header><span>${escape(relative)}</span><a href="?raw=1">Texte brut</a></header>
+<title>${escapeHtml(name)}</title><style>${STYLE}</style></head>
+<body><main><header><span>${escapeHtml(relative)}</span><a href="?raw=1">Texte brut</a></header>
 ${html}
 </main></body></html>`;
     return { body: page, headers: { ...common, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP } };

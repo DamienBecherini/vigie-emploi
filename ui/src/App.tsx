@@ -218,6 +218,7 @@ function Preferences() {
       <button type="button" className="button" onClick={() => setDrawerOpen(true)} aria-haspopup="dialog" title={t('theme.palettes')}>
         <PaletteIcon className="size-4" aria-hidden="true" /> <span className="hidden sm:inline">{t('theme.button')}</span>
       </button>
+      {/* biome-ignore lint/a11y/useSemanticElements: a fieldset would bring its own box and legend into the header bar */}
       <div role="group" aria-label={t('zoom.group')} className="flex items-center">
         <button type="button" className="button rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label={t('zoom.collapse')} title={t('zoom.collapse')}>
           <ZoomOut className="size-4" aria-hidden="true" />
@@ -305,9 +306,9 @@ export function App() {
   const [search, setSearch] = useState(params.get('q') ?? '');
   const searchDeferred = useDebounce(search, 300);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the debounced search changes, not when the URL does (it would write the old search back)
   useEffect(() => {
     if ((params.get('q') ?? '') !== searchDeferred) update({ q: searchDeferred || null, page: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchDeferred]);
 
   const page = Number(params.get('page') ?? 1);
@@ -366,6 +367,7 @@ export function App() {
   // Page change: once the lines of the new page are displayed (no more data of the old one kept while
   // waiting), if the bar above the table is out of the screen, scroll back up to it, under the stuck header.
   const pageReady = list.data !== undefined && !list.isPlaceholderData;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: list.data and page are the triggers (the lines of the new page have arrived)
   useEffect(() => {
     if (!scrollUpPending.current || !pageReady) return;
     scrollUpPending.current = false;
@@ -476,7 +478,7 @@ export function App() {
                     <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
                   )}
                   {levels.length > 1 && rank >= 0 && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400" aria-label={t('list.levelSort', { n: rank + 1 })}>
+                    <span className="text-xs text-slate-500 dark:text-slate-400" role="img" aria-label={t('list.levelSort', { n: rank + 1 })}>
                       {rank + 1}
                     </span>
                   )}
@@ -576,6 +578,7 @@ export function App() {
                 <button
                   type="button"
                   className="button"
+                  // biome-ignore lint/a11y/noAutofocus: the drawer has just been opened by the user, focus moves into it
                   autoFocus
                   onClick={() => setDrawerFilters(false)}
                   aria-label={t('list.hideFilters')}

@@ -67,7 +67,7 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
   if (!address) throw userError(t('cli.mail.addressRequired'));
   const provider = providerOf(address);
   let host = v.host as string | undefined;
-  const secure = v.insecure ? false : true;
+  const secure = !v.insecure;
   if (!host && provider?.auth === 'oauth') throw userError(t('cli.mail.oauth', { name: provider.name }));
   if (!host) host = provider?.host ?? (interactive ? await ask(t('cli.mail.askHost'), config.mail?.host) : undefined);
   if (!host) throw userError(t('cli.mail.hostRequired'));
@@ -87,7 +87,9 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
   let folder = v.folder as string | undefined;
   if (!folder && interactive) {
     console.log(t('cli.mail.folders'));
-    folders.forEach((f, i) => console.log(`  ${String(i + 1).padStart(2)}. ${f}`));
+    folders.forEach((f, i) => {
+      console.log(`  ${String(i + 1).padStart(2)}. ${f}`);
+    });
     const answer = await ask(t('cli.mail.askFolder'), config.mail?.folder);
     folder = /^\d+$/.test(answer) ? folders[Number(answer) - 1] : answer;
   }
@@ -102,7 +104,10 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
 
 function status(v: Values, config: Config, db: Database, store: SecretStore, json: (x: unknown) => void): void {
   const s = mailState(db, config.mail, store);
-  if (v.json) return json(s);
+  if (v.json) {
+    json(s);
+    return;
+  }
   if (!s.configured) {
     console.log(t('cli.mail.notConfigured'));
     return;

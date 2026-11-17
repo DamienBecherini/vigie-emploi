@@ -178,7 +178,16 @@ function EditorLink({ offer }: { offer: DetailOffer }) {
       <label htmlFor={id} className="sr-only">
         {t('link.label')}
       </label>
-      <input id={id} className="field min-w-0 flex-1" type="url" placeholder="https://…" value={input} onChange={(e) => setInput(e.target.value)} autoFocus />
+      <input
+        id={id}
+        className="field min-w-0 flex-1"
+        type="url"
+        placeholder="https://…"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        // biome-ignore lint/a11y/noAutofocus: the field has just been opened by the "edit" button
+        autoFocus
+      />
       <button type="submit" className="button">
         {t('common.save')}
       </button>
@@ -452,7 +461,7 @@ function ChangeStatus({ offer }: { offer: DetailOffer }) {
   );
 }
 
-function ButtonApply({ offer, announce: announce }: { offer: DetailOffer; announce: (m: string) => void }) {
+function ButtonApply({ offer, announce }: { offer: DetailOffer; announce: (m: string) => void }) {
   const client = useQueryClient();
   const updated = useMutation({
     mutationFn: () => api.apply(offer.id),
@@ -476,10 +485,11 @@ function ButtonApply({ offer, announce: announce }: { offer: DetailOffer; announ
   );
 }
 
-export function Detail({ id, close, announce: announce }: { id: number; close: () => void; announce: (m: string) => void }) {
+export function Detail({ id, close, announce }: { id: number; close: () => void; announce: (m: string) => void }) {
   const title = useId();
   const header = useRef<HTMLHeadingElement>(null);
   const q = useQuery({ queryKey: ['offer', id], queryFn: () => api.offer(id) });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: id is the trigger: another offer is shown, focus goes back to its title
   useEffect(() => {
     header.current?.focus({ preventScroll: true });
   }, [id]);
@@ -508,7 +518,6 @@ export function Detail({ id, close, announce: announce }: { id: number; close: (
   return (
     <aside
       ref={panel}
-      role="complementary"
       aria-labelledby={title}
       className="fixed inset-y-0 right-0 z-30 flex w-full max-w-2xl flex-col border-l border-slate-300 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
     >

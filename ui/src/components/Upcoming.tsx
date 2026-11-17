@@ -72,6 +72,7 @@ function Statistics() {
 function useLimitedHeight(dependency: unknown) {
   const ref = useRef<HTMLDivElement>(null);
   const [max, setMax] = useState<number | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `dependency` is the trigger: the list has changed, its height is measured again
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -125,11 +126,13 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
           {/* Scrolling list: never more than 40 % of the screen, framed, shaded at the top / bottom when hidden
               deadlines remain on that side, and on a phone a free strip on the right to scroll the page with the thumb. */}
           <div className={max ? 'relative mt-1 max-md:mr-10' : ''}>
+          {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the label comes with the role, both set only when the list scrolls */}
           <div
             ref={ref}
             className={max ? 'overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-700' : ''}
             style={max ? { maxHeight: `min(${max}px, 40vh)` } : undefined}
             tabIndex={max ? 0 : undefined}
+            role={max ? 'group' : undefined}
             aria-label={max ? t('upcoming.scrolling') : undefined}
           >
             {r && r.overdue.length > 0 && (

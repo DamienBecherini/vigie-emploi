@@ -29,17 +29,36 @@ if (!navigateur) throw new Error('Chrome ou Edge introuvable (variable CHROME po
 // Tableau de bord de l'espace, sur un port libre de la plage de démo
 const PORT_UI = 4430 + (langue === 'fr' ? 0 : 1);
 const base = `http://localhost:${PORT_UI}`;
-const serveur = spawn(process.execPath, [resolve(import.meta.dirname, '../../bin/vigie-emploi.js'), 'serve', '--port', String(PORT_UI), '--data', resolve(espace)], { stdio: 'ignore' });
+const serveur = spawn(
+  process.execPath,
+  [resolve(import.meta.dirname, '../../bin/vigie-emploi.js'), 'serve', '--port', String(PORT_UI), '--data', resolve(espace)],
+  { stdio: 'ignore' },
+);
 let pret = false;
 for (let i = 0; i < 50 && !pret; i++) {
   await attendre(200);
-  pret = await fetch(`${base}/api/health`).then((r) => r.ok, () => false);
+  pret = await fetch(`${base}/api/health`).then(
+    (r) => r.ok,
+    () => false,
+  );
 }
 if (!pret) throw new Error(`tableau de bord injoignable sur ${base}`);
 
 const PORT_CDP = 9333;
 const profil = mkdtempSync(join(tmpdir(), 'captures-'));
-const chrome = spawn(navigateur, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--lang=${langue}`, `--remote-debugging-port=${PORT_CDP}`, `--user-data-dir=${profil}`, 'about:blank'], { stdio: 'ignore' });
+const chrome = spawn(
+  navigateur,
+  [
+    '--headless=new',
+    '--disable-gpu',
+    '--hide-scrollbars',
+    `--lang=${langue}`,
+    `--remote-debugging-port=${PORT_CDP}`,
+    `--user-data-dir=${profil}`,
+    'about:blank',
+  ],
+  { stdio: 'ignore' },
+);
 let cible;
 for (let i = 0; i < 50 && !cible; i++) {
   await attendre(200);

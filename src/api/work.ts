@@ -44,9 +44,7 @@ export function goToPrepare(db: Database, dataDir: string): OfferToPrepare[] {
         ORDER BY o.id`,
     )
     .all() as { id: number; title: string; company: string | null; folder: string | null }[];
-  return lines
-    .filter((l) => !l.folder || !existsSync(join(dataDir, l.folder)))
-    .map(({ id, title, company }) => ({ id, title, company }));
+  return lines.filter((l) => !l.folder || !existsSync(join(dataDir, l.folder))).map(({ id, title, company }) => ({ id, title, company }));
 }
 
 export interface StateWork {
@@ -88,11 +86,7 @@ export function launcherTerminal(
   const chosen = scaffold ?? (platform === 'win32' ? TERMINAL_WINDOWS : null);
   return (action, dataDir) => {
     if (!chosen?.length) {
-      return Promise.reject(
-        new Error(
-          tl(language, 'api.withoutTerminal', { prompt: ACTIONS_AGENT[action], folder: dataDir }),
-        ),
-      );
+      return Promise.reject(new Error(tl(language, 'api.withoutTerminal', { prompt: ACTIONS_AGENT[action], folder: dataDir })));
     }
     const [program, ...args] = commandTerminal(chosen, dataDir, action);
     return new Promise((resolve, reject) => {

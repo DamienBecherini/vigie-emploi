@@ -3,16 +3,7 @@
 import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers } from './queries.ts';
-import {
-  addStatus,
-  detailOffer,
-  saveApplication,
-  updateTags,
-  offerById,
-  type FieldsApplication,
-  type DetailOffer,
-  type Offer,
-} from './offers.ts';
+import { addStatus, detailOffer, saveApplication, updateTags, offerById, type FieldsApplication, type DetailOffer, type Offer } from './offers.ts';
 import { isCriteriaScore, scoreInput, type InputBatch, type ResultScoring } from './scoring.ts';
 import { scoresOffer } from './offers.ts';
 import type { VersionRubric } from './rubric-storage.ts';
@@ -226,12 +217,7 @@ export function prepareApplication(db: Database, dataDir: string, id: number, or
  * Updates the application of an offer. With a sending date, an offer not sent yet moves
  * to "sent" (comment: channel and date).
  */
-export function trackApplication(
-  db: Database,
-  id: number,
-  fields: FieldsApplication,
-  origin: string,
-): { offer: DetailOffer; status_added: Status | null } {
+export function trackApplication(db: Database, id: number, fields: FieldsApplication, origin: string): { offer: DetailOffer; status_added: Status | null } {
   const o = offerOrError(db, id);
   const send = fields.sent_at?.trim();
   // "02/11/2026" is stored as 2026-11-02; a free text ("≈ 25/08/2026") is kept as it is.

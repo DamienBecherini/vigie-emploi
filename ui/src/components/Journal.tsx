@@ -29,7 +29,11 @@ function isFuture(date: string, hour: string): boolean {
 }
 
 function size(o: number): string {
-  return o < 1024 ? t('files.bytes', { n: o }) : o < 1024 * 1024 ? t('files.ko', { n: Math.ceil(o / 1024) }) : t('files.mo', { n: numberLocal(o / 1024 / 1024, 1) });
+  return o < 1024
+    ? t('files.bytes', { n: o })
+    : o < 1024 * 1024
+      ? t('files.ko', { n: Math.ceil(o / 1024) })
+      : t('files.mo', { n: numberLocal(o / 1024 / 1024, 1) });
 }
 
 /** Short name of a linked file: relative to the application folder when it is inside it. */
@@ -105,7 +109,10 @@ function inputOf(e: JournalEvent | null): Input {
 }
 
 function number(s: string, name: string): number | null {
-  const raw = s.trim().replace(/[\s  ]/g, '').replace(',', '.');
+  const raw = s
+    .trim()
+    .replace(/[\s  ]/g, '')
+    .replace(',', '.');
   if (!raw) return null;
   const n = Number(raw);
   if (!Number.isFinite(n)) throw new Error(t('journal.numberExpected', { name }));
@@ -132,12 +139,7 @@ function toApi(s: Input): EventInput {
   };
 }
 
-function FormEvent(props: {
-  offer: DetailOffer;
-  event: JournalEvent | null;
-  files: FilesFolder | undefined;
-  close: () => void;
-}) {
+function FormEvent(props: { offer: DetailOffer; event: JournalEvent | null; files: FilesFolder | undefined; close: () => void }) {
   const database = useId();
   const refresh = useRefreshJournal(props.offer.id);
   const [s, setS] = useState<Input>(() => inputOf(props.event));
@@ -207,7 +209,12 @@ function FormEvent(props: {
             <label htmlFor={`${database}-direction`} className="label">
               {t('journal.direction')}
             </label>
-            <select id={`${database}-direction`} className="field" value={s.direction} onChange={(e) => setS({ ...s, direction: e.target.value as Input['direction'] })}>
+            <select
+              id={`${database}-direction`}
+              className="field"
+              value={s.direction}
+              onChange={(e) => setS({ ...s, direction: e.target.value as Input['direction'] })}
+            >
               <option value="">—</option>
               <option value="sent">{t('journal.sent')}</option>
               <option value="received">{t('journal.received')}</option>
@@ -335,11 +342,7 @@ const COLORS_TYPES: Record<TypeEvent, string> = {
 };
 
 export function BadgeType({ type }: { type: TypeEvent }) {
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COLORS_TYPES[type]}`}>
-      {typeShown(type)}
-    </span>
-  );
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COLORS_TYPES[type]}`}>{typeShown(type)}</span>;
 }
 
 function LineEvent({ offer, e, update }: { offer: DetailOffer; e: JournalEvent; update: () => void }) {
@@ -362,10 +365,16 @@ function LineEvent({ offer, e, update }: { offer: DetailOffer; e: JournalEvent; 
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold tabular-nums">{dateEvent(e.at)}</span>
         <BadgeType type={e.type} />
-        {e.direction && <span className="text-xs text-slate-600 dark:text-slate-300">{e.direction === 'sent' ? t('journal.toSent') : t('journal.toReceived')}</span>}
-        {e.overdue && <span className="rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">{t('journal.overdue')}</span>}
+        {e.direction && (
+          <span className="text-xs text-slate-600 dark:text-slate-300">{e.direction === 'sent' ? t('journal.toSent') : t('journal.toReceived')}</span>
+        )}
+        {e.overdue && (
+          <span className="rounded-full bg-rose-700 px-2 py-0.5 text-xs font-bold text-white dark:bg-rose-400 dark:text-slate-950">{t('journal.overdue')}</span>
+        )}
         {e.deadline && !e.overdue && (
-          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950 dark:bg-amber-300 dark:text-slate-950">{t('journal.toDo')}</span>
+          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold text-amber-950 dark:bg-amber-300 dark:text-slate-950">
+            {t('journal.toDo')}
+          </span>
         )}
       </div>
       <p className="mt-1 break-words">{e.summary}</p>
@@ -393,7 +402,13 @@ function LineEvent({ offer, e, update }: { offer: DetailOffer; e: JournalEvent; 
             {t('journal.markDone')}
           </button>
         ) : (
-          <button type="button" className="button" disabled={done.isPending} onClick={() => done.mutate(false)} aria-label={t('journal.reopenLabel', { summary: e.summary })}>
+          <button
+            type="button"
+            className="button"
+            disabled={done.isPending}
+            onClick={() => done.mutate(false)}
+            aria-label={t('journal.reopenLabel', { summary: e.summary })}
+          >
             {t('journal.reopen')}
           </button>
         )}

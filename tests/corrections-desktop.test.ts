@@ -23,7 +23,12 @@ describe('rubric: changing a rule does not touch the others', () => {
     const database = g();
     const ids = database.rules.map((r) => r.id);
     expect(ids).toContain('stage');
-    const modified = applyChange(database, { rules: [{ id: 'sur-site-loin', value: 2 }, { id: 'devops', label: 'Poste DevOps', effect: 'cap', value: 3 }] });
+    const modified = applyChange(database, {
+      rules: [
+        { id: 'sur-site-loin', value: 2 },
+        { id: 'devops', label: 'Poste DevOps', effect: 'cap', value: 3 },
+      ],
+    });
     expect(modified.rules.map((r) => r.id)).toEqual([...ids, 'devops']);
     expect(modified.rules.find((r) => r.id === 'stage')).toEqual(database.rules.find((r) => r.id === 'stage'));
     const removed = applyChange(modified, { remove_rules: ['devops'] });

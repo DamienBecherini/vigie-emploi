@@ -77,18 +77,12 @@ export function fill(boxes: { height: number; text: Box | null }[]): AnalysisPag
   pages.forEach((p, i) => {
     const last = i === pages.length - 1;
     if (!last && p.fill < THRESHOLD_PAGE_FULL) {
-      warnings.push(
-        t('core.pages.jumpBadlyPlaced', { page: p.page, pc: p.fill }),
-      );
+      warnings.push(t('core.pages.jumpBadlyPlaced', { page: p.page, pc: p.fill }));
     }
     if (last && pages.length > 1 && p.fill < LAST_PAGE_THRESHOLD) {
-      warnings.push(
-        t('core.pages.lastEmpty', { page: p.page, pc: p.fill }),
-      );
+      warnings.push(t('core.pages.lastEmpty', { page: p.page, pc: p.fill }));
     } else if (last && pages.length > 1 && p.fill < LAST_PAGE_COMFORTABLE_THRESHOLD) {
-      warnings.push(
-        t('core.pages.lastRemark', { page: p.page, pc: p.fill, empty: 100 - p.fill }),
-      );
+      warnings.push(t('core.pages.lastRemark', { page: p.page, pc: p.fill, empty: 100 - p.fill }));
     }
   });
   return { pages, warnings };
@@ -122,12 +116,7 @@ function urlFile(path: string): string {
  * by pdf.js in the headless browser. The PDF is embedded in the HTML page (base64); only pdf.js is
  * loaded from the disk (hence --allow-file-access-from-files).
  */
-export function capturePages(
-  pdf: string,
-  png: string,
-  browser: string,
-  o: { pages: number; heightPage?: number; env?: NodeJS.ProcessEnv },
-): void {
+export function capturePages(pdf: string, png: string, browser: string, o: { pages: number; heightPage?: number; env?: NodeJS.ProcessEnv }): void {
   const html = png.replace(/\.png$/i, '.pages.html');
   const heightPage = o.heightPage ?? Math.round((WIDTH_PAGE * 297) / 210);
   const pages = Math.max(1, o.pages);

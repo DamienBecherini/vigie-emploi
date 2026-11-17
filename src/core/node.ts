@@ -8,7 +8,10 @@ import { spawnSync } from 'node:child_process';
 export const NODE_MINIMUM = { major: 24, minor: 0 };
 
 export function versionSufficient(version: string): boolean {
-  const m = version.trim().replace(/^v/, '').match(/^(\d+)\.(\d+)/);
+  const m = version
+    .trim()
+    .replace(/^v/, '')
+    .match(/^(\d+)\.(\d+)/);
   if (!m) return false;
   const [major, minor] = [Number(m[1]), Number(m[2])];
   return major > NODE_MINIMUM.major || (major === NODE_MINIMUM.major && minor >= NODE_MINIMUM.minor);
@@ -36,9 +39,7 @@ function pathVersion(): string | null {
  * Node executable able to run the application in a separate process: the current node if it is one,
  * otherwise the system's node if it is recent enough, otherwise null.
  */
-export function nodeExecutable(
-  o: { execPath?: string; versions?: NodeJS.ProcessVersions; versionPath?: () => string | null } = {},
-): string | null {
+export function nodeExecutable(o: { execPath?: string; versions?: NodeJS.ProcessVersions; versionPath?: () => string | null } = {}): string | null {
   const execPath = o.execPath ?? process.execPath;
   const versions = o.versions ?? process.versions;
   if (isNodeStandalone(execPath, versions)) return execPath;

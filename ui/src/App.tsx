@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-  type SortingState,
-  type VisibilityState,
-} from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, useReactTable, type ColumnDef, type SortingState, type VisibilityState } from '@tanstack/react-table';
 import { STATUSES_TO_PROCESS } from '../../src/core/statuses.ts';
 import { api, type LineOffer } from './api.ts';
 import { toggleLevel, writeLevels, readLevels } from './sort.ts';
@@ -78,8 +71,18 @@ const columnDefs = (): ColumnDef<LineOffer>[] => [
   },
   { id: 'remote', accessorKey: 'remote', header: t('col.remote'), cell: (c) => <span className="line-clamp-2">{c.row.original.remote ?? '—'}</span> },
   { id: 'source', accessorKey: 'source', header: t('col.source') },
-  { id: 'received_at', accessorKey: 'received_at', header: t('col.received'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.received_at)}</span> },
-  { id: 'published_at', accessorKey: 'published_at', header: t('col.published'), cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.published_at)}</span> },
+  {
+    id: 'received_at',
+    accessorKey: 'received_at',
+    header: t('col.received'),
+    cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.received_at)}</span>,
+  },
+  {
+    id: 'published_at',
+    accessorKey: 'published_at',
+    header: t('col.published'),
+    cell: (c) => <span className="whitespace-nowrap tabular-nums">{formatDate(c.row.original.published_at)}</span>,
+  },
   {
     id: 'tags',
     accessorKey: 'tags',
@@ -95,7 +98,12 @@ const columnDefs = (): ColumnDef<LineOffer>[] => [
       </span>
     ),
   },
-  { id: 'id', accessorKey: 'id', header: t('col.id'), cell: (c) => <span className="text-slate-500 tabular-nums dark:text-slate-400">{c.row.original.id}</span> },
+  {
+    id: 'id',
+    accessorKey: 'id',
+    header: t('col.id'),
+    cell: (c) => <span className="text-slate-500 tabular-nums dark:text-slate-400">{c.row.original.id}</span>,
+  },
 ];
 
 const VISIBILITY_DEFAULT: VisibilityState = { location: true, contract: false, remote: true, published_at: false, id: false, tags: true };
@@ -220,7 +228,13 @@ function Preferences() {
       </button>
       {/* biome-ignore lint/a11y/useSemanticElements: a fieldset would bring its own box and legend into the header bar */}
       <div role="group" aria-label={t('zoom.group')} className="flex items-center">
-        <button type="button" className="button rounded-r-none" onClick={() => setZoom(Math.max(75, zoom - 10))} aria-label={t('zoom.collapse')} title={t('zoom.collapse')}>
+        <button
+          type="button"
+          className="button rounded-r-none"
+          onClick={() => setZoom(Math.max(75, zoom - 10))}
+          aria-label={t('zoom.collapse')}
+          title={t('zoom.collapse')}
+        >
           <ZoomOut className="size-4" aria-hidden="true" />
         </button>
         <button
@@ -233,7 +247,13 @@ function Preferences() {
         >
           {zoom} %
         </button>
-        <button type="button" className="button rounded-l-none" onClick={() => setZoom(Math.min(175, zoom + 10))} aria-label={t('zoom.expand')} title={t('zoom.expand')}>
+        <button
+          type="button"
+          className="button rounded-l-none"
+          onClick={() => setZoom(Math.min(175, zoom + 10))}
+          aria-label={t('zoom.expand')}
+          title={t('zoom.expand')}
+        >
           <ZoomIn className="size-4" aria-hidden="true" />
         </button>
       </div>
@@ -508,59 +528,55 @@ export function App() {
             ref={lineRef}
             className="flex items-center gap-3 max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-slate-200 max-md:bg-white/95 max-md:px-4 max-md:py-2 max-md:backdrop-blur md:contents dark:max-md:border-slate-800 dark:max-md:bg-slate-900/95"
           >
-          <h1 className="text-lg font-extrabold tracking-tight">
-            vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
-          </h1>
-          <div className="min-w-48 flex-1">
-            <label htmlFor="search" className="sr-only">
-              {t('header.searchLabel')}
-            </label>
-            <input
-              id="search"
-              type="search"
-              className="field"
-              placeholder={t('header.search')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+            <h1 className="text-lg font-extrabold tracking-tight">
+              vigie<span className="text-blue-700 dark:text-blue-400">-emploi</span>
+            </h1>
+            <div className="min-w-48 flex-1">
+              <label htmlFor="search" className="sr-only">
+                {t('header.searchLabel')}
+              </label>
+              <input id="search" type="search" className="field" placeholder={t('header.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 max-md:border-b max-md:border-slate-200 max-md:px-4 max-md:py-2 md:contents dark:max-md:border-slate-800">
-          <nav aria-label={t('header.views')} className="flex flex-wrap gap-1">
-            {(
-              [
-                ['all', t('header.all')],
-                ['to-process', t('header.toProcess')],
-                ['good', t('header.good', { threshold: number(Number(threshold)) })],
-                ['applications', t('header.applications')],
-              ] as const
-            ).map(([name, label]) => (
-              <button
-                key={name}
-                type="button"
-                className={`button ${shortcutActive === name ? 'button-active' : ''}`}
-                aria-pressed={shortcutActive === name}
-                onClick={() => shortcut(name)}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-          <button type="button" className="button" onClick={() => setMailbox(true)} aria-haspopup="dialog">
-            <Mail className="size-4" aria-hidden="true" /> {t('header.mail')}
-          </button>
-          <button type="button" className="button" onClick={() => setSettings(true)} aria-haspopup="dialog">
-            <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('header.settings')}
-          </button>
-          <ButtonRefresh />
-          <Preferences />
+            <nav aria-label={t('header.views')} className="flex flex-wrap gap-1">
+              {(
+                [
+                  ['all', t('header.all')],
+                  ['to-process', t('header.toProcess')],
+                  ['good', t('header.good', { threshold: number(Number(threshold)) })],
+                  ['applications', t('header.applications')],
+                ] as const
+              ).map(([name, label]) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`button ${shortcutActive === name ? 'button-active' : ''}`}
+                  aria-pressed={shortcutActive === name}
+                  onClick={() => shortcut(name)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <button type="button" className="button" onClick={() => setMailbox(true)} aria-haspopup="dialog">
+              <Mail className="size-4" aria-hidden="true" /> {t('header.mail')}
+            </button>
+            <button type="button" className="button" onClick={() => setSettings(true)} aria-haspopup="dialog">
+              <SlidersHorizontal className="size-4" aria-hidden="true" /> {t('header.settings')}
+            </button>
+            <ButtonRefresh />
+            <Preferences />
           </div>
         </div>
       </header>
 
       <div className="flex flex-1 gap-4 p-2 sm:p-4">
         {filtersOpen && !narrow && (
-          <aside aria-label={t('list.filters')} className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <aside
+            aria-label={t('list.filters')}
+            className="w-64 shrink-0 self-start rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+          >
             <ActionsAgent className="mb-3 border-b border-slate-200 pb-3 dark:border-slate-800" />
             <Filters params={params} update={update} meta={meta.data} />
           </aside>
@@ -608,11 +624,7 @@ export function App() {
               <ChoiceColumns table={table} />
               <label className="flex items-center gap-1 text-sm">
                 {t('list.byPage')}
-                <select
-                  className="field w-20"
-                  value={size}
-                  onChange={(e) => update({ size: e.target.value === '50' ? null : e.target.value, page: null })}
-                >
+                <select className="field w-20" value={size} onChange={(e) => update({ size: e.target.value === '50' ? null : e.target.value, page: null })}>
                   {SIZES.map((t) => (
                     <option key={t} value={t}>
                       {t}
@@ -624,66 +636,72 @@ export function App() {
           </div>
 
           {list.isError && (
-            <p role="alert" className="mb-2 rounded border border-rose-300 bg-rose-50 p-2 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
+            <p
+              role="alert"
+              className="mb-2 rounded border border-rose-300 bg-rose-50 p-2 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100"
+            >
               {(list.error as Error).message}
             </p>
           )}
 
           {/* Table block: the stuck copy of the header (StickyHeader) does not go beyond its end. */}
           <div>
-          <StickyHeader tableRef={tableRef} scrollRef={scrollRef} lines={linesHeader(true)} />
-          <HorizontalScroll
-            refContainer={scrollRef}
-            shadowLeft={false}
-            className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-          >
-            <table ref={tableRef} className="w-full border-collapse text-sm">
-              <caption className="sr-only">
-                {t('list.legend', {
-                  levels: levels
-                    .map((n) => `${String(columns.find((c) => c.id === n.column)?.header ?? n.column)} (${n.order === 'asc' ? t('list.ascending') : t('list.descending')})`)
-                    .join(t('list.then')),
-                })}
-              </caption>
-              <thead className="bg-slate-100 text-left dark:bg-slate-800">{linesHeader(false)}</thead>
-              <tbody>
-                {table.getRowModel().rows.map((r) => {
-                  const chosen = r.original.id === offerChosen;
-                  return (
-                    <tr
-                      key={r.id}
-                      tabIndex={0}
-                      aria-selected={chosen}
-                      onClick={() => update({ offer: String(r.original.id) })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          update({ offer: String(r.original.id) });
-                        }
-                      }}
-                      className={`cursor-pointer border-t border-slate-200 align-top hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
-                        chosen ? 'bg-blue-100 dark:bg-blue-950' : 'bg-white dark:bg-slate-900'
-                      }`}
-                    >
-                      {r.getVisibleCells().map((c) => (
-                        // Stuck job title: background inherited from the line (hover, selection) to hide the columns passing under it.
-                        <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'title' ? `min-w-64 max-md:min-w-44 ${STUCK} bg-inherit` : ''}`}>
-                          {flexRender(c.column.columnDef.cell, c.getContext())}
-                        </td>
-                      ))}
+            <StickyHeader tableRef={tableRef} scrollRef={scrollRef} lines={linesHeader(true)} />
+            <HorizontalScroll
+              refContainer={scrollRef}
+              shadowLeft={false}
+              className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+            >
+              <table ref={tableRef} className="w-full border-collapse text-sm">
+                <caption className="sr-only">
+                  {t('list.legend', {
+                    levels: levels
+                      .map(
+                        (n) =>
+                          `${String(columns.find((c) => c.id === n.column)?.header ?? n.column)} (${n.order === 'asc' ? t('list.ascending') : t('list.descending')})`,
+                      )
+                      .join(t('list.then')),
+                  })}
+                </caption>
+                <thead className="bg-slate-100 text-left dark:bg-slate-800">{linesHeader(false)}</thead>
+                <tbody>
+                  {table.getRowModel().rows.map((r) => {
+                    const chosen = r.original.id === offerChosen;
+                    return (
+                      <tr
+                        key={r.id}
+                        tabIndex={0}
+                        aria-selected={chosen}
+                        onClick={() => update({ offer: String(r.original.id) })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            update({ offer: String(r.original.id) });
+                          }
+                        }}
+                        className={`cursor-pointer border-t border-slate-200 align-top hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
+                          chosen ? 'bg-blue-100 dark:bg-blue-950' : 'bg-white dark:bg-slate-900'
+                        }`}
+                      >
+                        {r.getVisibleCells().map((c) => (
+                          // Stuck job title: background inherited from the line (hover, selection) to hide the columns passing under it.
+                          <td key={c.id} className={`px-2 py-1.5 ${c.column.id === 'title' ? `min-w-64 max-md:min-w-44 ${STUCK} bg-inherit` : ''}`}>
+                            {flexRender(c.column.columnDef.cell, c.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                  {!list.isLoading && total === 0 && (
+                    <tr>
+                      <td colSpan={table.getVisibleLeafColumns().length} className="p-6 text-center text-slate-600 dark:text-slate-400">
+                        {t('list.none')}
+                      </td>
                     </tr>
-                  );
-                })}
-                {!list.isLoading && total === 0 && (
-                  <tr>
-                    <td colSpan={table.getVisibleLeafColumns().length} className="p-6 text-center text-slate-600 dark:text-slate-400">
-                      {t('list.none')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </HorizontalScroll>
+                  )}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
 
           <nav aria-label={t('list.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -693,9 +711,7 @@ export function App() {
             <button type="button" className="button" disabled={page <= 1} onClick={() => update({ page: page - 1 > 1 ? String(page - 1) : null })}>
               <ChevronLeft className="size-4" aria-hidden="true" /> {t('list.previous')}
             </button>
-            <span className="tabular-nums">
-              {t('list.page', { page, pages })}
-            </span>
+            <span className="tabular-nums">{t('list.page', { page, pages })}</span>
             <button type="button" className="button" disabled={page >= pages} onClick={() => update({ page: String(page + 1) })}>
               {t('list.next')} <ChevronRight className="size-4" aria-hidden="true" />
             </button>

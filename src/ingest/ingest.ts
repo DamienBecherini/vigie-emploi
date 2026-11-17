@@ -228,9 +228,14 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
     });
   }
 
-  db.prepare(
-    'INSERT INTO ingestions (at, files, added, duplicates, dismissed, errors) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run(now(), summary.files, summary.added, summary.duplicates, summary.dismissed, summary.errors.length);
+  db.prepare('INSERT INTO ingestions (at, files, added, duplicates, dismissed, errors) VALUES (?, ?, ?, ?, ?, ?)').run(
+    now(),
+    summary.files,
+    summary.added,
+    summary.duplicates,
+    summary.dismissed,
+    summary.errors.length,
+  );
 
   // 3. Deletion of the e-mails read without error and whose offers are in the database.
   if (!o.keep) {
@@ -250,12 +255,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
 }
 
 /** IMAP fetch of the configured mailbox, its error turned into a line of the summary. */
-async function fetchForIngest(
-  db: Database,
-  config: Pick<Config, 'emails' | 'mail'>,
-  store: SecretStore,
-  inbox: string,
-): Promise<SummaryIngest['mail']> {
+async function fetchForIngest(db: Database, config: Pick<Config, 'emails' | 'mail'>, store: SecretStore, inbox: string): Promise<SummaryIngest['mail']> {
   if (!config.mail) return null;
   try {
     const r = await fetchMailPerConfig(db, { mail: config.mail, emails: inbox }, store);
@@ -275,8 +275,7 @@ export async function ingestPerConfig(
   o: { keep?: boolean; download?: boolean; folderEmails?: string; mail?: boolean; store?: SecretStore } = {},
 ): Promise<SummaryIngest> {
   const inbox = o.folderEmails ?? config.emails;
-  const mail =
-    o.mail === false || !config.mail ? null : await fetchForIngest(db, { emails: inbox, mail: config.mail }, o.store ?? secretStore(), inbox);
+  const mail = o.mail === false || !config.mail ? null : await fetchForIngest(db, { emails: inbox, mail: config.mail }, o.store ?? secretStore(), inbox);
   const summary = await ingest(db, {
     folderEmails: inbox,
     keep: Boolean(o.keep),

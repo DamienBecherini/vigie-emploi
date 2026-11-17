@@ -295,35 +295,25 @@ export const api = {
   meta: () => call<Meta>('/api/meta'),
   status: (id: number, status: Status, comment: string) =>
     call<DetailOffer>(`/api/offers/${id}/status`, { method: 'POST', body: JSON.stringify({ status, comment }) }),
-  tags: (id: number, tags: string[]) =>
-    call<{ tags: string[] }>(`/api/offers/${id}/tags`, { method: 'PUT', body: JSON.stringify({ tags }) }),
-  link: (id: number, url: string | null) =>
-    call<DetailOffer>(`/api/offers/${id}/link`, { method: 'PUT', body: JSON.stringify({ url }) }),
-  score: (id: number, n: InputScore) =>
-    call<DetailOffer>(`/api/offers/${id}/score`, { method: 'POST', body: JSON.stringify(n) }),
-  application: (id: number, c: InputApplication) =>
-    call<DetailOffer>(`/api/offers/${id}/application`, { method: 'PUT', body: JSON.stringify(c) }),
-  addEvent: (id: number, e: EventInput) =>
-    call<DetailOffer>(`/api/offers/${id}/events`, { method: 'POST', body: JSON.stringify(e) }),
-  updateEvent: (id: number, e: Partial<EventInput>) =>
-    call<DetailOffer>(`/api/events/${id}`, { method: 'PUT', body: JSON.stringify(e) }),
-  markDone: (id: number, done: boolean) =>
-    call<DetailOffer>(`/api/events/${id}/done`, { method: 'POST', body: JSON.stringify({ done }) }),
+  tags: (id: number, tags: string[]) => call<{ tags: string[] }>(`/api/offers/${id}/tags`, { method: 'PUT', body: JSON.stringify({ tags }) }),
+  link: (id: number, url: string | null) => call<DetailOffer>(`/api/offers/${id}/link`, { method: 'PUT', body: JSON.stringify({ url }) }),
+  score: (id: number, n: InputScore) => call<DetailOffer>(`/api/offers/${id}/score`, { method: 'POST', body: JSON.stringify(n) }),
+  application: (id: number, c: InputApplication) => call<DetailOffer>(`/api/offers/${id}/application`, { method: 'PUT', body: JSON.stringify(c) }),
+  addEvent: (id: number, e: EventInput) => call<DetailOffer>(`/api/offers/${id}/events`, { method: 'POST', body: JSON.stringify(e) }),
+  updateEvent: (id: number, e: Partial<EventInput>) => call<DetailOffer>(`/api/events/${id}`, { method: 'PUT', body: JSON.stringify(e) }),
+  markDone: (id: number, done: boolean) => call<DetailOffer>(`/api/events/${id}/done`, { method: 'POST', body: JSON.stringify({ done }) }),
   deleteEvent: (id: number) => call<DetailOffer>(`/api/events/${id}`, { method: 'DELETE' }),
   deadlines: (days = 7) => call<Deadlines>(`/api/deadlines?days=${days}`),
   files: (id: number) => call<FilesFolder>(`/api/offers/${id}/files`),
   statistics: () => call<Statistics>('/api/statistics'),
-  subScores: (id: number, s: InputSubScores) =>
-    call<DetailOffer>(`/api/offers/${id}/sub-scores`, { method: 'PUT', body: JSON.stringify(s) }),
+  subScores: (id: number, s: InputSubScores) => call<DetailOffer>(`/api/offers/${id}/sub-scores`, { method: 'PUT', body: JSON.stringify(s) }),
   rubric: () => call<ReplyRubric>('/api/rubric'),
   previewRubric: (rubric: Rubric) => call<Impact>('/api/rubric/preview', { method: 'POST', body: JSON.stringify({ rubric }) }),
   saveRubric: (rubric: Rubric, summary: string) =>
     call<ReplyRubric & { impact: Impact }>('/api/rubric', { method: 'PUT', body: JSON.stringify({ rubric, summary }) }),
   historyRubric: () => call<InfoVersion[]>('/api/rubric/history'),
-  restoreRubric: (version: number) =>
-    call<ReplyRubric & { impact: Impact }>('/api/rubric/restore', { method: 'POST', body: JSON.stringify({ version }) }),
-  apply: (id: number) =>
-    call<{ command: string; offer: DetailOffer }>(`/api/offers/${id}/apply`, { method: 'POST' }),
+  restoreRubric: (version: number) => call<ReplyRubric & { impact: Impact }>('/api/rubric/restore', { method: 'POST', body: JSON.stringify({ version }) }),
+  apply: (id: number) => call<{ command: string; offer: DetailOffer }>(`/api/offers/${id}/apply`, { method: 'POST' }),
   work: () => call<StateWork>('/api/work'),
   mail: () => call<{ ok: true; state: StateMail; config_file: boolean; providers: ProviderMail[] }>('/api/mail'),
   mailFolders: (m: InputMail) => call<ReplyMail<{ folders: string[] }>>('/api/mail/folders', { method: 'POST', body: JSON.stringify(m) }),

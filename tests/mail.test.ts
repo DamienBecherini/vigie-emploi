@@ -120,9 +120,7 @@ describe('IMAP fetch', () => {
   });
 
   it('limit per fetch: the rest comes next time', async () => {
-    await start(
-      ['a', 'b', 'c'].map((s) => ({ raw: raw(s), internaldate: '16-Nov-2026 10:00:00 +0100' })),
-    );
+    await start(['a', 'b', 'c'].map((s) => ({ raw: raw(s), internaldate: '16-Nov-2026 10:00:00 +0100' })));
     expect(await fetchMail(db, mail(), inbox, { ...opts(), max: 2 })).toMatchObject({ fetched: 2, more: true });
     expect(await fetchMail(db, mail(), inbox, { ...opts(), max: 2 })).toMatchObject({ fetched: 1, more: false, files: ['imap-1-3.eml'] });
   });
@@ -161,7 +159,9 @@ describe('dashboard API', () => {
     const store = fileStore(keyring);
     const app = createApp(db, { dataDir: inbox, emails: inbox, file }, new Idle(0), { store: () => store });
     const send = async (method: string, path: string, body?: object) =>
-      (await app.request(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })).json() as Promise<Record<string, unknown>>;
+      (await app.request(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })).json() as Promise<
+        Record<string, unknown>
+      >;
     const box = { address: 'testuser', host: '127.0.0.1', port, secure: false };
     try {
       expect(await send('GET', '/api/mail')).toMatchObject({ ok: true, state: { configured: false } });
@@ -228,20 +228,24 @@ describe('mailbox settings and passwords', () => {
     expect(env.backend()).toBe('environment');
     expect(env.get('x')).toBe('secret');
   });
-  it.runIf(process.platform === 'win32')('Windows: DPAPI round trip', () => {
-    const folder = mkdtempSync(join(tmpdir(), 'vigie-dpapi-'));
-    try {
-      const s = secretStore({ APPDATA: folder }, 'win32');
-      expect(s.backend()).toBe('dpapi');
-      s.set('t|h', 'p@ss "w0rd" é');
-      expect(readFileSync(join(folder, 'vigie-emploi', 'secrets', 't_h.dpapi'), 'utf8')).not.toContain('w0rd');
-      expect(s.get('t|h')).toBe('p@ss "w0rd" é');
-      s.remove('t|h');
-      expect(s.get('t|h')).toBeNull();
-    } finally {
-      rmSync(folder, { recursive: true, force: true });
-    }
-  }, 60_000); // each step starts PowerShell: up to 15 s on a cold GitHub Windows runner
+  it.runIf(process.platform === 'win32')(
+    'Windows: DPAPI round trip',
+    () => {
+      const folder = mkdtempSync(join(tmpdir(), 'vigie-dpapi-'));
+      try {
+        const s = secretStore({ APPDATA: folder }, 'win32');
+        expect(s.backend()).toBe('dpapi');
+        s.set('t|h', 'p@ss "w0rd" é');
+        expect(readFileSync(join(folder, 'vigie-emploi', 'secrets', 't_h.dpapi'), 'utf8')).not.toContain('w0rd');
+        expect(s.get('t|h')).toBe('p@ss "w0rd" é');
+        s.remove('t|h');
+        expect(s.get('t|h')).toBeNull();
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    },
+    60_000,
+  ); // each step starts PowerShell: up to 15 s on a cold GitHub Windows runner
   it('MailError keeps its kind', () => {
     expect(new MailError('folder', 'x').kind).toBe('folder');
   });

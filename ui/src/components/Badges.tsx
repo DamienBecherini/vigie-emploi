@@ -17,11 +17,7 @@ const COLORS: Record<Status, string> = {
 };
 
 export function BadgeStatus({ status }: { status: Status }) {
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COLORS[status] ?? ''}`}>
-      {statusShown(status)}
-    </span>
-  );
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${COLORS[status] ?? ''}`}>{statusShown(status)}</span>;
 }
 
 export function formatScore(n: number | null): string {
@@ -29,18 +25,19 @@ export function formatScore(n: number | null): string {
 }
 
 export function BadgeScore({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-slate-500 dark:text-slate-400" role="img" aria-label={t('badge.unscored')}>—</span>;
+  if (score === null)
+    return (
+      <span className="text-slate-500 dark:text-slate-400" role="img" aria-label={t('badge.unscored')}>
+        —
+      </span>
+    );
   const c =
     score >= 6
       ? 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-slate-950'
       : score >= 4.5
         ? 'bg-amber-200 text-amber-950 dark:bg-amber-300 dark:text-slate-950'
         : 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100';
-  return (
-    <span className={`inline-block min-w-9 rounded px-1.5 py-0.5 text-center text-sm font-bold tabular-nums ${c}`}>
-      {formatScore(score)}
-    </span>
-  );
+  return <span className={`inline-block min-w-9 rounded px-1.5 py-0.5 text-center text-sm font-bold tabular-nums ${c}`}>{formatScore(score)}</span>;
 }
 
 export function formatDate(d: string | null): string {

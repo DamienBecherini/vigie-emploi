@@ -79,7 +79,11 @@ describe('pending work', () => {
 describe('launch of the agent', () => {
   it('replaces {folder} and {prompt} in the terminal command', () => {
     expect(commandTerminal(['wt.exe', '-d', '{folder}', 'claude', '{prompt}'], 'D:/data', 'process-emails')).toEqual([
-      'wt.exe', '-d', 'D:/data', 'claude', '/traiter-emails',
+      'wt.exe',
+      '-d',
+      'D:/data',
+      'claude',
+      '/traiter-emails',
     ]);
   });
 
@@ -145,7 +149,9 @@ describe('writes coming from another origin', () => {
   it('refused from a third-party page (Origin or Sec-Fetch-Site)', async () => {
     expect((await status({ Origin: 'https://example.com' })).status).toBe(403);
     expect((await status({ 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403);
-    expect((await app.request('/api/work/process-emails', { ...POST_JSON, headers: { ...POST_JSON.headers, Origin: 'https://example.com' } })).status).toBe(403);
+    expect((await app.request('/api/work/process-emails', { ...POST_JSON, headers: { ...POST_JSON.headers, Origin: 'https://example.com' } })).status).toBe(
+      403,
+    );
     expect(launched).toEqual([]);
   });
 

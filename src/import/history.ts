@@ -81,12 +81,7 @@ function reportEmpty(): Omit<ReportImport, 'journal'> {
 
 /** Cell of a line by column name (start of the label, case and accents ignored). */
 function column(l: LineTable, ...names: string[]): string | undefined {
-  const norm = (s: string) =>
-    s
-      .normalize('NFD')
-      .replace(/\p{M}/gu, '')
-      .toLowerCase()
-      .trim();
+  const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
   for (const name of names) {
     const i = l.headers.findIndex((e) => norm(e).startsWith(norm(name)));
     if (i >= 0) return l.cells[i];
@@ -97,18 +92,14 @@ function column(l: LineTable, ...names: string[]): string | undefined {
 /** Scores of a cell "6/10", "6 et 5,5/10", "7 · 6,5 · 4"; empty if ambiguous ("4 à 7/10", "≤ 2,5"). */
 export function cellScores(cell: string): number[] {
   if (/[≤≥<>~≈]|(^|\s)à(\s|$)/.test(cell)) return [];
-  return (cell.replace(/\/\s*10/g, '').match(/\d+(?:[.,]\d+)?/g) ?? [])
-    .map((n) => Number(n.replace(',', '.')))
-    .filter((n) => n >= 0 && n <= 10);
+  return (cell.replace(/\/\s*10/g, '').match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => Number(n.replace(',', '.'))).filter((n) => n >= 0 && n <= 10);
 }
 
 /** Contract, compensation and remote work read in a "Conditions" or "Type" cell. */
 export function readConditions(text: string): Pick<FieldsOffer, 'contract' | 'compensation' | 'remote'> {
   const t = withoutMarkdown(text);
   const contract = t.match(/\b(CDI|CDD|freelance|indépendant|portage|stage|alternance|intérim)\b/i)?.[1] ?? null;
-  const tt =
-    t.match(/(full remote|100 % (?:télétravail|remote)|full télétravail|full TT|télétravail[^,;·]*|remote[^,;·]*|hybride[^,;·]*)/i)?.[1] ??
-    null;
+  const tt = t.match(/(full remote|100 % (?:télétravail|remote)|full télétravail|full TT|télétravail[^,;·]*|remote[^,;·]*|hybride[^,;·]*)/i)?.[1] ?? null;
   return {
     contract: contract ? contract.charAt(0).toUpperCase() + contract.slice(1) : null,
     compensation: findCompensation(t),
@@ -128,7 +119,9 @@ function withoutLinkList(s: string): string {
 function importBatches(db: Database, folder: string, report: ReportImport): void {
   const dir = join(folder, 'candidatures', '_lots');
   if (!existsSync(dir)) return;
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
+  for (const f of readdirSync(dir)
+    .filter((x) => x.endsWith('.json'))
+    .sort()) {
     report.batches.files++;
     const path = join(dir, f);
     const date = f.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? statSync(path).mtime.toISOString().slice(0, 10);
@@ -217,7 +210,13 @@ export function registerLineOffers(l: LineTable): { offers: OfferRegister[]; lin
   const isBatch = /^lot\b/i.test(withoutMarkdown(company));
   const { parts: companies, byOffer } = cellCompanies(company);
   // Otherwise, one company per offer link (in order) when the numbers match; failing that, the whole cell.
-  const linksJob = new Set(segments.flatMap((seg) => linksMarkdown(seg).map((x) => keyLink(x.url)).filter((x) => x !== null)));
+  const linksJob = new Set(
+    segments.flatMap((seg) =>
+      linksMarkdown(seg)
+        .map((x) => keyLink(x.url))
+        .filter((x) => x !== null),
+    ),
+  );
   const bySegment = companies.length === segments.length;
   const byLink = !isBatch && !bySegment && byOffer.length > 1 && byOffer.length === linksJob.size;
   let rank = 0;
@@ -304,9 +303,7 @@ function importRegister(db: Database, folder: string, report: ReportImport): voi
       const setAside = /mis(es?)? de côté/i.test(l.section);
       const reason = withoutMarkdown(column(l, 'raison') ?? '');
       const status: Status = /^go\b/i.test(reason) ? 'withdrawn' : 'dismissed';
-      const comment = [at ? null : 'date inconnue', setAside ? 'mise de côté' : null, reason || null]
-        .filter(Boolean)
-        .join(' — ');
+      const comment = [at ? null : 'date inconnue', setAside ? 'mise de côté' : null, reason || null].filter(Boolean).join(' — ');
       const { offers, linksIgnored } = registerLineOffers(l);
       for (const url of linksIgnored) R.links_not_recognized.push({ line: l.number, url });
       for (const o of offers) {
@@ -378,7 +375,12 @@ const normalize = (s: string | null | undefined) =>
     .trim();
 
 /** Words of 4 letters or more ("cofondateur", "wordpress"…), to compare two job titles. */
-const words = (s: string) => new Set(normalize(s).split(' ').filter((m) => m.length >= 4));
+const words = (s: string) =>
+  new Set(
+    normalize(s)
+      .split(' ')
+      .filter((m) => m.length >= 4),
+  );
 
 /**
  * Offer without a link in the register (source "register") of the same company, whose title shares at least

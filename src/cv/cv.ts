@@ -47,8 +47,7 @@ const ICONS: Record<string, string> = {
   pin: '<path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7Zm0 4.2A2.8 2.8 0 1 0 12 11.8 2.8 2.8 0 0 0 12 6.2Z"/>',
   globe:
     '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.9 9h-3a15 15 0 0 0-1.2-5.5A8 8 0 0 1 18.9 11ZM12 4.2c.9 1.3 1.7 3.6 1.9 6.8h-3.8c.2-3.2 1-5.5 1.9-6.8ZM5.1 11a8 8 0 0 1 4.2-5.5A15 15 0 0 0 8.1 11h-3Zm0 2h3a15 15 0 0 0 1.2 5.5A8 8 0 0 1 5.1 13Zm6.9 6.8c-.9-1.3-1.7-3.6-1.9-6.8h3.8c-.2 3.2-1 5.5-1.9 6.8Zm2.7-1.3a15 15 0 0 0 1.2-5.5h3a8 8 0 0 1-4.2 5.5Z"/>',
-  clock:
-    '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-1.1 3v5.4l4.3 2.6 1.1-1.8-3.3-2V7.2h-2.1Z"/>',
+  clock: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-1.1 3v5.4l4.3 2.6 1.1-1.8-3.3-2V7.2h-2.1Z"/>',
   linkedin:
     '<path d="M6.5 8A1.5 1.5 0 1 0 6.5 5a1.5 1.5 0 0 0 0 3ZM5 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8Zm6 9h1a1 1 0 0 0 1-1v-4.5c0-1.5 3-2.5 3-.5V18a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6c0-2-1.5-3-3.5-3S13 10.5 13 10.5V10a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm9-18a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h16Zm1 3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4Z"/>',
   github:
@@ -160,7 +159,13 @@ export function cvToHtml(markdown: string, o: OptionsHtml): string {
         const isSub = /^\*\(.+\)\*$/.test(line) || /^[*_][^*_].*[*_]$/.test(line);
         if (!title && /^\*\*/.test(line) && !/·/.test(line)) title = inline(line.replace(/^\*\*|\*\*$/g, ''));
         else if (!subTitle && isSub) subTitle = inline(line.replace(/^\*|\*$/g, ''));
-        else contacts.push(...line.split(/\s+·\s+/).map((s) => s.trim()).filter(Boolean));
+        else
+          contacts.push(
+            ...line
+              .split(/\s+·\s+/)
+              .map((s) => s.trim())
+              .filter(Boolean),
+          );
       }
     } else if (t.type === 'list') {
       contacts.push(...(t as Tokens.List).items.map((it) => it.text.trim()));
@@ -179,9 +184,7 @@ export function cvToHtml(markdown: string, o: OptionsHtml): string {
     const items = elements.filter((c) => c.kind === kind).map((c) => c.html);
     return items.length ? `<ul class="contacts${cls ? ` ${cls}` : ''}">\n${items.join('\n')}\n</ul>` : '';
   };
-  const blockContacts = [group('principal', ''), group('address', 'contacts-address'), group('profil', 'contacts-profiles')]
-    .filter(Boolean)
-    .join('\n');
+  const blockContacts = [group('principal', ''), group('address', 'contacts-address'), group('profil', 'contacts-profiles')].filter(Boolean).join('\n');
 
   output.push(`<header class="cv-header">
 <div class="cv-id">
@@ -284,10 +287,7 @@ export function findBrowser(env: NodeJS.ProcessEnv = process.env): string | null
   if (forced) return existsSync(forced) ? forced : null;
   const list =
     process.platform === 'win32'
-      ? [
-          ...BROWSERS_WINDOWS,
-          ...(env.LOCALAPPDATA ? [join(env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe')] : []),
-        ]
+      ? [...BROWSERS_WINDOWS, ...(env.LOCALAPPDATA ? [join(env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe')] : [])]
       : process.platform === 'darwin'
         ? BROWSERS_MAC
         : BROWSERS_LINUX;
@@ -391,7 +391,11 @@ export function listTemplates(): { name: string; description: string }[] {
     .map((name) => {
       const css = readFileSync(join(FOLDER_TEMPLATES, name, 'gabarit.css'), 'utf8');
       const header = css.match(/\/\*([\s\S]*?)\*\//)?.[1] ?? '';
-      const phrase = header.replace(/\s+/g, ' ').trim().split(/(?<=\.)\s/)[0] ?? '';
+      const phrase =
+        header
+          .replace(/\s+/g, ' ')
+          .trim()
+          .split(/(?<=\.)\s/)[0] ?? '';
       // The description comes from the (French) header of the stylesheet; translated for the known shipped templates.
       const translated = DESCRIPTIONS_TEMPLATES[languageCurrent()]?.[name];
       return { name, description: translated ?? phrase };
@@ -405,7 +409,9 @@ export function listTemplates(): { name: string; description: string }[] {
 export function chooseTemplate(workspace: string, name: string): { folder: string; old: string | null } {
   const source = join(FOLDER_TEMPLATES, name);
   if (!/^[\w-]+$/.test(name) || !existsSync(join(source, 'gabarit.css'))) {
-    const names = listTemplates().map((g) => g.name).join(', ');
+    const names = listTemplates()
+      .map((g) => g.name)
+      .join(', ');
     throw Object.assign(new Error(t('core.cv.templateUnknown', { name, list: names })), { user: true });
   }
   const target = join(workspace, 'cv', 'gabarit');

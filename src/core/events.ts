@@ -142,7 +142,14 @@ function textOrNull(v: unknown, name: string): string | null {
 
 function numberOrNull(v: unknown, name: string): number | null {
   if (v === null || v === undefined || v === '') return null;
-  const n = typeof v === 'number' ? v : Number(String(v).replace(/[\s  ]/g, '').replace(',', '.'));
+  const n =
+    typeof v === 'number'
+      ? v
+      : Number(
+          String(v)
+            .replace(/[\s  ]/g, '')
+            .replace(',', '.'),
+        );
   if (!Number.isFinite(n)) throw new Error(tr('core.numberExpected', { name, value: String(v) }));
   return n;
 }
@@ -152,7 +159,10 @@ function numberOrNull(v: unknown, name: string): number | null {
  * "..", hidden segments (".git") and control characters.
  */
 export function pathRelative(v: string): string {
-  const t = v.trim().replace(/\\/g, '/').replace(/^\.\/+/, '');
+  const t = v
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\.\/+/, '');
   if (!t) throw new Error(tr('core.pathEmpty'));
   if (/^[a-z]:/i.test(t) || t.startsWith('/')) throw new Error(tr('core.pathAbsolute', { path: v }));
   // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what this check refuses
@@ -265,9 +275,7 @@ export function deadlines(db: Database, o: { days?: number; now?: Date } = {}): 
 
 /** Next deadline of an offer (the oldest not done: an overdue one comes before the rest). */
 export function nextDeadline(db: Database, offerId: number): JournalEvent | null {
-  const l = db
-    .prepare('SELECT * FROM events WHERE offer_id = ? AND done = 0 ORDER BY at ASC, id ASC LIMIT 1')
-    .get(offerId) as LineRaw | undefined;
+  const l = db.prepare('SELECT * FROM events WHERE offer_id = ? AND done = 0 ORDER BY at ASC, id ASC LIMIT 1').get(offerId) as LineRaw | undefined;
   return l ? fromLine(l) : null;
 }
 
@@ -283,13 +291,7 @@ function touchOffer(db: Database, offerId: number): void {
  * Adds an event to the journal of an offer. `done` defaults to false for a future date
  * (it is a deadline) and to true otherwise. `at` defaults to now.
  */
-export function addEvent(
-  db: Database,
-  offerId: number,
-  s: EventInput,
-  origin: OriginEvent,
-  opts: { importKey?: string; now?: Date } = {},
-): JournalEvent {
+export function addEvent(db: Database, offerId: number, s: EventInput, origin: OriginEvent, opts: { importKey?: string; now?: Date } = {}): JournalEvent {
   if (!db.prepare('SELECT 1 FROM offers WHERE id = ?').get(offerId)) throw new Error(tr('core.offerNotFound', { id: offerId }));
   const type = typeValid(s.type);
   const summary = textOrNull(s.summary, 'summary');

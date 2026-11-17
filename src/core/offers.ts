@@ -269,17 +269,11 @@ export function addStatus(db: Database, offerId: number, status: string, opts: O
   const origin = opts.origin ?? 'cli';
   if (opts.ifMissing) {
     const already = db
-      .prepare('SELECT 1 FROM statuses WHERE offer_id = ? AND status = ? AND origin = ? AND COALESCE(comment, \'\') = ?')
+      .prepare("SELECT 1 FROM statuses WHERE offer_id = ? AND status = ? AND origin = ? AND COALESCE(comment, '') = ?")
       .get(offerId, status, origin, comment ?? '');
     if (already) return false;
   }
-  db.prepare('INSERT INTO statuses (offer_id, status, comment, origin, at) VALUES (?, ?, ?, ?, ?)').run(
-    offerId,
-    status,
-    comment,
-    origin,
-    opts.at ?? now(),
-  );
+  db.prepare('INSERT INTO statuses (offer_id, status, comment, origin, at) VALUES (?, ?, ?, ?, ?)').run(offerId, status, comment, origin, opts.at ?? now());
   if (status === 'sent') dateSendByDefault(db, offerId, opts.at);
   recompute(db, offerId);
   return true;
@@ -291,8 +285,13 @@ export function addStatus(db: Database, offerId: number, status: string, opts: O
  */
 function dateSendByDefault(db: Database, offerId: number, at?: string): void {
   const d = new Date();
-  const day = at && /^\d{4}-\d{2}-\d{2}/.test(at) ? at.slice(0, 10) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  db.prepare('INSERT INTO applications (offer_id, sent_at) VALUES (?, ?) ON CONFLICT (offer_id) DO UPDATE SET sent_at = COALESCE(sent_at, excluded.sent_at)').run(offerId, day);
+  const day =
+    at && /^\d{4}-\d{2}-\d{2}/.test(at)
+      ? at.slice(0, 10)
+      : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  db.prepare(
+    'INSERT INTO applications (offer_id, sent_at) VALUES (?, ?) ON CONFLICT (offer_id) DO UPDATE SET sent_at = COALESCE(sent_at, excluded.sent_at)',
+  ).run(offerId, day);
   const columns = db.prepare("SELECT name FROM pragma_table_info('applications')").all() as { name: string }[];
   if (columns.some((c) => c.name === 'next_action')) {
     db.prepare("UPDATE applications SET next_action = NULL WHERE offer_id = ? AND next_action LIKE 'envoyer%'").run(offerId);
@@ -320,20 +319,13 @@ function numberOrNull(v: unknown): number | null {
   return n;
 }
 
-export function addScore(
-  db: Database,
-  offerId: number,
-  e: InputScore,
-  opts: { origin?: string; at?: string; ifMissing?: boolean } = {},
-): boolean {
+export function addScore(db: Database, offerId: number, e: InputScore, opts: { origin?: string; at?: string; ifMissing?: boolean } = {}): boolean {
   const score = numberOrNull(e.score);
   const raw = numberOrNull(e.raw_score);
   const origin = opts.origin ?? 'cli';
   const at = opts.at ?? now();
   if (opts.ifMissing) {
-    const already = db
-      .prepare('SELECT 1 FROM scores WHERE offer_id = ? AND origin = ? AND scored_at = ? AND score IS ?')
-      .get(offerId, origin, at, score);
+    const already = db.prepare('SELECT 1 FROM scores WHERE offer_id = ? AND origin = ? AND scored_at = ? AND score IS ?').get(offerId, origin, at, score);
     if (already) return false;
   }
   db.prepare(
@@ -361,9 +353,7 @@ export function addScore(
 
 export function tagsOffer(db: Database, offerId: number): string[] {
   return (
-    db
-      .prepare('SELECT t.name FROM offer_tags ot JOIN tags t ON t.id = ot.tag_id WHERE ot.offer_id = ? ORDER BY t.name')
-      .all(offerId) as { name: string }[]
+    db.prepare('SELECT t.name FROM offer_tags ot JOIN tags t ON t.id = ot.tag_id WHERE ot.offer_id = ? ORDER BY t.name').all(offerId) as { name: string }[]
   ).map((r) => r.name);
 }
 
@@ -381,10 +371,7 @@ export function updateTags(db: Database, offerId: number, additions: string[], r
     db.prepare('INSERT OR IGNORE INTO offer_tags (offer_id, tag_id) VALUES (?, ?)').run(offerId, tag.id);
   }
   for (const raw of removals) {
-    db.prepare('DELETE FROM offer_tags WHERE offer_id = ? AND tag_id = (SELECT id FROM tags WHERE name = ?)').run(
-      offerId,
-      normalizeTag(raw),
-    );
+    db.prepare('DELETE FROM offer_tags WHERE offer_id = ? AND tag_id = (SELECT id FROM tags WHERE name = ?)').run(offerId, normalizeTag(raw));
   }
   db.prepare('DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM offer_tags)').run();
   db.prepare('UPDATE offers SET updated_at = ? WHERE id = ?').run(now(), offerId);
@@ -400,12 +387,7 @@ export function applicationOf(db: Database, offerId: number): Application | null
  * clears it. `origin` is kept for the next action (importing _SUIVI.md does not replace
  * a text entered in the interface, the CLI or through MCP).
  */
-export function saveApplication(
-  db: Database,
-  offerId: number,
-  c: FieldsApplication,
-  opts: { origin?: string } = {},
-): Application {
+export function saveApplication(db: Database, offerId: number, c: FieldsApplication, opts: { origin?: string } = {}): Application {
   let current = applicationOf(db, offerId);
   if (!current) {
     db.prepare('INSERT INTO applications (offer_id, updated_at) VALUES (?, ?)').run(offerId, now());
@@ -441,31 +423,27 @@ type LineScore = Omit<Score, 'read' | 'input' | 'breakdown'> & { read: number; i
 
 /** Scores of an offer, from the most recent to the oldest (sub-scores and breakdown parsed). */
 export function scoresOffer(db: Database, offerId: number): Score[] {
-  return (db.prepare('SELECT * FROM scores WHERE offer_id = ? ORDER BY scored_at DESC, id DESC').all(offerId) as unknown as LineScore[]).map(
-    (n) => ({
-      ...n,
-      read: Boolean(n.read),
-      input: n.input ? (JSON.parse(n.input) as Input) : null,
-      breakdown: n.breakdown ? (JSON.parse(n.breakdown) as Breakdown) : null,
-    }),
-  );
+  return (db.prepare('SELECT * FROM scores WHERE offer_id = ? ORDER BY scored_at DESC, id DESC').all(offerId) as unknown as LineScore[]).map((n) => ({
+    ...n,
+    read: Boolean(n.read),
+    input: n.input ? (JSON.parse(n.input) as Input) : null,
+    breakdown: n.breakdown ? (JSON.parse(n.breakdown) as Breakdown) : null,
+  }));
 }
 
 export function detailOffer(db: Database, id: number): DetailOffer | undefined {
   const offer = offerById(db, id);
   if (!offer) return undefined;
   const scores = scoresOffer(db, id);
-  const statuses = db
-    .prepare('SELECT * FROM statuses WHERE offer_id = ? ORDER BY at DESC, id DESC')
-    .all(id) as unknown as LineStatus[];
+  const statuses = db.prepare('SELECT * FROM statuses WHERE offer_id = ? ORDER BY at DESC, id DESC').all(id) as unknown as LineStatus[];
   return { ...offer, tags: tagsOffer(db, id), scores, statuses, application: applicationOf(db, id), events: journal(db, id) };
 }
 
 /** Number of offers of a company already in the database (case-insensitive comparison). */
 export function companyOffers(db: Database, company: string, exceptId?: number): number {
-  const r = db
-    .prepare('SELECT COUNT(*) AS n FROM offers WHERE company = ? COLLATE NOCASE AND id IS NOT ?')
-    .get(company.trim(), exceptId ?? null) as { n: number };
+  const r = db.prepare('SELECT COUNT(*) AS n FROM offers WHERE company = ? COLLATE NOCASE AND id IS NOT ?').get(company.trim(), exceptId ?? null) as {
+    n: number;
+  };
   return r.n;
 }
 
@@ -480,10 +458,7 @@ export function mergeOffers(db: Database, target: number, duplicate: number): vo
   db.prepare('UPDATE scores SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);
   db.prepare('UPDATE statuses SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);
   db.prepare('UPDATE OR IGNORE events SET offer_id = ? WHERE offer_id = ?').run(target, duplicate);
-  db.prepare('INSERT OR IGNORE INTO offer_tags (offer_id, tag_id) SELECT ?, tag_id FROM offer_tags WHERE offer_id = ?').run(
-    target,
-    duplicate,
-  );
+  db.prepare('INSERT OR IGNORE INTO offer_tags (offer_id, tag_id) SELECT ?, tag_id FROM offer_tags WHERE offer_id = ?').run(target, duplicate);
   const cd = applicationOf(db, duplicate);
   if (cd) {
     if (!applicationOf(db, target)) {

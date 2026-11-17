@@ -44,7 +44,10 @@ export function levelsSort(sort?: string, order?: 'asc' | 'desc'): LevelSort[] {
   const byDefault = order === 'asc' ? 'asc' : 'desc';
   const levels: LevelSort[] = [];
   for (const chunk of (sort ?? '').split(',')) {
-    const [col, direction] = chunk.trim().split(':').map((x) => x.trim().toLowerCase());
+    const [col, direction] = chunk
+      .trim()
+      .split(':')
+      .map((x) => x.trim().toLowerCase());
     if (!(COLUMNS_SORT as readonly string[]).includes(col ?? '')) continue;
     if (levels.some((n) => n.column === col)) continue;
     levels.push({ column: col as ColumnSort, order: direction === 'asc' || direction === 'desc' ? direction : byDefault });
@@ -198,9 +201,7 @@ export function meta(db: Database): Meta {
     total: (db.prepare('SELECT COUNT(*) AS n FROM offers').get() as { n: number }).n,
     statuses: count('SELECT status AS value, COUNT(*) AS n FROM offers GROUP BY status ORDER BY n DESC'),
     sources: count('SELECT source AS value, COUNT(*) AS n FROM offers GROUP BY source ORDER BY n DESC'),
-    tags: count(
-      'SELECT t.name AS value, COUNT(*) AS n FROM offer_tags ot JOIN tags t ON t.id = ot.tag_id GROUP BY t.name ORDER BY t.name',
-    ),
+    tags: count('SELECT t.name AS value, COUNT(*) AS n FROM offer_tags ot JOIN tags t ON t.id = ot.tag_id GROUP BY t.name ORDER BY t.name'),
     contracts: count(
       "SELECT contract AS value, COUNT(*) AS n FROM offers WHERE contract IS NOT NULL AND contract <> '' GROUP BY contract ORDER BY n DESC LIMIT 30",
     ),

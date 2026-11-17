@@ -38,13 +38,7 @@ function FieldText(props: { key: KeyUrl; value: string; update: Update; label: s
   );
 }
 
-function Cases(props: {
-  legend: string;
-  key: KeyUrl;
-  options: { value: string; label: string; n?: number }[];
-  chosen: string[];
-  update: Update;
-}) {
+function Cases(props: { legend: string; key: KeyUrl; options: { value: string; label: string; n?: number }[]; chosen: string[]; update: Update }) {
   const toggle = (v: string) => {
     const s = new Set(props.chosen);
     if (s.has(v)) s.delete(v);
@@ -60,21 +54,21 @@ function Cases(props: {
       {/* Scrolling list: framed so that its edges show, shaded at the top / bottom when boxes are
           hidden on that side; on a phone, a free strip on the right lets the thumb scroll the drawer. */}
       <div className="relative max-md:mr-10">
-      <div ref={list} className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-600">
-        {props.options.map((o) => (
-          <label key={o.value} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
-            <input
-              type="checkbox"
-              className="size-4 accent-blue-700 dark:accent-blue-400"
-              checked={props.chosen.includes(o.value)}
-              onChange={() => toggle(o.value)}
-            />
-            <span className="flex-1 truncate">{o.label}</span>
-            {o.n !== undefined && <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">{o.n}</span>}
-          </label>
-        ))}
-      </div>
-      <VerticalShadows {...shadows} />
+        <div ref={list} className="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-600">
+          {props.options.map((o) => (
+            <label key={o.value} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700">
+              <input
+                type="checkbox"
+                className="size-4 accent-blue-700 dark:accent-blue-400"
+                checked={props.chosen.includes(o.value)}
+                onChange={() => toggle(o.value)}
+              />
+              <span className="flex-1 truncate">{o.label}</span>
+              {o.n !== undefined && <span className="text-xs text-slate-500 tabular-nums dark:text-slate-400">{o.n}</span>}
+            </label>
+          ))}
+        </div>
+        <VerticalShadows {...shadows} />
       </div>
     </fieldset>
   );
@@ -89,13 +83,11 @@ export function Filters({ params, update, meta }: { params: URLSearchParams; upd
     // On a phone, more space between the blocks: room to put the thumb outside the scrolling lists.
     <div className="flex flex-col gap-4 max-md:gap-7">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold">{t('filters.title')}{active ? ` (${active})` : ''}</h2>
-        <button
-          type="button"
-          className="button"
-          disabled={!active}
-          onClick={() => update(Object.fromEntries([...KEYS_FILTERS, 'page'].map((k) => [k, null])))}
-        >
+        <h2 className="text-sm font-bold">
+          {t('filters.title')}
+          {active ? ` (${active})` : ''}
+        </h2>
+        <button type="button" className="button" disabled={!active} onClick={() => update(Object.fromEntries([...KEYS_FILTERS, 'page'].map((k) => [k, null])))}>
           {t('filters.reset')}
         </button>
       </div>

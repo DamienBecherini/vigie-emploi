@@ -171,9 +171,9 @@ describe('rubric: examples in the partial change', () => {
     const removed = applyChange(database, { examples: { remove: [first.title] } });
     expect(removed.examples.map((e) => e.title)).not.toContain(first.title);
     expect(() => applyChange(database, { examples: { remove: ['Inconnu'] } })).toThrow(/Exemple absent/);
-    expect(() =>
-      applyChange(database, { examples: { add: [{ title: 'X', criteria: { unknown: { score: 5, justification: '' } } }] } }),
-    ).toThrow(/critère IA inconnu/);
+    expect(() => applyChange(database, { examples: { add: [{ title: 'X', criteria: { unknown: { score: 5, justification: '' } } }] } })).toThrow(
+      /critère IA inconnu/,
+    );
     expect(database.examples).toHaveLength(n); // grille d'origine intacte
   });
 
@@ -235,7 +235,15 @@ describe('ingest_emails: what to tell the user', () => {
     confirmations: [],
     detail: {
       added: [
-        { id: 7, source: 'hellowork', url: 'https://www.hellowork.com/fr-fr/emplois/1.html', title: 'Dev PHP', company: 'A', status: 'new', has_description: false },
+        {
+          id: 7,
+          source: 'hellowork',
+          url: 'https://www.hellowork.com/fr-fr/emplois/1.html',
+          title: 'Dev PHP',
+          company: 'A',
+          status: 'new',
+          has_description: false,
+        },
         { id: 8, source: 'linkedin', url: 'https://www.linkedin.com/jobs/view/2/', title: 'Dev', company: 'B', status: 'new', has_description: false },
       ],
       dismissed: [],

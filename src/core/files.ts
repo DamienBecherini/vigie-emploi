@@ -106,7 +106,11 @@ export function listFiles(dataDir: string, folder: string): { exists: boolean; f
   walk(realDatabase, 1);
   // The folder's sheet first, then from the most recent to the oldest.
   files.sort((a, b) =>
-    a.name === 'dossier-candidature.md' ? -1 : b.name === 'dossier-candidature.md' ? 1 : b.modified_at.localeCompare(a.modified_at) || a.name.localeCompare(b.name),
+    a.name === 'dossier-candidature.md'
+      ? -1
+      : b.name === 'dossier-candidature.md'
+        ? 1
+        : b.modified_at.localeCompare(a.modified_at) || a.name.localeCompare(b.name),
   );
   return { exists: true, files, truncated };
 }

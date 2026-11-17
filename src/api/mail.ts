@@ -43,10 +43,7 @@ function password(b: Body, mail: Pick<MailConfig, 'user' | 'host'>, store: Secre
   return stored;
 }
 
-export function routesMail(
-  app: Hono,
-  o: { db: Database; file: string | null; emails: string; store: () => SecretStore },
-): void {
+export function routesMail(app: Hono, o: { db: Database; file: string | null; emails: string; store: () => SecretStore }): void {
   const current = () => readMailSettings(o.file);
   const failure = (e: unknown, mail: Pick<MailConfig, 'host' | 'folder'>) => {
     const err = e instanceof MailError ? e : new MailError('other', (e as Error).message);

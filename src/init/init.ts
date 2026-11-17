@@ -153,7 +153,14 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
 
   const template = o.template ? join(FOLDER_TEMPLATES, o.template) : TEMPLATE_DEFAULT;
   if (!existsSync(join(template, 'gabarit.css'))) {
-    errorUser(m('init.templateUnknown', { template: o.template, list: listTemplates().map((g) => g.name).join(', ') }));
+    errorUser(
+      m('init.templateUnknown', {
+        template: o.template,
+        list: listTemplates()
+          .map((g) => g.name)
+          .join(', '),
+      }),
+    );
   }
   const workspace = slash(folder);
   const launched = launch();

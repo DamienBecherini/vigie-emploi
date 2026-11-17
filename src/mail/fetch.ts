@@ -117,7 +117,7 @@ export async function fetchMail(db: Database, mail: MailConfig, inbox: string, o
       let uids: number[];
       if (result.first) {
         const since = new Date((o.now ?? new Date()).getTime() - mail.sinceDays * 86400000);
-        uids = box.exists ? ((await c.search({ since }, { uid: true })) || []) : [];
+        uids = box.exists ? (await c.search({ since }, { uid: true })) || [] : [];
       } else {
         const after = state!.last_uid;
         uids = box.exists ? ((await c.search({ uid: `${after + 1}:*` }, { uid: true })) || []).filter((u) => u > after) : [];

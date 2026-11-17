@@ -3,8 +3,7 @@
 import { textHtmlLines } from '../core/links.ts';
 import { dateIso } from '../core/text.ts';
 
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 
 export interface DetailJsonLd {
   title: string | null;

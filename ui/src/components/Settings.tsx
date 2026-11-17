@@ -106,7 +106,9 @@ function Weight({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =
         })}
       </ul>
       <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-        {t('weight.total')}<strong className="tabular-nums">{sum}</strong>{t('weight.normalized')}
+        {t('weight.total')}
+        <strong className="tabular-nums">{sum}</strong>
+        {t('weight.normalized')}
         {sum === 0 && <span className="ml-1 text-rose-700 dark:text-rose-300">{t('weight.none')}</span>}
       </p>
     </Section>
@@ -131,7 +133,12 @@ function Scales({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =
             change={(n) => n !== undefined && updated((x) => void (x.scales.remote.onsite_days[j] = n))}
           />
         ))}
-        <FieldNumber className="w-20" label={t('scales.unknownRemote')} value={tt.unknown} change={(n) => n !== undefined && updated((x) => void (x.scales.remote.unknown = n))} />
+        <FieldNumber
+          className="w-20"
+          label={t('scales.unknownRemote')}
+          value={tt.unknown}
+          change={(n) => n !== undefined && updated((x) => void (x.scales.remote.unknown = n))}
+        />
       </div>
 
       <h4 className="mt-4 mb-1 text-sm font-semibold">{t('scales.compensation')}</h4>
@@ -151,7 +158,12 @@ function Scales({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =
             <option value="max">{t('scales.high')}</option>
           </select>
         </div>
-        <FieldNumber className="w-24" label={t('scales.unknownPay')} value={r.unknown} change={(n) => n !== undefined && updated((x) => void (x.scales.compensation.unknown = n))} />
+        <FieldNumber
+          className="w-24"
+          label={t('scales.unknownPay')}
+          value={r.unknown}
+          change={(n) => n !== undefined && updated((x) => void (x.scales.compensation.unknown = n))}
+        />
       </div>
       <fieldset className="mt-2">
         <legend className="text-sm font-semibold">{t('scales.salary')}</legend>
@@ -173,7 +185,14 @@ function Scales({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =
             <FieldNumber
               key={k}
               className={k === 'floor_full_remote' ? 'w-36' : 'w-28'}
-              label={{ floor: t('scales.floor'), floor_full_remote: t('scales.floorFullRemote'), target_low: t('scales.targetLow'), target_high: t('scales.targetHigh') }[k]}
+              label={
+                {
+                  floor: t('scales.floor'),
+                  floor_full_remote: t('scales.floorFullRemote'),
+                  target_low: t('scales.targetLow'),
+                  target_high: t('scales.targetHigh'),
+                }[k]
+              }
               value={r.daily_rate[k]}
               empty={k === 'floor_full_remote'}
               change={(n) =>
@@ -211,7 +230,13 @@ function Rules({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =>
               <label htmlFor={`regle-${r.id}`} className="label">
                 {r.id}
               </label>
-              <input id={`regle-${r.id}`} className="field" value={r.label} onChange={(e) => updated((x) => void (x.rules[i].label = e.target.value))} title={r.description} />
+              <input
+                id={`regle-${r.id}`}
+                className="field"
+                value={r.label}
+                onChange={(e) => updated((x) => void (x.rules[i].label = e.target.value))}
+                title={r.description}
+              />
             </div>
             <div className="w-32">
               <label htmlFor={`effet-${r.id}`} className="label">
@@ -256,13 +281,28 @@ function Rules({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =>
                     ))}
                   </select>
                 </div>
-                <FieldNumber className="w-24" label={t('rules.subThreshold')} value={r.threshold} change={(n) => n !== undefined && updated((x) => void (x.rules[i].threshold = n))} />
+                <FieldNumber
+                  className="w-24"
+                  label={t('rules.subThreshold')}
+                  value={r.threshold}
+                  change={(n) => n !== undefined && updated((x) => void (x.rules[i].threshold = n))}
+                />
               </>
             )}
             {r.effect === 'cap' && (
-              <FieldNumber className="w-24" label={t('rules.cap')} value={r.value} change={(n) => n !== undefined && updated((x) => void (x.rules[i].value = n))} />
+              <FieldNumber
+                className="w-24"
+                label={t('rules.cap')}
+                value={r.value}
+                change={(n) => n !== undefined && updated((x) => void (x.rules[i].value = n))}
+              />
             )}
-            <button type="button" className="button" onClick={() => updated((x) => void x.rules.splice(i, 1))} aria-label={t('rules.deleteLabel', { label: r.label })}>
+            <button
+              type="button"
+              className="button"
+              onClick={() => updated((x) => void x.rules.splice(i, 1))}
+              aria-label={t('rules.deleteLabel', { label: r.label })}
+            >
               {t('rules.delete')}
             </button>
           </li>
@@ -282,7 +322,13 @@ function Rules({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void) =>
           <label htmlFor="rule-new-id" className="label">
             {t('rules.identifier')}
           </label>
-          <input id="rule-new-id" className="field" placeholder={t('rules.identifierExample')} value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value })} />
+          <input
+            id="rule-new-id"
+            className="field"
+            placeholder={t('rules.identifierExample')}
+            value={draft.id}
+            onChange={(e) => setDraft({ ...draft, id: e.target.value })}
+          />
         </div>
         <div className="min-w-52 flex-1">
           <label htmlFor="rule-new-label" className="label">
@@ -313,9 +359,7 @@ function Inventory({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void
           </label>
           <input id="inv-filter" type="search" className="field" value={filter} onChange={(e) => setFilter(e.target.value)} />
         </div>
-        <p className="text-sm text-slate-700 dark:text-slate-300">
-          {LEVELS.map((n) => `${levelShown(n)} ${count(n)}`).join(' · ')}
-        </p>
+        <p className="text-sm text-slate-700 dark:text-slate-300">{LEVELS.map((n) => `${levelShown(n)} ${count(n)}`).join(' · ')}</p>
       </div>
       <div className="max-h-80 overflow-y-auto rounded border border-slate-200 dark:border-slate-700">
         <table className="w-full text-sm">
@@ -340,7 +384,12 @@ function Inventory({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void
             {lines.map(({ x, i }) => (
               <tr key={i} className="border-t border-slate-200 dark:border-slate-700">
                 <td className="px-2 py-1">
-                  <input aria-label={t('inventory.technology')} className="field" value={x.technology} onChange={(e) => updated((y) => void (y.inventory[i].technology = e.target.value))} />
+                  <input
+                    aria-label={t('inventory.technology')}
+                    className="field"
+                    value={x.technology}
+                    onChange={(e) => updated((y) => void (y.inventory[i].technology = e.target.value))}
+                  />
                 </td>
                 <td className="px-2 py-1">
                   <select
@@ -370,7 +419,12 @@ function Inventory({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void
                   />
                 </td>
                 <td className="px-2 py-1 text-right">
-                  <button type="button" className="button" onClick={() => updated((y) => void y.inventory.splice(i, 1))} aria-label={t('inventory.remove', { technology: x.technology })}>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => updated((y) => void y.inventory.splice(i, 1))}
+                    aria-label={t('inventory.remove', { technology: x.technology })}
+                  >
                     ×
                   </button>
                 </td>
@@ -384,12 +438,13 @@ function Inventory({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void
         onSubmit={(e) => {
           e.preventDefault();
           if (!draftTech.technology.trim()) return;
-          updated((x) =>
-            void x.inventory.push({
-              technology: draftTech.technology.trim(),
-              level: draftTech.level,
-              ...(draftTech.precision.trim() ? { precision: draftTech.precision.trim() } : {}),
-            }),
+          updated(
+            (x) =>
+              void x.inventory.push({
+                technology: draftTech.technology.trim(),
+                level: draftTech.level,
+                ...(draftTech.precision.trim() ? { precision: draftTech.precision.trim() } : {}),
+              }),
           );
           setDraftTech({ technology: '', level: draftTech.level, precision: '' });
         }}
@@ -398,7 +453,12 @@ function Inventory({ g, updated }: { g: Rubric; updated: (f: (g: Rubric) => void
           <label htmlFor="inv-technology" className="label">
             {t('inventory.new')}
           </label>
-          <input id="inv-technology" className="field" value={draftTech.technology} onChange={(e) => setDraftTech({ ...draftTech, technology: e.target.value })} />
+          <input
+            id="inv-technology"
+            className="field"
+            value={draftTech.technology}
+            onChange={(e) => setDraftTech({ ...draftTech, technology: e.target.value })}
+          />
         </div>
         <div className="w-28">
           <label htmlFor="inv-level" className="label">
@@ -437,7 +497,10 @@ function Examples({ g }: { g: Rubric }) {
             <li key={i} className="rounded-md bg-slate-50 p-2 text-sm dark:bg-slate-800/60">
               <p className="flex flex-wrap items-center gap-2">
                 <BadgeScore score={d.score} />
-                <strong>{e.company ? `${e.company} — ` : ''}{e.title}</strong>
+                <strong>
+                  {e.company ? `${e.company} — ` : ''}
+                  {e.title}
+                </strong>
                 {e.conditions && <span className="text-slate-600 dark:text-slate-400">{e.conditions}</span>}
               </p>
               <p className="mt-1 text-slate-700 dark:text-slate-300">
@@ -622,7 +685,13 @@ export function Settings({ close, choose, announce }: { close: () => void; choos
             </h2>
             {q.data?.version && (
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                {t('settings.version', { name: reference?.name, version: q.data.version, date: formatDate(q.data.at?.slice(0, 10) ?? null), author: q.data.author, summary: q.data.summary })}
+                {t('settings.version', {
+                  name: reference?.name,
+                  version: q.data.version,
+                  date: formatDate(q.data.at?.slice(0, 10) ?? null),
+                  author: q.data.author,
+                  summary: q.data.summary,
+                })}
               </p>
             )}
           </div>
@@ -633,18 +702,23 @@ export function Settings({ close, choose, announce }: { close: () => void; choos
         {q.isError && <p className="p-4 text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
         {q.data && !q.data.rubric && (
           <p className="p-4 text-sm">
-            {t('settings.notOfRubric1')}<code>vigie-emploi grille --init</code>{t('settings.notOfRubric2')}
-            <code>profil/grille.json</code>{t('settings.notOfRubric3')}
+            {t('settings.notOfRubric1')}
+            <code>vigie-emploi grille --init</code>
+            {t('settings.notOfRubric2')}
+            <code>profil/grille.json</code>
+            {t('settings.notOfRubric3')}
           </p>
         )}
         {workingCopy && (
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
-              {t('settings.explanation')}
-            </p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{t('settings.explanation')}</p>
             <Weight g={workingCopy} updated={updated} />
             <Section title={t('settings.thresholdTitle')} help={t('settings.thresholdHelp')}>
-              <FieldNumber label={t('settings.threshold')} value={workingCopy.threshold} change={(n) => n !== undefined && updated((x) => void (x.threshold = n))} />
+              <FieldNumber
+                label={t('settings.threshold')}
+                value={workingCopy.threshold}
+                change={(n) => n !== undefined && updated((x) => void (x.threshold = n))}
+              />
             </Section>
             <Scales g={workingCopy} updated={updated} />
             <Rules g={workingCopy} updated={updated} />
@@ -661,7 +735,14 @@ export function Settings({ close, choose, announce }: { close: () => void; choos
               save.mutate();
             }}
           >
-            {modified && <Preview impact={preview.data} loading={preview.isFetching} error={validation.error ?? (preview.error ? (preview.error as Error).message : null)} choose={choose} />}
+            {modified && (
+              <Preview
+                impact={preview.data}
+                loading={preview.isFetching}
+                error={validation.error ?? (preview.error ? (preview.error as Error).message : null)}
+                choose={choose}
+              />
+            )}
             <div className="flex flex-wrap items-end gap-2">
               <div className="min-w-64 flex-1">
                 <label htmlFor="summary-rubric" className="label">

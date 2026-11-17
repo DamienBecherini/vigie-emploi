@@ -21,9 +21,7 @@ export type Unit = (typeof UNITS)[number];
 /** Maximum number of weighted criteria (beyond that, the rubric gets hard to read). */
 export const CRITERIA_MAX = 7;
 
-const identifier = z
-  .string()
-  .regex(/^[a-z][a-z0-9_-]{0,39}$/, { error: () => t('core.rubric.identifier') });
+const identifier = z.string().regex(/^[a-z][a-z0-9_-]{0,39}$/, { error: () => t('core.rubric.identifier') });
 const score10 = z
   .number()
   .min(0, { error: () => t('core.rubric.score10') })
@@ -43,7 +41,11 @@ export const schemaCriterion = z
   })
   .superRefine((c, ctx) => {
     if (c.source === 'computation' && !c.computation) {
-      ctx.addIssue({ code: 'custom', path: ['computation'], message: t('core.rubric.computationExpected', { id: c.id, computations: COMPUTATIONS.join(t('core.or')) }) });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['computation'],
+        message: t('core.rubric.computationExpected', { id: c.id, computations: COMPUTATIONS.join(t('core.or')) }),
+      });
     }
     if (c.source === 'ai' && c.computation) {
       ctx.addIssue({ code: 'custom', path: ['computation'], message: t('core.rubric.computationReserved', { id: c.id }) });
@@ -58,15 +60,13 @@ const fieldsTier = {
   /** Floor specific to full remote jobs (optional). */
   floor_full_remote: z.number().positive().optional(),
 };
-export const schemaTier = z
-  .strictObject(fieldsTier)
-  .superRefine((p, ctx) => {
-    if (p.target_high <= p.floor) ctx.addIssue({ code: 'custom', path: ['target_high'], message: t('core.rubric.targetHigh') });
-    if (p.floor_full_remote !== undefined && p.target_high <= p.floor_full_remote) {
-      ctx.addIssue({ code: 'custom', path: ['floor_full_remote'], message: t('core.rubric.targetHighFullRemote') });
-    }
-    if (p.target_low > p.target_high) ctx.addIssue({ code: 'custom', path: ['target_low'], message: t('core.rubric.targetLow') });
-  });
+export const schemaTier = z.strictObject(fieldsTier).superRefine((p, ctx) => {
+  if (p.target_high <= p.floor) ctx.addIssue({ code: 'custom', path: ['target_high'], message: t('core.rubric.targetHigh') });
+  if (p.floor_full_remote !== undefined && p.target_high <= p.floor_full_remote) {
+    ctx.addIssue({ code: 'custom', path: ['floor_full_remote'], message: t('core.rubric.targetHighFullRemote') });
+  }
+  if (p.target_low > p.target_high) ctx.addIssue({ code: 'custom', path: ['target_low'], message: t('core.rubric.targetLow') });
+});
 export type Tier = z.infer<typeof schemaTier>;
 
 export const schemaScales = z.strictObject({
@@ -176,7 +176,10 @@ export const schemaRubric = z
     threshold: score10.default(4.5),
     /** General instructions for the AI (targets, bonuses, what matters), in addition to the criteria descriptions. */
     instructions: z.array(z.string()).default([]),
-    criteria: z.array(schemaCriterion).min(1).max(CRITERIA_MAX, { error: () => t('core.rubric.criteriaMax', { n: CRITERIA_MAX }) }),
+    criteria: z
+      .array(schemaCriterion)
+      .min(1)
+      .max(CRITERIA_MAX, { error: () => t('core.rubric.criteriaMax', { n: CRITERIA_MAX }) }),
     scales: schemaScales,
     rules: z.array(schemaRule).default([]),
     inventory: z.array(schemaTechnology).default([]),
@@ -184,7 +187,8 @@ export const schemaRubric = z
   })
   .superRefine((g, ctx) => {
     const duplicates = (ids: string[]) => ids.filter((x, i) => ids.indexOf(x) !== i);
-    for (const d of duplicates(g.criteria.map((c) => c.id))) ctx.addIssue({ code: 'custom', path: ['criteria'], message: t('core.rubric.criterionDouble', { id: d }) });
+    for (const d of duplicates(g.criteria.map((c) => c.id)))
+      ctx.addIssue({ code: 'custom', path: ['criteria'], message: t('core.rubric.criterionDouble', { id: d }) });
     for (const d of duplicates(g.rules.map((r) => r.id))) ctx.addIssue({ code: 'custom', path: ['rules'], message: t('core.rubric.ruleDouble', { id: d }) });
     for (const d of duplicates(g.criteria.flatMap((c) => (c.computation ? [c.computation] : [])))) {
       ctx.addIssue({ code: 'custom', path: ['criteria'], message: t('core.rubric.scaleDouble', { computation: d }) });
@@ -194,10 +198,12 @@ export const schemaRubric = z
     const rules = new Set(g.rules.map((r) => r.id));
     g.examples.forEach((e, i) => {
       for (const k of Object.keys(e.criteria)) {
-        if (!ai.has(k)) ctx.addIssue({ code: 'custom', path: ['examples', i, 'criteria', k], message: t('core.rubric.exampleCriterion', { title: e.title, criterion: k }) });
+        if (!ai.has(k))
+          ctx.addIssue({ code: 'custom', path: ['examples', i, 'criteria', k], message: t('core.rubric.exampleCriterion', { title: e.title, criterion: k }) });
       }
       for (const b of e.blockers) {
-        if (!rules.has(b)) ctx.addIssue({ code: 'custom', path: ['examples', i, 'blockers'], message: t('core.rubric.exampleRule', { title: e.title, rule: b }) });
+        if (!rules.has(b))
+          ctx.addIssue({ code: 'custom', path: ['examples', i, 'blockers'], message: t('core.rubric.exampleRule', { title: e.title, rule: b }) });
       }
     });
   });
@@ -323,7 +329,11 @@ export function onsiteDaysFromText(text: string | null | undefined): number | nu
   if (m) return Math.min(5, Number(m[1]));
   m = t.match(new RegExp(`${j}(?:de |en )?(?:teletravail|remote|tt\\b|a distance)`));
   if (m) return Math.max(0, 5 - Number(m[1]));
-  if (/full[ -]?remote|100 ?% (?:teletravail|remote|a distance)|(?:tout|totalement|entierement) (?:a distance|en teletravail)|teletravail (?:complet|total|integral)|remote total|fully remote|\bremote only\b/.test(t)) {
+  if (
+    /full[ -]?remote|100 ?% (?:teletravail|remote|a distance)|(?:tout|totalement|entierement) (?:a distance|en teletravail)|teletravail (?:complet|total|integral)|remote total|fully remote|\bremote only\b/.test(
+      t,
+    )
+  ) {
     return 0;
   }
   if (/^\s*(?:a distance|remote|teletravail)\s*$/.test(t)) return 0;
@@ -439,11 +449,7 @@ export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}
       const r =
         c.computation === 'remote'
           ? scoreRemote(rubric.scales.remote, inputs.onsite_days)
-          : scoreCompensation(
-              rubric.scales.compensation,
-              { min: inputs.salary_min, max: inputs.salary_max, unit: inputs.unit },
-              inputs.onsite_days,
-            );
+          : scoreCompensation(rubric.scales.compensation, { min: inputs.salary_min, max: inputs.salary_max, unit: inputs.unit }, inputs.onsite_days);
       score = r.score;
       justification = r.justification;
       origin = r.flag && r.flag.code !== 'sub_floor' ? 'neutral' : 'computation';
@@ -655,7 +661,16 @@ export function applyChange(rubric: Rubric, raw: unknown): Rubric {
       if (m.active !== undefined) r0.active = m.active;
     } else {
       if (!m.label || !m.effect) throw new Error(t('core.change.newRule', { id: m.id }));
-      g.rules.push({ id: m.id, label: m.label, description: m.description ?? '', effect: m.effect, value: m.value ?? undefined, criterion: m.criterion, threshold: m.threshold, active: m.active ?? true });
+      g.rules.push({
+        id: m.id,
+        label: m.label,
+        description: m.description ?? '',
+        effect: m.effect,
+        value: m.value ?? undefined,
+        criterion: m.criterion,
+        threshold: m.threshold,
+        active: m.active ?? true,
+      });
     }
   }
   for (const id of ch.remove_rules ?? []) {

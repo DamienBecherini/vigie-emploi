@@ -60,7 +60,10 @@ function parseDate(text: string, yearByDefault: number): string | null {
  * "- 13/10/2026 — …" and checked boxes "- [x] Candidature envoyée le : 13/10/2026 (…)". Unchecked
  * boxes (to do) and code blocks are ignored.
  */
-export function trackerLines(text: string, yearByDefault = new Date().getFullYear()): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
+export function trackerLines(
+  text: string,
+  yearByDefault = new Date().getFullYear(),
+): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
   const lines = text.split(/\r?\n/);
   const r: LineJournal[] = [];
   const withoutDate: { number: number; text: string }[] = [];
@@ -154,7 +157,12 @@ function amountAndDays(text: string): Pick<EventInput, 'amount' | 'unit' | 'days
   const j = t.match(/(\d+(?:,\d+)?)\s*(?:jours|j)\b(?!\s*cumul)/i);
   return {
     amount: m ? Number(m[1].replace(/[ .]/g, '').replace(',', '.')) : null,
-    unit: m ? m[2].replace(/\s+/g, ' ').replace(/€ \/ j/, '€/j').replace(/K€ \/ an/i, 'K€/an') : null,
+    unit: m
+      ? m[2]
+          .replace(/\s+/g, ' ')
+          .replace(/€ \/ j/, '€/j')
+          .replace(/K€ \/ an/i, 'K€/an')
+      : null,
     days: j ? Number(j[1].replace(',', '.')) : null,
   };
 }
@@ -206,9 +214,10 @@ const words = (s: string) =>
 function applicationByName(db: Database, name: string): number | null {
   const wordsFolder = new Set(words(name));
   const candidates = (
-    db
-      .prepare('SELECT c.offer_id, o.company FROM applications c JOIN offers o ON o.id = c.offer_id WHERE c.folder IS NULL')
-      .all() as { offer_id: number; company: string | null }[]
+    db.prepare('SELECT c.offer_id, o.company FROM applications c JOIN offers o ON o.id = c.offer_id WHERE c.folder IS NULL').all() as {
+      offer_id: number;
+      company: string | null;
+    }[]
   ).filter((c) => {
     const m = words(c.company ?? '');
     return m.length > 0 && m.every((x) => wordsFolder.has(x));
@@ -267,9 +276,7 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
       if (!section || (!lines.length && !withoutDate.length)) report.folders_without_tracker.push(folderRel);
       for (const s of withoutDate) report.without_date.push({ folder: folderRel, line: s.number, excerpt: excerpt(s.text) });
       const keys = new Set<string>();
-      const already = new Map(
-        (existing.all(link.offer_id) as { id: number; import_key: string; updated_at: string | null }[]).map((e) => [e.import_key, e]),
-      );
+      const already = new Map((existing.all(link.offer_id) as { id: number; import_key: string; updated_at: string | null }[]).map((e) => [e.import_key, e]));
       for (const l of lines) {
         report.lines++;
         const key = `tracker:${fingerprint(`${l.at}|${l.text}`)}`;

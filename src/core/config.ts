@@ -210,11 +210,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
     }
   }
   const baseDir = file ? dirname(file) : cwd;
-  const folder = dataForced
-    ? resolve(cwd, dataForced)
-    : raw.dataDir
-      ? resolve(baseDir, raw.dataDir)
-      : null;
+  const folder = dataForced ? resolve(cwd, dataForced) : raw.dataDir ? resolve(baseDir, raw.dataDir) : null;
   if (!folder) {
     throw new ErrorConfig('not-configured', tl(messageLanguage(env, raw), 'core.config.notConfigure', { file: NAME_FILE_CONFIG }));
   }

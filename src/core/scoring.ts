@@ -95,17 +95,9 @@ export function offerForInput(
   const ident = canonicalize(e.url);
   const source = ident?.source ?? (e.source || 'manual');
   const siteId = ident?.siteId ?? `url-${fingerprint(e.url)}`;
-  const existing = db.prepare('SELECT id FROM offers WHERE source = ? AND site_id = ?').get(source, siteId) as
-    | { id: number }
-    | undefined;
+  const existing = db.prepare('SELECT id FROM offers WHERE source = ? AND site_id = ?').get(source, siteId) as { id: number } | undefined;
   if (!existing && opts.create === false) return null;
-  const { offer, created } = saveOffer(
-    db,
-    source,
-    siteId,
-    { ...fields, canonical_url: ident?.url ?? e.url, received_at: opts.receivedAt ?? null },
-    origin,
-  );
+  const { offer, created } = saveOffer(db, source, siteId, { ...fields, canonical_url: ident?.url ?? e.url, received_at: opts.receivedAt ?? null }, origin);
   return { id: offer.id, created };
 }
 

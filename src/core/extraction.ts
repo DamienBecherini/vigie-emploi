@@ -14,7 +14,10 @@ export async function textPdf(data: Uint8Array): Promise<{ pages: number; text: 
   for (let i = 1; i <= r.totalPages; i += 1) {
     try {
       const annotations = (await (await pdf.getPage(i)).getAnnotations()) as { subtype?: string; url?: string; unsafeUrl?: string }[];
-      const urls = annotations.filter((a) => a.subtype === 'Link').map((a) => a.url ?? a.unsafeUrl).filter((u): u is string => Boolean(u));
+      const urls = annotations
+        .filter((a) => a.subtype === 'Link')
+        .map((a) => a.url ?? a.unsafeUrl)
+        .filter((u): u is string => Boolean(u));
       links.push([...new Set(urls)]);
     } catch {
       links.push([]);

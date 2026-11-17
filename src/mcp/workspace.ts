@@ -86,10 +86,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   // Prompts and resource: workspace instructions, read again from the disk at each call.
 
   for (const [name, p] of Object.entries(PROMPTS)) {
-    const argsSchema =
-      name === 'targeted-cv'
-        ? { offer: z.string().optional().describe(tm('workspace.argsSchema.offer')) }
-        : undefined;
+    const argsSchema = name === 'targeted-cv' ? { offer: z.string().optional().describe(tm('workspace.argsSchema.offer')) } : undefined;
     server.registerPrompt(
       name,
       { title: bi(p.title), description: bi(p.description), ...(argsSchema ? { argsSchema } : {}) },
@@ -169,22 +166,12 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       title: tu('workspace.initialize_workspace.title'),
       description: tm('workspace.initialize_workspace.description', { p1: String(slash(state.config.dataDir)) }),
       inputSchema: {
-        folder: z
-          .string()
-          .optional()
-          .describe(
-            tm('workspace.initialize_workspace.inputSchema.folder'),
-          ),
-        template: z
-          .string()
-          .optional()
-          .describe(tm('workspace.initialize_workspace.inputSchema.template')),
+        folder: z.string().optional().describe(tm('workspace.initialize_workspace.inputSchema.folder')),
+        template: z.string().optional().describe(tm('workspace.initialize_workspace.inputSchema.template')),
         language: z
           .enum(LANGUAGES)
           .optional()
-          .describe(
-            tm('workspace.initialize_workspace.inputSchema.language', { language: String(state.config.language) }),
-          ),
+          .describe(tm('workspace.initialize_workspace.inputSchema.language', { language: String(state.config.language) })),
       },
     },
     on(({ folder, template, language }: { folder?: string; template?: string; language?: Language }) => {
@@ -192,16 +179,12 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       const app = resolve(APP_ROOT);
       const toTarget = relative(app, target);
       if (!toTarget || (!toTarget.startsWith('..') && !isAbsolute(toTarget))) {
-        refuse(
-          tm('workspace.initialize_workspace', { p1: String(slash(target)), p2: String(slash(folderByDefault())) }),
-        );
+        refuse(tm('workspace.initialize_workspace', { p1: String(slash(target)), p2: String(slash(folderByDefault())) }));
       }
       if (workspaceExists(target)) {
         const open = state.db && resolve(state.config.dataDir).toLowerCase() === target.toLowerCase();
         refuse(
-          open
-            ? tm('workspace.initialize_workspace_2', { p1: String(slash(target)) })
-            : tm('workspace.initialize_workspace_3', { p1: String(slash(target)) }),
+          open ? tm('workspace.initialize_workspace_2', { p1: String(slash(target)) }) : tm('workspace.initialize_workspace_3', { p1: String(slash(target)) }),
         );
       }
       const r = initializeWorkspace({ folder: target, template, language: language ?? state.config.language });
@@ -213,16 +196,9 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         browser_pdf: r.browser,
         warnings: [
           ...r.warnings,
-          ...(persistent
-            ? []
-            : [
-                tm('workspace.initialize_workspace.warnings', { p1: String(slash(onboardingFolder)), folder: String(r.folder) }),
-              ]),
+          ...(persistent ? [] : [tm('workspace.initialize_workspace.warnings', { p1: String(slash(onboardingFolder)), folder: String(r.folder) })]),
         ],
-        more: [
-          tm('workspace.initialize_workspace.suite', { folder: String(r.folder) }),
-          tm('workspace.initialize_workspace.suite_2'),
-        ],
+        more: [tm('workspace.initialize_workspace.suite', { folder: String(r.folder) }), tm('workspace.initialize_workspace.suite_2')],
       };
     }),
   );
@@ -237,13 +213,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       description: tm('workspace.list_files.description'),
       inputSchema: {
         folder: z.string().optional().describe(tm('workspace.list_files.inputSchema.folder')),
-        depth: z
-          .number()
-          .int()
-          .min(1)
-          .max(4)
-          .optional()
-          .describe(tm('workspace.list_files.inputSchema.depth')),
+        depth: z.number().int().min(1).max(4).optional().describe(tm('workspace.list_files.inputSchema.depth')),
       },
       annotations: reading,
     },
@@ -262,9 +232,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
           .int()
           .min(0)
           .optional()
-          .describe(
-            tm('workspace.read_file.inputSchema.start', { CHUNK_TEXT: String(CHUNK_TEXT) }),
-          ),
+          .describe(tm('workspace.read_file.inputSchema.start', { CHUNK_TEXT: String(CHUNK_TEXT) })),
       },
       annotations: reading,
     },
@@ -275,10 +243,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         const d = start ?? 0;
         if (d === 0 && text.length <= CHUNK_TEXT) return { content: [{ type: 'text', text: text }] };
         const end = Math.min(text.length, d + CHUNK_TEXT);
-        const more =
-          end < text.length
-            ? tm('workspace.read_file', { end: String(end) })
-            : tm('workspace.read_file_2');
+        const more = end < text.length ? tm('workspace.read_file', { end: String(end) }) : tm('workspace.read_file_2');
         const header = tm('workspace.read_file_3', { path: String(l.path), d: String(d), end: String(end), length: String(text.length), more: String(more) });
         return { content: [{ type: 'text', text: `${header}\n\n${text.slice(d, end)}` }] };
       };
@@ -298,15 +263,20 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
               type: 'text',
               text: tm('workspace.read_file.content.text', { path: String(l.path), pages: String(pages) }),
             },
-            { type: 'resource', resource: { uri: `file:///${slash(pathInWorkspace(data(), l.path).absolute).replace(/^\/+/, '')}`, mimeType: 'application/pdf', blob: l.data.toString('base64') } },
+            {
+              type: 'resource',
+              resource: {
+                uri: `file:///${slash(pathInWorkspace(data(), l.path).absolute).replace(/^\/+/, '')}`,
+                mimeType: 'application/pdf',
+                blob: l.data.toString('base64'),
+              },
+            },
           ],
         };
       }
       const typeImage = TYPES_IMAGE[l.extension];
       if (typeImage) {
-        if (l.size > IMAGE_MAX) refuse(
-            tm('workspace.read_file_6', { p1: String(Math.round(l.size / 1024)) }),
-          );
+        if (l.size > IMAGE_MAX) refuse(tm('workspace.read_file_6', { p1: String(Math.round(l.size / 1024)) }));
         return {
           content: [
             { type: 'text', text: tm('workspace.read_file.content.text_2', { path: String(l.path), p2: String(Math.round(l.size / 1024)) }) },
@@ -318,9 +288,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         const text = textDocx(l.data);
         if (text) return chunk(tm('workspace.read_file_7', { path: String(l.path), text: String(text) }));
       }
-      refuse(
-        tm('workspace.read_file_8', { path: String(l.path), p2: String(l.extension || 'sans extension'), p3: String(l.extension || 'no extension') }),
-      );
+      refuse(tm('workspace.read_file_8', { path: String(l.path), p2: String(l.extension || 'sans extension'), p3: String(l.extension || 'no extension') }));
     }),
   );
 
@@ -330,10 +298,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       title: tu('workspace.write_file.title'),
       description: tm('workspace.write_file.description', { p1: String(EXTENSIONS_WRITE.join(', ')) }),
       inputSchema: {
-        path: z
-          .string()
-          .min(1)
-          .describe(tm('workspace.write_file.inputSchema.path')),
+        path: z.string().min(1).describe(tm('workspace.write_file.inputSchema.path')),
         content: z.string().describe(tm('workspace.write_file.inputSchema.content')),
         create_only: z.boolean().optional().describe(tm('workspace.write_file.inputSchema.create_only')),
       },
@@ -378,9 +343,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       if (!c.exists) refuse(tm('workspace.generate_cv_2', { relative: String(c.relative) }));
       const browser = findBrowser();
       if (!browser) {
-        refuse(
-          tm('workspace.generate_cv_3'),
-        );
+        refuse(tm('workspace.generate_cv_3'));
       }
       const local = join(workspace, 'cv', 'gabarit');
       const template = existsSync(join(local, 'gabarit.css')) ? local : TEMPLATE_DEFAULT;
@@ -398,14 +361,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         pages: r.pages,
         exceeded_2_pages: r.pages > 2,
         fill: layout.pages.map((p) => tm('workspace.generate_cv.fill', { page: String(p.page), fill: String(p.fill) })),
-        warnings: [
-          ...(r.pages > 2
-            ? [
-                tm('workspace.generate_cv.warnings_2', { pages: String(r.pages) }),
-              ]
-            : []),
-          ...layout.warnings,
-        ],
+        warnings: [...(r.pages > 2 ? [tm('workspace.generate_cv.warnings_2', { pages: String(r.pages) })] : []), ...layout.warnings],
         pdf_existed: pdfExisted,
         template: template === local ? 'cv/gabarit' : tm('workspace.generate_cv.template'),
         capture: r.capture ? rel(r.capture) : null,
@@ -462,5 +418,4 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       return { ok: true, folder: relativeWorkspace(workspace, r.folder), old: r.old ? relativeWorkspace(workspace, r.old) : null };
     }),
   );
-
 }

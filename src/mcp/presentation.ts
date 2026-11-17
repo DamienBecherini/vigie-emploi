@@ -50,7 +50,10 @@ export function detailCapped(d: DetailOffer, o: { full?: boolean } = {}): Record
     description: truncated ? `${description!.slice(0, DESCRIPTION_MAX)}…` : description,
     ...(truncated
       ? {
-          description_truncated: tm('presentation.detailCapped.description_truncated', { length: String(description!.length), DESCRIPTION_MAX: String(DESCRIPTION_MAX) }),
+          description_truncated: tm('presentation.detailCapped.description_truncated', {
+            length: String(description!.length),
+            DESCRIPTION_MAX: String(DESCRIPTION_MAX),
+          }),
         }
       : {}),
     scores: d.scores.slice(0, SCORES_MAX),
@@ -71,7 +74,7 @@ export function impactCapped(i: Impact): Record<string, unknown> {
   };
 }
 
-const first =<T>(l: T[], n: number) => ({ list: l.slice(0, n), rest: Math.max(0, l.length - n) });
+const first = <T>(l: T[], n: number) => ({ list: l.slice(0, n), rest: Math.max(0, l.length - n) });
 
 /**
  * Response of ingest_emails: counters, then what to tell the user (deleted e-mails, errors to
@@ -81,34 +84,26 @@ export function presentIngestion(r: SummaryIngest, o: { keep?: boolean; host?: s
   const toTell: string[] = [];
   const read = r.files - r.without_offer.length;
   if (r.mail?.error) {
-    toTell.push(tu('presentation.mailError', { message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: o.host ?? '', folder: r.mail.folder }) }));
+    toTell.push(
+      tu('presentation.mailError', { message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: o.host ?? '', folder: r.mail.folder }) }),
+    );
   } else if (r.mail) {
     toTell.push(tu('presentation.mailFetched', { n: String(r.mail.fetched), folder: r.mail.folder }));
     if (r.mail.more) toTell.push(tu('presentation.mailMore'));
   }
   if (r.files_deleted > 0) {
-    toTell.push(
-      tu('presentation.presentIngestion', { files_deleted: String(r.files_deleted) }),
-    );
+    toTell.push(tu('presentation.presentIngestion', { files_deleted: String(r.files_deleted) }));
   } else if (o.keep && read > 0) {
-    toTell.push(
-      tu('presentation.presentIngestion2', { read: String(read) }),
-    );
+    toTell.push(tu('presentation.presentIngestion2', { read: String(read) }));
   }
   if (r.without_offer.length) {
-    toTell.push(
-      tu('presentation.presentIngestion3', { length: String(r.without_offer.length), p2: String(r.without_offer.join(', ')) }),
-    );
+    toTell.push(tu('presentation.presentIngestion3', { length: String(r.without_offer.length), p2: String(r.without_offer.join(', ')) }));
   }
   if (r.errors.length) {
-    toTell.push(
-      tu('presentation.presentIngestion4', { length: String(r.errors.length) }),
-    );
+    toTell.push(tu('presentation.presentIngestion4', { length: String(r.errors.length) }));
   }
   if (r.confirmations.length) {
-    toTell.push(
-      tu('presentation.presentIngestion5', { length: String(r.confirmations.length) }),
-    );
+    toTell.push(tu('presentation.presentIngestion5', { length: String(r.confirmations.length) }));
   }
   const added = first(r.detail.added, DETAIL_INGESTION_MAX);
   const dismissed = first(r.detail.dismissed, DETAIL_INGESTION_MAX);

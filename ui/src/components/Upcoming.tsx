@@ -50,19 +50,14 @@ function Statistics() {
           <li key={name} className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-2">
             <span>{name}</span>
             <span className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden="true">
-              <span
-                className="block h-full rounded-full bg-blue-700 dark:bg-blue-400"
-                style={{ width: `${s.sent ? (n / s.sent) * 100 : 0}%` }}
-              />
+              <span className="block h-full rounded-full bg-blue-700 dark:bg-blue-400" style={{ width: `${s.sent ? (n / s.sent) * 100 : 0}%` }} />
             </span>
             <span className="text-right font-semibold tabular-nums">{n}</span>
           </li>
         ))}
       </ul>
       <p className="mt-2 text-slate-700 dark:text-slate-300">
-        {s.average_reply_days === null
-          ? t('stats.notEnough')
-          : t('stats.timeout', { days: number(s.average_reply_days), n: s.reply_sample_size })}
+        {s.average_reply_days === null ? t('stats.notEnough') : t('stats.timeout', { days: number(s.average_reply_days), n: s.reply_sample_size })}
       </p>
     </div>
   );
@@ -99,10 +94,7 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
   const { ref, max } = useLimitedHeight(r);
   const shadows = useVerticalShadows(ref, Boolean(max));
   return (
-    <section
-      aria-labelledby="upcoming-title"
-      className="mb-3 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900"
-    >
+    <section aria-labelledby="upcoming-title" className="mb-3 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-wrap items-center gap-2 px-1">
         <h2 id="upcoming-title" className="font-bold">
           {t('upcoming.title')}
@@ -120,40 +112,38 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1 basis-96">
           {q.isError && <p className="px-1 text-sm text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>}
-          {nothing && (
-            <p className="px-1 text-sm text-slate-600 dark:text-slate-400">{t('upcoming.nothing')}</p>
-          )}
+          {nothing && <p className="px-1 text-sm text-slate-600 dark:text-slate-400">{t('upcoming.nothing')}</p>}
           {/* Scrolling list: never more than 40 % of the screen, framed, shaded at the top / bottom when hidden
               deadlines remain on that side, and on a phone a free strip on the right to scroll the page with the thumb. */}
           <div className={max ? 'relative mt-1 max-md:mr-10' : ''}>
-          {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the label comes with the role, both set only when the list scrolls */}
-          <div
-            ref={ref}
-            className={max ? 'overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-700' : ''}
-            style={max ? { maxHeight: `min(${max}px, 40vh)` } : undefined}
-            tabIndex={max ? 0 : undefined}
-            role={max ? 'group' : undefined}
-            aria-label={max ? t('upcoming.scrolling') : undefined}
-          >
-            {r && r.overdue.length > 0 && (
-              <div className="mt-1 rounded-md border border-rose-300 bg-rose-50 dark:border-rose-800 dark:bg-rose-950">
-                <h3 className="px-2 pt-1 text-xs font-bold tracking-wide text-rose-900 uppercase dark:text-rose-200">{t('upcoming.overdue')}</h3>
-                <ul>
-                  {r.overdue.map((e) => (
+            {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the label comes with the role, both set only when the list scrolls */}
+            <div
+              ref={ref}
+              className={max ? 'overflow-y-auto rounded-md border border-slate-200 p-1 pr-1 dark:border-slate-700' : ''}
+              style={max ? { maxHeight: `min(${max}px, 40vh)` } : undefined}
+              tabIndex={max ? 0 : undefined}
+              role={max ? 'group' : undefined}
+              aria-label={max ? t('upcoming.scrolling') : undefined}
+            >
+              {r && r.overdue.length > 0 && (
+                <div className="mt-1 rounded-md border border-rose-300 bg-rose-50 dark:border-rose-800 dark:bg-rose-950">
+                  <h3 className="px-2 pt-1 text-xs font-bold tracking-wide text-rose-900 uppercase dark:text-rose-200">{t('upcoming.overdue')}</h3>
+                  <ul>
+                    {r.overdue.map((e) => (
+                      <Element key={e.id} e={e} choose={choose} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {r && r.upcoming.length > 0 && (
+                <ul className="mt-1">
+                  {r.upcoming.map((e) => (
                     <Element key={e.id} e={e} choose={choose} />
                   ))}
                 </ul>
-              </div>
-            )}
-            {r && r.upcoming.length > 0 && (
-              <ul className="mt-1">
-                {r.upcoming.map((e) => (
-                  <Element key={e.id} e={e} choose={choose} />
-                ))}
-              </ul>
-            )}
-          </div>
-          {max && <VerticalShadows {...shadows} />}
+              )}
+            </div>
+            {max && <VerticalShadows {...shadows} />}
           </div>
         </div>
         {/* Statistics under the header (near their button) as long as room is lacking; to the right of the list on a large screen. */}

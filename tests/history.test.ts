@@ -57,9 +57,7 @@ describe('import of the history', () => {
   it('register: lines without a link, links and lines not recognized', () => {
     expect(r.register.lines).toBe(9);
     expect(r.register.offers_without_link).toBe(2); // Theta (no link) and Iota (link not recognized)
-    expect(r.register.links_not_recognized.map((l) => l.url)).toEqual([
-      'https://www.welcometothejungle.com/fr/companies/iota/jobs/webmaster',
-    ]);
+    expect(r.register.links_not_recognized.map((l) => l.url)).toEqual(['https://www.welcometothejungle.com/fr/companies/iota/jobs/webmaster']);
     expect(r.register.unrecognized).toHaveLength(1);
     expect(r.register.unrecognized[0].excerpt).toContain('Kappa');
   });
@@ -71,10 +69,12 @@ describe('import of the history', () => {
     expect(d.application).toMatchObject({ folder: 'candidatures/acme-developpeur-php', channel: 'LinkedIn', sent_at: '2026-10-20' });
     expect(findOffer(db, 'tracker', 'suivi-lambda-integrateur-api')).toMatchObject({ status: 'go', score: 5.5 });
     expect(r.tracker.lines).toBe(7);
-    const statuses = (db.prepare("SELECT company, status FROM offers WHERE origin = 'import-tracker' ORDER BY company").all() as {
-      company: string;
-      status: string;
-    }[]).map((x) => `${x.company}:${x.status}`);
+    const statuses = (
+      db.prepare("SELECT company, status FROM offers WHERE origin = 'import-tracker' ORDER BY company").all() as {
+        company: string;
+        status: string;
+      }[]
+    ).map((x) => `${x.company}:${x.status}`);
     expect(statuses).toEqual(['ACME:sent', 'Lambda:go', 'Mu:followed-up', 'Nu:rejected', 'Pi:sent', 'Xi:withdrawn']);
   });
 
@@ -158,7 +158,11 @@ describe('import: sprint 2 fixes', () => {
 
   it('idempotent with the fixes', () => {
     const count = () =>
-      db.prepare('SELECT (SELECT COUNT(*) FROM offers) o, (SELECT COUNT(*) FROM scores) n, (SELECT COUNT(*) FROM statuses) s, (SELECT COUNT(*) FROM applications) c').get();
+      db
+        .prepare(
+          'SELECT (SELECT COUNT(*) FROM offers) o, (SELECT COUNT(*) FROM scores) n, (SELECT COUNT(*) FROM statuses) s, (SELECT COUNT(*) FROM applications) c',
+        )
+        .get();
     const before = count();
     const r2 = importHistory(db, DATA);
     expect(count()).toEqual(before);

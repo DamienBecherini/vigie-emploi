@@ -325,10 +325,7 @@ export const fr = {
   'settings.summaryExample': 'ex. Télétravail plus important',
   'settings.save': 'Enregistrer la version',
   'settings.cancel': 'Annuler les changements',
-  'settings.saved': p(
-    'Version {version} enregistrée : {n} note recalculée change.',
-    'Version {version} enregistrée : {n} notes recalculées changent.',
-  ),
+  'settings.saved': p('Version {version} enregistrée : {n} note recalculée change.', 'Version {version} enregistrée : {n} notes recalculées changent.'),
   'settings.ad': 'Grille v{version} enregistrée',
   'settings.restored': p('Version {version} créée ({summary}) : {n} note change.', 'Version {version} créée ({summary}) : {n} notes changent.'),
   'weight.title': 'Poids des critères',
@@ -393,10 +390,7 @@ export const fr = {
   'examples.none': 'Aucun exemple dans la grille.',
   'preview.title': "Aperçu avant d'enregistrer",
   'preview.computation': 'Calcul…',
-  'preview.changed': p(
-    '{n} offre sur {total} notées avec sous-notes change de note ;',
-    '{n} offres sur {total} notées avec sous-notes changent de note ;',
-  ),
+  'preview.changed': p('{n} offre sur {total} notées avec sous-notes change de note ;', '{n} offres sur {total} notées avec sous-notes changent de note ;'),
   'preview.rising': p('{n} passe au-dessus du seuil ({threshold})', '{n} passent au-dessus du seuil ({threshold})'),
   'preview.falling': '{n} en dessous.',
   'preview.old': ' Les anciennes notes globales ne sont pas recalculées.',
@@ -414,13 +408,12 @@ export const fr = {
     "vigie-emploi relève lui-même vos alertes d'offres dans un dossier de votre boîte mail, sans logiciel de messagerie. Il ne fait que lire : rien n'est supprimé ni déplacé, les messages relevés sont seulement marqués comme lus.",
   'mail.step1Title': '1. Un dossier pour les alertes',
   'mail.step1':
-    "Dans votre messagerie (Gmail, Outlook, Orange…), créez un dossier (un « libellé » dans Gmail), par exemple « Alertes emploi », et un filtre qui y range les alertes de LinkedIn, Indeed, HelloWork, Welcome to the Jungle, Free-Work…",
+    'Dans votre messagerie (Gmail, Outlook, Orange…), créez un dossier (un « libellé » dans Gmail), par exemple « Alertes emploi », et un filtre qui y range les alertes de LinkedIn, Indeed, HelloWork, Welcome to the Jungle, Free-Work…',
   'mail.step2Title': '2. La connexion à la boîte',
   'mail.address': 'Adresse e-mail',
   'mail.provider': 'Messagerie reconnue : {name}.',
   'mail.providerUnknown': 'Messagerie non reconnue : indiquez le serveur IMAP (voir l’aide de votre messagerie).',
-  'mail.appPassword':
-    '{name} demande un mot de passe d’application (16 caractères), pas celui du compte. La validation en deux étapes doit être active.',
+  'mail.appPassword': '{name} demande un mot de passe d’application (16 caractères), pas celui du compte. La validation en deux étapes doit être active.',
   'mail.appPasswordLink': 'Créer un mot de passe d’application',
   'mail.plainPassword': 'Le mot de passe habituel du compte convient.',
   'mail.oauth':
@@ -431,8 +424,7 @@ export const fr = {
   'mail.secure': 'Connexion chiffrée dès le départ (port 993)',
   'mail.password': 'Mot de passe',
   'mail.passwordKept': 'Laisser vide pour garder le mot de passe enregistré',
-  'mail.passwordWhere':
-    'Le mot de passe est gardé par le système ({backend}), jamais dans votre espace de travail ni dans la configuration.',
+  'mail.passwordWhere': 'Le mot de passe est gardé par le système ({backend}), jamais dans votre espace de travail ni dans la configuration.',
   'mail.connect': 'Se connecter et lister les dossiers',
   'mail.connecting': 'Connexion…',
   'mail.folder': 'Dossier des alertes',

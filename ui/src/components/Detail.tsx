@@ -558,13 +558,13 @@ export function Detail({ id, close, announce }: { id: number; close: () => void;
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer text-slate-600 dark:text-slate-400">{t('detail.history', { n: o.statuses.length })}</summary>
               <ol className="mt-2 space-y-1 border-l-2 border-slate-300 pl-3 dark:border-slate-600">
-              {o.statuses.map((s) => (
-                <li key={s.id}>
-                  <span className="text-slate-600 tabular-nums dark:text-slate-400">{formatDate(s.at.slice(0, 10))}</span>{' '}
-                  <BadgeStatus status={s.status} /> {s.comment && <span className="break-words">{s.comment}</span>}
-                </li>
-              ))}
-              {!o.statuses.length && <li className="text-slate-500 dark:text-slate-400">{t('detail.noneHistory')}</li>}
+                {o.statuses.map((s) => (
+                  <li key={s.id}>
+                    <span className="text-slate-600 tabular-nums dark:text-slate-400">{formatDate(s.at.slice(0, 10))}</span> <BadgeStatus status={s.status} />{' '}
+                    {s.comment && <span className="break-words">{s.comment}</span>}
+                  </li>
+                ))}
+                {!o.statuses.length && <li className="text-slate-500 dark:text-slate-400">{t('detail.noneHistory')}</li>}
               </ol>
             </details>
           </section>
@@ -614,9 +614,7 @@ export function Detail({ id, close, announce }: { id: number; close: () => void;
                     {n.gaps}
                   </p>
                 )}
-                {o.scores.length > 1 && (
-                  <p className="text-slate-600 dark:text-slate-400">{t('detail.previous', { n: o.scores.length - 1 })}</p>
-                )}
+                {o.scores.length > 1 && <p className="text-slate-600 dark:text-slate-400">{t('detail.previous', { n: o.scores.length - 1 })}</p>}
               </div>
             ) : (
               <p className="text-sm text-slate-600 dark:text-slate-400">{t('detail.notScored')}</p>
@@ -667,7 +665,6 @@ export function Detail({ id, close, announce }: { id: number; close: () => void;
             </h3>
             <EditorTags offer={o} />
           </section>
-
 
           <section aria-labelledby={`${title}-desc`}>
             <h3 id={`${title}-desc`} className="mb-2 font-bold">

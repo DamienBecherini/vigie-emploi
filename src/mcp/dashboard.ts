@@ -87,11 +87,7 @@ async function launchHosted(config: Config, port: number): Promise<void> {
 /** Opens an address in the default browser, without going through a shell. */
 export function openBrowser(url: string, platform: NodeJS.Platform = process.platform): void {
   const [command, args] =
-    platform === 'win32'
-      ? ['rundll32.exe', ['url.dll,FileProtocolHandler', url]]
-      : platform === 'darwin'
-        ? ['open', [url]]
-        : ['xdg-open', [url]];
+    platform === 'win32' ? ['rundll32.exe', ['url.dll,FileProtocolHandler', url]] : platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
   const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.on('error', () => undefined);
   child.unref();
@@ -106,11 +102,7 @@ const DEPENDENCIES: Dependencies = {
   openBrowser,
 };
 
-export async function openDashboard(
-  config: Config,
-  options: { open?: boolean } = {},
-  dep: Dependencies = DEPENDENCIES,
-): Promise<ResultTable> {
+export async function openDashboard(config: Config, options: { open?: boolean } = {}, dep: Dependencies = DEPENDENCIES): Promise<ResultTable> {
   const folder = config.dataDir;
   const end = (port: number, already: boolean, mode: ResultTable['mode']): ResultTable => {
     const url = `http://localhost:${port}/`;
@@ -142,9 +134,7 @@ export async function openDashboard(
     if (!s && free === null) free = port;
   }
   if (free === null) {
-    throw new Error(
-      tm('dashboard.openDashboard', { port: String(config.port), p2: String(config.port + PORTS_TRIED - 1) }),
-    );
+    throw new Error(tm('dashboard.openDashboard', { port: String(config.port), p2: String(config.port + PORTS_TRIED - 1) }));
   }
 
   const node = dep.node();
@@ -170,10 +160,7 @@ export function saveToolDashboard(server: McpServer, state: StateMcp): void {
       title: tu('dashboard.open_dashboard.title'),
       description: tm('dashboard.open_dashboard.description', { IDLE_MIN: String(IDLE_MIN) }),
       inputSchema: {
-        open: z
-          .boolean()
-          .optional()
-          .describe(tm('dashboard.open_dashboard.inputSchema.open')),
+        open: z.boolean().optional().describe(tm('dashboard.open_dashboard.inputSchema.open')),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },

@@ -166,7 +166,12 @@ describe('MCP server (stdio)', () => {
     const [a, b] = toRead.offers.map((o) => o.id);
     const batch = (await call('score_batch', {
       offers: [
-        { id: a, score: 2, criteria: { technique: { score: 8, justification: 'PHP' }, role: { score: 7 }, interet: { score: 6 }, risque: { score: 7 } }, inputs: { onsite_days: 1, salary_min: 55000, salary_max: 60000, unit: 'year' } },
+        {
+          id: a,
+          score: 2,
+          criteria: { technique: { score: 8, justification: 'PHP' }, role: { score: 7 }, interet: { score: 6 }, risque: { score: 7 } },
+          inputs: { onsite_days: 1, salary_min: 55000, salary_max: 60000, unit: 'year' },
+        },
         { id: b, criteria: { technique: { score: 9 } }, blockers: ['stage'] },
       ],
     })) as unknown as { offers: { score: number; warnings?: string[]; breakdown: { criteria: unknown[] } }[] };

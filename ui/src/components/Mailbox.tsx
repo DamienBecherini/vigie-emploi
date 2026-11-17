@@ -53,17 +53,15 @@ function Status({ state, edit }: { state: StateMail; edit: () => void }) {
         <button type="button" className="button" onClick={edit}>
           {t('mail.edit')}
         </button>
-        <button
-          type="button"
-          className="button"
-          disabled={forget.isPending}
-          onClick={() => window.confirm(t('mail.forgetConfirm')) && forget.mutate()}
-        >
+        <button type="button" className="button" disabled={forget.isPending} onClick={() => window.confirm(t('mail.forgetConfirm')) && forget.mutate()}>
           {t('mail.forget')}
         </button>
       </div>
       {message && (
-        <p role={message.error ? 'alert' : 'status'} className={`text-sm ${message.error ? 'text-rose-700 dark:text-rose-300' : 'text-slate-700 dark:text-slate-300'}`}>
+        <p
+          role={message.error ? 'alert' : 'status'}
+          className={`text-sm ${message.error ? 'text-rose-700 dark:text-rose-300' : 'text-slate-700 dark:text-slate-300'}`}
+        >
           {message.text}
         </p>
       )}
@@ -161,7 +159,10 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
           {provider?.auth === 'password' && t('mail.plainPassword')}
         </p>
         {provider?.auth === 'app-password' && (
-          <div role="note" className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100">
+          <div
+            role="note"
+            className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100"
+          >
             <KeyRound className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <div className="space-y-2">
               <p className="font-semibold">{t('mail.appPassword', { name: provider.name })}</p>
@@ -174,7 +175,10 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
           </div>
         )}
         {oauth && (
-          <div role="note" className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100">
+          <div
+            role="note"
+            className="mt-2 flex gap-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100"
+          >
             <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <p className="font-semibold">{t('mail.oauth', { name: provider!.name })}</p>
           </div>

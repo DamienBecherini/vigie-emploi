@@ -52,7 +52,10 @@ export function statistics(db: Database): Statistics {
     // First reply dated after the sending day (an incoming contact followed by a reply on the same day
     // says nothing about the reply delay).
     const send = l.sent_at && /^\d{4}-\d{2}-\d{2}$/.test(l.sent_at) ? l.sent_at : null;
-    const after = (l.replies ?? '').split(',').filter((d) => send && d > send).sort()[0];
+    const after = (l.replies ?? '')
+      .split(',')
+      .filter((d) => send && d > send)
+      .sort()[0];
     if (send && after) delays.push((Date.parse(after) - Date.parse(send)) / 86_400_000);
   }
   return {

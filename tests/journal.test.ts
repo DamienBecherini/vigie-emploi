@@ -4,18 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openDatabase, type Database } from '../src/db/database.ts';
 import { addStatus, detailOffer, saveApplication, saveOffer, offerById, findOffer } from '../src/core/offers.ts';
-import {
-  addEvent,
-  pathRelative,
-  deadlines,
-  isFuture,
-  journal,
-  readDateEvent,
-  markDone,
-  updateEvent,
-  nextDeadline,
-  deleteEvent,
-} from '../src/core/events.ts';
+import { addEvent, pathRelative, deadlines, isFuture, journal, readDateEvent, markDone, updateEvent, nextDeadline, deleteEvent } from '../src/core/events.ts';
 import { filesFolder, safeFile } from '../src/core/files.ts';
 import { statistics } from '../src/core/statistics.ts';
 import { scoreInput } from '../src/core/scoring.ts';
@@ -118,7 +107,10 @@ describe('journal and deadlines', () => {
   it('generated tracker: the next action comes from the next deadline, otherwise from the field', () => {
     addStatus(db, id, 'sent', { origin: 'cli' });
     saveApplication(db, id, { next_action: 'Attendre' });
-    const line = () => generateTracker(db, DATA, NOW).markdown.split('\n').find((l) => l.includes('**Kappa**'))!;
+    const line = () =>
+      generateTracker(db, DATA, NOW)
+        .markdown.split('\n')
+        .find((l) => l.includes('**Kappa**'))!;
     expect(line()).toContain('| **05/11 14 h 00** : Entretien technique |');
     const e = nextDeadline(db, id)!;
     markDone(db, e.id);
@@ -189,7 +181,11 @@ describe('import of the folder journals', () => {
     const r = importHistory(db2, DATA).journal;
     expect(r.events_created).toBe(0);
     expect(r.events_duplicate).toHaveLength(1);
-    expect(journal(db2, id, NOW).filter((e) => e.type === 'interview').map((e) => e.origin)).toEqual(['mcp']);
+    expect(
+      journal(db2, id, NOW)
+        .filter((e) => e.type === 'interview')
+        .map((e) => e.origin),
+    ).toEqual(['mcp']);
   });
 
   it('tracker formats: dated bullets, unchecked boxes ignored, code blocks ignored', () => {

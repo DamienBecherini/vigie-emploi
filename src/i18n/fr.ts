@@ -331,8 +331,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'tracker.headers': '| Offre | Type | Canal | Envoyé | Statut | Prochaine action | Dossier |',
   'tracker.headersCloses': '| Offre | Issue |',
   'tracker.estimations': "Les dates « ≈ » sont des estimations, pas une trace d'envoi. Les corriger si tu retrouves la vraie date.",
-  'tracker.footer':
-    'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `vigie-emploi serve`, ou `vigie-emploi list --status dismissed`).',
+  'tracker.footer': 'Offres vues, écartées ou mises de côté : dans la base (tableau de bord `vigie-emploi serve`, ou `vigie-emploi list --status dismissed`).',
   'tracker.toSend': '**À envoyer** — GO',
   'tracker.remote': 'télétravail {value}',
   'tracker.folder': 'dossier',
@@ -395,8 +394,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.scoreScale': "Note hors de l'échelle 0-10 : {score}",
   'core.mergeImpossible': 'Fusion impossible : offre {target} ou {duplicate} introuvable',
   'core.inputWithoutId': 'Entrée sans "id" ni "url"',
-  'core.withoutRubric':
-    'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (vigie-emploi rubric --init)',
+  'core.withoutRubric': 'Note à critères sans grille de notation : créer profil/grille.json dans le dossier de données (vigie-emploi rubric --init)',
   'core.scoreIgnored': 'Champ « score » ({score}) ignoré : note calculée avec la grille v{version} = {calculee}',
   'core.rawScoreIgnored': 'Champ « raw_score » ignoré : remplacé par la moyenne pondérée',
   'core.batchUnreadable': 'Lot illisible : tableau JSON attendu',
@@ -404,8 +402,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.step.reread': "Relire l'offre ({url}) et la note enregistrée",
   'core.step.instructions': 'Appliquer les consignes de candidature du dossier de données (CLAUDE.md, AGENTS.md ou équivalent)',
   'core.step.folder': "Créer le dossier {folder} avec l'annonce, le fit, les écarts et les messages",
-  'core.step.save':
-    'Enregistrer la candidature (dossier, CV, canal, prochaine action) : save_application ou vigie-emploi application {id} --folder {folder}',
+  'core.step.save': 'Enregistrer la candidature (dossier, CV, canal, prochaine action) : save_application ou vigie-emploi application {id} --folder {folder}',
   'core.step.send': "Après l'envoi : enregistrer la date d'envoi (sent_at), l'offre passe en « sent »",
   'core.rubricUnreadable': 'Grille illisible ({path}) : {message}',
   'core.rubricObject': 'Grille illisible ({path}) : objet JSON attendu',
@@ -445,8 +442,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.calc.floorFullRemote': ' (plancher full remote)',
   'core.input.invalid': 'Note à critères invalide : {message}',
   'core.input.criterionUnknown': "Critère inconnu : {id} (critères notés par l'IA : {list})",
-  'core.input.criterionComputed':
-    "Le critère {id} est calculé par l'application : ne pas le noter, fournir plutôt {fields} si l'offre les donne",
+  'core.input.criterionComputed': "Le critère {id} est calculé par l'application : ne pas le noter, fournir plutôt {fields} si l'offre les donne",
   'core.input.ruleUnknown': 'Règle bloquante inconnue : {id} (règles : {list})',
   'core.change.invalid': 'Changement invalide : {message}',
   'core.change.criterionUnknownList': 'Critère inconnu : {id} (critères : {list})',

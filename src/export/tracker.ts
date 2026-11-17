@@ -222,9 +222,7 @@ export function writeTracker(
   dataDir: string,
   o: { output?: string; replace?: boolean; at?: Date; language?: Language } = {},
 ): ResultWriteTracker {
-  const file = o.output
-    ? resolve(o.output)
-    : join(dataDir, o.replace ? FILE_TRACKER : FILE_PREVIEW);
+  const file = o.output ? resolve(o.output) : join(dataDir, o.replace ? FILE_TRACKER : FILE_PREVIEW);
   const { markdown, ...counts } = generateTracker(db, dataDir, o.at, o.language);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, markdown, 'utf8');

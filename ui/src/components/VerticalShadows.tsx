@@ -32,8 +32,7 @@ export function useVerticalShadows(ref: RefObject<HTMLElement | null>, active = 
 
 /** The two shadows, to place after the scrolling area, in its `relative` parent (rounding of the area: rounded-md). */
 export function VerticalShadows({ high, low }: { high: boolean; low: boolean }) {
-  const shadow =
-    'pointer-events-none absolute inset-x-px h-4 from-slate-900/15 to-transparent transition-opacity duration-200 dark:from-black/60';
+  const shadow = 'pointer-events-none absolute inset-x-px h-4 from-slate-900/15 to-transparent transition-opacity duration-200 dark:from-black/60';
   return (
     <>
       <div aria-hidden="true" className={`${shadow} top-px rounded-t-md bg-linear-to-b ${high ? 'opacity-100' : 'opacity-0'}`} />

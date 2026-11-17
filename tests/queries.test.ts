@@ -136,7 +136,7 @@ describe('paginated list', () => {
       headers: { 'Content-Type': 'application/json' },
     });
     expect(((await tags.json()) as { tags: string[] }).tags).toEqual(['a', 'b']);
-    const c = (await (await app.request(`/api/offers/${id}/apply`, { method: "POST" })).json()) as { command: string };
+    const c = (await (await app.request(`/api/offers/${id}/apply`, { method: 'POST' })).json()) as { command: string };
     expect(c.command).toBe(`apply ${id}`);
     expect((await app.request('/api/offers/999999')).status).toBe(404);
   });

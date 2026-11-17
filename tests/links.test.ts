@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { canonicalize, decodeLink, identifierLink, textHtml } from '../src/core/links.ts';
 import { dateFr, readCompensation, withoutMarkdown, findCompensation } from '../src/core/text.ts';
 
-const b64url = (b: Buffer | string) =>
-  Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64url = (b: Buffer | string) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 describe('canonicalize', () => {
   it('LinkedIn (/comm/ link and tracking parameters)', () => {
@@ -23,14 +22,10 @@ describe('canonicalize', () => {
   });
   it('Glassdoor: jobListingId or jl', () => {
     expect(canonicalize('https://www.glassdoor.fr/partner/jobListing.htm?pos=1&jobListingId=1009&ao=1')?.siteId).toBe('1009');
-    expect(canonicalize('https://www.glassdoor.fr/job-listing/?jl=1010273297796')?.url).toBe(
-      'https://www.glassdoor.fr/job-listing/?jl=1010273297796',
-    );
+    expect(canonicalize('https://www.glassdoor.fr/job-listing/?jl=1010273297796')?.url).toBe('https://www.glassdoor.fr/job-listing/?jl=1010273297796');
   });
   it('Hellowork and Free-Work', () => {
-    expect(canonicalize('https://www.hellowork.com/fr-fr/emplois/84908442.html?utm=x')?.url).toBe(
-      'https://www.hellowork.com/fr-fr/emplois/84908442.html',
-    );
+    expect(canonicalize('https://www.hellowork.com/fr-fr/emplois/84908442.html?utm=x')?.url).toBe('https://www.hellowork.com/fr-fr/emplois/84908442.html');
     const fw = canonicalize('https://www.free-work.com/fr/tech-it/job-mission/developpeur-php/lead-dev-paris-3?utm=1');
     expect(fw).toEqual({
       source: 'free-work',
@@ -47,9 +42,7 @@ describe('canonicalize', () => {
 describe('decodeLink', () => {
   it('url-safe base64 segment (Mailjet / Hellowork)', () => {
     const seg = b64url('https://www.hellowork.com/fr-fr/emplois/70000001.html?utm_source=alerte');
-    expect(decodeLink(`https://r.mailjet.test/lnk/AbCd/${seg}/1/xyz`)).toBe(
-      'https://www.hellowork.com/fr-fr/emplois/70000001.html?utm_source=alerte',
-    );
+    expect(decodeLink(`https://r.mailjet.test/lnk/AbCd/${seg}/1/xyz`)).toBe('https://www.hellowork.com/fr-fr/emplois/70000001.html?utm_source=alerte');
   });
   it('gzip payload (Indeed)', () => {
     const seg = b64url(gzipSync(JSON.stringify({ u: 'https://fr.indeed.com/rc/clk?jk=abcdef0123456789&from=ja' })));

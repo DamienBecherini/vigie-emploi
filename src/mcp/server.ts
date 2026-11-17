@@ -19,27 +19,10 @@ import type { InputBatch } from '../core/scoring.ts';
 import { COLUMNS_SORT, STATUSES } from '../core/statuses.ts';
 import { ingestPerConfig } from '../ingest/ingest.ts';
 import { writeTracker } from '../export/tracker.ts';
-import {
-  addEvent,
-  deadlines,
-  eventOrError,
-  journal,
-  markDone,
-  updateEvent,
-  TYPES_EVENT,
-} from '../core/events.ts';
+import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, TYPES_EVENT } from '../core/events.ts';
 import { filesFolder } from '../core/files.ts';
 import { instructionsAi, computedExamples, schemaChange, UNITS } from '../core/rubric.ts';
-import {
-  pathRubric,
-  rubricCurrent,
-  rubricRequired,
-  historyRubric,
-  updateRubric,
-  rescore,
-  restoreRubric,
-  versionRubric,
-} from '../core/rubric-storage.ts';
+import { pathRubric, rubricCurrent, rubricRequired, historyRubric, updateRubric, rescore, restoreRubric, versionRubric } from '../core/rubric-storage.ts';
 import { defineLanguage } from '../i18n/index.ts';
 import { notInitializedMessage, openState, type StateMcp } from './state.ts';
 import { saveToolsWorkspace } from './workspace.ts';
@@ -62,11 +45,15 @@ import {
 
 const ORIGIN = 'mcp';
 
-
 /** Parameter schemas, built in the current language (descriptions included). */
 function buildSchemas() {
   const id = z.number().int().positive().describe(tm('server.id'));
-  const numberScore = (d: string) => z.union([z.number().min(0).max(10), z.string()]).nullable().optional().describe(d);
+  const numberScore = (d: string) =>
+    z
+      .union([z.number().min(0).max(10), z.string()])
+      .nullable()
+      .optional()
+      .describe(d);
 
   /** A score in the batch format (candidatures/_lots/*.json files). */
   const fieldsScore = {
@@ -75,63 +62,31 @@ function buildSchemas() {
         z.string(),
         z.object({
           score: z.union([z.number().min(0).max(10), z.string()]).describe(tm('server.fieldsScore.criteria.score')),
-          justification: z
-            .string()
-            .optional()
-            .describe(tm('server.fieldsScore.criteria.justification')),
+          justification: z.string().optional().describe(tm('server.fieldsScore.criteria.justification')),
         }),
       )
       .optional()
-      .describe(
-        tm('server.fieldsScore.criteria'),
-      ),
+      .describe(tm('server.fieldsScore.criteria')),
     inputs: z
       .object({
-        onsite_days: z
-          .number()
-          .int()
-          .min(0)
-          .max(5)
-          .nullable()
-          .optional()
-          .describe(tm('server.fieldsScore.inputs.onsite_days')),
-        salary_min: z
-          .number()
-          .positive()
-          .nullable()
-          .optional()
-          .describe(tm('server.fieldsScore.inputs.salary_min')),
+        onsite_days: z.number().int().min(0).max(5).nullable().optional().describe(tm('server.fieldsScore.inputs.onsite_days')),
+        salary_min: z.number().positive().nullable().optional().describe(tm('server.fieldsScore.inputs.salary_min')),
         salary_max: z.number().positive().nullable().optional().describe(tm('server.fieldsScore.inputs.salary_max')),
-        unit: z
-          .enum(UNITS)
-          .nullable()
-          .optional()
-          .describe(tm('server.fieldsScore.inputs.unit')),
+        unit: z.enum(UNITS).nullable().optional().describe(tm('server.fieldsScore.inputs.unit')),
       })
       .optional()
-      .describe(
-        tm('server.fieldsScore.inputs'),
-      ),
-    blockers: z
-      .array(z.string())
-      .optional()
-      .describe(tm('server.fieldsScore.blockers')),
+      .describe(tm('server.fieldsScore.inputs')),
+    blockers: z.array(z.string()).optional().describe(tm('server.fieldsScore.blockers')),
     score: numberScore(tm('server.fieldsScore.score')),
     raw_score: numberScore(tm('server.fieldsScore.raw_score')),
-    penalties: z
-      .string()
-      .optional()
-      .describe(tm('server.fieldsScore.penalties')),
+    penalties: z.string().optional().describe(tm('server.fieldsScore.penalties')),
     fit: z.string().optional().describe(tm('server.fieldsScore.fit')),
     gaps: z.string().optional().describe(tm('server.fieldsScore.gaps')),
     read: z.boolean().optional().describe(tm('server.fieldsScore.read')),
     tags: z.array(z.string()).optional().describe(tm('server.fieldsScore.tags')),
   };
   const fieldsDescriptive = {
-    source: z
-      .string()
-      .optional()
-      .describe(tm('server.fieldsDescriptive.source')),
+    source: z.string().optional().describe(tm('server.fieldsDescriptive.source')),
     title: z.string().optional().describe(tm('server.fieldsDescriptive.title')),
     company: z.string().optional().describe(tm('server.fieldsDescriptive.company')),
     location: z.string().optional(),
@@ -144,10 +99,7 @@ function buildSchemas() {
   };
   const inputBatch = z.object({
     id: id.optional().describe(tm('server.inputBatch.id')),
-    url: z
-      .string()
-      .optional()
-      .describe(tm('server.inputBatch.url')),
+    url: z.string().optional().describe(tm('server.inputBatch.url')),
     ...fieldsDescriptive,
     ...fieldsScore,
   });
@@ -166,7 +118,10 @@ export function createServerMcp(state: StateMcp): McpServer {
   defineLanguage(state.config.language);
   const { id, inputBatch, textOptional } = buildSchemas();
   const VERSION_APP = (JSON.parse(readFileSync(join(APP_ROOT, 'package.json'), 'utf8')) as { version: string }).version;
-  const server = new McpServer({ name: 'vigie-emploi', version: VERSION_APP }, { instructions: tm('server.INSTRUCTIONS', { language: languageNameEn(state.config.language) }) });
+  const server = new McpServer(
+    { name: 'vigie-emploi', version: VERSION_APP },
+    { instructions: tm('server.INSTRUCTIONS', { language: languageNameEn(state.config.language) }) },
+  );
   const reading = { readOnlyHint: true, openWorldHint: false };
   /** Database of the workspace; clear error as long as the workspace is not initialized. */
   const database = (): Database => {
@@ -191,32 +146,18 @@ export function createServerMcp(state: StateMcp): McpServer {
           .array(z.enum(STATUSES))
           .optional()
           .describe(tm('server.list_offers.inputSchema.statuses', { p1: String(STATUSES.join(', ')) })),
-        sources: z
-          .array(z.string())
-          .optional()
-          .describe(
-            tm('server.list_offers.inputSchema.sources'),
-          ),
+        sources: z.array(z.string()).optional().describe(tm('server.list_offers.inputSchema.sources')),
         tags: z.array(z.string()).optional().describe(tm('server.list_offers.inputSchema.tags')),
         score_min: z.number().optional().describe(tm('server.list_offers.inputSchema.score_min')),
         score_max: z.number().optional().describe(tm('server.list_offers.inputSchema.score_max')),
-        unscored: z
-          .boolean()
-          .optional()
-          .describe(tm('server.list_offers.inputSchema.unscored')),
-        text: z
-          .string()
-          .optional()
-          .describe(tm('server.list_offers.inputSchema.text')),
+        unscored: z.boolean().optional().describe(tm('server.list_offers.inputSchema.unscored')),
+        text: z.string().optional().describe(tm('server.list_offers.inputSchema.text')),
         contract: z.string().optional().describe(tm('server.list_offers.inputSchema.contract')),
         remote: z.string().optional().describe(tm('server.list_offers.inputSchema.remote')),
         received_from: z.string().optional().describe(tm('server.list_offers.inputSchema.received_from')),
         received_until: z.string().optional().describe(tm('server.list_offers.inputSchema.received_until')),
         published_from: z.string().optional().describe(tm('server.list_offers.inputSchema.published_from')),
-        my_applications: z
-          .boolean()
-          .optional()
-          .describe(tm('server.list_offers.inputSchema.my_applications')),
+        my_applications: z.boolean().optional().describe(tm('server.list_offers.inputSchema.my_applications')),
         page: z.number().int().min(1).optional().describe(tm('server.list_offers.inputSchema.page')),
         size: z
           .number()
@@ -228,13 +169,8 @@ export function createServerMcp(state: StateMcp): McpServer {
         sort: z
           .string()
           .optional()
-          .describe(
-            tm('server.list_offers.inputSchema.sort', { p1: String(COLUMNS_SORT.join(', ')) }),
-          ),
-        order: z
-          .enum(['asc', 'desc'])
-          .optional()
-          .describe(tm('server.list_offers.inputSchema.order')),
+          .describe(tm('server.list_offers.inputSchema.sort', { p1: String(COLUMNS_SORT.join(', ')) })),
+        order: z.enum(['asc', 'desc']).optional().describe(tm('server.list_offers.inputSchema.order')),
       },
       annotations: reading,
     },
@@ -281,7 +217,11 @@ export function createServerMcp(state: StateMcp): McpServer {
     'offers_to_read',
     {
       title: tu('server.offers_to_read.title'),
-      description: tm('server.offers_to_read.description', { TO_READ_DEFAULT: String(TO_READ_DEFAULT), LENGTH_DESCRIPTION_PAGE: String(LENGTH_DESCRIPTION_PAGE), TO_READ_MAX_DESCRIPTIONS: String(TO_READ_MAX_DESCRIPTIONS) }),
+      description: tm('server.offers_to_read.description', {
+        TO_READ_DEFAULT: String(TO_READ_DEFAULT),
+        LENGTH_DESCRIPTION_PAGE: String(LENGTH_DESCRIPTION_PAGE),
+        TO_READ_MAX_DESCRIPTIONS: String(TO_READ_MAX_DESCRIPTIONS),
+      }),
       inputSchema: {
         limit: z
           .number()
@@ -294,9 +234,7 @@ export function createServerMcp(state: StateMcp): McpServer {
         descriptions: z
           .boolean()
           .optional()
-          .describe(
-            tm('server.offers_to_read.inputSchema.descriptions', { TO_READ_MAX_DESCRIPTIONS: String(TO_READ_MAX_DESCRIPTIONS) }),
-          ),
+          .describe(tm('server.offers_to_read.inputSchema.descriptions', { TO_READ_MAX_DESCRIPTIONS: String(TO_READ_MAX_DESCRIPTIONS) })),
       },
       annotations: reading,
     },
@@ -306,9 +244,7 @@ export function createServerMcp(state: StateMcp): McpServer {
       return {
         ...r,
         offers: r.offers.map((o) => withoutEmpty(o)),
-        more: r.remaining
-          ? tm('server.offers_to_read.suite', { p1: String(r.page + 1), remaining: String(r.remaining) })
-          : null,
+        more: r.remaining ? tm('server.offers_to_read.suite', { p1: String(r.page + 1), remaining: String(r.remaining) }) : null,
       };
     }),
   );
@@ -333,10 +269,7 @@ export function createServerMcp(state: StateMcp): McpServer {
       description: tm('server.score_batch.description'),
       inputSchema: {
         offers: z.array(inputBatch).min(1).describe(tm('server.score_batch.inputSchema.offers')),
-        dry_run: z
-          .boolean()
-          .optional()
-          .describe(tm('server.score_batch.inputSchema.dry_run')),
+        dry_run: z.boolean().optional().describe(tm('server.score_batch.inputSchema.dry_run')),
       },
     },
     on(({ offers, dry_run }) => {
@@ -386,17 +319,9 @@ export function createServerMcp(state: StateMcp): McpServer {
       description: tm('server.update_rubric.description'),
       inputSchema: {
         change: schemaChange.optional().describe(tm('server.update_rubric.inputSchema.change')),
-        summary: z
-          .string()
-          .optional()
-          .describe(tm('server.update_rubric.inputSchema.summary')),
+        summary: z.string().optional().describe(tm('server.update_rubric.inputSchema.summary')),
         dry_run: z.boolean().optional().describe(tm('server.update_rubric.inputSchema.dry_run')),
-        restore_version: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe(tm('server.update_rubric.inputSchema.restore_version')),
+        restore_version: z.number().int().positive().optional().describe(tm('server.update_rubric.inputSchema.restore_version')),
       },
     },
     on(({ change, summary, dry_run, restore_version }) => {
@@ -512,18 +437,12 @@ export function createServerMcp(state: StateMcp): McpServer {
       description: tm('server.save_application.description'),
       inputSchema: {
         id,
-        folder: textOptional(
-          tm('server.save_application.inputSchema.folder'),
-        ),
+        folder: textOptional(tm('server.save_application.inputSchema.folder')),
         cv: textOptional(tm('server.save_application.inputSchema.cv')),
         channel: textOptional(tm('server.save_application.inputSchema.channel')),
-        sent_at: textOptional(
-          tm('server.save_application.inputSchema.sent_at'),
-        ),
+        sent_at: textOptional(tm('server.save_application.inputSchema.sent_at')),
         message: textOptional(tm('server.save_application.inputSchema.message')),
-        next_action: textOptional(
-          tm('server.save_application.inputSchema.next_action'),
-        ),
+        next_action: textOptional(tm('server.save_application.inputSchema.next_action')),
       },
     },
     on(({ id, ...fields }) => {
@@ -533,28 +452,14 @@ export function createServerMcp(state: StateMcp): McpServer {
   );
 
   const fieldsEvent = {
-    direction: z
-      .enum(['sent', 'received'])
-      .nullable()
-      .optional()
-      .describe(tm('server.fieldsEvent.direction')),
-    details: textOptional(
-      tm('server.fieldsEvent.details'),
-    ),
+    direction: z.enum(['sent', 'received']).nullable().optional().describe(tm('server.fieldsEvent.direction')),
+    details: textOptional(tm('server.fieldsEvent.details')),
     channel: textOptional(tm('server.fieldsEvent.channel')),
-    contacts: textOptional(
-      tm('server.fieldsEvent.contacts'),
-    ),
+    contacts: textOptional(tm('server.fieldsEvent.contacts')),
     amount: z.number().nullable().optional().describe(tm('server.fieldsEvent.amount')),
     unit: textOptional(tm('server.fieldsEvent.unit')),
     days: z.number().nullable().optional().describe(tm('server.fieldsEvent.days')),
-    files: z
-      .array(z.string())
-      .nullable()
-      .optional()
-      .describe(
-        tm('server.fieldsEvent.files'),
-      ),
+    files: z.array(z.string()).nullable().optional().describe(tm('server.fieldsEvent.files')),
   };
 
   server.registerTool(
@@ -565,22 +470,9 @@ export function createServerMcp(state: StateMcp): McpServer {
       inputSchema: {
         id,
         type: z.enum(TYPES_EVENT).describe(tm('server.add_event.inputSchema.type', { p1: String(TYPES_EVENT.join(', ')) })),
-        at: z
-          .string()
-          .optional()
-          .describe(
-            tm('server.add_event.inputSchema.at'),
-          ),
-        summary: z
-          .string()
-          .min(1)
-          .describe(
-            tm('server.add_event.inputSchema.summary'),
-          ),
-        done: z
-          .boolean()
-          .optional()
-          .describe(tm('server.add_event.inputSchema.done')),
+        at: z.string().optional().describe(tm('server.add_event.inputSchema.at')),
+        summary: z.string().min(1).describe(tm('server.add_event.inputSchema.summary')),
+        done: z.boolean().optional().describe(tm('server.add_event.inputSchema.done')),
         ...fieldsEvent,
       },
     },
@@ -673,7 +565,10 @@ export function createServerMcp(state: StateMcp): McpServer {
       annotations: { destructiveHint: true, openWorldHint: true },
     },
     on(async (a) =>
-      presentIngestion(await ingestPerConfig(database(), { ...state.config, mail: readMailSettings(state.config.file) }, { keep: a.keep, download: a.download }), { keep: a.keep, host: readMailSettings(state.config.file)?.host }),
+      presentIngestion(
+        await ingestPerConfig(database(), { ...state.config, mail: readMailSettings(state.config.file) }, { keep: a.keep, download: a.download }),
+        { keep: a.keep, host: readMailSettings(state.config.file)?.host },
+      ),
     ),
   );
 

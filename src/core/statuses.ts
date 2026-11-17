@@ -1,18 +1,6 @@
 // Statuses of an offer, shared by the CLI, the API and the interface (no Node dependency here).
 
-export const STATUSES = [
-  'new',
-  'to-read',
-  'scored',
-  'dismissed',
-  'go',
-  'sent',
-  'followed-up',
-  'interview',
-  'rejected',
-  'closed',
-  'withdrawn',
-] as const;
+export const STATUSES = ['new', 'to-read', 'scored', 'dismissed', 'go', 'sent', 'followed-up', 'interview', 'rejected', 'closed', 'withdrawn'] as const;
 
 export type Status = (typeof STATUSES)[number];
 

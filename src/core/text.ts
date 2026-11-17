@@ -29,10 +29,7 @@ function number(s: string): number {
 // groups of three digits stays a decimal comma ("26,6 K€").
 const COUNT = String.raw`\d{1,3}(?:[ .,]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)?`;
 const CURRENCY = String.raw`(?:k\s*€|k\s*eur|€|eur\b|euros?\b|k\b)`;
-const RE_RANGE = new RegExp(
-  String.raw`(?:${COUNT})\s*(?:k\s*)?(?:€\s*)?(?:-|–|à|to)\s*(?:${COUNT})\s*${CURRENCY}[^,;·(]*`,
-  'i',
-);
+const RE_RANGE = new RegExp(String.raw`(?:${COUNT})\s*(?:k\s*)?(?:€\s*)?(?:-|–|à|to)\s*(?:${COUNT})\s*${CURRENCY}[^,;·(]*`, 'i');
 const RE_AMOUNT = new RegExp(String.raw`(?:${COUNT})\s*${CURRENCY}[^,;·(]*`, 'i');
 
 /**

@@ -247,13 +247,27 @@ export function EditorSubScores({ offer }: { offer: DetailOffer }) {
           <label htmlFor={`${base}-min`} className="label">
             {t('subScores.salaryMin')}
           </label>
-          <input id={`${base}-min`} className="field" inputMode="decimal" placeholder="55000" value={s.min} onChange={(e) => setS({ ...s, min: e.target.value })} />
+          <input
+            id={`${base}-min`}
+            className="field"
+            inputMode="decimal"
+            placeholder="55000"
+            value={s.min}
+            onChange={(e) => setS({ ...s, min: e.target.value })}
+          />
         </div>
         <div className="w-28">
           <label htmlFor={`${base}-max`} className="label">
             {t('subScores.salaryMax')}
           </label>
-          <input id={`${base}-max`} className="field" inputMode="decimal" placeholder="65000" value={s.max} onChange={(e) => setS({ ...s, max: e.target.value })} />
+          <input
+            id={`${base}-max`}
+            className="field"
+            inputMode="decimal"
+            placeholder="65000"
+            value={s.max}
+            onChange={(e) => setS({ ...s, max: e.target.value })}
+          />
         </div>
         <div className="w-28">
           <label htmlFor={`${base}-unit`} className="label">

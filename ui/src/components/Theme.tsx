@@ -25,7 +25,11 @@ export type Mode = 'system' | 'light' | 'dark';
 function Dots({ p, dark }: { p: Palette; dark: boolean }) {
   const background = hue(p.neutral, dark ? '900' : '50');
   return (
-    <span className="flex h-8 w-16 shrink-0 items-center justify-center gap-1 rounded border border-slate-300 dark:border-slate-600" style={{ background: background }} aria-hidden="true">
+    <span
+      className="flex h-8 w-16 shrink-0 items-center justify-center gap-1 rounded border border-slate-300 dark:border-slate-600"
+      style={{ background: background }}
+      aria-hidden="true"
+    >
       <span className="size-3 rounded-full" style={{ background: hue(p.neutral, dark ? '600' : '300') }} />
       <span className="size-3 rounded-full" style={{ background: hue(p.neutral, dark ? '300' : '700') }} />
       <span className="size-3 rounded-full" style={{ background: hue(p.accent, dark ? '500' : '700') }} />
@@ -49,7 +53,9 @@ function ChoicePalette(props: {
       <label
         key={id}
         className={`flex cursor-pointer items-center gap-3 rounded-md border p-2 ${
-          active ? 'border-blue-600 ring-2 ring-blue-600/30 dark:border-blue-400' : 'border-slate-300 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800'
+          active
+            ? 'border-blue-600 ring-2 ring-blue-600/30 dark:border-blue-400'
+            : 'border-slate-300 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800'
         }`}
       >
         <input type="radio" name={name} className="sr-only" checked={active} onChange={() => props.choose(id)} />
@@ -76,7 +82,11 @@ function ChoicePalette(props: {
         <div className="grid grid-cols-2 gap-2">
           <label className="text-sm">
             <span className="label">{t('theme.gray')}</span>
-            <select className="field" value={props.personal.neutral} onChange={(e) => props.setPersonal({ ...props.personal, neutral: e.target.value as Neutral })}>
+            <select
+              className="field"
+              value={props.personal.neutral}
+              onChange={(e) => props.setPersonal({ ...props.personal, neutral: e.target.value as Neutral })}
+            >
               {NEUTRAL.map((n) => (
                 <option key={n} value={n}>
                   {neutral()[n]}
@@ -86,7 +96,11 @@ function ChoicePalette(props: {
           </label>
           <label className="text-sm">
             <span className="label">{t('theme.accent')}</span>
-            <select className="field" value={props.personal.accent} onChange={(e) => props.setPersonal({ ...props.personal, accent: e.target.value as Accent })}>
+            <select
+              className="field"
+              value={props.personal.accent}
+              onChange={(e) => props.setPersonal({ ...props.personal, accent: e.target.value as Accent })}
+            >
               {ACCENTS.map((a) => (
                 <option key={a} value={a}>
                   {accents()[a]}
@@ -129,7 +143,10 @@ export function ChoiceTheme(props: {
   // Portal: the header (sticky, blurred) would trap a fixed position.
   return createPortal(
     // biome-ignore lint/a11y/noStaticElementInteractions: backdrop, a click outside closes the panel; Escape does the same from the keyboard
-    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4 sm:pt-16" onMouseDown={(e) => e.target === e.currentTarget && close()}>
+    <div
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-4 sm:pt-16"
+      onMouseDown={(e) => e.target === e.currentTarget && close()}
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -165,9 +182,7 @@ export function ChoiceTheme(props: {
           </fieldset>
           <ChoicePalette title={t('theme.paletteLight')} dark={false} {...props.light} />
           <ChoicePalette title={t('theme.paletteDark')} dark {...props.dark} />
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            {t('theme.help')}
-          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('theme.help')}</p>
         </div>
       </div>
     </div>,

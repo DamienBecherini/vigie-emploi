@@ -10,7 +10,10 @@ export interface Level {
 export function readLevels(sort: string | null, orderDefault: 'asc' | 'desc' = 'desc'): Level[] {
   const levels: Level[] = [];
   for (const chunk of (sort ?? '').split(',')) {
-    const [column, direction] = chunk.trim().split(':').map((x) => x.trim());
+    const [column, direction] = chunk
+      .trim()
+      .split(':')
+      .map((x) => x.trim());
     if (!column || levels.some((n) => n.column === column)) continue;
     levels.push({ column, order: direction === 'asc' || direction === 'desc' ? direction : orderDefault });
   }

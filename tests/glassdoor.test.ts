@@ -9,7 +9,11 @@ describe('Glassdoor titles', () => {
       location: 'Saint-Germain',
       compensation: '50 k € - 65 k €',
     });
-    expect(splitGlassdoor('CGI 3.7 ★ Expert(e) Kubernetes F/H Paris Candidature facile')).toEqual({ company: 'CGI', title: 'Expert(e) Kubernetes F/H', location: 'Paris' });
+    expect(splitGlassdoor('CGI 3.7 ★ Expert(e) Kubernetes F/H Paris Candidature facile')).toEqual({
+      company: 'CGI',
+      title: 'Expert(e) Kubernetes F/H',
+      location: 'Paris',
+    });
   });
 
   it('leaves in the job title what cannot be separated without risk', () => {

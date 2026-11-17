@@ -8,30 +8,13 @@ import { openDatabase, type Database } from '../db/database.ts';
 import { ingestPerConfig } from '../ingest/ingest.ts';
 import { importHistory } from '../import/history.ts';
 import { listOffers, type OptionsList } from '../core/queries.ts';
-import {
-  addStatus,
-  detailOffer,
-  updateLink,
-  updateTags,
-  offerById,
-  type FieldsApplication,
-  type DetailOffer,
-} from '../core/offers.ts';
+import { addStatus, detailOffer, updateLink, updateTags, offerById, type FieldsApplication, type DetailOffer } from '../core/offers.ts';
 import { batchInputs, type InputBatch } from '../core/scoring.ts';
 import { scoreOffers, offersToRead, prepareApplication, trackApplication } from '../core/actions.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
 import { writeTracker } from '../export/tracker.ts';
 import { startServer } from '../api/server.ts';
-import {
-  addEvent,
-  deadlines,
-  eventOrError,
-  journal,
-  markDone,
-  TYPES_EVENT,
-  type EventJournal,
-  type EventInput,
-} from '../core/events.ts';
+import { addEvent, deadlines, eventOrError, journal, markDone, TYPES_EVENT, type EventJournal, type EventInput } from '../core/events.ts';
 import { filesFolder } from '../core/files.ts';
 import { statistics } from '../core/statistics.ts';
 import { instructionsAi, scoreExample, type Breakdown } from '../core/rubric.ts';
@@ -99,7 +82,11 @@ function truncate(s: string | null | undefined, n: number): string {
 
 function table(headers: string[], lines: string[][]): string {
   const widths = headers.map((e, i) => Math.max(e.length, ...lines.map((l) => (l[i] ?? '').length)));
-  const line = (l: string[]) => l.map((c, i) => (c ?? '').padEnd(widths[i])).join('  ').trimEnd();
+  const line = (l: string[]) =>
+    l
+      .map((c, i) => (c ?? '').padEnd(widths[i]))
+      .join('  ')
+      .trimEnd();
   return [line(headers), widths.map((w) => '-'.repeat(w)).join('  '), ...lines.map(line)].join('\n');
 }
 
@@ -261,7 +248,12 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
       mail: v.mail !== false,
     });
     if (v.json) return json(r);
-    if (r.mail?.error) console.log(t('cli.ingest.mailError', { message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: config.mail?.host ?? '', folder: r.mail.folder }) }));
+    if (r.mail?.error)
+      console.log(
+        t('cli.ingest.mailError', {
+          message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: config.mail?.host ?? '', folder: r.mail.folder }),
+        }),
+      );
     else if (r.mail) {
       console.log(t('cli.ingest.mail', { n: r.mail.fetched, folder: r.mail.folder }));
       if (r.mail.more) console.log(t('cli.ingest.mailMore'));
@@ -293,7 +285,9 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = context(v);
     const r = importHistory(db, (v.source as string | undefined) ?? config.dataDir);
     if (v.json) return json(r);
-    console.log(t('cli.import.batches', { files: r.batches.files, inputs: r.batches.inputs, offers: r.batches.offers_created, scores: r.batches.scores_added }));
+    console.log(
+      t('cli.import.batches', { files: r.batches.files, inputs: r.batches.inputs, offers: r.batches.offers_created, scores: r.batches.scores_added }),
+    );
     console.log(
       t('cli.import.register', {
         lines: r.register.lines,
@@ -308,7 +302,12 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     if (r.tracker.ignore) console.log(t('cli.import.trackerIgnore', { reason: r.tracker.ignore }));
     else
       console.log(
-        t('cli.import.tracker', { lines: r.tracker.lines, offers: r.tracker.offers_created, applications: r.tracker.applications, statuses: r.tracker.statuses_added }),
+        t('cli.import.tracker', {
+          lines: r.tracker.lines,
+          offers: r.tracker.offers_created,
+          applications: r.tracker.applications,
+          statuses: r.tracker.statuses_added,
+        }),
       );
     const J = r.journal;
     console.log(
@@ -320,7 +319,10 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
         duplicate: J.events_duplicate.length,
         removed: J.events_removed,
         deadlines: J.deadlines,
-        types: Object.entries(J.by_type).map(([x, n]) => `${x} ${n}`).join(', ') || '—',
+        types:
+          Object.entries(J.by_type)
+            .map(([x, n]) => `${x} ${n}`)
+            .join(', ') || '—',
       }),
     );
     for (const d of J.folders_attached) console.log(t('cli.import.attached', { offer: d.offer_id, folder: d.folder }));
@@ -351,7 +353,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
       status: { type: 'string' },
       'score-min': { type: 'string' },
       'score-max': { type: 'string' },
-      'unscored': { type: 'boolean' },
+      unscored: { type: 'boolean' },
       source: { type: 'string' },
       tag: { type: 'string' },
       from: { type: 'string' },
@@ -446,9 +448,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
         inputs[0] = { ...inputs[0], id: whole(pos[0], 'id') };
       }
     }
-    const results = withoutError(() =>
-      scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: Boolean(v.dry_run) }),
-    );
+    const results = withoutError(() => scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: Boolean(v.dry_run) }));
     json({ ok: true, dry_run: Boolean(v.dry_run), scored: v.dry_run ? 0 : results.length, offers: results });
   },
 
@@ -591,8 +591,14 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { db } = context(opts);
     const id = whole(rest[0], 'id');
     if (!offerById(db, id)) error(t('cli.offerNotFound', { id }));
-    const additions = rest.slice(1).filter((x) => x.startsWith('+')).map((x) => x.slice(1));
-    const removals = rest.slice(1).filter((x) => x.startsWith('-')).map((x) => x.slice(1));
+    const additions = rest
+      .slice(1)
+      .filter((x) => x.startsWith('+'))
+      .map((x) => x.slice(1));
+    const removals = rest
+      .slice(1)
+      .filter((x) => x.startsWith('-'))
+      .map((x) => x.slice(1));
     const others = rest.slice(1).filter((x) => !/^[+-]/.test(x));
     if (others.length) error(t('cli.tag.prefix', { tags: others.join(' ') }));
     const tags = updateTags(db, id, additions, removals);
@@ -763,9 +769,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     if (v.json) return json({ ok: true, ...s });
     console.log(t('cli.stats.steps', { sent: s.sent, replies: s.replies, interviews: s.interviews, proposals: s.proposals }));
     console.log(
-      s.average_reply_days === null
-        ? t('cli.stats.notEnough')
-        : t('cli.stats.timeout', { days: comma(s.average_reply_days, 1), n: s.reply_sample_size }),
+      s.average_reply_days === null ? t('cli.stats.notEnough') : t('cli.stats.timeout', { days: comma(s.average_reply_days, 1), n: s.reply_sample_size }),
     );
   },
 
@@ -872,9 +876,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     }
     if (v.json) return json({ ok: true, template, cv: results });
     for (const r of results) {
-      const rate = r.fill
-        ? ` (${t('cli.cv.fill', { rate: r.fill.map((x) => t('core.pages.percent', { pc: x })).join(', ') })})`
-        : '';
+      const rate = r.fill ? ` (${t('cli.cv.fill', { rate: r.fill.map((x) => t('core.pages.percent', { pc: x })).join(', ') })})` : '';
       console.log(`${String(r.pages).padStart(2)} ${t('cli.cv.pages')}  ${r.pdf}${r.pages > 2 ? t('cli.cv.exceeded') : ''}`);
       // Lines read by the tools and the AI (HTML, PDF, IMAGE, PAGES): same labels in both languages.
       if (results.length === 1) console.log(`HTML : ${r.html}\nPDF  : ${r.pdf}${r.capture ? `\nIMAGE : ${r.capture}` : ''}\nPAGES : ${r.pages}${rate}`);

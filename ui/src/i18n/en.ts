@@ -106,10 +106,7 @@ export const en: Record<KeyUi, MessageText> = {
   'stats.interview': 'Interview',
   'stats.proposal': 'Offer',
   'stats.notEnough': 'Delay before the first reply: not enough dated data.',
-  'stats.timeout': p(
-    'Average delay before the first reply: {days} d ({n} application).',
-    'Average delay before the first reply: {days} d ({n} applications).',
-  ),
+  'stats.timeout': p('Average delay before the first reply: {days} d ({n} application).', 'Average delay before the first reply: {days} d ({n} applications).'),
 
   'theme.title': 'Theme',
   'theme.close': 'Close',
@@ -379,10 +376,7 @@ export const en: Record<KeyUi, MessageText> = {
   'examples.none': 'No example in the grid.',
   'preview.title': 'Preview before saving',
   'preview.computation': 'Computing…',
-  'preview.changed': p(
-    '{n} of {total} criteria-scored offers gets a new score;',
-    '{n} of {total} criteria-scored offers get a new score;',
-  ),
+  'preview.changed': p('{n} of {total} criteria-scored offers gets a new score;', '{n} of {total} criteria-scored offers get a new score;'),
   'preview.rising': p('{n} moves above the threshold ({threshold})', '{n} move above the threshold ({threshold})'),
   'preview.falling': '{n} below.',
   'preview.old': ' Old overall scores are not recomputed.',

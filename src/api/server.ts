@@ -11,16 +11,7 @@ import { routesMail } from './mail.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers, meta, type OptionsList } from '../core/queries.ts';
-import {
-  addStatus,
-  FIELDS_APPLICATION,
-  detailOffer,
-  updateLink,
-  updateTags,
-  offerById,
-  tagsOffer,
-  type FieldsApplication,
-} from '../core/offers.ts';
+import { addStatus, FIELDS_APPLICATION, detailOffer, updateLink, updateTags, offerById, tagsOffer, type FieldsApplication } from '../core/offers.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
 import { updateSubScores, scoreOffers, prepareApplication, trackApplication, type InputSubScores } from '../core/actions.ts';
 import { scoreExample, LEVELS, validateRubric } from '../core/rubric.ts';
@@ -35,16 +26,7 @@ import {
   type VersionRubric,
 } from '../core/rubric-storage.ts';
 import type { InputBatch } from '../core/scoring.ts';
-import {
-  addEvent,
-  deadlines,
-  eventOrError,
-  journal,
-  markDone,
-  updateEvent,
-  deleteEvent,
-  type EventInput,
-} from '../core/events.ts';
+import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, deleteEvent, type EventInput } from '../core/events.ts';
 import { safeFolder, safeFile, filesFolder } from '../core/files.ts';
 import { statistics } from '../core/statistics.ts';
 import { pageFile } from './file.ts';
@@ -80,7 +62,12 @@ function number(v: string | undefined): number | undefined {
 }
 
 function list(v: string | undefined): string[] | undefined {
-  return v ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+  return v
+    ? v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : undefined;
 }
 
 /** URL parameters → list options (same names as in the interface). */
@@ -498,7 +485,7 @@ export function startServer(o: {
         o.db.close();
         if (!o.hosted) process.exit(0);
       });
-      if ('closeAllConnections' in server) server.closeAllConnections();  // otherwise keep-alive connections delay the stop
+      if ('closeAllConnections' in server) server.closeAllConnections(); // otherwise keep-alive connections delay the stop
     }, 1000);
     watcher.unref();
   });

@@ -142,7 +142,9 @@ describe('standalone MCP server (in memory)', () => {
 
     const list = json(await call('list_files', { folder: 'candidatures', depth: 2 }));
     expect((list.inputs as { path: string }[]).map((e) => e.path)).toContain('candidatures/acme/dossier-candidature.md');
-    expect(json(await call('move_file', { source: 'candidatures/acme/dossier-candidature.md', destination: 'candidatures/acme-dev/dossier-candidature.md' }))).toMatchObject({ ok: true });
+    expect(
+      json(await call('move_file', { source: 'candidatures/acme/dossier-candidature.md', destination: 'candidatures/acme-dev/dossier-candidature.md' })),
+    ).toMatchObject({ ok: true });
   });
 
   it('reads the text of a dropped PDF and returns an image as an image', async () => {
@@ -162,7 +164,7 @@ describe('standalone MCP server (in memory)', () => {
     expect(json(await call('count', { text: 'Bonjour à vous' }))).toMatchObject({ blocks: [{ characters: 14, words: 3 }] });
     const f = json(await call('count', { path: 'candidatures/acme-dev/dossier-candidature.md' }));
     expect(f).toMatchObject({ file: 'candidatures/acme-dev/dossier-candidature.md', blocks: [{ characters: 6 }] });
-    expect((await call('count', {}) as Result).isError).toBe(true);
+    expect(((await call('count', {})) as Result).isError).toBe(true);
 
     const g = json(await call('list_templates')) as { templates: { name: string }[] };
     expect(g.templates.map((x) => x.name)).toEqual(expect.arrayContaining(['plain', 'modern', 'compact']));

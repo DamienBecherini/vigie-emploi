@@ -132,12 +132,16 @@ describe('score computation', () => {
   const g = rubricTest();
 
   it('normalized weighted average, contributions, rounding, exact value', () => {
-    const d = computeScore(g, { criteria: { technique: { score: 8, justification: 'PHP' } }, blockers: [] }, {
-      remote: '3 j sur site',
-      compensation_min: 57000,
-      compensation_max: 57000,
-      compensation_unit: 'year',
-    });
+    const d = computeScore(
+      g,
+      { criteria: { technique: { score: 8, justification: 'PHP' } }, blockers: [] },
+      {
+        remote: '3 j sur site',
+        compensation_min: 57000,
+        compensation_max: 57000,
+        compensation_unit: 'year',
+      },
+    );
     // 8 × 0,5 + 3 × 0,25 + 7,5 × 0,25 = 6,625
     expect(d.average).toBe(6.625);
     expect(d.exact_score).toBe(6.625);
@@ -158,11 +162,15 @@ describe('score computation', () => {
   });
 
   it('the inputs of the entry come before the offer’s fields', () => {
-    const d = computeScore(g, { criteria: { technique: { score: 8 } }, inputs: { onsite_days: 0, salary_min: 500, unit: 'day' }, blockers: [] }, {
-      remote: 'sur site',
-      compensation_min: 30000,
-      compensation_unit: 'year',
-    });
+    const d = computeScore(
+      g,
+      { criteria: { technique: { score: 8 } }, inputs: { onsite_days: 0, salary_min: 500, unit: 'day' }, blockers: [] },
+      {
+        remote: 'sur site',
+        compensation_min: 30000,
+        compensation_unit: 'year',
+      },
+    );
     expect(d.inputs).toMatchObject({ onsite_days: 0, days_origin: 'input', unit: 'day', salary_origin: 'input' });
     expect(d.exact_score).toBe(9); // 8 × 0,5 + 10 × 0,25 + 10 × 0,25
   });
@@ -213,9 +221,9 @@ describe('score computation', () => {
     b.compensation.salary.target_high = 40;
     expect(() => validateRubric({ ...database, scales: b })).toThrow(/cible haute doit dépasser le plancher/);
     expect(() => validateRubric({ ...database, criteria: [{ id: 'x', label: 'X', source: 'computation', weight: 1 }] })).toThrow(/computation.*attendu/);
-    expect(() =>
-      validateRubric({ ...database, examples: [{ title: 'E', criteria: { teletravail: { score: 1, justification: '' } } }] }),
-    ).toThrow(/critère IA inconnu teletravail/);
+    expect(() => validateRubric({ ...database, examples: [{ title: 'E', criteria: { teletravail: { score: 1, justification: '' } } }] })).toThrow(
+      /critère IA inconnu teletravail/,
+    );
     expect(() => validateRubric({ ...database, rules: [{ id: 'p', label: 'P', effect: 'cap' }] })).toThrow(/value.*plafond/);
   });
 
@@ -228,7 +236,13 @@ describe('score computation', () => {
         { id: 'stage', active: false },
         { id: 'esn', label: 'Régie en ESN', effect: 'cap', value: 4 },
       ],
-      inventory: { add: [{ technology: 'Kubernetes', level: 'light' }, { technology: 'Go', level: 'zero' }], remove: ['Java'] },
+      inventory: {
+        add: [
+          { technology: 'Kubernetes', level: 'light' },
+          { technology: 'Go', level: 'zero' },
+        ],
+        remove: ['Java'],
+      },
     });
     expect(g2.criteria.find((c) => c.id === 'technique')!.weight).toBe(50);
     expect(g2.threshold).toBe(5);
@@ -266,7 +280,13 @@ describe('storage, versions and rescoring', () => {
     db = openDatabase(':memory:');
     ids = [];
     for (let i = 0; i < 3; i++) {
-      const { offer } = saveOffer(db, 'linkedin', String(500 + i), { title: `Offre ${i}`, remote: ['full remote', '3 j sur site', 'hybride'][i], compensation: ['55-65 K€', 'NC', '450 €/j'][i] }, 'email');
+      const { offer } = saveOffer(
+        db,
+        'linkedin',
+        String(500 + i),
+        { title: `Offre ${i}`, remote: ['full remote', '3 j sur site', 'hybride'][i], compensation: ['55-65 K€', 'NC', '450 €/j'][i] },
+        'email',
+      );
       ids.push(offer.id);
     }
   });
@@ -294,7 +314,14 @@ describe('storage, versions and rescoring', () => {
     scoreOffers(db, [{ id: ids[2], score: 6, fit: 'ancienne grille' }], 'cli');
     const [r] = scoreOffers(
       db,
-      [{ id: ids[0], score: 9, criteria: { technique: { score: 8, justification: 'PHP' }, role: { score: 7 }, interet: { score: 6 }, risque: { score: 7 } }, fit: 'API' }],
+      [
+        {
+          id: ids[0],
+          score: 9,
+          criteria: { technique: { score: 8, justification: 'PHP' }, role: { score: 7 }, interet: { score: 6 }, risque: { score: 7 } },
+          fit: 'API',
+        },
+      ],
       'mcp',
       { rubric: () => rubricCurrent(db, folder) },
     );
@@ -312,7 +339,12 @@ describe('storage, versions and rescoring', () => {
     initializeRubric(db, folder);
     const load = () => rubricCurrent(db, folder);
     const criteria = { technique: { score: 6 }, role: { score: 6 }, interet: { score: 6 }, risque: { score: 6 } };
-    scoreOffers(db, ids.map((id) => ({ id, criteria })), 'cli', { rubric: load });
+    scoreOffers(
+      db,
+      ids.map((id) => ({ id, criteria })),
+      'cli',
+      { rubric: load },
+    );
     const before = ids.map((id) => offerById(db, id)!.score);
     // 0: 6×.6 + 10×.2 + 10×.2 = 7.6 → 7.5; 1: 3 days on site, salary NC → 6×.6 + 3×.2 + 5×.2 = 5.2 → 5;
     // 2 : hybride inconnu, 450 €/j ≥ cible 450 → 6×.6 + 5×.2 + 10×.2 = 6,6 → 6,5

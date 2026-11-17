@@ -71,7 +71,7 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
   if (!host && provider?.auth === 'oauth') throw userError(t('cli.mail.oauth', { name: provider.name }));
   if (!host) host = provider?.host ?? (interactive ? await ask(t('cli.mail.askHost'), config.mail?.host) : undefined);
   if (!host) throw userError(t('cli.mail.hostRequired'));
-  const port = v.port ? Number(v.port) : (provider?.host === host ? provider.port : secure ? 993 : 143);
+  const port = v.port ? Number(v.port) : provider?.host === host ? provider.port : secure ? 993 : 143;
   if (provider) console.log(t('cli.mail.provider', { name: provider.name, host, port }));
   if (provider?.auth === 'app-password') console.log(t('cli.mail.appPassword', { name: provider.name, help: provider.help ?? '' }));
 
@@ -124,12 +124,7 @@ function status(v: Values, config: Config, db: Database, store: SecretStore, jso
   );
 }
 
-export async function commandMail(
-  sub: string | undefined,
-  v: Values,
-  ctx: { config: Config; db: Database },
-  json: (x: unknown) => void,
-): Promise<void> {
+export async function commandMail(sub: string | undefined, v: Values, ctx: { config: Config; db: Database }, json: (x: unknown) => void): Promise<void> {
   const store = secretStore();
   const { config, db } = ctx;
   switch (sub ?? 'status') {

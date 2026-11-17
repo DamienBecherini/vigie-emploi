@@ -164,7 +164,11 @@ export function rubricRequired(db: Database, dataDir: string): VersionRubric {
 }
 
 /** Copies the sample rubric into the data folder if no rubric exists. */
-export function initializeRubric(db: Database, dataDir: string, language: Language = LANGUAGE_DEFAULT): { created: boolean; path: string; version: VersionRubric } {
+export function initializeRubric(
+  db: Database,
+  dataDir: string,
+  language: Language = LANGUAGE_DEFAULT,
+): { created: boolean; path: string; version: VersionRubric } {
   const path = pathRubric(dataDir);
   const created = !existsSync(path) && !lastVersion(db);
   if (created) {

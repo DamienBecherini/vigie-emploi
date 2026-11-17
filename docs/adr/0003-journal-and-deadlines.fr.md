@@ -1,5 +1,7 @@
 # ADR 0003 — Journal des candidatures, échéances et fichiers du dossier
 
+[English](0003-journal-and-deadlines.md) · **Français**
+
 Date : 02/11/2026 · Statut : accepté
 
 > Les noms d'outils, de champs et de commandes cités sont ceux de l'époque, en français ; le code et l'API sont depuis en anglais (par exemple `ajouter_evenement` → `add_event`, `noter_lot` → `score_batch`, `grille` → `rubric`).

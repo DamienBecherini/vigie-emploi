@@ -1,5 +1,7 @@
 # ADR 0001 — Choix techniques du sprint 1
 
+[English](0001-technical-choices.md) · **Français**
+
 Date : 02/11/2026 · Statut : accepté
 
 ## Contexte

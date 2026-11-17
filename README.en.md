@@ -81,19 +81,17 @@ No terminal and no Node to install: the extension contains the application and u
 
 ### With Claude Code or another agent
 
-```sh
-npx vigie-emploi init ~/my-search --language en
+Open Claude Code (or your agent) in any folder and paste this prompt, without changing anything:
+
+```text
+Install vigie-emploi for my job search (https://github.com/DamienBecherini/vigie-emploi): run "npx -y vigie-emploi@latest init --language en", which creates the vigie-emploi folder in my home folder, then read AGENTS.md and DEMARRAGE.md in that folder and run the onboarding with me. If Node.js 24 is missing, explain how to install it.
 ```
 
-Nothing to clone or build: npx downloads the application and runs `init`. The workspace remembers the version used (`npx -y vigie-emploi@<version>`, in `.mcp.json` and in the AI instructions). For a permanently installed command: `npm install -g vigie-emploi`, then `vigie-emploi init ~/my-search`. To contribute, install from the repository (see [Installation](#installation)).
+The agent creates your workspace in `~/vigie-emploi` (your home folder, on Windows, macOS and Linux), then starts the onboarding: it asks you to drop your résumé in `~/vigie-emploi/a-deposer/` and asks its questions. For another folder, add its path after `init` in the prompt (`… init D:/job-search --language en`). Onboarding takes two sessions of about half an hour each; for the second one and the following ones, open Claude Code in the workspace folder (`cd ~/vigie-emploi` then `claude`) and accept the "vigie-emploi" MCP server.
 
-`init` creates your workspace (`--template modern` or `compact` to change the résumé template; `--language en` for English AI instructions, grid, dashboard and CLI, French being the default) and prints the starting prompt to give your AI. Then:
+By hand, without a prompt: `npx vigie-emploi init --language en` (or `npx vigie-emploi init <folder> --language en`) creates the workspace and prints the onboarding prompt; then open your AI in that folder and paste it. The workspace keeps the version used (`npx -y vigie-emploi@<version>`, in `.mcp.json` and in the AI's instructions). For a permanently installed command: `npm install -g vigie-emploi`, then `vigie-emploi init --language en`. To contribute, install from the repository (see [Installation](#installation)).
 
-1. drop your résumé into `~/my-search/a-deposer/`;
-2. open your AI in `~/my-search` (Claude Code: `cd ~/my-search` then `claude`, and accept the MCP server);
-3. paste the prompt printed by `init`.
-
-Onboarding takes two sessions of about half an hour each.
+`init` options: `--template modern` or `compact` to change the résumé template; `--language en` for everything in English (AI instructions and workspace templates, sample grid, MCP server, dashboard and CLI; command and status names are the same in every language, the workspace's file names stay in French).
 
 ## Automating alert intake
 

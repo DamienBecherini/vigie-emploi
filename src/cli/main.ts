@@ -47,7 +47,7 @@ import {
   versionRubric,
   type Impact,
 } from '../core/rubric-storage.ts';
-import { initializeWorkspace } from '../init/init.ts';
+import { defaultWorkspace, initializeWorkspace } from '../init/init.ts';
 import { countText } from '../core/count.ts';
 import { chooseTemplate, TEMPLATE_DEFAULT, generateCv, listTemplates, findBrowser } from '../cv/cv.ts';
 import { decimal, defineLanguage, isLanguage, languageCurrent, LANGUAGES, t } from '../i18n/index.ts';
@@ -793,13 +793,13 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
 
   init(args) {
     const { v, pos } = analyze(args, { port: { type: 'string' }, 'mcp-name': { type: 'string' }, template: { type: 'string' }, language: { type: 'string' } });
-    if (pos.length !== 1) error(t('cli.init.usage'));
+    if (pos.length > 1) error(t('cli.init.usage'));
     const language = typeof v.language === 'string' ? normalizeLanguage(v.language) : undefined;
     if (language !== undefined && !isLanguage(language)) {
       error(t('cli.invalid', { name: '--language', value: `${String(v.language)} (${LANGUAGES.join(', ')})` }));
     }
     const r = initializeWorkspace({
-      folder: pos[0],
+      folder: pos[0] ?? defaultWorkspace(),
       port: v.port ? whole(v.port, 'port') : undefined,
       mcpName: v['mcp-name'] as string | undefined,
       template: v.template as string | undefined,

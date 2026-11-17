@@ -79,19 +79,17 @@ Pas de terminal ni de Node à installer : l'extension contient l'application et 
 
 ### Avec Claude Code ou un autre agent
 
-```sh
-npx vigie-emploi init ~/ma-recherche
+Ouvrez Claude Code (ou votre agent) dans n'importe quel dossier et collez ce prompt, sans rien modifier :
+
+```text
+Installe vigie-emploi pour ma recherche d'emploi (https://github.com/DamienBecherini/vigie-emploi) : lance « npx -y vigie-emploi@latest init », qui crée le dossier vigie-emploi dans mon dossier personnel, puis lis AGENTS.md et DEMARRAGE.md dans ce dossier et mène le démarrage avec moi. S'il manque Node.js 24, explique-moi comment l'installer.
 ```
 
-Rien à cloner ni à compiler : npx télécharge l'application et lance `init`. L'espace de travail retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init ~/ma-recherche`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
+L'agent crée votre espace de travail dans `~/vigie-emploi` (votre dossier personnel, sur Windows, macOS et Linux), puis commence le démarrage : il vous demande de déposer votre CV dans `~/vigie-emploi/a-deposer/` et vous pose ses questions. Pour un autre dossier, ajoutez son chemin à la fin de la commande dans le prompt (`… init D:/recherche`). Le démarrage se fait en deux sessions d'environ une demi-heure chacune ; pour la seconde et les suivantes, ouvrez Claude Code dans le dossier de l'espace (`cd ~/vigie-emploi` puis `claude`) et acceptez le serveur MCP « vigie-emploi ».
 
-`init` crée votre espace de travail (`--template modern` ou `compact` pour changer de gabarit de CV, `--language en` pour tout en anglais : consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes et de statuts sont les mêmes dans toutes les langues, ceux des fichiers de l'espace restent en français) et affiche le prompt de démarrage à donner à votre IA. Ensuite :
+À la main, sans prompt : `npx vigie-emploi init` (ou `npx vigie-emploi init <dossier>`) crée l'espace et affiche le prompt de démarrage ; ouvrez ensuite votre IA dans ce dossier et collez-le. L'espace retient la version utilisée (`npx -y vigie-emploi@<version>`, dans `.mcp.json` et dans les consignes de l'IA). Pour une commande installée à demeure : `npm install -g vigie-emploi`, puis `vigie-emploi init`. Pour contribuer, installez depuis le dépôt (voir [Installation](#installation)).
 
-1. glissez votre CV dans `~/ma-recherche/a-deposer/` ;
-2. ouvrez votre IA dans `~/ma-recherche` (Claude Code : `cd ~/ma-recherche` puis `claude`, et acceptez le serveur MCP) ;
-3. collez le prompt affiché par `init`.
-
-Le démarrage se fait en deux sessions d'environ une demi-heure chacune.
+Options de `init` : `--template modern` ou `compact` pour changer de gabarit de CV ; `--language en` pour tout en anglais (consignes de l'IA et modèle de l'espace, grille d'exemple, serveur MCP, tableau de bord et CLI ; les noms de commandes et de statuts sont les mêmes dans toutes les langues, ceux des fichiers de l'espace restent en français).
 
 ## Automatiser la réception des alertes
 

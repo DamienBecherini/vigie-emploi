@@ -5,9 +5,11 @@ You are running the first interview with the user. Goal: fill in `_CONTEXTE.md`,
 - **session 1**: steps 0 to 5 (tools, reading, profiles, questions, `_CONTEXTE.md`);
 - **session 2**: steps 6 to 9 (grid, CV, alerts, wrap-up).
 
-Announce this split in your very first message, as it is (not "I will prepare your grid" in session 1). At the end of session 1, tell the user to open a new conversation and write "resume the onboarding". The state is kept in the files (step 0).
+Announce this split in your very first message, as it is (not "I will prepare your grid" in session 1). At the end of session 1, tell the user to open a new conversation **in the workspace** and write "resume the onboarding" (see "Session started outside the workspace" below). The state is kept in the files (step 0).
 
 Workspace: `{{WORKSPACE}}` · application: `{{APP}}` · command: `{{CMD}}`
+
+**Session started outside the workspace** (installation through a prompt, from another folder): the MCP server and the workspace's instructions are not loaded yet. Use absolute paths (`{{WORKSPACE}}/…`) and the CLI with the workspace as an option: `{{CMD}} <command> --data {{WORKSPACE}}`. For the next sessions, give them the steps, once and as they are: open a terminal, `cd {{WORKSPACE}}`, run `claude`, accept the "vigie-emploi" MCP server when Claude Code offers it.
 
 The workspace's file and folder names are in French and must stay as they are (the application expects them): `_CONTEXTE.md` is the context, `_A-FAIRE.md` the to-do list, `_JOURNAL-DECISIONS.md` the decision log, `a-deposer/` the drop folder, `profils-publics/` the public profiles.
 
@@ -103,4 +105,4 @@ Explain how to feed the job-ad sorting:
 
 ## 9. Wrap-up
 
-Sum up what is in place and what remains in `_A-FAIRE.md`, then explain the everyday loop in four lines: alerts arrive in `emails/` → you sort and score them → they give their "go" → you prepare the application file, tailored CV and message, **they send it** → they tell you what happens next (sent, reply, interview) and you keep the follow-up and reminders. End with the next concrete action (usually: process the e-mails), not with "ask me later". If they keep the workspace under version control with git, suggest a first commit.
+Sum up what is in place and what remains in `_A-FAIRE.md`, then explain the everyday loop in four lines: alerts arrive in `emails/` → you sort and score them → they give their "go" → you prepare the application file, tailored CV and message, **they send it** → they tell you what happens next (sent, reply, interview) and you keep the follow-up and reminders. End with the next concrete action (usually: process the e-mails), not with "ask me later". If they keep the workspace under version control with git, suggest a first commit. If the session was started outside the workspace, give again the steps for next time (open Claude Code in `{{WORKSPACE}}`).

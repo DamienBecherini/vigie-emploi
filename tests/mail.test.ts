@@ -241,7 +241,7 @@ describe('mailbox settings and passwords', () => {
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
-  });
+  }, 60_000); // each step starts PowerShell: up to 15 s on a cold GitHub Windows runner
   it('MailError keeps its kind', () => {
     expect(new MailError('folder', 'x').kind).toBe('folder');
   });

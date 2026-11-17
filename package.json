@@ -39,6 +39,7 @@
     "AGENTS.md",
     "AGENTS.*.md",
     "docs/utiliser-avec-une-ia.md",
+    "docs/utiliser-avec-une-ia.en.md",
     "vigie-emploi.config.example.json"
   ],
   "engines": {

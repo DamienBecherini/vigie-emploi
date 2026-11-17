@@ -2,7 +2,7 @@
 
 This file is for an agent (Claude Code or another) that helps the user sort their job ads. The application contacts no AI model: the agent reads, scores and reports back, and the application keeps the state. Work and write in English with the user; the names of the commands, options, MCP tools, parameters and statuses are identifiers: use them as they are.
 
-Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the MCP client is connected, see [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md)) or the **CLI** with `--json`. Both call the same core.
+Two ways to drive it: the **MCP tools** (`vigie-emploi mcp`, preferred when the MCP client is connected, see [`docs/utiliser-avec-une-ia.en.md`](docs/utiliser-avec-une-ia.en.md)) or the **CLI** with `--json`. Both call the same core.
 
 ## Rules
 
@@ -119,4 +119,4 @@ The dashboard's "Apply" button copies `apply <id>`: when the user pastes that te
 - `npm test` and `npm run build` must pass before each commit.
 - Fictitious fixtures only (`tests/fixtures`): never real e-mails or real job ads.
 - Schema: add a migration `migrations/000N_name.sql`; never change a migration that has already been published.
-- The code (identifiers, comments, tests) is in English; the documentation is written in French, and `AGENTS.en.md`, `README.en.md` and `scaffold-en/` are its English versions.
+- The code (identifiers, comments, tests) is in English; the documentation is written in French, and `AGENTS.en.md`, `README.en.md`, `docs/*.en.md` and `scaffold-en/` are its English versions (the architecture decisions in `docs/adr/` stay in French).

@@ -1,5 +1,7 @@
 # Ajouter une langue
 
+**Français** · [English](ajouter-une-langue.en.md)
+
 vigie-emploi est livré en français (langue par défaut) et en anglais. Une langue de plus ne demande aucun changement de logique : on la déclare, puis on traduit ce que le compilateur et les tests signalent. Exemple avec l'espagnol (`es`).
 
 ## 1. Déclarer la langue
@@ -38,6 +40,7 @@ Les textes gardent leurs paramètres `{nom}`. Un texte au pluriel est un objet `
 | `AGENTS.es.md` | Consignes de l'application pour l'agent | `AGENTS.md` (français) |
 | `examples/rubric.es.json` | Grille d'exemple | Grille française |
 | `README.es.md` | Présentation, à relier au sélecteur de langue en tête des README | — |
+| `docs/*.es.md` | Guides (utiliser avec une IA, ajouter une langue), à relier à leur sélecteur de langue | Guides français |
 
 `npm test` (fichier `tests/languages.test.ts`) vérifie que ces fichiers existent, que `scaffold-es/` contient les mêmes fichiers que `scaffold/`, et qu'aucun texte des dictionnaires n'est vide ou resté en français.
 

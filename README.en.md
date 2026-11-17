@@ -77,7 +77,7 @@ Résumés are written in Markdown and rendered as two-page A4 PDFs, with three t
 3. Choose the **workspace folder** (by default `vigie-emploi` in your home folder; it does not need to exist) and the **language**: type `en`.
 4. In a new conversation, ask "create my vigie-emploi workspace", or **+** button → vigie-emploi → **`onboarding`** prompt. Claude creates the workspace, asks you to drop your résumé into `a-deposer/`, then runs the onboarding.
 
-No terminal and no Node to install: the extension contains the application and uses the Node built into Claude Desktop. To browse your job ads in the dashboard, ask Claude to open it (`open_dashboard` tool). Details (in French): [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+No terminal and no Node to install: the extension contains the application and uses the Node built into Claude Desktop. To browse your job ads in the dashboard, ask Claude to open it (`open_dashboard` tool). Details: [docs/utiliser-avec-une-ia.en.md](docs/utiliser-avec-une-ia.en.md#claude-desktop).
 
 ### With Claude Code or another agent
 
@@ -171,7 +171,7 @@ To try it without touching an existing installation: another folder, another por
 
 ### With Claude Desktop or another MCP client
 
-The MCP server (`vigie-emploi mcp`) is enough for an AI with no access to your files and no terminal, such as Claude Desktop: it creates the workspace (`initialize_workspace`), provides the instructions as prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), reads the documents you drop in, writes the context, application files and résumés, generates the PDFs and starts the dashboard (`open_dashboard`). With Claude Desktop, the simplest route is the `.mcpb` extension ([One-click install](#one-click-install-claude-desktop)); you can also declare the server by hand in `claude_desktop_config.json`, with your workspace folder in `VIGIE_EMPLOI_DATA` and `VIGIE_EMPLOI_LANGUAGE` set to `en`. Details: [docs/utiliser-avec-une-ia.md](docs/utiliser-avec-une-ia.md#claude-desktop).
+The MCP server (`vigie-emploi mcp`) is enough for an AI with no access to your files and no terminal, such as Claude Desktop: it creates the workspace (`initialize_workspace`), provides the instructions as prompts (`onboarding`, `process-emails`, `prepare-go`, `targeted-cv`), reads the documents you drop in, writes the context, application files and résumés, generates the PDFs and starts the dashboard (`open_dashboard`). With Claude Desktop, the simplest route is the `.mcpb` extension ([One-click install](#one-click-install-claude-desktop)); you can also declare the server by hand in `claude_desktop_config.json`, with your workspace folder in `VIGIE_EMPLOI_DATA` and `VIGIE_EMPLOI_LANGUAGE` set to `en`. Details: [docs/utiliser-avec-une-ia.en.md](docs/utiliser-avec-une-ia.en.md#claude-desktop).
 
 Building the extension (for a GitHub release): `npm run mcpb` builds the application, prepares `build/mcpb/vigie-emploi/` (compiled JavaScript, interface, templates, production `node_modules` only), validates `mcpb/manifest.json` and packs everything into `build/vigie-emploi-<version>.mcpb` (about 7 MB) with the official `@anthropic-ai/mcpb` tool. Attach that file to the release.
 
@@ -212,7 +212,7 @@ To designate it, in order of precedence:
 | `rejectedEmployers` | Regular expressions: refused employers (title, company, start of description) | `[]` |
 | `terminal` | Command opening a terminal with the agent (dashboard buttons); `{folder}` and `{prompt}` are substituted | Windows: `["wt.exe", "-d", "{folder}", "claude", "{prompt}"]`; elsewhere: none |
 | `mail` | Mailbox fetched over IMAP: `user`, `host`, `port`, `secure`, `folder`, `sinceDays`, `markSeen` (written by the "Mailbox" panel or `vigie-emploi mail setup`; the password is never there) | none |
-| `language` | Language of the dashboard, the CLI messages, the MCP server texts shown to the user (what only the AI reads is in English) and the generated tracking file: `fr` or `en` (written by `init --language`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser. Another language can be added without touching the logic: [docs/ajouter-une-langue.md](docs/ajouter-une-langue.md) (in French) | `fr` |
+| `language` | Language of the dashboard, the CLI messages, the MCP server texts shown to the user (what only the AI reads is in English) and the generated tracking file: `fr` or `en` (written by `init --language`, which also picks the language of the AI instructions); the selector in the dashboard header takes precedence, for that browser. Another language can be added without touching the logic: [docs/ajouter-une-langue.en.md](docs/ajouter-une-langue.en.md) | `fr` |
 
 Environment variables also recognised: `VIGIE_EMPLOI_CONFIG` (config file), `VIGIE_EMPLOI_DATABASE` (database), `VIGIE_EMPLOI_PORT`, `VIGIE_EMPLOI_LANGUAGE`, `VIGIE_EMPLOI_MAIL_PASSWORD` (mailbox password, instead of the keychain), `VIGIE_EMPLOI_BROWSER` (browser for the PDFs).
 
@@ -368,7 +368,7 @@ mcpb/, scripts/       Claude Desktop extension (manifest, build); scripts/demo/:
 docs/adr/             architecture decisions (in French)
 ```
 
-See also [`AGENTS.en.md`](AGENTS.en.md) (how an AI drives the application; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.md`](docs/utiliser-avec-une-ia.md) (connecting the MCP server), [`docs/ajouter-une-langue.md`](docs/ajouter-une-langue.md) (adding a language) and the architecture decisions in [`docs/adr/`](docs/adr/) (all in French).
+See also [`AGENTS.en.md`](AGENTS.en.md) (how an AI drives the application; French original: [`AGENTS.md`](AGENTS.md)), [`docs/utiliser-avec-une-ia.en.md`](docs/utiliser-avec-une-ia.en.md) (connecting the MCP server), [`docs/ajouter-une-langue.en.md`](docs/ajouter-une-langue.en.md) (adding a language) and the architecture decisions in [`docs/adr/`](docs/adr/) (in French).
 
 ## License
 

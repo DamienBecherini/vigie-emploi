@@ -30,6 +30,7 @@ const TO_COPY = [
   'examples',
   'AGENTS.md',
   'docs/utiliser-avec-une-ia.md',
+  'docs/utiliser-avec-une-ia.en.md',
   'vigie-emploi.config.example.json',
   'LICENSE',
   'README.md',

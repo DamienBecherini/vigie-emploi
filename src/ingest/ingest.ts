@@ -12,6 +12,8 @@ import { addEvent, dateEventFr, dayLocal } from '../core/events.ts';
 import { readEmail, type OfferEmail } from './eml.ts';
 import { extractJsonLd, downloadPage, type DetailJsonLd, type Downloader } from './jsonld.ts';
 import { t } from '../i18n/index.ts';
+import { fetchMailPerConfig, MailError, type MailErrorKind, type MailFetch } from '../mail/fetch.ts';
+import { secretStore, type SecretStore } from '../mail/secret.ts';
 
 export interface OptionsIngest {
   folderEmails: string;
@@ -57,6 +59,11 @@ export interface SummaryIngest {
    */
   confirmations: { file: string; subject: string; date: string | null; known_offers: { id: number; status: string; title: string }[] }[];
   detail: { added: OfferIngested[]; dismissed: OfferIngested[]; duplicates: OfferIngested[] };
+  /**
+   * IMAP fetch before the ingestion (null: no mailbox configured, or fetch not asked). On an error, the
+   * ingestion still reads the e-mails already in the inbox.
+   */
+  mail?: (Omit<MailFetch, 'files'> & { error?: undefined }) | { folder: string; error: MailErrorKind; message: string } | null;
 }
 
 function patternExclusion(text: string, patterns: RegExp[]): string | null {
@@ -242,18 +249,42 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
   return summary;
 }
 
-/** Ingestion with the settings of the configuration (CLI and MCP). */
-export function ingestPerConfig(
+/** IMAP fetch of the configured mailbox, its error turned into a line of the summary. */
+async function fetchForIngest(
   db: Database,
-  config: Pick<Config, 'emails' | 'fetchJsonLd' | 'excludedTitles' | 'rejectedEmployers'>,
-  o: { keep?: boolean; download?: boolean; folderEmails?: string } = {},
+  config: Pick<Config, 'emails' | 'mail'>,
+  store: SecretStore,
+  inbox: string,
+): Promise<SummaryIngest['mail']> {
+  if (!config.mail) return null;
+  try {
+    const r = await fetchMailPerConfig(db, { mail: config.mail, emails: inbox }, store);
+    if (!r) return null;
+    const { files: _files, ...rest } = r;
+    return rest;
+  } catch (e) {
+    const err = e instanceof MailError ? e : new MailError('other', (e as Error).message);
+    return { folder: config.mail.folder, error: err.kind, message: err.message };
+  }
+}
+
+/** Ingestion with the settings of the configuration (CLI and MCP): IMAP fetch first if a mailbox is configured. */
+export async function ingestPerConfig(
+  db: Database,
+  config: Pick<Config, 'emails' | 'fetchJsonLd' | 'excludedTitles' | 'rejectedEmployers'> & Partial<Pick<Config, 'mail'>>,
+  o: { keep?: boolean; download?: boolean; folderEmails?: string; mail?: boolean; store?: SecretStore } = {},
 ): Promise<SummaryIngest> {
-  return ingest(db, {
-    folderEmails: o.folderEmails ?? config.emails,
+  const inbox = o.folderEmails ?? config.emails;
+  const mail =
+    o.mail === false || !config.mail ? null : await fetchForIngest(db, { emails: inbox, mail: config.mail }, o.store ?? secretStore(), inbox);
+  const summary = await ingest(db, {
+    folderEmails: inbox,
     keep: Boolean(o.keep),
     download: o.download === false ? false : config.fetchJsonLd,
     excludedTitles: config.excludedTitles,
     rejectedEmployers: config.rejectedEmployers,
     pause: 400,
   });
+  summary.mail = mail;
+  return summary;
 }

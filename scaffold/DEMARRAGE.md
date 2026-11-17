@@ -96,7 +96,7 @@ Après chaque modification, relis la grille (`rubric`, ou `{{CMD}} rubric --json
 Explique comment alimenter le tri des offres :
 
 1. Créer des alertes sur les sites d'emploi (LinkedIn, Indeed, Hellowork, Free-Work, Glassdoor…) avec ses mots-clés.
-2. Faire arriver les alertes en `.eml` dans `emails/`. **Propose de l'automatiser maintenant**, c'est ce qui rend l'outil vraiment pratique : demande quelle messagerie il utilise et guide-le pas à pas avec [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (Thunderbird et FiltaQuilla ; messagerie web ou Outlook : passer par Thunderbird). S'il préfère plus tard, note-le dans `_A-FAIRE.md` ; le glisser-déposer à la main reste possible.
+2. Faire arriver les alertes dans l'application. **Propose de l'automatiser maintenant**, c'est ce qui rend l'outil vraiment pratique : demande quelle messagerie il utilise et guide-le pas à pas avec [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (un dossier et un filtre dans sa messagerie, puis la connexion de la boîte dans le tableau de bord, bouton « Boîte mail » ; ne demande jamais son mot de passe dans la conversation). S'il préfère plus tard, note-le dans `_A-FAIRE.md` ; le glisser-déposer des alertes dans `emails/` reste possible.
 3. Regarde tout de suite si `emails/` contient des `.eml` (`list_files` ou lecture du dossier). S'il y en a : propose de les traiter maintenant, c'est le but de tout ce qui précède. Sinon : propose à l'utilisateur d'y glisser dès maintenant quelques alertes déjà reçues, pour faire un premier tri ensemble avant de clore.
 
 ## 9. Fin

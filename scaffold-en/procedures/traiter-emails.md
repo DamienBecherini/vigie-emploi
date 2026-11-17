@@ -11,7 +11,7 @@ A connected browser (Claude in Chrome or similar) lets you read the LinkedIn, In
 
 ## 1. Ingest
 
-`ingest_emails`. Report in one sentence: new job ads, duplicates, ads discarded by title, ads to read. Then pass on to the user what `to_tell` says: **the processed `.eml` files have been deleted from `emails/`** (they need to know), and every ingestion error (`errors`: description not read, page without "JSON-LD" data, unreadable link…), with the job ad concerned; a description that could not be read does not stop you reading the ad in the browser.
+`ingest_emails`. Report in one sentence: new job ads, duplicates, ads discarded by title, ads to read. Then pass on to the user what `to_tell` says: if a mailbox is connected, how many e-mails were fetched from it, or why it could not be (password refused, folder not found: help fix it, never asking for the password in the conversation); **the processed `.eml` files have been deleted from `emails/`** (they need to know), and every ingestion error (`errors`: description not read, page without "JSON-LD" data, unreadable link…), with the job ad concerned; a description that could not be read does not stop you reading the ad in the browser.
 
 **Application acknowledgements** (`confirmations` in the result: "Your application has been submitted", "Thank you for applying"…): these are not job ads. For each one, check that the application is recorded as sent (`known_offers`); otherwise point it out to the user and record it with them (`save_application` with `sent_at`). Never present them as new job ads. **E-mails not deleted** (error "e-mail read but not deleted"): point it out, they would come back with the next batch.
 

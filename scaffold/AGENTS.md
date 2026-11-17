@@ -9,7 +9,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 1. **Premier lancement** (`_CONTEXTE.md` encore à trous) : suivre [`DEMARRAGE.md`](DEMARRAGE.md), rien d'autre.
 2. Sinon, lire **[`_CONTEXTE.md`](_CONTEXTE.md)** avant toute analyse d'offre ou rédaction : positionnement, faits, ce qui est revendicable ou non, interdits.
-3. **Démarrage fait, nouvelle session sans demande précise** : fais le point en une ligne et propose l'action utile, sans attendre qu'on te la demande : des `.eml` dans `emails/` → les traiter ; des offres en `go` sans dossier → préparer les candidatures ; des échéances en retard ou proches (`deadlines`) → les rappeler.
+3. **Démarrage fait, nouvelle session sans demande précise** : fais le point en une ligne et propose l'action utile, sans attendre qu'on te la demande : des `.eml` dans `emails/`, ou une boîte mail connectée (section `mail` de `vigie-emploi.config.json`) → traiter les e-mails (`ingest_emails` relève d'abord la boîte) ; des offres en `go` sans dossier → préparer les candidatures ; des échéances en retard ou proches (`deadlines`) → les rappeler.
 4. Quand tu crées ou modifies un document que l'utilisateur doit lire, valider ou envoyer (CV, dossier de candidature, message), donne-lui son **lien cliquable** en chemin absolu (`file:///…`) ; pour un CV, le PDF et le Markdown (`generate_cv` les renvoie dans `links`).
 5. L'état des offres et des candidatures est dans la base : elle fait foi. `candidatures/_SUIVI.md` en est généré : ne jamais l'éditer à la main.
 
@@ -59,7 +59,7 @@ Ce dossier est l'espace de travail d'une personne qui cherche un emploi ou des m
 
 ## Alertes e-mail
 
-Les e-mails d'alertes (`.eml`) arrivent dans `emails/`. Le flux (ingestion, lecture, notation avec la grille `profil/grille.json`, compte rendu, « go ») : [`procedures/traiter-emails.md`](procedures/traiter-emails.md). Ne jamais donner la note finale d'une offre : noter les critères, l'application calcule. Ne modifier la grille qu'à la demande de l'utilisateur, après un essai dont tu lui montres l'impact.
+Les e-mails d'alertes (`.eml`) arrivent dans `emails/` (déposés à la main ou par un filtre), ou sont relevés dans la boîte mail connectée au début de chaque ingestion ([`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md)). Le flux (ingestion, lecture, notation avec la grille `profil/grille.json`, compte rendu, « go ») : [`procedures/traiter-emails.md`](procedures/traiter-emails.md). Ne jamais donner la note finale d'une offre : noter les critères, l'application calcule. Ne modifier la grille qu'à la demande de l'utilisateur, après un essai dont tu lui montres l'impact.
 
 ## Garder le contexte léger
 

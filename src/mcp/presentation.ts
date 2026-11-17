@@ -1,5 +1,7 @@
 // Formatting of the large responses of the MCP server: an AI without a file reading tool (Claude Desktop)
 // must be able to read each response in full. Target: less than 25,000 characters per response.
+import { MailError } from '../mail/fetch.ts';
+import { messageMailError } from '../mail/settings.ts';
 import type { Impact } from '../core/rubric-storage.ts';
 import type { DetailOffer } from '../core/offers.ts';
 import type { LineList } from '../core/queries.ts';
@@ -75,9 +77,15 @@ const first =<T>(l: T[], n: number) => ({ list: l.slice(0, n), rest: Math.max(0,
  * Response of ingest_emails: counters, then what to tell the user (deleted e-mails, errors to
  * report), and a capped detail (the full list of the offers to read is in offers_to_read).
  */
-export function presentIngestion(r: SummaryIngest, o: { keep?: boolean } = {}): Record<string, unknown> {
+export function presentIngestion(r: SummaryIngest, o: { keep?: boolean; host?: string } = {}): Record<string, unknown> {
   const toTell: string[] = [];
   const read = r.files - r.without_offer.length;
+  if (r.mail?.error) {
+    toTell.push(tu('presentation.mailError', { message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: o.host ?? '', folder: r.mail.folder }) }));
+  } else if (r.mail) {
+    toTell.push(tu('presentation.mailFetched', { n: String(r.mail.fetched), folder: r.mail.folder }));
+    if (r.mail.more) toTell.push(tu('presentation.mailMore'));
+  }
   if (r.files_deleted > 0) {
     toTell.push(
       tu('presentation.presentIngestion', { files_deleted: String(r.files_deleted) }),
@@ -115,6 +123,7 @@ export function presentIngestion(r: SummaryIngest, o: { keep?: boolean } = {}): 
     dismissed: r.dismissed,
     to_read: r.to_read,
     with_description: r.with_description,
+    mail: r.mail ?? null,
     to_tell: toTell,
     errors: r.errors.map((e) => ({
       ...e,

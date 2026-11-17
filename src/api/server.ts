@@ -7,6 +7,8 @@ import { serve } from '@hono/node-server';
 import type { Config } from '../core/config.ts';
 import { APP_ROOT } from '../core/config.ts';
 import type { Database } from '../db/database.ts';
+import { routesMail } from './mail.ts';
+import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers, meta, type OptionsList } from '../core/queries.ts';
 import {
@@ -119,6 +121,8 @@ export interface OptionsApp {
   opener?: OpenerFolder;
   /** Does the request come from the server's machine? (by default: address of the connection). */
   isLocal?: (c: Context) => boolean;
+  /** Keychain of the mailbox password (by default: the system's). */
+  store?: () => SecretStore;
 }
 
 /** Does a request come from another origin (third-party web page, form)? */
@@ -134,7 +138,7 @@ function originForeign(origin: string | undefined, site: string | undefined): bo
 
 export function createApp(
   db: Database,
-  config: Pick<Config, 'dataDir'> & Partial<Pick<Config, 'emails' | 'terminal' | 'language'>>,
+  config: Pick<Config, 'dataDir'> & Partial<Pick<Config, 'emails' | 'terminal' | 'language' | 'file'>>,
   idle: Idle = new Idle(0),
   options: OptionsApp = {},
 ): Hono {
@@ -217,6 +221,7 @@ export function createApp(
       local_machine: isLocal(c),
     }),
   );
+  routesMail(app, { db, file: config.file ?? null, emails, store: options.store ?? (() => secretStore()) });
   app.get('/api/meta', (c) => c.json({ ...meta(db), possibleStatuses: STATUSES }));
   app.get('/api/offers', (c) => c.json(listOffers(db, optionsFromRequest(c.req.query()))));
 

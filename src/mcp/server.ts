@@ -8,7 +8,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { ErrorConfig, APP_ROOT, variable } from '../core/config.ts';
+import { ErrorConfig, APP_ROOT, variable, readMailSettings } from '../core/config.ts';
 import type { OptionsConfig } from '../core/config.ts';
 import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
@@ -673,7 +673,7 @@ export function createServerMcp(state: StateMcp): McpServer {
       annotations: { destructiveHint: true, openWorldHint: true },
     },
     on(async (a) =>
-      presentIngestion(await ingestPerConfig(database(), state.config, { keep: a.keep, download: a.download }), { keep: a.keep }),
+      presentIngestion(await ingestPerConfig(database(), { ...state.config, mail: readMailSettings(state.config.file) }, { keep: a.keep, download: a.download }), { keep: a.keep, host: readMailSettings(state.config.file)?.host }),
     ),
   );
 

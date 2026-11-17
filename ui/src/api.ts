@@ -239,6 +239,46 @@ export interface StateWork {
 
 export type ActionAgent = 'process-emails' | 'prepare-go';
 
+export type SecretBackend = 'environment' | 'dpapi' | 'keychain' | 'secret-service' | 'file';
+
+export interface StateMail {
+  configured: boolean;
+  user: string | null;
+  host: string | null;
+  port: number | null;
+  folder: string | null;
+  sinceDays: number | null;
+  markSeen: boolean | null;
+  password: boolean;
+  backend: SecretBackend;
+  fetched_at: string | null;
+}
+
+export interface ProviderMail {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  auth: 'password' | 'app-password' | 'oauth';
+  help?: string;
+  domains: string[];
+}
+
+export interface InputMail {
+  address: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  password?: string;
+  folder?: string;
+  sinceDays?: number;
+  markSeen?: boolean;
+}
+
+/** Mailbox operations answer ok: false (with a message for the user) instead of an HTTP error. */
+export type ReplyMail<T> = ({ ok: true } & T) | { ok: false; kind: string; error: string };
+
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, {
     ...init,
@@ -285,6 +325,11 @@ export const api = {
   apply: (id: number) =>
     call<{ command: string; offer: DetailOffer }>(`/api/offers/${id}/apply`, { method: 'POST' }),
   work: () => call<StateWork>('/api/work'),
+  mail: () => call<{ ok: true; state: StateMail; config_file: boolean; providers: ProviderMail[] }>('/api/mail'),
+  mailFolders: (m: InputMail) => call<ReplyMail<{ folders: string[] }>>('/api/mail/folders', { method: 'POST', body: JSON.stringify(m) }),
+  saveMail: (m: InputMail) => call<ReplyMail<{ state: StateMail }>>('/api/mail', { method: 'PUT', body: JSON.stringify(m) }),
+  forgetMail: () => call<{ ok: true }>('/api/mail', { method: 'DELETE' }),
+  fetchMail: () => call<ReplyMail<{ fetched: number; more: boolean; folder: string }>>('/api/mail/fetch', { method: 'POST', body: '{}' }),
   launchAgent: (action: ActionAgent) => call<{ ok: true }>(`/api/work/${action}`, { method: 'POST', body: '{}' }),
   /** local_machine: the page is open on the server's machine (opening a folder in the explorer is then possible). */
   health: () => call<{ local_machine?: boolean }>('/api/health'),

@@ -97,36 +97,35 @@ Onboarding takes two sessions of about half an hour each.
 
 ## Automating alert intake
 
-The AI processes the alerts found in the workspace's `emails/` folder, as `.eml` files. You can drag the e-mails there by hand from your mail client, but the simplest way is a filter that does it each time mail is fetched.
+The AI processes the job alerts that reach the application. The simplest way: **the application fetches a folder of your mailbox itself** (IMAP), on Windows, macOS or Linux, without a mail client.
 
 1. Create **alerts** on the job sites you use (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…), with your keywords.
-2. Set up your mail client to **save each alert received as an `.eml` file in `emails/`**, then move it to a separate folder.
-3. Then ask your AI to "process the e-mails", or, with Claude Code, click "Process N e-mails" in the dashboard. Processed files are deleted from `emails/`.
+2. In your mailbox, create a **folder** (a label in Gmail), for example "Job alerts", and a **filter** that files the alerts in it (condition: the sender of each site).
+3. Connect the mailbox: **"Mailbox"** button of the dashboard, or `vigie-emploi mail setup` in a terminal. Address, password, choice of the folder.
+4. Then ask your AI to "process the e-mails": it fetches the folder, then sorts and scores the new offers.
 
-### Example with Thunderbird and FiltaQuilla
+The application only reads: nothing is deleted or moved in the mailbox, the fetched messages are only marked as read (`markSeen: false` to avoid it). Each message is fetched once; the first fetch is limited to the last 14 days.
 
-Thunderbird cannot save a message as a file from a filter; the [FiltaQuilla](https://addons.thunderbird.net/thunderbird/addon/filtaquilla/) add-on adds this action.
+| Provider | Password to type |
+| --- | --- |
+| Gmail, Yahoo, iCloud | an **app password** (two-step verification required; Gmail: https://myaccount.google.com/apppasswords) |
+| Most other providers | the usual password |
+| Outlook.com, Hotmail, Microsoft 365 | not supported yet: forward the alerts to another mailbox, or use a method below |
+| Other | the mailbox's, with the IMAP server given by your provider |
 
-**1. Install and configure FiltaQuilla**
+The password is handed to the system, never written in the workspace or in the configuration: encrypted for your Windows session (DPAPI, in `%APPDATA%\vigie-emploi`), macOS keychain, desktop keyring on Linux (Secret Service), or otherwise a file readable by you alone in `~/.config/vigie-emploi`. The `VIGIE_EMPLOI_MAIL_PASSWORD` variable replaces it when set. The settings (address, server, folder) go in the `mail` section of `vigie-emploi.config.json`.
 
-- Menu **Tools → Add-ons and Themes**, search for "FiltaQuilla" and install the add-on.
-- Open its **options** (Add-ons → FiltaQuilla → Options). In the list of actions, **enable "Save Message as File"**: it is disabled by default and does not appear in filters until it is.
+### Other methods
 
-**2. Create the filter**
+The AI also processes any `.eml` file dropped in the workspace's `emails/` folder:
 
-- Menu **Tools → Message Filters**, choose the account that receives the alerts, then **New**.
-- Name it, for example "Job alerts".
-- Choose **"Match any of the following"** and add a condition **From → contains → the sending address of the alerts** for each site (open an alert you received to find it).
-- Under **"Perform these actions"**:
-  1. **Save Message as File**: choose the `emails/` folder of your workspace (for example `~/my-search/emails`);
-  2. *(optional)* **Move Message to** a subfolder, for example "Processed alerts": you can then see in Thunderbird what has already been passed on.
-- Let the filter run on **Getting New Mail**. For alerts already received: select the filter, then **Run Now** on the inbox.
-
-With another mail client the idea is the same: any rule or script able to save a message as `.eml` into `emails/` will do.
+- **drag** the alerts from your mail client, once a day is enough;
+- **Thunderbird and the [FiltaQuilla](https://addons.thunderbird.net/thunderbird/addon/filtaquilla/) add-on**: enable the "Save Message as File" action in FiltaQuilla's options, then create a filter (Tools → Message Filters) that, for the alert senders, saves the message in `emails/` when getting new mail;
+- any other rule or script able to save a message as `.eml` into `emails/`.
 
 ## Privacy
 
-Your workspace (résumés, context, database, applications) stays on your disk. Nothing is sent anywhere except to the AI you use. The application only downloads the public pages of Hellowork and Free-Work offers; it never reads LinkedIn, Indeed or Glassdoor by script.
+Your workspace (résumés, context, database, applications) stays on your disk. Nothing is sent anywhere except to the AI you use. The application only downloads the public pages of Hellowork and Free-Work offers; it never reads LinkedIn, Indeed or Glassdoor by script. If you connect your mailbox, it only reads the chosen folder, directly from your computer, and keeps the password in the system keychain.
 
 ## Reference
 
@@ -224,7 +223,8 @@ All commands accept `--json` (stable output for an AI), `--data` and `--config`.
 
 | Command | Effect |
 |---|---|
-| `vigie-emploi ingest [--keep] [--no-fetch] [--emails <folder>]` | Reads the `.eml` files, adds new offers (`new`, or `dismissed` with the reason for excluded titles), then **deletes the processed e-mails** (unless `--keep`). Summary: new, duplicates, discarded, to read |
+| `vigie-emploi mail [setup|status|fetch|forget]` | Mailbox fetched over IMAP (see [Automating alert intake](#automating-alert-intake)): `setup` asks for the address, password and folder (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`); `fetch` fetches without ingesting; `forget` removes the settings and the password |
+| `vigie-emploi ingest [--keep] [--no-fetch] [--no-mail] [--emails <folder>]` | Fetches the mailbox first when one is configured (unless `--no-mail`), then reads the `.eml` files, adds new offers (`new`, or `dismissed` with the reason for excluded titles), then **deletes the processed e-mails** (unless `--keep`). Summary: new, duplicates, discarded, to read |
 | `vigie-emploi import-history` | Imports `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` and the "Suivi" sections of `candidatures/*/dossier-candidature.md` (journal, see below); read-only, idempotent, with a report of unrecognised lines. A `_SUIVI.md` generated by vigie-emploi is not re-read |
 | `vigie-emploi list [filters]` | Paginated list: `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (received), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order`; multi-level sort: `--sort received_at:desc,score:desc` |
 | `vigie-emploi show <id>` | Details: description, scores, status history, tags, application |

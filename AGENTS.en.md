@@ -57,7 +57,7 @@ A job ad already being followed that reappears in an alert or a batch keeps its 
 
 ## "Process the e-mails" flow (CLI)
 
-1. `vigie-emploi ingest --json`: reads `<data>/emails/*.eml`, adds the new job ads, deletes the processed e-mails. Note `added`, `duplicates`, `dismissed`, `to_read` and `errors`.
+1. `vigie-emploi ingest --json`: fetches the mailbox when one is configured (`mail` in the result), reads `<data>/emails/*.eml`, adds the new job ads, deletes the processed e-mails. Note `added`, `duplicates`, `dismissed`, `to_read` and `errors`.
 2. `vigie-emploi to-read --json`: job ads to process without a score. `reading` field:
    - `description`: the description is in the `description` field (truncated at 2,500 characters; `--full` for all of it);
    - `browser`: open `url` in the user's browser;

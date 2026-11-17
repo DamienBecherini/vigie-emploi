@@ -11,7 +11,7 @@ The file and folder names of the workspace stay in French because the applicatio
 
 1. **First run** (`_CONTEXTE.md` still full of gaps): follow [`DEMARRAGE.md`](DEMARRAGE.md) and nothing else.
 2. Otherwise, read **[`_CONTEXTE.md`](_CONTEXTE.md)** before analysing any job ad or writing anything: positioning, facts, what can and cannot be claimed, things never to write.
-3. **Onboarding done, new session without a specific request**: give a one-line status and suggest the useful action, without waiting to be asked: `.eml` files in `emails/` → process them; ads in `go` without an application folder → prepare the applications; overdue or upcoming deadlines (`deadlines`) → remind the user.
+3. **Onboarding done, new session without a specific request**: give a one-line status and suggest the useful action, without waiting to be asked: `.eml` files in `emails/`, or a connected mailbox (`mail` section of `vigie-emploi.config.json`) → process the e-mails (`ingest_emails` fetches the mailbox first); ads in `go` without an application folder → prepare the applications; overdue or upcoming deadlines (`deadlines`) → remind the user.
 4. When you create or change a document the user must read, approve or send (CV, application file, message), give them its **clickable link** as an absolute path (`file:///…`); for a CV, both the PDF and the Markdown (`generate_cv` returns them in `links`).
 5. The state of the job ads and applications lives in the database, which is the source of truth. `candidatures/_SUIVI.md` is generated from it: never edit it by hand.
 
@@ -61,7 +61,7 @@ The file and folder names of the workspace stay in French because the applicatio
 
 ## E-mail alerts
 
-Job alert e-mails (`.eml`) arrive in `emails/`. The flow (ingestion, reading, scoring with the grid `profil/grille.json`, report, "go"): [`procedures/traiter-emails.md`](procedures/traiter-emails.md). Never give a job ad's final score: score the criteria and let the application calculate it. Only change the grid when the user asks, after a trial run whose impact you show them.
+Job alert e-mails (`.eml`) arrive in `emails/` (dropped by hand or by a filter), or are fetched from the connected mailbox at the start of each ingestion ([`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md)). The flow (ingestion, reading, scoring with the grid `profil/grille.json`, report, "go"): [`procedures/traiter-emails.md`](procedures/traiter-emails.md). Never give a job ad's final score: score the criteria and let the application calculate it. Only change the grid when the user asks, after a trial run whose impact you show them.
 
 ## Keep the context lean
 

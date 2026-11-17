@@ -95,36 +95,35 @@ Le démarrage se fait en deux sessions d'environ une demi-heure chacune.
 
 ## Automatiser la réception des alertes
 
-L'IA traite les alertes qui se trouvent dans le dossier `emails/` de l'espace de travail, au format `.eml`. Vous pouvez y glisser les e-mails à la main depuis votre messagerie, mais le plus simple est un filtre qui le fait à chaque relève.
+L'IA traite les alertes d'offres qui arrivent dans l'application. Le plus simple : **l'application relève elle-même un dossier de votre boîte mail** (IMAP), sur Windows, macOS ou Linux, sans logiciel de messagerie.
 
 1. Créez des **alertes** sur les sites d'emploi que vous utilisez (LinkedIn, Indeed, Glassdoor, Hellowork, Free-Work…), avec vos mots-clés.
-2. Configurez votre messagerie pour **enregistrer chaque alerte reçue en fichier `.eml` dans `emails/`**, puis la ranger dans un dossier à part.
-3. Demandez ensuite à votre IA de « traiter les e-mails » (ou cliquez sur « Traiter les e-mails » dans le tableau de bord, avec Claude Code). Les fichiers traités sont supprimés de `emails/`.
+2. Dans votre messagerie, créez un **dossier** (un libellé dans Gmail), par exemple « Alertes emploi », et un **filtre** qui y range les alertes (condition : l'expéditeur de chaque site).
+3. Connectez la boîte : bouton **« Boîte mail »** du tableau de bord, ou `vigie-emploi mail setup` dans un terminal. Adresse, mot de passe, choix du dossier.
+4. Demandez ensuite à votre IA de « traiter les e-mails » : elle relève le dossier, puis trie et note les nouvelles offres.
 
-### Exemple avec Thunderbird et FiltaQuilla
+L'application ne fait que lire : rien n'est supprimé ni déplacé dans la boîte, les messages relevés sont seulement marqués comme lus (`markSeen: false` pour l'éviter). Chaque message n'est relevé qu'une fois ; la première relève se limite aux 14 derniers jours.
 
-Thunderbird ne sait pas enregistrer un message en fichier depuis un filtre ; l'extension [FiltaQuilla](https://addons.thunderbird.net/thunderbird/addon/filtaquilla/) ajoute cette action.
+| Messagerie | Mot de passe à saisir |
+| --- | --- |
+| Gmail, Yahoo, iCloud | un **mot de passe d'application** (validation en deux étapes requise ; Gmail : https://myaccount.google.com/apppasswords) |
+| Orange, Free, SFR, La Poste, GMX | le mot de passe habituel |
+| Outlook.com, Hotmail, Microsoft 365 | pas encore géré : faites suivre les alertes vers une autre boîte, ou utilisez une méthode ci-dessous |
+| Autre | celui de la boîte, avec le serveur IMAP indiqué par votre fournisseur |
 
-**1. Installer et configurer FiltaQuilla**
+Le mot de passe est confié au système, jamais écrit dans l'espace de travail ni dans la configuration : chiffré pour votre session Windows (DPAPI, dans `%APPDATA%\vigie-emploi`), trousseau de macOS, trousseau du bureau sous Linux (Secret Service), ou à défaut un fichier lisible par vous seul dans `~/.config/vigie-emploi`. La variable `VIGIE_EMPLOI_MAIL_PASSWORD` le remplace si elle est définie. Les réglages (adresse, serveur, dossier) vont dans la section `mail` de `vigie-emploi.config.json`.
 
-- Menu **Outils → Modules complémentaires et thèmes**, recherchez « FiltaQuilla » et installez l'extension.
-- Ouvrez ses **options** (Modules complémentaires → FiltaQuilla → Options). Dans la liste des actions, **activez « Save Message as File »** (enregistrer le message comme fichier) : elle est désactivée par défaut et n'apparaît pas dans les filtres tant qu'elle ne l'est pas.
+### Autres méthodes
 
-**2. Créer le filtre**
+L'IA traite aussi tout fichier `.eml` déposé dans le dossier `emails/` de l'espace de travail :
 
-- Menu **Outils → Filtres de messages**, choisissez le compte qui reçoit les alertes, puis **Nouveau**.
-- Nommez-le, par exemple « Alertes offres ».
-- Choisissez **« Remplir une des conditions suivantes »** et ajoutez une condition **Expéditeur → contient → l'adresse d'envoi des alertes** de chaque site (ouvrez une alerte reçue pour la relever).
-- Dans **« Exécuter ces actions »** :
-  1. **Save Message as File** : choisissez le dossier `emails/` de votre espace de travail (par exemple `~/ma-recherche/emails`) ;
-  2. *(facultatif)* **Déplacer le message vers** un sous-dossier, par exemple « Alertes traitées » : vous voyez ainsi dans Thunderbird ce qui a déjà été transmis.
-- Laissez le filtre s'appliquer à la **relève du courrier**. Pour les alertes déjà reçues : sélectionnez le filtre, puis **Exécuter maintenant** sur le dossier de réception.
-
-Avec une autre messagerie, l'idée est la même : toute règle ou tout script capable d'enregistrer un message au format `.eml` dans `emails/` convient.
+- **glisser-déposer** les alertes depuis votre messagerie, une fois par jour suffit ;
+- **Thunderbird et l'extension [FiltaQuilla](https://addons.thunderbird.net/thunderbird/addon/filtaquilla/)** : activez l'action « Save Message as File » dans les options de FiltaQuilla, puis créez un filtre (Outils → Filtres de messages) qui, pour les expéditeurs des alertes, enregistre le message dans `emails/` à chaque relève du courrier ;
+- tout autre règle ou script capable d'enregistrer un message au format `.eml` dans `emails/`.
 
 ## Confidentialité
 
-Votre espace de travail (CV, contexte, base, candidatures) reste sur votre disque. Rien n'est envoyé ailleurs que vers l'IA que vous utilisez. L'application ne télécharge que les pages publiques des offres Hellowork et Free-Work ; elle ne lit jamais LinkedIn, Indeed ni Glassdoor par script.
+Votre espace de travail (CV, contexte, base, candidatures) reste sur votre disque. Rien n'est envoyé ailleurs que vers l'IA que vous utilisez. L'application ne télécharge que les pages publiques des offres Hellowork et Free-Work ; elle ne lit jamais LinkedIn, Indeed ni Glassdoor par script. Si vous connectez votre boîte mail, elle ne lit que le dossier choisi, directement depuis votre ordinateur, et garde le mot de passe dans le trousseau du système.
 
 ## Référence
 
@@ -222,7 +221,8 @@ Toutes les commandes acceptent `--json` (sortie stable pour une IA), `--data` et
 
 | Commande | Effet |
 |---|---|
-| `vigie-emploi ingest [--keep] [--no-fetch] [--emails <dossier>]` | Lit les `.eml`, ajoute les nouvelles offres (`new`, ou `dismissed` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
+| `vigie-emploi mail [setup|status|fetch|forget]` | Boîte mail relevée en IMAP (voir [Automatiser la réception des alertes](#automatiser-la-réception-des-alertes)) : `setup` demande adresse, mot de passe et dossier (`--address`, `--host`, `--port`, `--insecure`, `--folder`, `--since-days`, `--no-mark-seen`, `--password-stdin`) ; `fetch` relève sans ingérer ; `forget` efface réglages et mot de passe |
+| `vigie-emploi ingest [--keep] [--no-fetch] [--no-mail] [--emails <dossier>]` | Relève d'abord la boîte mail si elle est configurée (sauf `--no-mail`), puis lit les `.eml`, ajoute les nouvelles offres (`new`, ou `dismissed` avec le motif pour les intitulés exclus), puis **supprime les e-mails traités** (sauf `--keep`). Résumé : nouvelles, doublons, écartées, à lire |
 | `vigie-emploi import-history` | Reprend `candidatures/_lots/*.json`, `candidatures/_ecartees.md`, `candidatures/_SUIVI.md` et les sections « Suivi » des `candidatures/*/dossier-candidature.md` (journal, voir plus bas) ; lecture seule, idempotent, avec un rapport des lignes non reconnues. Un `_SUIVI.md` généré par vigie-emploi n'est pas relu |
 | `vigie-emploi list [filtres]` | Liste paginée : `--status a,b`, `--score-min`, `--score-max`, `--unscored`, `--source`, `--tag`, `--from` / `--until` (réception), `--text`, `--contract`, `--remote`, `--applications`, `--page`, `--size`, `--sort`, `--order` ; tri sur plusieurs niveaux : `--sort received_at:desc,score:desc` |
 | `vigie-emploi show <id>` | Détail : description, notes, historique des statuts, tags, candidature |

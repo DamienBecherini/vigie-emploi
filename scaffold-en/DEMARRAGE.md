@@ -98,7 +98,7 @@ After each change, reread the grid (`rubric`, or `{{CMD}} rubric --json`): **the
 Explain how to feed the job-ad sorting:
 
 1. Set up alerts on job sites (LinkedIn, Indeed, Glassdoor, Reed, Otta…) with their keywords.
-2. Get the alerts into `emails/` as `.eml` files. **Offer to automate it now**, it is what makes the tool truly convenient: ask which mail client they use and guide them step by step with [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (Thunderbird and FiltaQuilla; webmail or Outlook: go through Thunderbird). If they prefer to do it later, note it in `_A-FAIRE.md`; dragging and dropping by hand is always possible.
+2. Get the alerts into the application. **Offer to automate it now**, it is what makes the tool truly convenient: ask which mail provider they use and guide them step by step with [`procedures/alertes-automatiques.md`](procedures/alertes-automatiques.md) (a folder and a filter in their mailbox, then the mailbox connection in the dashboard, "Mailbox" button; never ask for their password in the conversation). If they prefer to do it later, note it in `_A-FAIRE.md`; dragging the alerts into `emails/` is always possible.
 3. Check straight away whether `emails/` contains `.eml` files (`list_files` or reading the folder). If it does: offer to process them now, that is the point of everything above. If not: suggest that the user drops a few alerts they have already received into it right now, so that you can do a first sort together before wrapping up.
 
 ## 9. Wrap-up

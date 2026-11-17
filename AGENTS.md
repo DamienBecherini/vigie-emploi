@@ -57,7 +57,7 @@ Une offre déjà suivie qui réapparaît dans une alerte ou un lot garde son sta
 
 ## Flux « traite les e-mails » (CLI)
 
-1. `vigie-emploi ingest --json` : lit `<données>/emails/*.eml`, ajoute les nouvelles offres, supprime les e-mails traités. Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`.
+1. `vigie-emploi ingest --json` : relève la boîte mail si elle est configurée (`mail` dans le résultat), lit `<données>/emails/*.eml`, ajoute les nouvelles offres, supprime les e-mails traités. Relever `added`, `duplicates`, `dismissed`, `to_read`, `errors`.
 2. `vigie-emploi to-read --json` : offres à traiter sans note. Champ `reading` :
    - `description` : la description est dans le champ `description` (tronquée à 2 500 caractères ; `--full` pour tout) ;
    - `browser` : ouvrir `url` dans le navigateur de l'utilisateur ;

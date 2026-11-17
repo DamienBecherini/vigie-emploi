@@ -146,7 +146,7 @@ describe('standalone MCP server (in memory)', () => {
   });
 
   it('reads the text of a dropped PDF and returns an image as an image', async () => {
-    copyFileSync(join(ROOT, 'docs', 'exemples', 'CV-damien-becherini-sobre.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
+    copyFileSync(join(ROOT, 'docs', 'exemples', 'CV-damien-becherini-plain.pdf'), join(workspace, 'a-deposer', 'CV.pdf'));
     const pdf = text(await call('read_file', { path: 'a-deposer/CV.pdf' }));
     expect(pdf).toMatch(/PDF, 2 page\(s\), extracted text/);
     expect(pdf).toContain('Damien BECHERINI');

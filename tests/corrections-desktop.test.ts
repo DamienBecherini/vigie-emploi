@@ -9,7 +9,7 @@ import { APP_ROOT } from '../src/core/config.ts';
 
 describe('dropped PDF: the links are read', () => {
   it('returns the address hidden behind “GitHub” in a CV', async () => {
-    const r = await textPdf(readFileSync(join(APP_ROOT, 'docs', 'exemples', 'CV-damien-becherini-sobre.pdf')));
+    const r = await textPdf(readFileSync(join(APP_ROOT, 'docs', 'exemples', 'CV-damien-becherini-plain.pdf')));
     expect(r.links).toHaveLength(r.pages);
     expect(r.links[0]).toContain('https://github.com/DamienBecherini');
     expect(r.text[0]).toContain('GitHub');

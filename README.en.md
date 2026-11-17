@@ -41,21 +41,21 @@ e-mail alerts (.eml)  →  triage and scoring by the AI (your grid)  →  your "
 
 The application **calls no AI model**: your agent reads and writes, the application keeps the state (SQLite database, web dashboard, CLI, MCP server).
 
-![Dashboard: offers sorted by date then score, upcoming deadlines, statistics](docs/captures/tableau-de-bord.png)
+![Dashboard: offers sorted by date then score, upcoming deadlines, statistics](docs/captures/tableau-de-bord.en.png)
 
 *The dashboard (fictitious data, French interface): offers sorted by date received then by score, deadlines for the next seven days, applications by stage.*
 
-![Offer details: score breakdown criterion by criterion](docs/captures/detail-offre.png)
+![Offer details: score breakdown criterion by criterion](docs/captures/detail-offre.en.png)
 
 *Offer details: each criterion, its sub-score, its weight and its contribution to the final score, with the AI's justification.*
 
 ### Résumés
 
-Résumés are written in Markdown and rendered as two-page A4 PDFs, with three templates: "sobre" (serif), "moderne" (colour banner) and "compact" (single column, dense). The AI can also adapt the stylesheet to a model you show it.
+Résumés are written in Markdown and rendered as two-page A4 PDFs, with three templates: "plain" (serif), "modern" (colour banner) and "compact" (single column, dense). The AI can also adapt the stylesheet to a model you show it.
 
 <div align="center">
-<a href="docs/exemples/CV-damien-becherini-sobre.en.pdf"><img src="docs/captures/cv-sobre-en.png" alt="The author's résumé, “sobre” template (page 1 of the PDF)" width="32%"></a>
-<a href="docs/exemples/CV-damien-becherini-moderne.en.pdf"><img src="docs/captures/cv-moderne-en.png" alt="The author's résumé, “moderne” template (page 1 of the PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-plain.en.pdf"><img src="docs/captures/cv-plain-en.png" alt="The author's résumé, “plain” template (page 1 of the PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-modern.en.pdf"><img src="docs/captures/cv-modern-en.png" alt="The author's résumé, “modern” template (page 1 of the PDF)" width="32%"></a>
 <a href="docs/exemples/CV-damien-becherini-compact.en.pdf"><img src="docs/captures/cv-compact-en.png" alt="The author's résumé, “compact” template (page 1 of the PDF)" width="32%"></a>
 
 <em>My own résumé, written with vigie-emploi and rendered with each of the three templates (first page; click to open the full PDF). Markdown source: <a href="docs/exemples/CV-damien-becherini.en.md">docs/exemples/CV-damien-becherini.en.md</a>.</em>
@@ -334,6 +334,14 @@ npm run build       # typecheck + interface build
 npm run mcpb        # Claude Desktop extension: build/vigie-emploi-<version>.mcpb
 ```
 
+README screenshots and sample résumés (fictitious data, French and English):
+
+```sh
+node scripts/demo/demo.ts ../demo-en en                  # demo workspace (14 offers, applications, deadlines)
+node scripts/demo/captures.mjs ../demo-en en             # docs/captures/tableau-de-bord.en.png, detail-offre.en.png (after npm run build)
+bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf and docs/captures/cv-*.png (needs pypdfium2)
+```
+
 Layout:
 
 ```
@@ -353,9 +361,9 @@ src/i18n/             translation mechanism and texts of the CLI, the API and th
 src/export/           application tracking generation (Markdown)
 ui/                   React 19 + Vite + Tailwind CSS v4 + TanStack Table / Query interface (texts in ui/src/i18n/)
 scaffold/, scaffold-en/   workspace template copied by init (AI instructions, onboarding, sample résumé)
-templates/cv/          résumé templates ("sobre", "moderne", "compact")
+templates/cv/          résumé templates ("plain", "modern", "compact")
 examples/             sample scoring grids (French and English)
-mcpb/, scripts/       Claude Desktop extension (manifest, build)
+mcpb/, scripts/       Claude Desktop extension (manifest, build); scripts/demo/: demo workspace, screenshots, sample résumés
 docs/adr/             architecture decisions (in French)
 ```
 
@@ -363,4 +371,4 @@ See also [`AGENTS.en.md`](AGENTS.en.md) (driving by an AI; French original: [`AG
 
 ## License
 
-Code under the MIT license (see `LICENSE`). Résumé template fonts under the SIL Open Font License: Amiri ("sobre" template) and Source Sans 3 ("moderne" and "compact" templates); license text in each template's `fonts/` folder.
+Code under the MIT license (see `LICENSE`). Résumé template fonts under the SIL Open Font License: Amiri ("plain" template) and Source Sans 3 ("modern" and "compact" templates); license text in each template's `fonts/` folder.

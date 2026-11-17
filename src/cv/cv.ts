@@ -377,9 +377,9 @@ export const FOLDER_TEMPLATES = join(APP_ROOT, 'templates', 'cv');
 const DESCRIPTIONS_TEMPLATES: Partial<Record<Language, Record<string, string>>> = {
   en: {
     compact: '"compact" template — dense single-column CV, for long careers or a one-page CV.',
-    modern: '"moderne" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
+    modern: '"modern" template — 2-page A4 CV, sans-serif (Source Sans 3, SIL OFL licence, see fonts/OFL.txt).',
     plain:
-      '"sobre" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
+      '"plain" template — 2-page A4 CV: header with an optional round photo, contact details in three rows, two-column sections for skills, education and languages.',
   },
 };
 

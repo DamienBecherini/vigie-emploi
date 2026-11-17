@@ -49,11 +49,11 @@ L'application **n'appelle aucun modèle d'IA** : c'est votre agent qui lit et r�
 
 ### Les CV
 
-Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois gabarits fournis : « sobre » (à empattements), « moderne » (bandeau de couleur) et « compact » (une colonne, dense). L'IA peut aussi adapter la feuille de style à un modèle que vous lui montrez.
+Les CV s'écrivent en Markdown et sortent en PDF A4 de deux pages, avec trois gabarits fournis : `plain` (sobre, à empattements), `modern` (bandeau de couleur) et `compact` (une colonne, dense). L'IA peut aussi adapter la feuille de style à un modèle que vous lui montrez.
 
 <div align="center">
-<a href="docs/exemples/CV-damien-becherini-sobre.pdf"><img src="docs/captures/cv-sobre.png" alt="CV de l'auteur, gabarit « sobre » (page 1 du PDF)" width="32%"></a>
-<a href="docs/exemples/CV-damien-becherini-moderne.pdf"><img src="docs/captures/cv-moderne.png" alt="CV de l'auteur, gabarit « moderne » (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-plain.pdf"><img src="docs/captures/cv-plain.png" alt="CV de l'auteur, gabarit `plain` (page 1 du PDF)" width="32%"></a>
+<a href="docs/exemples/CV-damien-becherini-modern.pdf"><img src="docs/captures/cv-modern.png" alt="CV de l'auteur, gabarit `modern` (page 1 du PDF)" width="32%"></a>
 <a href="docs/exemples/CV-damien-becherini-compact.pdf"><img src="docs/captures/cv-compact.png" alt="CV de l'auteur, gabarit « compact » (page 1 du PDF)" width="32%"></a>
 
 <em>Mon propre CV, écrit avec vigie-emploi et rendu avec chacun des trois gabarits (première page ; cliquez pour ouvrir le PDF complet). Source Markdown : <a href="docs/exemples/CV-damien-becherini.md">docs/exemples/CV-damien-becherini.md</a>.</em>
@@ -332,6 +332,14 @@ npm run build       # typecheck + compilation de l'interface
 npm run mcpb        # extension Claude Desktop : build/vigie-emploi-<version>.mcpb
 ```
 
+Captures du README et CV d'exemple (données fictives, en français et en anglais) :
+
+```sh
+node scripts/demo/demo.ts ../demo-fr fr                  # espace de démonstration (14 offres, candidatures, échéances)
+node scripts/demo/captures.mjs ../demo-fr fr             # docs/captures/tableau-de-bord.png, detail-offre.png (après npm run build)
+bash scripts/demo/cv-exemples.sh                         # docs/exemples/*.pdf et docs/captures/cv-*.png (pypdfium2 requis)
+```
+
 Arborescence :
 
 ```
@@ -353,7 +361,7 @@ ui/                   interface React 19 + Vite + Tailwind CSS v4 + TanStack Tab
 scaffold/, scaffold-en/   modèle d'espace de travail copié par init (consignes de l'IA, démarrage, exemple de CV)
 templates/cv/          gabarits de CV (`plain`, `modern`, `compact`)
 examples/             grilles de notation d'exemple (française et anglaise)
-mcpb/, scripts/       extension Claude Desktop (manifeste, construction)
+mcpb/, scripts/       extension Claude Desktop (manifeste, construction) ; scripts/demo/ : espace de démo, captures, CV d'exemple
 docs/adr/             décisions d'architecture
 ```
 
@@ -361,4 +369,4 @@ Voir aussi [`AGENTS.md`](AGENTS.md) (pilotage par une IA), [`docs/utiliser-avec-
 
 ## Licence
 
-Code sous licence MIT (voir `LICENSE`). Polices des gabarits de CV sous licence SIL Open Font License : Amiri (gabarit « sobre ») et Source Sans 3 (gabarits « moderne » et « compact ») ; texte de la licence dans le dossier `fonts/` de chaque gabarit.
+Code sous licence MIT (voir `LICENSE`). Polices des gabarits de CV sous licence SIL Open Font License : Amiri (gabarit `plain`) et Source Sans 3 (gabarits `modern` et `compact` ») ; texte de la licence dans le dossier `fonts/` de chaque gabarit.

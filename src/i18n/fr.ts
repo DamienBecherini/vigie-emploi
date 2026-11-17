@@ -12,13 +12,13 @@ export const fr = {
 Usage : vigie-emploi <commande> [options]
 
 Commandes
-  init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--template sobre|moderne|compact] [--language fr|en]
+  init <dossier> [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
                         Crée un espace de travail (modèle, gabarit de CV, grille d'exemple, config, .mcp.json)
                         et affiche le prompt de démarrage à donner à l'IA ; --language : langue de l'interface,
                         de la CLI et du suivi (fr par défaut)
   count <fichier>       Nombre de caractères de chaque message à copier-coller du fichier (blocs entre
                         « ──── début … » et « ──── fin … »), ou du fichier entier s'il n'en a pas
-  templates             Gabarits de CV livrés (sobre, moderne, compact…)
+  templates             Gabarits de CV livrés (plain, modern, compact…)
   template <nom>        Installe ce gabarit dans cv/gabarit de l'espace (l'ancien est gardé à côté)
   cv <cv.md>… [--template <dossier>] [--capture]
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).

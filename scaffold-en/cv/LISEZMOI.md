@@ -27,7 +27,7 @@ Without a terminal (MCP-only client), the `generate_cv` tool does the same thing
 
 The template is in [`template/`](gabarit/): `gabarit.css`, the fonts, and an optional photo (`portrait.jpg`, `.png` or `.webp`). To change the look:
 
-- pick another bundled template: `{{CMD}} templates` (tool `list_templates`) lists them ("sobre", serif; "moderne", with a coloured band; "compact", single column), `{{CMD}} template <name>` (tool `choose_template`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
+- pick another bundled template: `{{CMD}} templates` (tool `list_templates`) lists them ("plain", serif; "modern", with a coloured band; "compact", single column), `{{CMD}} template <name>` (tool `choose_template`) installs it; the old one is kept in `cv/gabarit-<date>/` and the photo is carried over;
 
 - ask the AI: "adapt `cv/gabarit/gabarit.css` to this design", giving it a screenshot or a PDF of the look you want; it edits the stylesheet, regenerates the CV and checks the 2 pages;
 - or edit `gabarit.css` yourself (accent colour, font, margins).

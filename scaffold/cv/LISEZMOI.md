@@ -27,7 +27,7 @@ Sans terminal (client MCP seul), l'outil `generate_cv` fait la même chose. Le P
 
 Le gabarit est dans [`template/`](gabarit/) : `gabarit.css`, les polices, et une photo facultative (`portrait.jpg`, `.png` ou `.webp`). Pour changer l'apparence :
 
-- choisir un autre gabarit livré : `{{CMD}} templates` (outil `list_templates`) les liste (« sobre » à empattements, « moderne » avec bandeau de couleur, « compact » sur une colonne), `{{CMD}} template <nom>` (outil `choose_template`) l'installe ; l'ancien est gardé dans `cv/gabarit-<date>/` et la photo est reprise ;
+- choisir un autre gabarit livré : `{{CMD}} templates` (outil `list_templates`) les liste (`plain`, sobre, à empattements ; `modern`, avec bandeau de couleur ; `compact` sur une colonne), `{{CMD}} template <nom>` (outil `choose_template`) l'installe ; l'ancien est gardé dans `cv/gabarit-<date>/` et la photo est reprise ;
 
 - demander à l'IA : « adapte `cv/gabarit/gabarit.css` à ce modèle » en lui donnant une capture ou un PDF du rendu voulu ; elle modifie la feuille, régénère le CV et vérifie les 2 pages ;
 - ou modifier `gabarit.css` soi-même (couleur d'accent, police, marges).

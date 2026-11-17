@@ -13,13 +13,13 @@ Command and option names, statuses and event types are the same in every languag
 for example « list --status sent », « event 12 --type interview ».
 
 Commands
-  init <folder> [--port 4410] [--mcp-name vigie-emploi] [--template sobre|moderne|compact] [--language fr|en]
+  init <folder> [--port 4410] [--mcp-name vigie-emploi] [--template plain|modern|compact] [--language fr|en]
                         Creates a workspace (templates, résumé template, sample grid, config, .mcp.json)
                         and prints the starting prompt to give the AI; --language: language of the dashboard,
                         the CLI and the tracking file (fr by default)
   count <file>          Character count of each copy-paste message in the file (blocks between
                         « ──── début … » and « ──── fin … »), or of the whole file if it has none
-  templates             Bundled résumé templates (sobre, moderne, compact…)
+  templates             Bundled résumé templates (plain, modern, compact…)
   template <name>       Installs this template in the workspace's cv/gabarit (the old one is kept next to it)
   cv <cv.md>… [--template <folder>] [--capture]
                         Markdown résumé -> A4 PDF next to the .md, with the page count (target: 2).

@@ -166,7 +166,7 @@ describe('CV templates', () => {
     expect(readFileSync(join(workspace, 'cv', 'gabarit', 'gabarit.css'), 'utf8')).toContain('« compact »');
     writeFileSync(join(workspace, 'cv', 'gabarit', 'portrait.jpg'), 'x');
     const r = chooseTemplate(workspace, 'modern');
-    expect(readFileSync(join(r.folder, 'gabarit.css'), 'utf8')).toContain('« moderne »');
+    expect(readFileSync(join(r.folder, 'gabarit.css'), 'utf8')).toContain('« modern »');
     expect(existsSync(join(r.folder, 'portrait.jpg'))).toBe(true);
     expect(existsSync(join(r.old!, 'gabarit.css'))).toBe(true);
     expect(() => chooseTemplate(workspace, 'unknown')).toThrow(/inconnu/);

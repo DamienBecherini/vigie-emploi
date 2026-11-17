@@ -8,7 +8,8 @@ import { PROVIDERS } from '../mail/providers.ts';
 import type { SecretStore } from '../mail/secret.ts';
 import { mailState, messageMailError, saveMailSettings } from '../mail/settings.ts';
 
-interface Body {
+/** Body of the mailbox requests (folder list, save). */
+export interface Body {
   address?: string;
   host?: string;
   port?: number;

@@ -25,9 +25,15 @@ Commands
                         Markdown résumé -> A4 PDF next to the .md, with the page count (target: 2).
                         Template: --template, else the workspace's cv/gabarit/, else the application's;
                         --capture: PNG image of the rendering in <template>/apercu/ (visual check)
-  ingest [--keep] [--no-fetch] [--emails <folder>]
+  ingest [--keep] [--no-fetch] [--no-mail] [--emails <folder>]
                         Reads the .eml files of the inbox, adds the new offers,
-                        then deletes the processed e-mails (unless --keep)
+                        then deletes the processed e-mails (unless --keep); fetches the mailbox first when one
+                        is configured (--no-mail: do not fetch it)
+  mail [setup|status|fetch|forget]
+                        Mailbox read over IMAP (folder where a filter files the job alerts): setup asks for
+                        the address, the password (kept in the system keychain, never in the workspace) and
+                        the folder; options --address, --host, --port, --insecure, --folder, --since-days 14,
+                        --no-mark-seen, --password-stdin. fetch: fetches without ingesting
   import-history        Imports candidatures/_lots/*.json, _ecartees.md and _SUIVI.md if they exist (idempotent)
   list [filters]        Paginated list of offers
       --status a,b  --score-min N  --score-max N  --unscored  --source s1,s2  --tag t
@@ -140,6 +146,38 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'cli.ingest.acknowledgment': '  application acknowledgement (not an alert): {subject}{suite}',
   'cli.ingest.offerMissing': ' → offer not in the database',
   'cli.ingest.suite': 'Next: vigie-emploi to-read',
+  'cli.ingest.mail': 'Mailbox: {n} e-mail(s) fetched from "{folder}".',
+  'cli.ingest.mailMore': 'Mailbox: more messages are waiting; they will come with the next ingestion.',
+  'cli.ingest.mailError': 'Mailbox not fetched: {message}',
+  'cli.mail.notTty': 'Cannot type the password outside a terminal: use --password-stdin.',
+  'cli.mail.cancelled': 'Cancelled.',
+  'cli.mail.noConfigFile': 'No vigie-emploi.config.json file: create the workspace first (vigie-emploi init).',
+  'cli.mail.askAddress': 'E-mail address:',
+  'cli.mail.addressRequired': 'E-mail address required (--address).',
+  'cli.mail.oauth':
+    '{name} no longer accepts passwords over IMAP (Microsoft sign-in required), which is not supported yet. Meanwhile: forward your alerts to another mailbox, or drop the e-mails in emails/.',
+  'cli.mail.askHost': 'IMAP server (e.g. imap.example.com):',
+  'cli.mail.hostRequired': 'IMAP server required (--host).',
+  'cli.mail.provider': '{name}: {host}, port {port}.',
+  'cli.mail.appPassword':
+    '{name} needs an "app password" (16 characters), not the account password. Create it here; two-step verification must be on: {help}',
+  'cli.mail.askPassword': 'Password (nothing shows while you type):',
+  'cli.mail.passwordRequired': 'Empty password.',
+  'cli.mail.folders': 'Folders of the mailbox:',
+  'cli.mail.askFolder': 'Folder of the alerts (number or name):',
+  'cli.mail.folderRequired': 'Folder required (--folder).',
+  'cli.mail.folderUnknown': 'No folder "{folder}" in the mailbox. Folders: {folders}',
+  'cli.mail.saved':
+    'Mailbox saved: folder "{folder}" fetched at each ingestion (settings in {file}, password: {backend}). Remember the filter of your mailbox that files the job alerts in this folder.',
+  'cli.mail.notConfigured': 'No mailbox configured (vigie-emploi mail setup).',
+  'cli.mail.status': 'Mailbox: {user} on {host}:{port}, folder "{folder}"\nPassword: {password}\nLast fetch: {fetched}',
+  'cli.mail.passwordYes': 'stored ({backend})',
+  'cli.mail.passwordNo': 'missing (vigie-emploi mail setup)',
+  'cli.mail.never': 'never',
+  'cli.mail.fetched': '{n} e-mail(s) fetched from "{folder}", dropped in {inbox}. Next: vigie-emploi ingest',
+  'cli.mail.more': 'More messages are waiting: fetch again.',
+  'cli.mail.forgotten': 'Mailbox forgotten: settings and password removed (the messages stay in the mailbox).',
+  'cli.mail.subUnknown': 'Unknown subcommand "{sub}": setup, status, fetch or forget.',
 
   'cli.import.batches': 'Batches: {files} file(s), {inputs} item(s), {offers} offer(s) created, {scores} score(s).',
   'cli.import.register':
@@ -417,6 +455,17 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'core.import': 'apply (reopened after "{status}")',
   'core.sentAt': 'sent on {date}',
   'core.ingest.box': 'Inbox not found: {folder}',
+  'core.mail.error.no-password': 'no password stored for this mailbox (dashboard settings, or vigie-emploi mail setup).',
+  'core.mail.error.authentication':
+    'login refused by {host} (address or password). Gmail, Yahoo, iCloud: an app password is needed, not the account password. Detail: {message}',
+  'core.mail.error.folder': 'no folder "{folder}" in the mailbox (renamed or deleted?). Detail: {message}',
+  'core.mail.error.connection': 'cannot reach the server {host} (server address, network). Detail: {message}',
+  'core.mail.error.other': 'IMAP error: {message}',
+  'core.mail.backend.environment': 'VIGIE_EMPLOI_MAIL_PASSWORD variable',
+  'core.mail.backend.dpapi': 'encrypted for your Windows session',
+  'core.mail.backend.keychain': 'macOS keychain',
+  'core.mail.backend.secret-service': 'system keyring',
+  'core.mail.backend.file': 'file readable by you alone (no keyring available)',
   'core.ingest.seen': 'Seen again on {date} in a {source} alert: status unchanged',
   'core.ingest.withoutJsonLd': 'No JSON-LD JobPosting on the page',
   'core.ingest.readingImpossible': 'could not read the page: {message}',

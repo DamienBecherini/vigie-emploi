@@ -53,6 +53,9 @@ import { chooseTemplate, TEMPLATE_DEFAULT, generateCv, listTemplates, findBrowse
 import { decimal, defineLanguage, isLanguage, languageCurrent, LANGUAGES, t } from '../i18n/index.ts';
 import { labelLevel, labelStatus, labelType, messageFlag } from '../i18n/labels.ts';
 import { analyzePages } from '../cv/pages.ts';
+import { commandMail } from './mail.ts';
+import { messageMailError } from '../mail/settings.ts';
+import { MailError } from '../mail/fetch.ts';
 
 function help(): string {
   return t('cli.help', { statuses: STATUSES.join(', '), types: TYPES_EVENT.join('|') });
@@ -235,15 +238,34 @@ function withoutError<T>(fn: () => T): T {
 }
 
 const commands: Record<string, (args: string[]) => Promise<void> | void> = {
+  async mail(args) {
+    const { v, pos } = analyze(args, {
+      address: { type: 'string' },
+      host: { type: 'string' },
+      port: { type: 'string' },
+      insecure: { type: 'boolean' },
+      folder: { type: 'string' },
+      'since-days': { type: 'string' },
+      'mark-seen': { type: 'boolean' },
+      'password-stdin': { type: 'boolean' },
+    });
+    await commandMail(pos[0], v, context(v), json);
+  },
   async ingest(args) {
-    const { v } = analyze(args, { keep: { type: 'boolean' }, fetch: { type: 'boolean' }, emails: { type: 'string' } });
+    const { v } = analyze(args, { keep: { type: 'boolean' }, fetch: { type: 'boolean' }, mail: { type: 'boolean' }, emails: { type: 'string' } });
     const { config, db } = context(v);
     const r = await ingestPerConfig(db, config, {
       folderEmails: v.emails as string | undefined,
       keep: Boolean(v.keep),
       download: v.fetch === false ? false : undefined,
+      mail: v.mail !== false,
     });
     if (v.json) return json(r);
+    if (r.mail?.error) console.log(t('cli.ingest.mailError', { message: messageMailError(new MailError(r.mail.error, r.mail.message), { host: config.mail?.host ?? '', folder: r.mail.folder }) }));
+    else if (r.mail) {
+      console.log(t('cli.ingest.mail', { n: r.mail.fetched, folder: r.mail.folder }));
+      if (r.mail.more) console.log(t('cli.ingest.mailMore'));
+    }
     console.log(
       t('cli.ingest.summary', {
         files: r.files,

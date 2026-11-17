@@ -24,9 +24,15 @@ Commandes
                         CV Markdown -> PDF A4 à côté du .md, avec le nombre de pages (cible : 2).
                         Gabarit : --template, sinon cv/gabarit/ de l'espace, sinon celui de l'application ;
                         --capture : image PNG du rendu dans <gabarit>/apercu/ (contrôle visuel)
-  ingest [--keep] [--no-fetch] [--emails <dossier>]
+  ingest [--keep] [--no-fetch] [--no-mail] [--emails <dossier>]
                         Lit les .eml de la boîte de réception, ajoute les nouvelles offres,
-                        puis supprime les e-mails traités (sauf --keep)
+                        puis supprime les e-mails traités (sauf --keep) ; relève d'abord la boîte mail si elle
+                        est configurée (--no-mail : ne pas la relever)
+  mail [setup|status|fetch|forget]
+                        Boîte mail lue en IMAP (dossier où un filtre range les alertes d'offres) : setup
+                        demande l'adresse, le mot de passe (gardé dans le trousseau du système, jamais dans
+                        l'espace) et le dossier ; options --address, --host, --port, --insecure, --folder,
+                        --since-days 14, --no-mark-seen, --password-stdin. fetch : relève sans ingérer
   import-history        Reprend candidatures/_lots/*.json, _ecartees.md et _SUIVI.md s'ils existent (idempotent)
   list [filtres]        Liste paginée des offres
       --status a,b  --score-min N  --score-max N  --unscored  --source s1,s2  --tag t
@@ -144,6 +150,38 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'cli.ingest.acknowledgment': '  accusé de candidature (pas une alerte) : {subject}{suite}',
   'cli.ingest.offerMissing': ' → offre absente de la base',
   'cli.ingest.suite': 'Suite : vigie-emploi to-read',
+  'cli.ingest.mail': 'Boîte mail : {n} e-mail(s) relevé(s) dans « {folder} ».',
+  'cli.ingest.mailMore': 'Boîte mail : d’autres messages attendent, ils viendront à la prochaine ingestion.',
+  'cli.ingest.mailError': 'Boîte mail non relevée : {message}',
+  'cli.mail.notTty': 'Saisie du mot de passe impossible hors d’un terminal : utilisez --password-stdin.',
+  'cli.mail.cancelled': 'Annulé.',
+  'cli.mail.noConfigFile': 'Pas de fichier vigie-emploi.config.json : créez d’abord l’espace (vigie-emploi init).',
+  'cli.mail.askAddress': 'Adresse e-mail :',
+  'cli.mail.addressRequired': 'Adresse e-mail obligatoire (--address).',
+  'cli.mail.oauth':
+    '{name} n’accepte plus les mots de passe en IMAP (connexion Microsoft obligatoire), ce n’est pas encore géré. En attendant : transférez vos alertes vers une autre boîte, ou déposez les e-mails dans emails/.',
+  'cli.mail.askHost': 'Serveur IMAP (ex. imap.exemple.fr) :',
+  'cli.mail.hostRequired': 'Serveur IMAP obligatoire (--host).',
+  'cli.mail.provider': '{name} : {host}, port {port}.',
+  'cli.mail.appPassword':
+    '{name} demande un « mot de passe d’application » (16 caractères), pas le mot de passe du compte. Il se crée ici, la validation en deux étapes doit être active : {help}',
+  'cli.mail.askPassword': 'Mot de passe (rien ne s’affiche pendant la frappe) :',
+  'cli.mail.passwordRequired': 'Mot de passe vide.',
+  'cli.mail.folders': 'Dossiers de la boîte :',
+  'cli.mail.askFolder': 'Dossier des alertes (numéro ou nom) :',
+  'cli.mail.folderRequired': 'Dossier obligatoire (--folder).',
+  'cli.mail.folderUnknown': 'Dossier « {folder} » absent de la boîte. Dossiers : {folders}',
+  'cli.mail.saved':
+    'Boîte enregistrée : dossier « {folder} » relevé à chaque ingestion (réglages dans {file}, mot de passe : {backend}). Pensez au filtre de votre messagerie qui range les alertes d’offres dans ce dossier.',
+  'cli.mail.notConfigured': 'Aucune boîte mail configurée (vigie-emploi mail setup).',
+  'cli.mail.status': 'Boîte : {user} sur {host}:{port}, dossier « {folder} »\nMot de passe : {password}\nDernière relève : {fetched}',
+  'cli.mail.passwordYes': 'enregistré ({backend})',
+  'cli.mail.passwordNo': 'absent (vigie-emploi mail setup)',
+  'cli.mail.never': 'jamais',
+  'cli.mail.fetched': '{n} e-mail(s) relevé(s) dans « {folder} », déposé(s) dans {inbox}. Suite : vigie-emploi ingest',
+  'cli.mail.more': 'D’autres messages attendent : relancez la relève.',
+  'cli.mail.forgotten': 'Boîte mail oubliée : réglages et mot de passe supprimés (les messages restent dans la boîte).',
+  'cli.mail.subUnknown': 'Sous-commande inconnue « {sub} » : setup, status, fetch ou forget.',
 
   // CLI : import-history
   'cli.import.batches': 'Lots : {files} fichier(s), {inputs} entrée(s), {offers} offre(s) créée(s), {scores} note(s).',
@@ -438,6 +476,17 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.import': 'apply (reprise après « {status} »)',
   'core.sentAt': 'envoyée le {date}',
   'core.ingest.box': 'Boîte de réception introuvable : {folder}',
+  'core.mail.error.no-password': 'aucun mot de passe enregistré pour cette boîte (réglages du tableau de bord, ou vigie-emploi mail setup).',
+  'core.mail.error.authentication':
+    'connexion refusée par {host} (adresse ou mot de passe). Gmail, Yahoo, iCloud : il faut un mot de passe d’application, pas celui du compte. Détail : {message}',
+  'core.mail.error.folder': 'dossier « {folder} » introuvable dans la boîte (renommé ou supprimé ?). Détail : {message}',
+  'core.mail.error.connection': 'serveur {host} injoignable (adresse du serveur, réseau). Détail : {message}',
+  'core.mail.error.other': 'erreur IMAP : {message}',
+  'core.mail.backend.environment': 'variable VIGIE_EMPLOI_MAIL_PASSWORD',
+  'core.mail.backend.dpapi': 'chiffré pour votre session Windows',
+  'core.mail.backend.keychain': 'trousseau macOS',
+  'core.mail.backend.secret-service': 'trousseau du système',
+  'core.mail.backend.file': 'fichier lisible par vous seul (pas de trousseau disponible)',
   'core.ingest.seen': 'Revue le {date} dans une alerte {source} : statut inchangé',
   'core.ingest.withoutJsonLd': 'JSON-LD JobPosting absent de la page',
   'core.ingest.readingImpossible': 'lecture impossible : {message}',

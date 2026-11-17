@@ -13,6 +13,9 @@ import { providerOf } from '../src/mail/providers.ts';
 import { fileStore, secretStore, type SecretStore } from '../src/mail/secret.ts';
 import { ingestPerConfig } from '../src/ingest/ingest.ts';
 import { findOffer } from '../src/core/offers.ts';
+import { createApp } from '../src/api/server.ts';
+import { Idle } from '../src/api/idle.ts';
+import { writeFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const hoodiecrow = require('hoodiecrow-imap') as (o: object) => {
@@ -146,6 +149,44 @@ describe('IMAP fetch', () => {
     const r2 = await ingestPerConfig(db, config, { store: bad, download: false });
     expect(r2.mail).toMatchObject({ error: 'no-password' });
     expect(r2.files).toBe(0);
+  });
+});
+
+describe('dashboard API', () => {
+  it('folders, save (password kept out of the page and the workspace), state, fetch, forget', async () => {
+    await start([{ raw: LINKEDIN, internaldate: '16-Nov-2026 10:00:00 +0100' }]);
+    const keyring = mkdtempSync(join(tmpdir(), 'vigie-keyring-'));
+    const file = join(inbox, 'vigie-emploi.config.json');
+    writeFileSync(file, JSON.stringify({ dataDir: '.', port: 4410 }, null, 2));
+    const store = fileStore(keyring);
+    const app = createApp(db, { dataDir: inbox, emails: inbox, file }, new Idle(0), { store: () => store });
+    const send = async (method: string, path: string, body?: object) =>
+      (await app.request(path, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })).json() as Promise<Record<string, unknown>>;
+    const box = { address: 'testuser', host: '127.0.0.1', port, secure: false };
+    try {
+      expect(await send('GET', '/api/mail')).toMatchObject({ ok: true, state: { configured: false } });
+      expect(await send('POST', '/api/mail/folders', { ...box, password: 'mauvais' })).toMatchObject({ ok: false, kind: 'authentication' });
+      expect(await send('POST', '/api/mail/folders', { ...box, password: 'testpass' })).toEqual({ ok: true, folders: ['INBOX', FOLDER] });
+      expect(await send('PUT', '/api/mail', { ...box, password: 'testpass', folder: 'Absent' })).toMatchObject({ ok: false, kind: 'folder' });
+      expect(await send('PUT', '/api/mail', { ...box, password: 'testpass', folder: FOLDER })).toMatchObject({
+        ok: true,
+        state: { configured: true, folder: FOLDER, password: true },
+      });
+      const config = readFileSync(file, 'utf8');
+      expect(JSON.parse(config).mail).toMatchObject({ user: 'testuser', folder: FOLDER, port });
+      expect(config).not.toContain('testpass');
+      // Changing a setting without retyping the password: the stored one is used.
+      expect(await send('PUT', '/api/mail', { ...box, folder: FOLDER, markSeen: false })).toMatchObject({ ok: true, state: { markSeen: false } });
+      const state = await send('GET', '/api/mail');
+      expect(JSON.stringify(state)).not.toContain('testpass');
+      expect(await send('POST', '/api/mail/fetch')).toMatchObject({ ok: true, fetched: 1 });
+      expect(readdirSync(inbox).filter((f) => f.endsWith('.eml'))).toHaveLength(1);
+      expect(await send('DELETE', '/api/mail')).toEqual({ ok: true });
+      expect(JSON.parse(readFileSync(file, 'utf8')).mail).toBeUndefined();
+      expect(store.get(accountOf({ user: 'testuser', host: '127.0.0.1' }))).toBeNull();
+    } finally {
+      rmSync(keyring, { recursive: true, force: true });
+    }
   });
 });
 

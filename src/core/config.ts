@@ -128,6 +128,16 @@ export function mailOf(raw: Partial<MailConfig> | undefined): MailConfig | null 
   };
 }
 
+/** Mailbox settings read again from the file (setup made by another process: dashboard, CLI). */
+export function readMailSettings(file: string | null): MailConfig | null {
+  if (!file || !existsSync(file)) return null;
+  try {
+    return mailOf(readJson(file).mail);
+  } catch {
+    return null;
+  }
+}
+
 function compiler(patterns: string[] | undefined): RegExp[] {
   return (patterns ?? []).map((m) => new RegExp(m, 'i'));
 }

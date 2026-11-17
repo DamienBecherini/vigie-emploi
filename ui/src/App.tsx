@@ -15,7 +15,7 @@ import { chooseLanguage, language, LANGUAGES, locale, NAMES_LANGUAGES, number, t
 import { useParameters, usePreference, usePreferenceText, useDebounce, KEYS_FILTERS } from './state.ts';
 import { BadgeScore, BadgeStatus, formatDate } from './components/Badges.tsx';
 import { Filters } from './components/Filters.tsx';
-import { ScrollHorizontal } from './components/ScrollHorizontal.tsx';
+import { HorizontalScroll } from './components/HorizontalScroll.tsx';
 import { StickyHeader } from './components/StickyHeader.tsx';
 import { Detail } from './components/Detail.tsx';
 import { Upcoming } from './components/Upcoming.tsx';
@@ -124,7 +124,7 @@ const NARROW_SCREEN = '(max-width: 767px)';
 /**
  * Job title column stuck to the left edge when the table scrolls horizontally. Its shadow (a gradient over the whole
  * height of each cell, so continuous from one line to the next) only appears when it is really stuck and
- * columns pass under it (data-stuck of the container, see ScrollHorizontal).
+ * columns pass under it (data-stuck of the container, see HorizontalScroll).
  */
 const STUCK =
   'sticky left-0 z-[1] after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-3 after:bg-linear-to-r after:from-slate-900/15 after:to-transparent after:opacity-0 after:transition-opacity dark:after:from-black/60 group-data-[stuck=true]/scroll:after:opacity-100';
@@ -341,10 +341,10 @@ export function App() {
   // The scroll-up waits for the lines of the new page (effect below, after the query): a shorter page
   // (often the last one) reduces the height of the document when they arrive, which readjusts the scrolling and would break
   // a scroll-up started too early.
-  const pagePrevious = useRef(page);
+  const previousPage = useRef(page);
   const scrollUpPending = useRef(false);
-  if (pagePrevious.current !== page) {
-    pagePrevious.current = page;
+  if (previousPage.current !== page) {
+    previousPage.current = page;
     scrollUpPending.current = true;
   }
   // Sort on one or several levels: ?sort=received_at:desc,score:desc (old format: ?sort=score&order=asc).
@@ -629,7 +629,7 @@ export function App() {
           {/* Table block: the stuck copy of the header (StickyHeader) does not go beyond its end. */}
           <div>
           <StickyHeader tableRef={tableRef} scrollRef={scrollRef} lines={linesHeader(true)} />
-          <ScrollHorizontal
+          <HorizontalScroll
             refContainer={scrollRef}
             shadowLeft={false}
             className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
@@ -680,7 +680,7 @@ export function App() {
                 )}
               </tbody>
             </table>
-          </ScrollHorizontal>
+          </HorizontalScroll>
           </div>
 
           <nav aria-label={t('list.pagination')} className="mt-3 flex flex-wrap items-center gap-2 text-sm">

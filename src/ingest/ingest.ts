@@ -5,7 +5,7 @@ import type { Database } from '../db/database.ts';
 import type { Config } from '../core/config.ts';
 import { transaction } from '../db/database.ts';
 import { SOURCES_JSONLD } from '../core/links.ts';
-import { addStatus, saveOffer, updateTags, offersOfCompany, findOffer } from '../core/offers.ts';
+import { addStatus, saveOffer, updateTags, companyOffers, findOffer } from '../core/offers.ts';
 import { now } from '../core/text.ts';
 import { STATUSES_TRACKED } from '../core/statuses.ts';
 import { addEvent, dateEventFr, dayLocal } from '../core/events.ts';
@@ -217,7 +217,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
         summary.detail.dismissed.push({ ...line, status: 'dismissed', pattern: comment });
       } else {
         addStatus(db, offer.id, 'new', { comment: off.subject ? t('core.ingest.email', { subject: off.subject }) : null, origin: 'ingest', at });
-        if (offer.company && offersOfCompany(db, offer.company, offer.id) > 0) {
+        if (offer.company && companyOffers(db, offer.company, offer.id) > 0) {
           updateTags(db, offer.id, ['entreprise-connue'], []);
         }
         summary.added++;

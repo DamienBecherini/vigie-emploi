@@ -90,19 +90,19 @@ interface LineRubric {
   summary: string;
 }
 
-function versionOfLine(l: LineRubric): VersionRubric {
+function lineVersion(l: LineRubric): VersionRubric {
   return { version: l.version, at: l.at, author: l.author, summary: l.summary, rubric: validateRubric(JSON.parse(l.content), `version ${l.version}`) };
 }
 
 export function lastVersion(db: Database): VersionRubric | null {
   const l = db.prepare('SELECT * FROM rubrics ORDER BY version DESC LIMIT 1').get() as LineRubric | undefined;
-  return l ? versionOfLine(l) : null;
+  return l ? lineVersion(l) : null;
 }
 
 export function versionRubric(db: Database, version: number): VersionRubric {
   const l = db.prepare('SELECT * FROM rubrics WHERE version = ?').get(version) as LineRubric | undefined;
   if (!l) throw new Error(t('core.versionNotFound', { version }));
-  return versionOfLine(l);
+  return lineVersion(l);
 }
 
 /** History of the versions, from the most recent to the oldest. */

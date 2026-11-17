@@ -245,7 +245,7 @@ export const en = {
   "dashboard.open_dashboard.title": "Open the dashboard",
   "dashboard.open_dashboard.description": "Starts the workspace's web dashboard (job ad list, filters, details, tuning the grid with the mouse) in the background if it is not already running, and returns its local address (http://localhost:…). It stops by itself after {IDLE_MIN} minutes without activity. Offer it when the user wants to browse their job ads or tune their grid themselves, instead of a \"serve\" command to type. open: true also opens it in their default browser (only if they ask for it or agree).",
   "dashboard.open_dashboard.inputSchema.open": "true: also open the address in the default browser",
-  "state.messageNotInitialized": "The folder {d} is the application's own folder, not a workspace: call initialize_workspace with another folder.",
+  "state.notInitializedMessage": "The folder {d} is the application's own folder, not a workspace: call initialize_workspace with another folder.",
   "state.messageNotInitialized2": "Workspace not initialised: {d} does not exist or is empty. Call initialize_workspace (folder {d} by default, or the one the user chooses), then carry on.",
   "results.failure.content.text": "Error: {message}",
   "dashboard.toTell.alreadyLaunched": "The dashboard is already running: {url}",

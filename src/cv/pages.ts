@@ -21,9 +21,9 @@ export interface AnalysisPages {
 
 /** Thresholds: a page before the last one must be full; the last one, at least half. */
 export const THRESHOLD_PAGE_FULL = 80;
-export const THRESHOLD_LAST_PAGE = 50;
+export const LAST_PAGE_THRESHOLD = 50;
 /** Below, a simple remark about the room left on the last page. */
-export const THRESHOLD_LAST_COMFORTABLE = 75;
+export const LAST_PAGE_COMFORTABLE_THRESHOLD = 75;
 
 /** Bottom of a text line below its baseline (descenders), as a share of the font size. */
 const DESCENT = 0.25;
@@ -81,11 +81,11 @@ export function fill(boxes: { height: number; text: Box | null }[]): AnalysisPag
         t('core.pages.jumpBadlyPlaced', { page: p.page, pc: p.fill }),
       );
     }
-    if (last && pages.length > 1 && p.fill < THRESHOLD_LAST_PAGE) {
+    if (last && pages.length > 1 && p.fill < LAST_PAGE_THRESHOLD) {
       warnings.push(
         t('core.pages.lastEmpty', { page: p.page, pc: p.fill }),
       );
-    } else if (last && pages.length > 1 && p.fill < THRESHOLD_LAST_COMFORTABLE) {
+    } else if (last && pages.length > 1 && p.fill < LAST_PAGE_COMFORTABLE_THRESHOLD) {
       warnings.push(
         t('core.pages.lastRemark', { page: p.page, pc: p.fill, empty: 100 - p.fill }),
       );

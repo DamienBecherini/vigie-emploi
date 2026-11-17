@@ -47,7 +47,7 @@ const excerpt = (s: string) => {
 const two = (n: number | string) => String(n).padStart(2, '0');
 
 /** First date of the text: DD/MM/YYYY, otherwise DD/MM (year from the context). */
-function dateOfText(text: string, yearByDefault: number): string | null {
+function parseDate(text: string, yearByDefault: number): string | null {
   const complete = text.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})\/(\d{4})(?![\d/])/);
   if (complete) return `${complete[3]}-${two(complete[2])}-${two(complete[1])}`;
   const short = text.match(/(?<![\d/])(\d{1,2})\/(\d{1,2})(?![\d/])/);
@@ -60,7 +60,7 @@ function dateOfText(text: string, yearByDefault: number): string | null {
  * "- 13/10/2026 — …" and checked boxes "- [x] Candidature envoyée le : 13/10/2026 (…)". Unchecked
  * boxes (to do) and code blocks are ignored.
  */
-export function linesOfTracker(text: string, yearByDefault = new Date().getFullYear()): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
+export function trackerLines(text: string, yearByDefault = new Date().getFullYear()): { lines: LineJournal[]; withoutDate: { number: number; text: string }[]; section: boolean } {
   const lines = text.split(/\r?\n/);
   const r: LineJournal[] = [];
   const withoutDate: { number: number; text: string }[] = [];
@@ -106,7 +106,7 @@ export function linesOfTracker(text: string, yearByDefault = new Date().getFullY
       const iText = headers.findIndex((e) => /^(événement|evenement|action|quoi)/.test(e));
       if (iDate < 0) continue;
       const textLine = iText >= 0 ? c[iText] : c.filter((_, k) => k !== iDate).join(' — ');
-      keep(i + 1, dateOfText(c[iDate] ?? '', year), textLine ?? '');
+      keep(i + 1, parseDate(c[iDate] ?? '', year), textLine ?? '');
       continue;
     }
     headers = null;
@@ -116,8 +116,8 @@ export function linesOfTracker(text: string, yearByDefault = new Date().getFullY
     const content = bullet[2];
     // "13/10/2026 — text": the leading date is removed from the text.
     const head = content.match(/^\**(\d{1,2}\/\d{1,2}(?:\/\d{4})?)\**\s*(?:—|–|-|:)\s*(.*)$/);
-    if (head) keep(i + 1, dateOfText(head[1], year), head[2]);
-    else keep(i + 1, dateOfText(content, year), content);
+    if (head) keep(i + 1, parseDate(head[1], year), head[2]);
+    else keep(i + 1, parseDate(content, year), content);
   }
   return { lines: r, withoutDate, section };
 }
@@ -203,7 +203,7 @@ const words = (s: string) =>
  * Folderless application whose company words (3 letters or more) all appear in the folder
  * name ("Hippocrate Care" → hippocrate-care-cto-cofondateur), if it is unique.
  */
-function applicationOfName(db: Database, name: string): number | null {
+function applicationByName(db: Database, name: string): number | null {
   const wordsFolder = new Set(words(name));
   const candidates = (
     db
@@ -253,7 +253,7 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
       const folderRel = `candidatures/${name}`;
       let link = offerOf.get(folderRel, `${folderRel}/`) as { offer_id: number } | undefined;
       if (!link) {
-        const offerId = applicationOfName(db, name);
+        const offerId = applicationByName(db, name);
         if (offerId === null) {
           report.folders_without_offer.push(folderRel);
           continue;
@@ -263,7 +263,7 @@ export function importJournals(db: Database, dataDir: string): ReportJournal {
         link = { offer_id: offerId };
       }
       const text = readFileSync(sheet, 'utf8');
-      const { lines, withoutDate, section } = linesOfTracker(text);
+      const { lines, withoutDate, section } = trackerLines(text);
       if (!section || (!lines.length && !withoutDate.length)) report.folders_without_tracker.push(folderRel);
       for (const s of withoutDate) report.without_date.push({ folder: folderRel, line: s.number, excerpt: excerpt(s.text) });
       const keys = new Set<string>();

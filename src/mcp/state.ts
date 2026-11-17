@@ -49,10 +49,10 @@ export function openState(options: OptionsConfig = {}): StateMcp {
   return { config, db: ready ? openDatabase(config.database) : null, byDefault, options };
 }
 
-export function messageNotInitialized(state: StateMcp): string {
+export function notInitializedMessage(state: StateMcp): string {
   const d = slash(state.config.dataDir);
   if (isApplication(state.config.dataDir)) {
-    return tm('state.messageNotInitialized', { d: String(d) });
+    return tm('state.notInitializedMessage', { d: String(d) });
   }
   return tm('state.messageNotInitialized2', { d: String(d) });
 }

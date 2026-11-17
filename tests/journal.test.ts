@@ -20,7 +20,7 @@ import { filesFolder, safeFile } from '../src/core/files.ts';
 import { statistics } from '../src/core/statistics.ts';
 import { scoreInput } from '../src/core/scoring.ts';
 import { importHistory } from '../src/import/history.ts';
-import { guessType, linesOfTracker } from '../src/import/journal.ts';
+import { guessType, trackerLines } from '../src/import/journal.ts';
 import { generateTracker } from '../src/export/tracker.ts';
 import { ingest } from '../src/ingest/ingest.ts';
 import { createApp } from '../src/api/server.ts';
@@ -193,7 +193,7 @@ describe('import of the folder journals', () => {
   });
 
   it('tracker formats: dated bullets, unchecked boxes ignored, code blocks ignored', () => {
-    const { lines, withoutDate } = linesOfTracker(
+    const { lines, withoutDate } = trackerLines(
       [
         '## 6. Suivi',
         '',

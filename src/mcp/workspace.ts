@@ -14,7 +14,7 @@ import { countText } from '../core/count.ts';
 import { chooseTemplate, TEMPLATE_DEFAULT, generateCv, listTemplates, findBrowser } from '../cv/cv.ts';
 import { analyzePages } from '../cv/pages.ts';
 import { initializeWorkspace } from '../init/init.ts';
-import { toggle, folderByDefault, workspaceExists, messageNotInitialized, type StateMcp } from './state.ts';
+import { toggle, folderByDefault, workspaceExists, notInitializedMessage, type StateMcp } from './state.ts';
 import { on, onContent } from './results.ts';
 import { bi, bt, languageNameEn, tm, tu, type Bilingual, type KeyMcp } from './texts.ts';
 import { LANGUAGES, type Language } from '../i18n/index.ts';
@@ -71,7 +71,7 @@ function readInstruction(folder: string, file: string): string {
 export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () => string): void {
   const reading = { readOnlyHint: true, openWorldHint: false };
   /** Folder that a next session will find again without changing anything in the client's configuration. */
-  const folderOfOnboarding = resolve(state.config.dataDir);
+  const onboardingFolder = resolve(state.config.dataDir);
 
   // ---------------------------------------------------------------------------------------------
   // Prompts and resource: workspace instructions, read again from the disk at each call.
@@ -90,8 +90,8 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
           const d = slash(state.config.dataDir);
           text =
             name === 'onboarding'
-              ? tm('workspace.saveToolsWorkspace', { language: languageNameEn(state.config.language), p1: String(messageNotInitialized(state)), d: String(d) })
-              : tm('workspace.saveToolsWorkspace2', { p1: String(messageNotInitialized(state)) });
+              ? tm('workspace.saveToolsWorkspace', { language: languageNameEn(state.config.language), p1: String(notInitializedMessage(state)), d: String(d) })
+              : tm('workspace.saveToolsWorkspace2', { p1: String(notInitializedMessage(state)) });
         } else {
           const folder = state.config.dataDir;
           const target = args?.offer?.trim();
@@ -120,7 +120,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         {
           uri: uri.href,
           mimeType: 'text/markdown',
-          text: state.db ? readInstruction(state.config.dataDir, 'AGENTS.md') : messageNotInitialized(state),
+          text: state.db ? readInstruction(state.config.dataDir, 'AGENTS.md') : notInitializedMessage(state),
         },
       ],
     }),
@@ -144,7 +144,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
         folder: slash(folder),
         initialized,
         default_folder: state.byDefault,
-        message: initialized ? null : messageNotInitialized(state),
+        message: initialized ? null : notInitializedMessage(state),
         onboarding_done: initialized ? !/À COMPLÉTER|TO BE COMPLETED/.test(readInstruction(folder, '_CONTEXTE.md').split('\n')[0] ?? '') : false,
         browser_pdf: findBrowser(),
         cv_template: initialized && existsSync(join(folder, 'cv', 'gabarit', 'gabarit.css')) ? 'cv/gabarit' : tm('workspace.workspace_state.cv_template'),
@@ -197,7 +197,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
       }
       const r = initializeWorkspace({ folder: target, template, language: language ?? state.config.language });
       toggle(state, target);
-      const persistent = target.toLowerCase() === folderOfOnboarding.toLowerCase();
+      const persistent = target.toLowerCase() === onboardingFolder.toLowerCase();
       return {
         ok: true,
         folder: r.folder,
@@ -207,7 +207,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
           ...(persistent
             ? []
             : [
-                tm('workspace.initialize_workspace.warnings', { p1: String(slash(folderOfOnboarding)), folder: String(r.folder) }),
+                tm('workspace.initialize_workspace.warnings', { p1: String(slash(onboardingFolder)), folder: String(r.folder) }),
               ]),
         ],
         more: [

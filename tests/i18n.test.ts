@@ -10,12 +10,12 @@ import { labelStatus, messageFlag } from '../src/i18n/labels.ts';
 import { STATUSES } from '../src/core/statuses.ts';
 import { DICTIONARIES_UI } from '../ui/src/i18n/index.ts';
 import { loadConfig } from '../src/core/config.ts';
-import { initializeWorkspace, SCAFFOLD, scaffoldOfLanguage } from '../src/init/init.ts';
+import { initializeWorkspace, SCAFFOLD, scaffoldForLanguage } from '../src/init/init.ts';
 import { openDatabase } from '../src/db/database.ts';
 import { importHistory } from '../src/import/history.ts';
 import { addStatus } from '../src/core/offers.ts';
 import { generateTracker, MARKER_TRACKER_GENERATED } from '../src/export/tracker.ts';
-import { cvToHtml, languageOfCv } from '../src/cv/cv.ts';
+import { cvToHtml, cvLanguage } from '../src/cv/cv.ts';
 import { createApp } from '../src/api/server.ts';
 import { main } from '../src/cli/main.ts';
 
@@ -112,11 +112,11 @@ describe('init --language en', () => {
   it('copies scaffold-<language>/ when it exists', () => {
     const app = join(root, 'app');
     mkdirSync(join(app, 'scaffold'), { recursive: true });
-    expect(scaffoldOfLanguage('en', app)).toBe(join(app, 'scaffold'));
+    expect(scaffoldForLanguage('en', app)).toBe(join(app, 'scaffold'));
     mkdirSync(join(app, 'scaffold-en'));
-    expect(scaffoldOfLanguage('en', app)).toBe(join(app, 'scaffold-en'));
-    expect(scaffoldOfLanguage('fr', app)).toBe(join(app, 'scaffold'));
-    expect(scaffoldOfLanguage('en')).toBe(join(SCAFFOLD, '..', 'scaffold-en'));
+    expect(scaffoldForLanguage('en', app)).toBe(join(app, 'scaffold-en'));
+    expect(scaffoldForLanguage('fr', app)).toBe(join(app, 'scaffold'));
+    expect(scaffoldForLanguage('en')).toBe(join(SCAFFOLD, '..', 'scaffold-en'));
   });
 });
 
@@ -249,10 +249,10 @@ Backend developer.
   });
 
   it('language of the document deduced from the titles (en / fr), without depending on the configuration', () => {
-    expect(languageOfCv(md)).toBe('en');
+    expect(cvLanguage(md)).toBe('en');
     expect(html).toContain('<html lang="en">');
     const fr = readFileSync(join(SCAFFOLD, 'cv', '_exemple-structure.md'), 'utf8');
-    expect(languageOfCv(fr)).toBe('fr');
+    expect(cvLanguage(fr)).toBe('fr');
     expect(cvToHtml(fr, { css: 'g.css' })).toContain('<html lang="fr">');
   });
 });

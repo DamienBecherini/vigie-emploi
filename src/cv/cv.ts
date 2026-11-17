@@ -32,7 +32,7 @@ const SECTIONS_BY_LANGUAGE: Partial<Record<Language, RegExp>> = {
 const PAGE_BREAK = /saut-de-page|page-break|break-after/i;
 
 /** Language of a Markdown CV from its section titles: the first language of which it has at least two usual titles, otherwise the default language. */
-export function languageOfCv(markdown: string): Language {
+export function cvLanguage(markdown: string): Language {
   const titles = [...markdown.matchAll(/^##[ \t]+(.+?)[ \t#]*$/gm)].map((m) => m[1].replace(/[*_]/g, '').trim());
   for (const [language, pattern] of Object.entries(SECTIONS_BY_LANGUAGE) as [Language, RegExp][]) {
     if (titles.filter((x) => pattern.test(x)).length >= 2) return language;
@@ -238,7 +238,7 @@ ${o.portrait ? `<img class="portrait" src="${o.portrait}" alt="">` : ''}
   closeSection();
 
   return `<!DOCTYPE html>
-<html lang="${o.language ?? languageOfCv(markdown)}">
+<html lang="${o.language ?? cvLanguage(markdown)}">
 <head>
 <meta charset="utf-8">
 <title>CV</title>

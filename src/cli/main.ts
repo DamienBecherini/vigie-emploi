@@ -17,7 +17,7 @@ import {
   type FieldsApplication,
   type DetailOffer,
 } from '../core/offers.ts';
-import { inputsOfBatch, type InputBatch } from '../core/scoring.ts';
+import { batchInputs, type InputBatch } from '../core/scoring.ts';
 import { scoreOffers, offersToRead, prepareApplication, trackApplication } from '../core/actions.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
 import { writeTracker } from '../export/tracker.ts';
@@ -436,7 +436,7 @@ const commands: Record<string, (args: string[]) => Promise<void> | void> = {
     const { config, db } = context(v);
     let inputs: InputBatch[];
     if (v.file) {
-      inputs = inputsOfBatch(JSON.parse(readFileSync(v.file as string, 'utf8').replace(/^﻿/, '')));
+      inputs = batchInputs(JSON.parse(readFileSync(v.file as string, 'utf8').replace(/^﻿/, '')));
     } else {
       if (typeof v.json !== 'string') error(t('cli.score.expected'));
       const e = JSON.parse(v.json) as InputBatch | InputBatch[];
@@ -901,7 +901,7 @@ function optionRaw(argv: string[], name: string): string | undefined {
  * Language of the messages: init's --language (the workspace being created), otherwise the configuration (--data, --config,
  * VIGIE_EMPLOI_LANGUAGE, file), otherwise French.
  */
-function languageOfMessages(cmd: string | undefined, args: string[]) {
+function messageLanguage(cmd: string | undefined, args: string[]) {
   const raw = cmd === 'init' ? optionRaw(args, 'language') : undefined;
   const requested = raw === undefined ? undefined : normalizeLanguage(raw);
   if (isLanguage(requested)) return requested;
@@ -910,7 +910,7 @@ function languageOfMessages(cmd: string | undefined, args: string[]) {
 
 export async function main(argv: string[]): Promise<number> {
   const [cmd, ...args] = argv;
-  defineLanguage(languageOfMessages(cmd, args));
+  defineLanguage(messageLanguage(cmd, args));
   if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') {
     process.stdout.write(help());
     return 0;

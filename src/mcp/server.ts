@@ -41,7 +41,7 @@ import {
   versionRubric,
 } from '../core/rubric-storage.ts';
 import { defineLanguage } from '../i18n/index.ts';
-import { messageNotInitialized, openState, type StateMcp } from './state.ts';
+import { notInitializedMessage, openState, type StateMcp } from './state.ts';
 import { saveToolsWorkspace } from './workspace.ts';
 import { saveToolDashboard } from './dashboard.ts';
 import { on } from './results.ts';
@@ -170,7 +170,7 @@ export function createServerMcp(state: StateMcp): McpServer {
   const reading = { readOnlyHint: true, openWorldHint: false };
   /** Database of the workspace; clear error as long as the workspace is not initialized. */
   const database = (): Database => {
-    if (!state.db) throw new Error(messageNotInitialized(state));
+    if (!state.db) throw new Error(notInitializedMessage(state));
     return state.db;
   };
   const data = (): string => {

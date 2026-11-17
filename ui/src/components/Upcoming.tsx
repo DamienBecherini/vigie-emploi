@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, type DeadlineOffer } from '../api.ts';
 import { usePreference } from '../state.ts';
 import { BadgeType, dateEvent } from './Journal.tsx';
-import { ShadowsVertical, useShadowsVertical } from './ShadowsVertical.tsx';
+import { VerticalShadows, useVerticalShadows } from './VerticalShadows.tsx';
 import { number, t } from '../i18n/index.ts';
 
 /** Number of deadlines visible before the scroll bar. */
@@ -96,7 +96,7 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
   const nothing = r && !r.overdue.length && !r.upcoming.length;
   const [stats, setStats] = usePreference<boolean>('statistics-visible', false);
   const { ref, max } = useLimitedHeight(r);
-  const shadows = useShadowsVertical(ref, Boolean(max));
+  const shadows = useVerticalShadows(ref, Boolean(max));
   return (
     <section
       aria-labelledby="upcoming-title"
@@ -150,7 +150,7 @@ export function Upcoming({ choose }: { choose: (id: number) => void }) {
               </ul>
             )}
           </div>
-          {max && <ShadowsVertical {...shadows} />}
+          {max && <VerticalShadows {...shadows} />}
           </div>
         </div>
         {/* Statistics under the header (near their button) as long as room is lacking; to the right of the list on a large screen. */}

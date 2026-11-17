@@ -3,7 +3,7 @@ import { STATUSES, type Status } from '../../../src/core/statuses.ts';
 import { statusShown, t } from '../i18n/index.ts';
 import type { Meta } from '../api.ts';
 import { KEYS_FILTERS, useDebounce, type KeyUrl } from '../state.ts';
-import { ShadowsVertical, useShadowsVertical } from './ShadowsVertical.tsx';
+import { VerticalShadows, useVerticalShadows } from './VerticalShadows.tsx';
 
 type Update = (updated: Partial<Record<KeyUrl, string | null>>) => void;
 
@@ -52,7 +52,7 @@ function Cases(props: {
     props.update({ [props.key]: [...s].join(',') || null, page: null });
   };
   const list = useRef<HTMLDivElement>(null);
-  const shadows = useShadowsVertical(list, props.options.length > 0);
+  const shadows = useVerticalShadows(list, props.options.length > 0);
   if (!props.options.length) return null;
   return (
     <fieldset className="min-w-0">
@@ -74,7 +74,7 @@ function Cases(props: {
           </label>
         ))}
       </div>
-      <ShadowsVertical {...shadows} />
+      <VerticalShadows {...shadows} />
       </div>
     </fieldset>
   );

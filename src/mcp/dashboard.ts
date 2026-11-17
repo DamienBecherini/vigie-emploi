@@ -13,7 +13,7 @@ import type { Config } from '../core/config.ts';
 import { nodeExecutable } from '../core/node.ts';
 import { openDatabase } from '../db/database.ts';
 import { BINARY } from '../init/init.ts';
-import { messageNotInitialized, type StateMcp } from './state.ts';
+import { notInitializedMessage, type StateMcp } from './state.ts';
 import { on } from './results.ts';
 import { tm, tu } from './texts.ts';
 
@@ -178,7 +178,7 @@ export function saveToolDashboard(server: McpServer, state: StateMcp): void {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     on(async ({ open }: { open?: boolean }) => {
-      if (!state.db) throw new Error(messageNotInitialized(state));
+      if (!state.db) throw new Error(notInitializedMessage(state));
       return openDashboard(state.config, { open });
     }),
   );

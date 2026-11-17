@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { openDatabase, type Database } from '../src/db/database.ts';
-import { importHistory, scoresOfCell, type ReportImport } from '../src/import/history.ts';
+import { importHistory, cellScores, type ReportImport } from '../src/import/history.ts';
 import { cells, split } from '../src/import/markdown.ts';
 import { detailOffer, saveApplication, saveOffer, updateTags, offerById, findOffer } from '../src/core/offers.ts';
 import { fingerprint } from '../src/core/text.ts';
@@ -14,12 +14,12 @@ describe('Markdown tools', () => {
     expect(split('A ([offre](u1)) · B ( ([offre](u2)) · C', ' · ')).toEqual(['A ([offre](u1))', 'B ( ([offre](u2))', 'C']);
   });
   it('scores of a cell', () => {
-    expect(scoresOfCell('6/10')).toEqual([6]);
-    expect(scoresOfCell('6 et 5,5/10')).toEqual([6, 5.5]);
-    expect(scoresOfCell('7 · 6,5 · 4')).toEqual([7, 6.5, 4]);
-    expect(scoresOfCell('4 à 7/10')).toEqual([]);
-    expect(scoresOfCell('≤ 2,5/10')).toEqual([]);
-    expect(scoresOfCell('—')).toEqual([]);
+    expect(cellScores('6/10')).toEqual([6]);
+    expect(cellScores('6 et 5,5/10')).toEqual([6, 5.5]);
+    expect(cellScores('7 · 6,5 · 4')).toEqual([7, 6.5, 4]);
+    expect(cellScores('4 à 7/10')).toEqual([]);
+    expect(cellScores('≤ 2,5/10')).toEqual([]);
+    expect(cellScores('—')).toEqual([]);
   });
 });
 

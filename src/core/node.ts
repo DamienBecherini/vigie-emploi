@@ -26,7 +26,7 @@ export function commandNode(execPath: string = process.execPath, versions: NodeJ
 }
 
 /** Version of the node on the PATH ("v24.12.0"), or null if it is missing. */
-function versionOfPath(): string | null {
+function pathVersion(): string | null {
   const r = spawnSync('node', ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 10_000 });
   return r.status === 0 ? r.stdout.trim() : null;
 }
@@ -41,6 +41,6 @@ export function nodeExecutable(
   const execPath = o.execPath ?? process.execPath;
   const versions = o.versions ?? process.versions;
   if (isNodeStandalone(execPath, versions)) return execPath;
-  const v = (o.versionPath ?? versionOfPath)();
+  const v = (o.versionPath ?? pathVersion)();
   return v && versionSufficient(v) ? 'node' : null;
 }

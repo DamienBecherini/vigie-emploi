@@ -5,7 +5,7 @@ import { STATUSES, type Status } from '../../../src/core/statuses.ts';
 import { statusShown, t } from '../i18n/index.ts';
 import { api, urlFile, type DetailOffer } from '../api.ts';
 import { BadgeScore, BadgeStatus, formatDate, formatScore } from './Badges.tsx';
-import { FilesOfFolder, Journal } from './Journal.tsx';
+import { FolderFiles, Journal } from './Journal.tsx';
 import { BadgeOldRubric, BreakdownScore, EditorSubScores } from './Breakdown.tsx';
 
 function Line({ label, children }: { label: string; children: React.ReactNode }) {
@@ -629,7 +629,7 @@ export function Detail({ id, close, announce: announce }: { id: number; close: (
                   {o.application.folder && (
                     <div className="space-y-1.5">
                       <LinkFolder offerId={o.id} folder={o.application.folder} />
-                      <FilesOfFolder offer={o} withoutPath />
+                      <FolderFiles offer={o} withoutPath />
                     </div>
                   )}
                 </Line>

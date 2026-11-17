@@ -5,7 +5,7 @@ import { join, posix } from 'node:path';
 import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { canonicalize } from '../core/links.ts';
-import { inputsOfBatch, scoreInput } from '../core/scoring.ts';
+import { batchInputs, scoreInput } from '../core/scoring.ts';
 import {
   addScore,
   addStatus,
@@ -24,7 +24,7 @@ import { split, linksMarkdown, linesTables, type LineTable } from './markdown.ts
 import { MARKER_TRACKER_GENERATED } from '../export/tracker.ts';
 import { importJournals, type ReportJournal } from './journal.ts';
 
-export interface LineNotRecognized {
+export interface UnrecognizedLine {
   file: string;
   line: number;
   reason: string;
@@ -32,7 +32,7 @@ export interface LineNotRecognized {
 }
 
 export interface ReportImport {
-  batches: { files: number; inputs: number; offers_created: number; scores_added: number; errors: LineNotRecognized[] };
+  batches: { files: number; inputs: number; offers_created: number; scores_added: number; errors: UnrecognizedLine[] };
   register: {
     lines: number;
     offers: number;
@@ -42,7 +42,7 @@ export interface ReportImport {
     statuses_added: number;
     scores_added: number;
     links_not_recognized: { line: number; url: string }[];
-    unrecognized: LineNotRecognized[];
+    unrecognized: UnrecognizedLine[];
   };
   tracker: {
     lines: number;
@@ -53,7 +53,7 @@ export interface ReportImport {
     merges: { offer: number; duplicate: number; company: string }[];
     statuses_added: number;
     scores_added: number;
-    unrecognized: LineNotRecognized[];
+    unrecognized: UnrecognizedLine[];
   };
   /** Journals of the application folders ("Suivi" sections). */
   journal: ReportJournal;
@@ -95,7 +95,7 @@ function column(l: LineTable, ...names: string[]): string | undefined {
 }
 
 /** Scores of a cell "6/10", "6 et 5,5/10", "7 · 6,5 · 4"; empty if ambiguous ("4 à 7/10", "≤ 2,5"). */
-export function scoresOfCell(cell: string): number[] {
+export function cellScores(cell: string): number[] {
   if (/[≤≥<>~≈]|(^|\s)à(\s|$)/.test(cell)) return [];
   return (cell.replace(/\/\s*10/g, '').match(/\d+(?:[.,]\d+)?/g) ?? [])
     .map((n) => Number(n.replace(',', '.')))
@@ -117,7 +117,7 @@ export function readConditions(text: string): Pick<FieldsOffer, 'contract' | 'co
 }
 
 /** Removes from the cell the parentheses that only contain links "([offre](…), [doublon](…))". */
-function withoutListOfLinks(s: string): string {
+function withoutLinkList(s: string): string {
   return s.replace(/\s*\(\s*(?:\[[^\]]*\]\([^)\s]*\)\s*,?\s*)+\)/g, '').replace(/\[[^\]]*\]\([^)\s]*\)/g, '');
 }
 
@@ -134,7 +134,7 @@ function importBatches(db: Database, folder: string, report: ReportImport): void
     const date = f.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? statSync(path).mtime.toISOString().slice(0, 10);
     let inputs;
     try {
-      inputs = inputsOfBatch(JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')));
+      inputs = batchInputs(JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')));
     } catch (e) {
       report.batches.errors.push({ file: f, line: 0, reason: (e as Error).message, excerpt: '' });
       continue;
@@ -178,7 +178,7 @@ interface OfferRegister {
  * Companies of a grouped cell of the register: separated by "·" or "/", otherwise one per bold block
  * ("**A** (filiale), **B**"). `parts`: one entry per company; `byOffer`: "(×3)" counts three times.
  */
-export function companiesOfCell(cell: string): { parts: string[]; byOffer: string[] } {
+export function cellCompanies(cell: string): { parts: string[]; byOffer: string[] } {
   let parts = split(cell, ' · ');
   if (parts.length < 2) parts = split(cell, ' / ');
   if (parts.length < 2) {
@@ -208,14 +208,14 @@ const keyLink = (url: string): string | null => {
   return id ? `${id.source}:${id.siteId}` : null;
 };
 
-export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; linksIgnored: string[] } {
+export function registerLineOffers(l: LineTable): { offers: OfferRegister[]; linksIgnored: string[] } {
   const company = column(l, 'entreprise') ?? '';
   const machine = column(l, 'poste') ?? '';
   const conditions = column(l, 'conditions') ?? '';
-  const scores = scoresOfCell(column(l, 'note') ?? '');
+  const scores = cellScores(column(l, 'note') ?? '');
   const segments = split(machine, ' · ');
   const isBatch = /^lot\b/i.test(withoutMarkdown(company));
-  const { parts: companies, byOffer } = companiesOfCell(company);
+  const { parts: companies, byOffer } = cellCompanies(company);
   // Otherwise, one company per offer link (in order) when the numbers match; failing that, the whole cell.
   const linksJob = new Set(segments.flatMap((seg) => linksMarkdown(seg).map((x) => keyLink(x.url)).filter((x) => x !== null)));
   const bySegment = companies.length === segments.length;
@@ -227,7 +227,7 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
   const seen = new Set<string>();
 
   segments.forEach((seg, k) => {
-    const text = withoutMarkdown(withoutListOfLinks(seg));
+    const text = withoutMarkdown(withoutLinkList(seg));
     let ent = bySegment ? companies[k] : withoutMarkdown(company);
     let title = text;
     if (isBatch && text.includes(' — ')) {
@@ -264,8 +264,8 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
       source: id.source,
       siteId: id.siteId,
       url: id.url,
-      title: withoutMarkdown(withoutListOfLinks(machine)),
-      company: withoutMarkdown(withoutListOfLinks(company)),
+      title: withoutMarkdown(withoutLinkList(machine)),
+      company: withoutMarkdown(withoutLinkList(company)),
       conditions,
       score: scores.length === 1 ? scores[0] : null,
     });
@@ -277,8 +277,8 @@ export function offersOfLineRegister(l: LineTable): { offers: OfferRegister[]; l
       source: 'register',
       siteId: `reg-${fingerprint(`${date}|${withoutMarkdown(company)}|${withoutMarkdown(machine)}`)}`,
       url: null,
-      title: withoutMarkdown(withoutListOfLinks(machine)) || withoutMarkdown(company),
-      company: withoutMarkdown(withoutListOfLinks(company)),
+      title: withoutMarkdown(withoutLinkList(machine)) || withoutMarkdown(company),
+      company: withoutMarkdown(withoutLinkList(company)),
       conditions,
       score: scores.length === 1 ? scores[0] : null,
     });
@@ -307,7 +307,7 @@ function importRegister(db: Database, folder: string, report: ReportImport): voi
       const comment = [at ? null : 'date inconnue', setAside ? 'mise de côté' : null, reason || null]
         .filter(Boolean)
         .join(' — ');
-      const { offers, linksIgnored } = offersOfLineRegister(l);
+      const { offers, linksIgnored } = registerLineOffers(l);
       for (const url of linksIgnored) R.links_not_recognized.push({ line: l.number, url });
       for (const o of offers) {
         R.offers++;
@@ -321,7 +321,7 @@ function importRegister(db: Database, folder: string, report: ReportImport): voi
         );
         if (created) R.offers_created++;
         // Import from an older version: the whole grouped cell had been taken as the company.
-        const cellWhole = [withoutMarkdown(company), withoutMarkdown(withoutListOfLinks(company))];
+        const cellWhole = [withoutMarkdown(company), withoutMarkdown(withoutLinkList(company))];
         if (!created && offer.company !== o.company && cellWhole.includes(offer.company ?? '')) {
           db.prepare('UPDATE offers SET company = ?, updated_at = ? WHERE id = ?').run(o.company, now(), offer.id);
           R.companies_corrected++;
@@ -358,7 +358,7 @@ function statusClosed(issue: string): Status {
 }
 
 /** First identifiable offer in the application folder (the job ad), if it exists. */
-function offerOfFolder(dataDir: string, pathRelative: string): ReturnType<typeof canonicalize> {
+function offerForFolder(dataDir: string, pathRelative: string): ReturnType<typeof canonicalize> {
   const path = join(dataDir, pathRelative);
   if (!existsSync(path) || !statSync(path).isFile()) return null;
   const text = readFileSync(path, 'utf8');
@@ -416,9 +416,9 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
       const cellFolder = column(l, 'dossier') ?? '';
       const linkFolder = linksMarkdown(`${cellFolder} ${cellOffer}`).find((x) => !/^https?:/.test(x.url) && /\.md$|\/$/.test(x.url));
       const folderRel = linkFolder ? posix.join('candidatures', posix.dirname(linkFolder.url.replace(/\\/g, '/'))) : null;
-      const id = linkFolder ? offerOfFolder(folder, posix.join('candidatures', linkFolder.url)) : null;
+      const id = linkFolder ? offerForFolder(folder, posix.join('candidatures', linkFolder.url)) : null;
 
-      const textOffer = withoutMarkdown(withoutListOfLinks(cellOffer));
+      const textOffer = withoutMarkdown(withoutLinkList(cellOffer));
       const bold = cellOffer.match(/\*\*([^*]+)\*\*/)?.[1];
       const i = textOffer.indexOf(' — ');
       const company = bold ?? (i > 0 ? textOffer.slice(0, i) : textOffer);
@@ -459,7 +459,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
       let at: string;
       if (/clos/i.test(l.section)) {
         status = statusClosed(issue);
-        comment = withoutMarkdown(withoutListOfLinks(issue));
+        comment = withoutMarkdown(withoutLinkList(issue));
         at = dateFr(issue) ?? now();
       } else if (/ancienne/i.test(l.section)) {
         status = 'sent';
@@ -492,7 +492,7 @@ function importTracker(db: Database, folder: string, report: ReportImport): void
           // Date alone → YYYY-MM-DD (or YYYY-MM); "≈ 25/08/2026", "après le 20/08/2026" kept as they are.
           sent_at: isEmpty(send) ? null : /^\d{1,2}\/\d{1,2}\/\d{4}$|^\d{1,2}\/\d{4}$/.test(send) ? dateFr(send) : send,
           channel: isEmpty(channel) ? null : channel,
-          label: withoutListOfLinks(cellOffer).replace(/\s+/g, ' ').trim(),
+          label: withoutLinkList(cellOffer).replace(/\s+/g, ' ').trim(),
           conditions: isEmpty(type) ? null : type,
           state: (/clos/i.test(l.section) ? issue : statusText).trim() || null,
           next_action: action !== undefined && actionFree ? (isEmpty(withoutMarkdown(action)) ? null : action) : undefined,

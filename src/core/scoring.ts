@@ -64,7 +64,7 @@ function datePublished(v: string | undefined): string | null {
 }
 
 /** Finds (or creates) the offer of a batch input: by id, otherwise by canonical URL. */
-export function offerOfInput(
+export function offerForInput(
   db: Database,
   e: InputBatch,
   origin: Origin,
@@ -131,7 +131,7 @@ export function scoreInput(
     throw new Error(t('core.withoutRubric'));
   }
   const input = hasCriteria ? checkInput(rubric!.rubric, { criteria: e.criteria, inputs: e.inputs, blockers: e.blockers }) : null;
-  const target = offerOfInput(db, e, opts.originOffer ?? 'manual', { receivedAt: opts.receivedAt })!;
+  const target = offerForInput(db, e, opts.originOffer ?? 'manual', { receivedAt: opts.receivedAt })!;
   let breakdown: Breakdown | undefined;
   const warnings: string[] = [];
   let scoreAdded: boolean;
@@ -193,7 +193,7 @@ export function scoreInput(
 }
 
 /** Normalizes the content of a batch file: array, single object or { offers: [...] }. */
-export function inputsOfBatch(json: unknown): InputBatch[] {
+export function batchInputs(json: unknown): InputBatch[] {
   if (Array.isArray(json)) return json as InputBatch[];
   if (json && typeof json === 'object') {
     const o = json as { offers?: unknown };

@@ -100,7 +100,7 @@ export function normalizeLanguage(v: string): string {
 }
 
 /** This folder's config file, under its current name or the former ones. */
-function configOfFolder(folder: string): string[] {
+function folderConfig(folder: string): string[] {
   return [NAME_FILE_CONFIG, ...OLD_FILES_CONFIG].map((f) => join(folder, f));
 }
 
@@ -158,7 +158,7 @@ export class ErrorConfig extends Error {
 }
 
 /** Language of the configuration error messages: variable, otherwise file, if they are valid; otherwise French. */
-function languageOfMessages(env: NodeJS.ProcessEnv, raw: ConfigFile = {}): Language {
+function messageLanguage(env: NodeJS.ProcessEnv, raw: ConfigFile = {}): Language {
   const v = variable(env, 'LANGUAGE');
   const n = v === undefined ? undefined : normalizeLanguage(v);
   if (isLanguage(n)) return n;
@@ -170,7 +170,7 @@ function languageOf(env: NodeJS.ProcessEnv, raw: ConfigFile, file: string | null
   const input = variable(env, 'LANGUAGE');
   const v = (input === undefined ? undefined : normalizeLanguage(input)) ?? raw.language ?? LANGUAGE_DEFAULT;
   if (!isLanguage(v)) {
-    const language = languageOfMessages(env, raw);
+    const language = messageLanguage(env, raw);
     throw new ErrorConfig(
       'language-unknown',
       tl(language, 'core.config.language', { language: v, languages: LANGUAGES.join(tl(language, 'core.or')), file: file ?? NAME_FILE_CONFIG }),
@@ -203,15 +203,15 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
   if (opts.fileConfig) candidates.push(resolve(cwd, opts.fileConfig));
   const configEnv = variable(env, 'CONFIG');
   if (configEnv) candidates.push(resolve(cwd, configEnv));
-  candidates.push(...configOfFolder(cwd));
+  candidates.push(...folderConfig(cwd));
   const dataForced = opts.dataDir ?? variable(env, 'DATA');
-  if (dataForced) candidates.push(...configOfFolder(resolve(cwd, dataForced)));
-  candidates.push(...configOfFolder(APP_ROOT));
+  if (dataForced) candidates.push(...folderConfig(resolve(cwd, dataForced)));
+  candidates.push(...folderConfig(APP_ROOT));
 
   let file: string | null = null;
   let raw: ConfigFile = {};
   if (opts.fileConfig && !existsSync(candidates[0])) {
-    throw new ErrorConfig('file-not-found', tl(languageOfMessages(env), 'core.config.notFound', { path: candidates[0] }));
+    throw new ErrorConfig('file-not-found', tl(messageLanguage(env), 'core.config.notFound', { path: candidates[0] }));
   }
   for (const c of candidates) {
     if (existsSync(c)) {
@@ -227,7 +227,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
       ? resolve(baseDir, raw.dataDir)
       : null;
   if (!folder) {
-    throw new ErrorConfig('not-configured', tl(languageOfMessages(env, raw), 'core.config.notConfigure', { file: NAME_FILE_CONFIG }));
+    throw new ErrorConfig('not-configured', tl(messageLanguage(env, raw), 'core.config.notConfigure', { file: NAME_FILE_CONFIG }));
   }
   const relative = (p: string | undefined, fallback: string) => (p ? (isAbsolute(p) ? p : join(folder, p)) : fallback);
   // Default database: data/vigie-emploi.sqlite, or the first existing former database (postuler-juste, cap-emploi)

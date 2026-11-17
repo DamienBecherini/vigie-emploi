@@ -453,7 +453,7 @@ export function Journal({ offer }: { offer: DetailOffer }) {
  * Files of the application folder. `withoutPath`: displayed under the "Folder" line of the application, which already
  * shows the folder (neither a repeated path, nor a message when the offer has no folder).
  */
-export function FilesOfFolder({ offer, withoutPath = false }: { offer: DetailOffer; withoutPath?: boolean }) {
+export function FolderFiles({ offer, withoutPath = false }: { offer: DetailOffer; withoutPath?: boolean }) {
   const q = useFiles(offer.id);
   if (q.isLoading) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('files.loading')}</p>;
   if (q.isError) return <p className="text-sm text-rose-700 dark:text-rose-300">{(q.error as Error).message}</p>;

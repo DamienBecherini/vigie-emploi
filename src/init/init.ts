@@ -14,7 +14,7 @@ export const SCAFFOLD = join(APP_ROOT, 'scaffold');
  * Workspace template in the wanted language: scaffold-<language>/ if it exists (translated AI instructions),
  * otherwise scaffold/ (French).
  */
-export function scaffoldOfLanguage(language: Language, root: string = APP_ROOT): string {
+export function scaffoldForLanguage(language: Language, root: string = APP_ROOT): string {
   if (language === LANGUAGE_DEFAULT) return join(root, 'scaffold');
   const translated = join(root, `scaffold-${language}`);
   return existsSync(translated) ? translated : join(root, 'scaffold');
@@ -149,7 +149,7 @@ export function initializeWorkspace(o: OptionsInit): ResultInit {
   const { command, app } = launched;
 
   // Translated template (scaffold-en/…) if it exists; otherwise the French template, reported by a warning.
-  const scaffold = scaffoldOfLanguage(language);
+  const scaffold = scaffoldForLanguage(language);
   cpSync(scaffold, folder, { recursive: true });
   // npm does not ship the .gitignore files of a package: the template keeps it under the name "gitignore".
   if (existsSync(join(folder, 'gitignore'))) renameSync(join(folder, 'gitignore'), join(folder, '.gitignore'));

@@ -462,7 +462,7 @@ export function detailOffer(db: Database, id: number): DetailOffer | undefined {
 }
 
 /** Number of offers of a company already in the database (case-insensitive comparison). */
-export function offersOfCompany(db: Database, company: string, exceptId?: number): number {
+export function companyOffers(db: Database, company: string, exceptId?: number): number {
   const r = db
     .prepare('SELECT COUNT(*) AS n FROM offers WHERE company = ? COLLATE NOCASE AND id IS NOT ?')
     .get(company.trim(), exceptId ?? null) as { n: number };

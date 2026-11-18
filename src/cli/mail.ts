@@ -8,8 +8,21 @@ import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { mailState, messageMailError, saveMailSettings } from '../mail/settings.ts';
 import { t } from '../i18n/index.ts';
 import { AppError } from '../core/errors.ts';
+import type { CommandValues } from './options.ts';
 
-type Values = Record<string, string | boolean | string[] | undefined>;
+/** Options of "vigie-emploi mail". */
+export const MAIL_OPTIONS = {
+  address: { type: 'string' },
+  host: { type: 'string' },
+  port: { type: 'string' },
+  insecure: { type: 'boolean' },
+  folder: { type: 'string' },
+  'since-days': { type: 'string' },
+  'mark-seen': { type: 'boolean' },
+  'password-stdin': { type: 'boolean' },
+} as const;
+
+type Values = CommandValues<typeof MAIL_OPTIONS>;
 
 function userError(message: string): Error {
   return new AppError('invalid', message);
@@ -64,10 +77,10 @@ async function readStdin(): Promise<string> {
 async function setup(v: Values, config: Config, store: SecretStore): Promise<void> {
   if (!config.file) throw userError(t('cli.mail.noConfigFile'));
   const interactive = Boolean(process.stdin.isTTY) && !v['password-stdin'];
-  const address = (v.address as string | undefined) ?? (interactive ? await ask(t('cli.mail.askAddress'), config.mail?.user) : '');
+  const address = v.address ?? (interactive ? await ask(t('cli.mail.askAddress'), config.mail?.user) : '');
   if (!address) throw userError(t('cli.mail.addressRequired'));
   const provider = providerOf(address);
-  let host = v.host as string | undefined;
+  let host = v.host;
   const secure = !v.insecure;
   if (!host && provider?.auth === 'oauth') throw userError(t('cli.mail.oauth', { name: provider.name }));
   if (!host) host = provider?.host ?? (interactive ? await ask(t('cli.mail.askHost'), config.mail?.host) : undefined);
@@ -85,7 +98,7 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
   } catch (e) {
     throw userError(messageMailError(e, { host, folder: '' }));
   }
-  let folder = v.folder as string | undefined;
+  let folder = v.folder;
   if (!folder && interactive) {
     console.log(t('cli.mail.folders'));
     folders.forEach((f, i) => {

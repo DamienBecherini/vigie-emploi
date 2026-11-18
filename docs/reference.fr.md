@@ -226,20 +226,23 @@ node scripts/demo/captures.mjs ../demo-fr fr             # docs/screenshots/dash
 bash scripts/demo/cv-exemples.sh                         # docs/examples/*.pdf et docs/screenshots/cv-*.png (pypdfium2 requis)
 ```
 
+Comment le code s'articule, et pourquoi : [`code.fr.md`](code.fr.md). Comment contribuer : [`CONTRIBUTING.fr.md`](../CONTRIBUTING.fr.md).
+
 Arborescence :
 
 ```
 bin/vigie-emploi.js   point d'entrée de la commande (TypeScript de src/ dans le dépôt, JavaScript de dist/ dans le paquet npm)
 migrations/           schéma SQL versionné (PRAGMA user_version)
-src/core/             configuration, liens, normalisation, opérations sur les offres, requêtes,
-                      grille de notation (rubric.ts : schéma et calcul purs ; rubric-storage.ts : fichier, versions, renotation)
+src/core/             configuration, liens, normalisation, opérations sur les offres, requêtes, erreurs,
+                      grille de notation (rubric/ : schéma et calcul purs ; rubric-storage.ts : fichier, versions, renotation)
+src/sources/          un adaptateur par site d'offres (reconnaissance des liens, lecture de la page, particularités des e-mails)
 src/db/               ouverture de la base et migrations
-src/ingest/           lecture des .eml, JSON-LD, ingestion
+src/ingest/           lecture des .eml, ingestion, téléchargement d'une page publique
 src/mail/             relève IMAP, mot de passe dans le trousseau du système, messageries connues
 src/import/           reprise d'un historique Markdown / JSON (dont les journaux des dossiers)
-src/cli/              commandes
-src/api/              serveur HTTP (Hono) : API JSON, lecture des fichiers du dossier, interface compilée
-src/mcp/              serveur MCP (stdio), outils branchés sur src/core ; textes dans src/mcp/i18n/
+src/cli/              ligne de commande : point d'entrée, options, un fichier par groupe de commandes dans commands/
+src/api/              serveur HTTP (Hono) : API JSON (routes/), lecture des fichiers du dossier, interface compilée
+src/mcp/              serveur MCP (stdio), outils branchés sur src/core (tools/) ; textes dans src/mcp/i18n/
 src/cv/               CV Markdown → PDF (Chrome sans interface), gabarits, comptage des pages
 src/init/             création d'un espace de travail
 src/i18n/             mécanisme de traduction et textes de la CLI, de l'API et du suivi
@@ -252,4 +255,4 @@ mcpb/, scripts/       extension Claude Desktop (manifeste, construction) ; scrip
 docs/adr/             décisions d'architecture
 ```
 
-Voir aussi [`AGENTS.fr.md`](../AGENTS.fr.md) (pilotage par une IA), [`mcp.fr.md`](mcp.fr.md) (brancher le serveur MCP), [`adding-a-language.fr.md`](adding-a-language.fr.md) et les décisions d'architecture : [0001](adr/0001-technical-choices.fr.md) (choix techniques), [0002](adr/0002-mcp-and-tracker.fr.md) (MCP et suivi), [0003](adr/0003-journal-and-deadlines.fr.md) (journal et échéances), [0004](adr/0004-scoring-grid.fr.md) (grille de notation), [0005](adr/0005-agent-buttons-and-notifications.fr.md) (boutons de l'agent et notifications).
+Voir aussi [`AGENTS.fr.md`](../AGENTS.fr.md) (pilotage par une IA), [`mcp.fr.md`](mcp.fr.md) (brancher le serveur MCP), [`adding-a-language.fr.md`](adding-a-language.fr.md) et les décisions d'architecture : [0001](adr/0001-technical-choices.fr.md) (choix techniques), [0002](adr/0002-mcp-and-tracker.fr.md) (MCP et suivi), [0003](adr/0003-journal-and-deadlines.fr.md) (journal et échéances), [0004](adr/0004-scoring-grid.fr.md) (grille de notation), [0005](adr/0005-agent-buttons-and-notifications.fr.md) (boutons de l'agent et notifications), [0006](adr/0006-redesign-0-7.fr.md) (la refonte 0.7).

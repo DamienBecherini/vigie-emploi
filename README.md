@@ -131,7 +131,7 @@ Your workspace (résumés, context, database, applications) stays on your disk. 
 
 [`docs/reference.md`](docs/reference.md) describes the application in detail: installation, creating the workspace, PDF résumés, configuration, commands, scoring grid, dashboard, generated tracking file, journal and deadlines, development.
 
-See also [`docs/mcp.md`](docs/mcp.md) (connecting an AI through the MCP server), [`AGENTS.md`](AGENTS.md) (how an AI drives the application), [`docs/adding-a-language.md`](docs/adding-a-language.md), the architecture decisions in [`docs/adr/`](docs/adr/) and the [changelog](CHANGELOG.md).
+See also [`docs/mcp.md`](docs/mcp.md) (connecting an AI through the MCP server), [`AGENTS.md`](AGENTS.md) (how an AI drives the application), [`docs/adding-a-language.md`](docs/adding-a-language.md) and the [changelog](CHANGELOG.md). For developers: [`docs/code.md`](docs/code.md) (how the code fits together), [`CONTRIBUTING.md`](CONTRIBUTING.md) and the architecture decisions in [`docs/adr/`](docs/adr/).
 
 ## License
 

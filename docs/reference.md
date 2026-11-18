@@ -226,20 +226,23 @@ node scripts/demo/captures.mjs ../demo-en en             # docs/screenshots/dash
 bash scripts/demo/cv-exemples.sh                         # docs/examples/*.pdf and docs/screenshots/cv-*.png (needs pypdfium2)
 ```
 
+How the code fits together, and why: [`code.md`](code.md). How to contribute: [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
 Layout:
 
 ```
 bin/vigie-emploi.js   command entry point (TypeScript from src/ in the repository, JavaScript from dist/ in the npm package)
 migrations/           versioned SQL schema (PRAGMA user_version)
-src/core/             configuration, links, normalisation, offer operations, queries,
-                      scoring grid (rubric.ts: pure schema and computation; rubric-storage.ts: file, versions, re-scoring)
+src/core/             configuration, links, normalisation, offer operations, queries, errors,
+                      scoring grid (rubric/: pure schema and computation; rubric-storage.ts: file, versions, re-scoring)
+src/sources/          one adapter per job site (link recognition, page reading, e-mail particularities)
 src/db/               database opening and migrations
-src/ingest/           .eml reading, JSON-LD, ingestion
+src/ingest/           .eml reading, ingestion, download of a public page
 src/mail/             IMAP fetch, password in the system keychain, known providers
 src/import/           import of a Markdown / JSON history (including folder journals)
-src/cli/              commands
-src/api/              HTTP server (Hono): JSON API, data folder file reading, built interface
-src/mcp/              MCP server (stdio), tools wired to src/core; texts in src/mcp/i18n/
+src/cli/              command line: entry point, options, one file per group of commands in commands/
+src/api/              HTTP server (Hono): JSON API (routes/), data folder file reading, built interface
+src/mcp/              MCP server (stdio), tools wired to src/core (tools/); texts in src/mcp/i18n/
 src/cv/               Markdown résumé → PDF (headless Chrome), templates, page count
 src/init/             workspace creation
 src/i18n/             translation mechanism and texts of the CLI, the API and the tracking file
@@ -252,4 +255,4 @@ mcpb/, scripts/       Claude Desktop extension (manifest, build); scripts/demo/:
 docs/adr/             architecture decisions
 ```
 
-See also [`AGENTS.md`](../AGENTS.md) (how an AI drives the application), [`mcp.md`](mcp.md) (connecting the MCP server), [`adding-a-language.md`](adding-a-language.md) and the architecture decisions: [0001](adr/0001-technical-choices.md) (technical choices), [0002](adr/0002-mcp-and-tracker.md) (MCP and tracker), [0003](adr/0003-journal-and-deadlines.md) (journal and deadlines), [0004](adr/0004-scoring-grid.md) (scoring grid), [0005](adr/0005-agent-buttons-and-notifications.md) (agent buttons and notifications).
+See also [`AGENTS.md`](../AGENTS.md) (how an AI drives the application), [`mcp.md`](mcp.md) (connecting the MCP server), [`adding-a-language.md`](adding-a-language.md) and the architecture decisions: [0001](adr/0001-technical-choices.md) (technical choices), [0002](adr/0002-mcp-and-tracker.md) (MCP and tracker), [0003](adr/0003-journal-and-deadlines.md) (journal and deadlines), [0004](adr/0004-scoring-grid.md) (scoring grid), [0005](adr/0005-agent-buttons-and-notifications.md) (agent buttons and notifications), [0006](adr/0006-redesign-0-7.md) (the 0.7 redesign).

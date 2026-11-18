@@ -129,7 +129,7 @@ Votre espace de travail (CV, contexte, base, candidatures) reste sur votre disqu
 
 [`docs/reference.fr.md`](docs/reference.fr.md) décrit l'application en détail : installation, création de l'espace, CV en PDF, configuration, commandes, grille de notation, tableau de bord, suivi généré, journal et échéances, développement.
 
-Voir aussi [`docs/mcp.fr.md`](docs/mcp.fr.md) (brancher une IA par le serveur MCP), [`AGENTS.fr.md`](AGENTS.fr.md) (pilotage par une IA), [`docs/adding-a-language.fr.md`](docs/adding-a-language.fr.md), les décisions d'architecture dans [`docs/adr/`](docs/adr/) et l'[historique des versions](CHANGELOG.md) (en anglais).
+Voir aussi [`docs/mcp.fr.md`](docs/mcp.fr.md) (brancher une IA par le serveur MCP), [`AGENTS.fr.md`](AGENTS.fr.md) (pilotage par une IA), [`docs/adding-a-language.fr.md`](docs/adding-a-language.fr.md) et l'[historique des versions](CHANGELOG.md) (en anglais). Pour les développeurs : [`docs/code.fr.md`](docs/code.fr.md) (comment le code s'articule), [`CONTRIBUTING.fr.md`](CONTRIBUTING.fr.md) et les décisions d'architecture dans [`docs/adr/`](docs/adr/).
 
 ## Licence
 

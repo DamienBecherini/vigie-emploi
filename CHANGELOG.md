@@ -19,6 +19,7 @@
 - English first: `README.md` is in English and `README.fr.md` in French; the same rule applies in `docs/`.
 - The reference (installation, configuration, commands, scoring grid, dashboard) moved from the README to `docs/reference.md`.
 - Guides renamed: `docs/mcp.md` (was `docs/utiliser-avec-une-ia.md`) and `docs/adding-a-language.md` (was `docs/ajouter-une-langue.md`), each with its `.fr.md` version; architecture decisions (`docs/adr/`) and this changelog translated to English.
+- For developers: `docs/code.md` explains how the code fits together (modules, data, score, the three ways in, job sites, choices), `CONTRIBUTING.md` says what a change must come with, and ADR 0006 records the decisions of this redesign. Each exists in French (`.fr.md`).
 
 ### Errors
 

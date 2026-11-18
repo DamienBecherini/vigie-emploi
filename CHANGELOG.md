@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1 — November 2026
+
+### Fixes
+
+- Dashboard: the filters work again. Ticking a status, a source or a tag, or typing a score, a date, a contract or a work pattern changed nothing since 0.6.0: the name of the URL parameter was passed as React's reserved `key` prop, which never reaches the component.
+- Dashboard: the pay read from a job ad's page shows its unit in the language of the interface ("45000-55000 / an", "/ year") instead of the raw schema.org unit ("YEAR"). The saved text does not change.
+
 ## 0.7.0 — November 2026
 
 ### Security

@@ -1,6 +1,6 @@
 {
   "name": "vigie-emploi",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "AI-driven search for a job or freelance work: job ads sorted with a transparent scoring grid, honest résumés and applications, tracking. SQLite database, web dashboard, CLI and MCP server. English and French.",
   "keywords": [
     "job-search",

@@ -133,7 +133,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   );
 
   // ---------------------------------------------------------------------------------------------
-  // Espace
+  // Workspace
 
   server.registerTool(
     'workspace_state',
@@ -204,7 +204,7 @@ export function saveToolsWorkspace(server: McpServer, state: StateMcp, data: () 
   );
 
   // ---------------------------------------------------------------------------------------------
-  // Fichiers de l'espace
+  // Files of the workspace
 
   server.registerTool(
     'list_files',

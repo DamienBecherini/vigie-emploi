@@ -69,7 +69,7 @@ export function usePreference<T>(key: string, fallback: T): [T, (v: T) => void] 
     try {
       localStorage.setItem(`vigie-emploi:${key}`, typeof value === 'string' ? value : JSON.stringify(value));
     } catch {
-      /* stockage indisponible : la préférence vaut pour la session */
+      /* storage unavailable: the preference holds for the session */
     }
   }, [key, value]);
   return [value, setValue];
@@ -88,7 +88,7 @@ export function usePreferenceText(key: string, fallback: string): [string, (v: s
     try {
       localStorage.setItem(`vigie-emploi:${key}`, value);
     } catch {
-      /* ignoré */
+      /* ignored */
     }
   }, [key, value]);
   return [value, setValue];

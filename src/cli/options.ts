@@ -48,10 +48,10 @@ export function analyze<const O extends OptionDefinitions>(args: string[], optio
   return { v: values as CommandValues<O>, pos: positionals };
 }
 
-/** Whole number above zero, otherwise an error naming the option. */
-export function whole(v: unknown, name: string): number {
-  const n = Number(v);
-  if (!Number.isInteger(n) || n <= 0) error(t('cli.invalid', { name, value: String(v) }));
+/** Whole number from `min` (1 by default), otherwise an error naming the option and showing what was typed. */
+export function whole(v: unknown, name: string, min = 1): number {
+  const n = String(v ?? '').trim() === '' ? Number.NaN : Number(v);
+  if (!Number.isInteger(n) || n < min) error(t('cli.invalid', { name, value: String(v) }));
   return n;
 }
 

@@ -13,7 +13,7 @@ export interface Filters {
   unscored?: boolean;
   contract?: string;
   remote?: string;
-  /** Recherche plein texte (titre, entreprise, description, stack). */
+  /** Full-text search (title, company, description, stack). */
   q?: string;
   receivedFrom?: string;
   receivedUntil?: string;

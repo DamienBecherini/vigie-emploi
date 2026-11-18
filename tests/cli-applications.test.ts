@@ -213,6 +213,10 @@ describe('event, journal, deadlines, done', () => {
 
   it('deadlines: invalid number of days', async () => {
     expect((await run('deadlines', '--days', '-1')).code).toBe(1);
+    // The error names the option and shows what was typed (not "NaN").
+    expect(await run('deadlines', '--days', 'abc')).toEqual({ code: 1, out: '', err: 'Error: Invalid days: abc\n' });
+    expect((await run('deadlines', '--days', '')).err).toBe('Error: Invalid days: \n');
+    expect(parsed<{ ok: boolean }>(await run('deadlines', '--days', '0', '--json')).ok).toBe(true);
   });
 
   it('done: done, reopened, unknown event', async () => {

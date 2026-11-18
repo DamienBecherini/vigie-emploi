@@ -18,14 +18,20 @@ import {
 import { languageCurrent, t } from '../../i18n/index.ts';
 import { labelLevel } from '../../i18n/labels.ts';
 import { analyze, error, whole } from '../options.ts';
-import { context, withoutError, type Command } from '../context.ts';
+import { context, type Command } from '../context.ts';
 import { comma, json, showImpact } from '../format.ts';
+
+/** Trial run: --dry-run (the spelling of the help) or --dry_run (the name of the MCP and API field); --no-… gives false. */
+function dryRun(v: { 'dry-run'?: boolean; dry_run?: boolean }): boolean {
+  return Boolean(v['dry-run'] ?? v.dry_run);
+}
 
 export const scoringCommands: Record<string, Command> = {
   score(args) {
     // Here --json carries the scores to record (JSON text): it replaces the general --json switch.
-    const { v, pos } = analyze(args, { file: { type: 'string' }, json: { type: 'string' }, dry_run: { type: 'boolean' } });
+    const { v, pos } = analyze(args, { file: { type: 'string' }, json: { type: 'string' }, 'dry-run': { type: 'boolean' }, dry_run: { type: 'boolean' } });
     const { config, db } = context(v);
+    const dry = dryRun(v);
     let inputs: unknown[];
     if (v.file) {
       inputs = batchInputs(JSON.parse(readFileSync(v.file, 'utf8').replace(/^﻿/, '')));
@@ -38,8 +44,8 @@ export const scoringCommands: Record<string, Command> = {
         inputs[0] = { ...(inputs[0] as object), id: whole(pos[0], 'id') };
       }
     }
-    const results = withoutError(() => scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: Boolean(v.dry_run) }));
-    json({ ok: true, dry_run: Boolean(v.dry_run), scored: v.dry_run ? 0 : results.length, offers: results });
+    const results = scoreOffers(db, inputs, 'cli', { rubric: () => rubricCurrent(db, config.dataDir), dry_run: dry });
+    json({ ok: true, dry_run: dry, scored: dry ? 0 : results.length, offers: results });
   },
 
   rubric(args) {
@@ -51,37 +57,39 @@ export const scoringCommands: Record<string, Command> = {
       init: { type: 'boolean' },
       update: { type: 'string' },
       summary: { type: 'string' },
+      'dry-run': { type: 'boolean' },
       dry_run: { type: 'boolean' },
     });
     const { config, db } = context(v);
     const folder = config.dataDir;
     if (v.init) {
-      const r = withoutError(() => initializeRubric(db, folder, config.language));
+      const r = initializeRubric(db, folder, config.language);
       if (v.json) return json({ ok: true, created: r.created, path: r.path, version: r.version.version });
       return console.log(r.created ? t('cli.rubric.copied', { path: r.path }) : t('cli.rubric.exists', { path: r.path }));
     }
     if (v.history) {
-      withoutError(() => rubricCurrent(db, folder));
+      rubricCurrent(db, folder);
       const h = historyRubric(db);
       if (v.json) return json({ ok: true, versions: h });
       for (const x of h) console.log(`  v${String(x.version).padEnd(4)} ${x.at.slice(0, 16).replace('T', ' ')}  ${x.author.padEnd(9)} ${x.summary}`);
       return;
     }
     if (v.restore !== undefined) {
-      const r = withoutError(() => restoreRubric(db, folder, whole(v.restore, 'version'), { author: 'cli', summary: v.summary }));
+      const r = restoreRubric(db, folder, whole(v.restore, 'version'), { author: 'cli', summary: v.summary });
       if (v.json) return json({ ok: true, version: r.version.version, impact: r.impact });
       console.log(t('cli.rubric.version', { version: r.version.version, summary: r.version.summary }));
       return showImpact(r.impact);
     }
     if (v.update !== undefined) {
-      if (!v.dry_run && !v.summary) error(t('cli.rubric.summaryExpected'));
+      const dry = dryRun(v);
+      if (!dry && !v.summary) error(t('cli.rubric.summaryExpected'));
       let change: unknown;
       try {
         change = JSON.parse(v.update);
       } catch (e) {
         error(t('cli.rubric.jsonInvalid', { message: (e as Error).message }));
       }
-      const r = withoutError(() => updateRubric(db, folder, change, { author: 'cli', summary: v.summary ?? '', dry_run: Boolean(v.dry_run) }));
+      const r = updateRubric(db, folder, change, { author: 'cli', summary: v.summary ?? '', dry_run: dry });
       if (v.json) return json({ ok: true, ...r });
       console.log(r.saved ? t('cli.rubric.saved', { version: r.version }) : t('cli.rubric.dry_run'));
       if (r.computed_examples.length) {
@@ -93,7 +101,7 @@ export const scoringCommands: Record<string, Command> = {
       }
       return showImpact(r.impact);
     }
-    const g = v.version !== undefined ? withoutError(() => versionRubric(db, whole(v.version, 'version'))) : withoutError(() => rubricRequired(db, folder));
+    const g = v.version !== undefined ? versionRubric(db, whole(v.version, 'version')) : rubricRequired(db, folder);
     if (v.json) {
       return json({
         ok: true,
@@ -149,7 +157,7 @@ export const scoringCommands: Record<string, Command> = {
   rescore(args) {
     const { v } = analyze(args, {});
     const { config, db } = context(v);
-    const r = withoutError(() => rescore(db, config.dataDir));
+    const r = rescore(db, config.dataDir);
     if (v.json) return json({ ok: true, ...r });
     console.log(t('cli.rescore', { version: r.version }));
     showImpact(r.impact);

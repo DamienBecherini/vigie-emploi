@@ -24,9 +24,6 @@ const commands: Record<string, Command> = {
   ...scoringCommands,
   ...applicationCommands,
   ...workspaceCommands,
-  help() {
-    process.stdout.write(help());
-  },
 };
 
 /** Value of an option (--name value or --name=value) read before the full parsing. */
@@ -58,7 +55,8 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(help());
     return 0;
   }
-  const fn = commands[cmd];
+  // Own properties only: a name inherited from Object.prototype (toString, constructor…) is not a command.
+  const fn = Object.hasOwn(commands, cmd) ? commands[cmd] : undefined;
   if (!fn) {
     process.stderr.write(`${t('cli.commandUnknown', { command: cmd })}\n\n${help()}`);
     return 2;

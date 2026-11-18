@@ -9,7 +9,7 @@ import { writeTracker } from '../../export/tracker.ts';
 import { languageCurrent, t } from '../../i18n/index.ts';
 import { labelType } from '../../i18n/labels.ts';
 import { analyze, error, whole } from '../options.ts';
-import { context, notFound, withoutError, type Command } from '../context.ts';
+import { context, notFound, type Command } from '../context.ts';
 import { comma, dateEvent, json, lineJournal, showDetail, truncate } from '../format.ts';
 
 export const applicationCommands: Record<string, Command> = {
@@ -17,7 +17,7 @@ export const applicationCommands: Record<string, Command> = {
     const { v, pos } = analyze(args, {});
     const { config, db } = context(v);
     const id = whole(pos[0], 'id');
-    const r = withoutError(() => prepareApplication(db, config.dataDir, id, 'cli'));
+    const r = prepareApplication(db, config.dataDir, id, 'cli');
     if (v.json) return json(r);
     console.log(showDetail(r.offer));
     console.log(`\n${t('cli.apply.folder', { folder: r.suggested_folder })}`);
@@ -44,7 +44,7 @@ export const applicationCommands: Record<string, Command> = {
       next_action: v['next-action'],
     };
     if (Object.values(fields).every((x) => x === undefined)) error(t('cli.application.option'));
-    const r = withoutError(() => trackApplication(db, id, fields, 'cli'));
+    const r = trackApplication(db, id, fields, 'cli');
     if (v.json) return json({ ok: true, id, status: r.offer.status, status_added: r.status_added, application: r.offer.application });
     console.log(showDetail(r.offer).split(`\n\n${t('cli.detail.description')}`)[0]);
   },
@@ -55,7 +55,7 @@ export const applicationCommands: Record<string, Command> = {
     const id = whole(pos[0], 'id');
     if (pos[1] === undefined) error(t('cli.nextAction.expected'));
     const text = pos.slice(1).join(' ');
-    const r = withoutError(() => trackApplication(db, id, { next_action: text === '-' ? null : text }, 'cli'));
+    const r = trackApplication(db, id, { next_action: text === '-' ? null : text }, 'cli');
     const action = r.offer.application?.next_action ?? null;
     if (v.json) return json({ ok: true, id, next_action: action });
     console.log(`#${id} : ${action ?? t('cli.nextAction.none')}`);
@@ -94,7 +94,7 @@ export const applicationCommands: Record<string, Command> = {
       files: v.file,
       done: v.done,
     };
-    const e = withoutError(() => addEvent(db, id, input, 'cli'));
+    const e = addEvent(db, id, input, 'cli');
     if (v.json) return json({ ok: true, event: e });
     console.log(
       t('cli.event.added', { id: e.id, offer: id, at: dateEvent(e.at), type: e.type, deadline: e.done ? '' : t('cli.event.deadline'), summary: e.summary }),
@@ -117,7 +117,7 @@ export const applicationCommands: Record<string, Command> = {
   deadlines(args) {
     const { v } = analyze(args, { days: { type: 'string' } });
     const { db } = context(v);
-    const r = withoutError(() => deadlines(db, { days: v.days !== undefined ? Number(v.days) : 7 }));
+    const r = deadlines(db, { days: v.days !== undefined ? whole(v.days, 'days', 0) : 7 });
     if (v.json) return json({ ok: true, ...r });
     const language = languageCurrent();
     const line = (e: (typeof r.upcoming)[number]) =>
@@ -132,7 +132,7 @@ export const applicationCommands: Record<string, Command> = {
     const { v, pos } = analyze(args, { done: { type: 'boolean' } });
     const { db } = context(v);
     const id = whole(pos[0], 'event_id');
-    withoutError(() => eventOrError(db, id));
+    eventOrError(db, id);
     const e = markDone(db, id, v.done !== false);
     if (v.json) return json({ ok: true, event: e });
     console.log(t(e.done ? 'cli.done.done' : 'cli.done.reopened', { id, summary: e.summary }));

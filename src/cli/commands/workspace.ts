@@ -9,7 +9,7 @@ import { chooseTemplate, TEMPLATE_DEFAULT, generateCv, listTemplates, findBrowse
 import { analyzePages } from '../../cv/pages.ts';
 import { isLanguage, LANGUAGES, t } from '../../i18n/index.ts';
 import { analyze, error, number, whole } from '../options.ts';
-import { context, withoutError, type Command } from '../context.ts';
+import { context, type Command } from '../context.ts';
 import { json } from '../format.ts';
 
 export const workspaceCommands: Record<string, Command> = {
@@ -58,7 +58,7 @@ export const workspaceCommands: Record<string, Command> = {
   count(args) {
     const { v, pos } = analyze(args, {});
     if (pos.length !== 1) error(t('cli.count.usage'));
-    const result = countText(withoutError(() => readFileSync(pos[0], 'utf8')));
+    const result = countText(readFileSync(pos[0], 'utf8'));
     if (v.json) return json({ ok: true, file: pos[0], blocks: result });
     for (const b of result) {
       console.log(t('cli.count.line', { characters: String(b.characters).padStart(6), words: String(b.words).padStart(4), start: b.start }));
@@ -77,7 +77,7 @@ export const workspaceCommands: Record<string, Command> = {
     const { v, pos } = analyze(args, {});
     if (pos.length !== 1) error(t('cli.template.usage'));
     const workspace = loadConfig({ dataDir: v.data, fileConfig: v.config }).dataDir;
-    const r = withoutError(() => chooseTemplate(workspace, pos[0]));
+    const r = chooseTemplate(workspace, pos[0]);
     if (v.json) return json({ ok: true, ...r });
     console.log(t('cli.template.installed', { name: pos[0], folder: r.folder, old: r.old ? t('cli.template.old', { folder: r.old }) : '' }));
     console.log(t('cli.template.regenerate'));
@@ -100,7 +100,7 @@ export const workspaceCommands: Record<string, Command> = {
     const template = chosen;
     const browser = findBrowser();
     if (!browser) error(t('cli.cv.withoutBrowser'));
-    const generated = pos.map((md) => withoutError(() => generateCv(md, template, browser, { capture: Boolean(v.capture) })));
+    const generated = pos.map((md) => generateCv(md, template, browser, { capture: Boolean(v.capture) }));
     const results = [];
     for (const r of generated) {
       const layout = await analyzePages(readFileSync(r.pdf)).catch(() => null);

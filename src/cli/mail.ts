@@ -8,7 +8,7 @@ import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { mailState, messageMailError, saveMailSettings } from '../mail/settings.ts';
 import { t } from '../i18n/index.ts';
 import { AppError } from '../core/errors.ts';
-import type { CommandValues } from './options.ts';
+import { whole, type CommandValues } from './options.ts';
 
 /** Options of "vigie-emploi mail". */
 export const MAIL_OPTIONS = {
@@ -76,6 +76,9 @@ async function readStdin(): Promise<string> {
 
 async function setup(v: Values, config: Config, store: SecretStore): Promise<void> {
   if (!config.file) throw userError(t('cli.mail.noConfigFile'));
+  // Numbers checked before any question: the error names the option and shows what was typed.
+  const portTyped = v.port !== undefined ? whole(v.port, 'port') : undefined;
+  const sinceDays = v['since-days'] !== undefined ? whole(v['since-days'], 'since-days') : (config.mail?.sinceDays ?? 14);
   const interactive = Boolean(process.stdin.isTTY) && !v['password-stdin'];
   const address = v.address ?? (interactive ? await ask(t('cli.mail.askAddress'), config.mail?.user) : '');
   if (!address) throw userError(t('cli.mail.addressRequired'));
@@ -85,13 +88,13 @@ async function setup(v: Values, config: Config, store: SecretStore): Promise<voi
   if (!host && provider?.auth === 'oauth') throw userError(t('cli.mail.oauth', { name: provider.name }));
   if (!host) host = provider?.host ?? (interactive ? await ask(t('cli.mail.askHost'), config.mail?.host) : undefined);
   if (!host) throw userError(t('cli.mail.hostRequired'));
-  const port = v.port ? Number(v.port) : provider?.host === host ? provider.port : secure ? 993 : 143;
+  const port = portTyped ?? (provider?.host === host ? provider.port : secure ? 993 : 143);
   if (provider) console.log(t('cli.mail.provider', { name: provider.name, host, port }));
   if (provider?.auth === 'app-password') console.log(t('cli.mail.appPassword', { name: provider.name, help: provider.help ?? '' }));
 
   const password = v['password-stdin'] ? await readStdin() : await askHidden(t('cli.mail.askPassword'));
   if (!password) throw userError(t('cli.mail.passwordRequired'));
-  const base = { user: address, host, port, secure, sinceDays: Number(v['since-days'] ?? config.mail?.sinceDays ?? 14), markSeen: v['mark-seen'] !== false };
+  const base = { user: address, host, port, secure, sinceDays, markSeen: v['mark-seen'] !== false };
   let folders: string[];
   try {
     folders = await listFolders(base, { password });

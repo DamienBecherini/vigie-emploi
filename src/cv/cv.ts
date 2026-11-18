@@ -405,7 +405,7 @@ export function listTemplates(): { name: string; description: string }[] {
 
 /**
  * Installs a shipped template into <workspace>/cv/gabarit. The old one is renamed cv/gabarit-<YYYYMMDD-HHMMSS>
- * (nothing is lost); the photo (portrait.*) is carried over into the new one.
+ * (-2, -3… if that name is taken: nothing is lost); the photo (portrait.*) is carried over into the new one.
  */
 export function chooseTemplate(workspace: string, name: string): { folder: string; old: string | null } {
   const source = join(FOLDER_TEMPLATES, name);
@@ -420,7 +420,14 @@ export function chooseTemplate(workspace: string, name: string): { folder: strin
   if (existsSync(target)) {
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
-    old = join(workspace, 'cv', `gabarit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`);
+    const stamp = join(
+      workspace,
+      'cv',
+      `gabarit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`,
+    );
+    // A second change within the same second: -2, -3… (an existing backup is never overwritten).
+    old = stamp;
+    for (let n = 2; existsSync(old); n++) old = `${stamp}-${n}`;
     renameSync(target, old);
   }
   cpSync(source, target, { recursive: true });

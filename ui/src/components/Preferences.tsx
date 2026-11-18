@@ -21,7 +21,7 @@ function save(key: string, value: unknown) {
   try {
     localStorage.setItem(`vigie-emploi:${key}`, JSON.stringify(value));
   } catch {
-    /* stockage indisponible : la préférence vaut pour la session */
+    /* storage unavailable: the preference holds for the session */
   }
 }
 

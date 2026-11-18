@@ -45,12 +45,22 @@
 - A work pattern written in English is understood by the score: "3 days on site", "2 days from home", "2 days per week in the office".
 - Free-Work: a description that contains "Bienvenue chez" is no longer cut there (the cut is for Hellowork, which repeats the presentation of the company).
 
+### Fixes
+
+- `score` and `rubric --update` accept `--dry-run`, the spelling of the help (`--dry_run` still works).
+- `template` run twice within the same second keeps both old templates (`cv/gabarit-<date>-2`…) instead of failing.
+- `deadlines --days abc`, `mail setup --port abc` and `mail setup --since-days abc` give one line naming the option and what was typed, instead of going on with "not a number".
+- `vigie-emploi toString` (or any name inherited by a JavaScript object) is an unknown command, not a silent success.
+- `tag` reads `--data=<folder>` and `--config=<file>` like the other commands, and refuses `--data` or `--config` without a value instead of ignoring it.
+- The command line shows the stack of a defect of the program (an unexpected error) instead of its message alone; the errors it expects (a wrong input, something missing) still show their message alone.
+
 ### Development
 
 - One adapter per job site in `src/sources/` (link recognition, who reads the ad, page reading, e-mail particularities), listed in one registry: adding a site is one file, one line and one block of tests.
 - The five largest files are split by domain, without any change of behaviour: commands of the command line (`src/cli/commands/`), routes of the API (`src/api/routes/`), tools of the MCP server (`src/mcp/tools/`), scoring grid (`src/core/rubric/`), components and hooks of the interface.
 - Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.
 - Tests of the command-line interface, of the documentation's links and of the lockfile.
+- The reading of the cells of the history tables moved from `src/import/history.ts` to `src/import/cells.ts`; a test keeps the files of `src/` under 500 lines and the comments in English. No test reads the real `~/vigie-emploi` any more.
 
 ## 0.6.0 — November 2026 (first public release)
 

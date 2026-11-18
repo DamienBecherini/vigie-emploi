@@ -177,7 +177,7 @@ function filesCited(text: string, dataDir: string, folderRel: string): string[] 
     try {
       decode = decodeURIComponent(p);
     } catch {
-      /* lien mal encodé : tel quel */
+      /* badly encoded link: kept as it is */
     }
     const rel = posix.normalize(posix.join(base, decode));
     if (rel.startsWith('..') || rel.split('/').some((s) => s.startsWith('.'))) return;

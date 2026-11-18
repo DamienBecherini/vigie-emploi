@@ -55,7 +55,7 @@ export function chooseLanguage(l: Language): void {
   try {
     localStorage.setItem(KEY, l);
   } catch {
-    /* stockage indisponible : le choix vaut pour la session */
+    /* storage unavailable: the choice holds for the session */
   }
   apply(l);
 }

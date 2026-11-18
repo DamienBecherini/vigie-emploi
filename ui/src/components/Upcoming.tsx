@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type DeadlineOffer } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { usePreference } from '../state.ts';
 import { BadgeType, dateEvent } from './Journal.tsx';
 import { VerticalShadows, useVerticalShadows } from './VerticalShadows.tsx';
@@ -33,7 +34,7 @@ function Element({ e, choose }: { e: DeadlineOffer; choose: (id: number) => void
 }
 
 function Statistics() {
-  const q = useQuery({ queryKey: ['statistics'], queryFn: api.statistics });
+  const q = useQuery({ queryKey: queryKeys.statistics(), queryFn: api.statistics });
   const s = q.data;
   if (!s) return <p className="text-sm text-slate-600 dark:text-slate-400">{t('stats.loading')}</p>;
   const steps: [string, number][] = [
@@ -87,7 +88,7 @@ function useLimitedHeight(dependency: unknown) {
 }
 
 export function Upcoming({ choose }: { choose: (id: number) => void }) {
-  const q = useQuery({ queryKey: ['deadlines'], queryFn: () => api.deadlines(7) });
+  const q = useQuery({ queryKey: queryKeys.deadlines(), queryFn: () => api.deadlines(7) });
   const r = q.data;
   const nothing = r && !r.overdue.length && !r.upcoming.length;
   const [stats, setStats] = usePreference<boolean>('statistics-visible', false);

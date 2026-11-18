@@ -10,7 +10,6 @@ import { AppError, messageZod } from './errors.ts';
 
 export const LEVELS = ['strong', 'medium', 'light', 'zero'] as const;
 export type Level = (typeof LEVELS)[number];
-export const LABELS_LEVELS: Record<Level, string> = { strong: 'Fort', medium: 'Moyen', light: 'Léger', zero: 'Zéro' };
 
 /** Criteria whose sub-score is computed by the application from a scale. */
 export const COMPUTATIONS = ['remote', 'compensation'] as const;
@@ -172,7 +171,7 @@ export type Example = z.infer<typeof schemaExample>;
 
 export const schemaRubric = z
   .strictObject({
-    name: z.string().default('Grille de notation'),
+    name: z.string().default(() => t('core.rubric.defaultName')),
     /** "Worth a look" threshold: quick view "Scored ≥ …". */
     threshold: score10.default(4.5),
     /** General instructions for the AI (targets, bonuses, what matters), in addition to the criteria descriptions. */
@@ -259,7 +258,10 @@ export interface AppliedRule {
 
 export interface Flag {
   code: string;
-  message: string;
+  /** Values of the message: the amount under the floor and its kind, the label of the criterion left without a sub-score. */
+  params?: Record<string, string | number>;
+  /** Scores saved before version 0.7 carry their message, written in French; the newer ones the code and its values only. */
+  message?: string;
 }
 
 export interface InputsUsed {
@@ -361,7 +363,7 @@ export function scoreRemote(b: Scales['remote'], days: number | null): ResultCom
     return {
       score: b.unknown,
       justification: t('core.calc.paceUnknown'),
-      flag: { code: 'remote_unknown', message: 'Télétravail inconnu (valeur neutre) : à vérifier' },
+      flag: { code: 'remote_unknown' },
     };
   }
   const n = b.onsite_days[Math.min(5, Math.max(0, Math.round(days)))];
@@ -378,7 +380,7 @@ export function scoreCompensation(
     return {
       score: b.unknown,
       justification: t('core.calc.compensationUnknown'),
-      flag: { code: 'compensation_unknown', message: 'Rémunération inconnue (valeur neutre) : à demander' },
+      flag: { code: 'compensation_unknown' },
     };
   }
   const min = Math.min(...values);
@@ -400,7 +402,7 @@ export function scoreCompensation(
   return {
     score,
     justification: `${formatNumber(value)}${u}${ref}, ${position}${fullRemote ? t('core.calc.floorFullRemote') : ''}`,
-    flag: value < floor ? { code: 'sub_floor', message: `Rémunération sous le plancher (${formatNumber(value)}${u}) : à signaler` } : undefined,
+    flag: value < floor ? { code: 'sub_floor', params: { amount: rounded(value, 1), unit: type } } : undefined,
   };
 }
 
@@ -455,7 +457,7 @@ export function computeScore(rubric: Rubric, input: Input, offer: DataOffer = {}
         score = 5;
         justification = null;
         origin = 'neutral';
-        flags.push({ code: `criterion_missing:${c.id}`, message: `${c.label} : pas de sous-note (valeur neutre 5)` });
+        flags.push({ code: `criterion_missing:${c.id}`, params: { label: c.label } });
       }
     }
     const normalizedWeight = sum > 0 ? c.weight / sum : 0;
@@ -539,8 +541,10 @@ export function checkInput(rubric: Rubric, raw: unknown): Input {
 
 /** Short label of the applied rules, for the "penalties" column of the scores. */
 export function summaryRules(d: Breakdown): string | null {
-  const t = d.rules.map((r) => `${r.effect === 'zero' ? '0' : `plafond ${formatNumber(r.value!)}`} : ${r.label}`);
-  return t.length ? t.join(' ; ') : null;
+  const lines = d.rules.map((r) =>
+    t('core.ruleSummary', { effect: r.effect === 'zero' ? '0' : t('core.cap', { value: formatNumber(r.value!) }), label: r.label }),
+  );
+  return lines.length ? lines.join(' ; ') : null;
 }
 
 /** Score of a reference example, computed with the rubric (to display it and calibrate the AI). */
@@ -584,7 +588,7 @@ export const schemaChange = z.strictObject({
       }),
     )
     .optional(),
-  remove_rules: z.array(z.string()).optional().describe('Identifiants des règles à retirer ; les règles non citées dans « regles » restent telles quelles'),
+  remove_rules: z.array(z.string()).optional().describe('Ids of the rules to remove; the rules not named in "rules" stay as they are'),
   /** Criteria: update of the given fields (label, description, weight). */
   criteria: z
     .array(z.strictObject({ id: z.string(), label: z.string().optional(), description: z.string().optional(), weight: z.number().min(0).max(100).optional() }))
@@ -603,7 +607,7 @@ export const schemaChange = z.strictObject({
       remove: z
         .array(z.union([z.string(), z.strictObject({ title: z.string(), company: z.string().optional() })]))
         .optional()
-        .describe('Titres des exemples à retirer, ou { titre, entreprise } si deux exemples ont le même titre'),
+        .describe('Titles of the examples to remove, or { title, company } when two examples have the same title'),
     })
     .optional(),
 });

@@ -9,7 +9,7 @@ import { t as tr } from '../i18n/index.ts';
 import { AppError } from './errors.ts';
 import { z } from 'zod';
 
-export { LABELS_TYPES, ORIGINS_EVENT, DIRECTION_MESSAGE, TYPES_EVENT } from './statuses.ts';
+export { ORIGINS_EVENT, DIRECTION_MESSAGE, TYPES_EVENT } from './statuses.ts';
 export type { OriginEvent, Direction, TypeEvent } from './statuses.ts';
 
 export interface JournalEvent {

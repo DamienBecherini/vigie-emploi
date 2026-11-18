@@ -15,7 +15,14 @@ import { openState } from '../src/mcp/state.ts';
 import { launchDetached, openDashboard, probe, type Dependencies, type Health } from '../src/mcp/dashboard.ts';
 
 const root = mkdtempSync(join(tmpdir(), 'vigie-emploi-tableau-'));
-afterAll(() => rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
+afterAll(() => {
+  try {
+    rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  } catch {
+    // On Windows, a dashboard process still shutting down keeps the folder for a moment: a temporary folder left behind
+    // is not a failure of the tests.
+  }
+});
 
 const withoutElectron = { node: '24.12.0' } as unknown as NodeJS.ProcessVersions;
 const electron = { node: '24.22.1', electron: '45.2.1' } as unknown as NodeJS.ProcessVersions;
@@ -56,6 +63,7 @@ describe('settings of the Claude Desktop extension', () => {
     expect(c.language).toBe('fr');
     const e = openState({ env: { VIGIE_EMPLOI_DATA: '${user_config.folder}' }, cwd: root });
     expect(e.byDefault).toBe(true);
+    e.db?.close();
   });
 
   it('language typed by hand: case and names tolerated', () => {
@@ -68,6 +76,8 @@ describe('settings of the Claude Desktop extension', () => {
     expect(() => openState({ dataDir: folder, env: { VIGIE_EMPLOI_LANGUAGE: 'de' }, cwd: root })).toThrow(/de/);
     const e = openStateTolerant({ dataDir: folder, env: { VIGIE_EMPLOI_LANGUAGE: 'de' }, cwd: root });
     expect(e.config.language).toBe('fr');
+    // An open database cannot be removed with its folder on Windows (afterAll).
+    e.db?.close();
   });
 });
 

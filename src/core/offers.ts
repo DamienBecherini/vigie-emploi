@@ -4,7 +4,7 @@ import { isStatus, type Status } from './statuses.ts';
 import { readCompensation, now, sanitize } from './text.ts';
 import { journal, type EventJournal } from './events.ts';
 import type { Breakdown, Input } from './rubric.ts';
-import { t } from '../i18n/index.ts';
+import { LANGUAGES, t, tl } from '../i18n/index.ts';
 import { AppError } from './errors.ts';
 
 export type Origin = 'email' | 'import-batch' | 'import-register' | 'import-tracker' | 'manual';
@@ -293,9 +293,9 @@ function dateSendByDefault(db: Database, offerId: number, at?: string): void {
   db.prepare(
     'INSERT INTO applications (offer_id, sent_at) VALUES (?, ?) ON CONFLICT (offer_id) DO UPDATE SET sent_at = COALESCE(sent_at, excluded.sent_at)',
   ).run(offerId, day);
-  const columns = db.prepare("SELECT name FROM pragma_table_info('applications')").all() as { name: string }[];
-  if (columns.some((c) => c.name === 'next_action')) {
-    db.prepare("UPDATE applications SET next_action = NULL WHERE offer_id = ? AND next_action LIKE 'envoyer%'").run(offerId);
+  // A next action that was to send the application is done: "Envoyer…", "Send…" (the verb of each language).
+  for (const language of LANGUAGES) {
+    db.prepare('UPDATE applications SET next_action = NULL WHERE offer_id = ? AND next_action LIKE ?').run(offerId, `${tl(language, 'core.sendVerb')}%`);
   }
 }
 

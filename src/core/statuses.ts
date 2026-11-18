@@ -4,20 +4,6 @@ export const STATUSES = ['new', 'to-read', 'scored', 'dismissed', 'go', 'sent', 
 
 export type Status = (typeof STATUSES)[number];
 
-export const LABELS_STATUSES: Record<Status, string> = {
-  new: 'Nouvelle',
-  'to-read': 'À lire',
-  scored: 'Notée',
-  dismissed: 'Écartée',
-  go: 'Go',
-  sent: 'Envoyée',
-  'followed-up': 'Relancée',
-  interview: 'Entretien',
-  rejected: 'Refus',
-  closed: 'Close',
-  withdrawn: 'Abandonnée',
-};
-
 /** "My applications": sent status and the following ones. */
 export const STATUSES_APPLICATION: Status[] = ['sent', 'followed-up', 'interview', 'rejected', 'closed'];
 
@@ -56,12 +42,3 @@ export const DIRECTION_MESSAGE = ['sent', 'received'] as const;
 export type Direction = (typeof DIRECTION_MESSAGE)[number];
 export const ORIGINS_EVENT = ['interface', 'cli', 'mcp', 'import'] as const;
 export type OriginEvent = (typeof ORIGINS_EVENT)[number];
-
-export const LABELS_TYPES: Record<TypeEvent, string> = {
-  message: 'Message',
-  interview: 'Entretien / appel',
-  test: 'Test',
-  proposal: 'Proposition / devis',
-  decision: 'Décision',
-  note: 'Note',
-};

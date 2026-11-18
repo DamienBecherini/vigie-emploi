@@ -432,7 +432,7 @@ export function createApp(
       if (!(e instanceof AppError)) throw e;
       return c.text(e.message, e.code === 'not-found' ? 404 : 403);
     }
-    const p = pageFile(file.absolute, file.relative, { raw: c.req.query('raw') === '1' });
+    const p = pageFile(file.absolute, file.relative, { raw: c.req.query('raw') === '1', language });
     return c.body(p.body, 200, p.headers);
   });
 

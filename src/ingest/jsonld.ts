@@ -2,6 +2,7 @@
 // The application never downloads LinkedIn, Indeed nor Glassdoor (terms of use, anti-bot protections).
 import { textHtmlLines } from '../core/links.ts';
 import { dateIso } from '../core/text.ts';
+import { t, type KeyServer } from '../i18n/index.ts';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 
@@ -42,13 +43,14 @@ function findJobPosting(d: unknown): Json | null {
   return null;
 }
 
-const CONTRACTS: Record<string, string> = {
-  FULL_TIME: 'Temps plein',
-  PART_TIME: 'Temps partiel',
-  CONTRACTOR: 'Freelance',
-  TEMPORARY: 'CDD / intérim',
-  INTERN: 'Stage',
-  PERMANENT: 'CDI',
+/** Contract kinds of schema.org (employmentType), named in the language of the workspace. */
+const CONTRACTS: Record<string, KeyServer> = {
+  FULL_TIME: 'core.contract.fullTime',
+  PART_TIME: 'core.contract.partTime',
+  CONTRACTOR: 'core.contract.contractor',
+  TEMPORARY: 'core.contract.temporary',
+  INTERN: 'core.contract.intern',
+  PERMANENT: 'core.contract.permanent',
 };
 
 const CONTRACTS_COLLECTIVE: Record<string, string> = { FREELANCE: 'Freelance', PERMANENT: 'CDI', FIXED_TERM: 'CDD', INTERNSHIP: 'Stage' };
@@ -68,7 +70,7 @@ export function extractCollective(page: string): DetailJsonLd | null {
   if (!p?.name) return null;
   const text = (h: unknown) => (h ? textHtmlLines(String(h)) : '');
   const profile = text(p.profileWanted);
-  const description = [text(p.description), profile && `Profil recherché\n${profile}`].filter(Boolean).join('\n\n');
+  const description = [text(p.description), profile && `${t('core.ingest.profileWanted')}\n${profile}`].filter(Boolean).join('\n\n');
   const salary =
     p.minSalary || p.maxSalary
       ? `${[p.minSalary, p.maxSalary].filter(Boolean).join('-')} ${String(p.salaryCurrency ?? '€')} ${String(p.salaryFrequency ?? '')}`.trim()
@@ -109,7 +111,7 @@ export function extractJsonLd(page: string): DetailJsonLd | null {
     const salary = ((jp.baseSalary as Json | undefined)?.value ?? {}) as Json;
     const amounts = ['minValue', 'maxValue', 'value'].filter((k) => k in salary).map((k) => String(salary[k]));
     const compensation = amounts.length ? `${amounts.join('-')} ${String(salary.unitText ?? '')}`.trim() : null;
-    const types = ([] as unknown[]).concat(jp.employmentType ?? []).map((t) => CONTRACTS[String(t)] ?? String(t));
+    const types = ([] as unknown[]).concat(jp.employmentType ?? []).map((type) => (CONTRACTS[String(type)] ? t(CONTRACTS[String(type)]) : String(type)));
     return {
       title: jp.title ? String(jp.title) : null,
       company: ((jp.hiringOrganization as Json | undefined)?.name as string | undefined) ?? null,

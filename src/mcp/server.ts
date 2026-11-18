@@ -601,7 +601,5 @@ export async function startMcp(options: OptionsConfig = {}): Promise<void> {
   process.on('SIGTERM', close);
   await server.connect(transport);
   const d = state.config.dataDir;
-  process.stderr.write(
-    tm('server.startMcp', { d: String(d), p2: String(state.db ? '' : ', espace non initialisé'), p3: String(state.db ? '' : ', workspace not initialised') }),
-  );
+  process.stderr.write(tm('server.startMcp', { d: String(d), p3: String(state.db ? '' : ', workspace not initialised') }));
 }

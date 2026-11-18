@@ -31,6 +31,13 @@
 - A score has one definition for the command line, the API and the MCP server. A text field may be `null` everywhere (an AI often writes `null` for what the job ad does not say), and a field of the wrong type is refused with its name.
 - The configuration file is validated: a key of the wrong type, a file that is not JSON, an invalid exclusion pattern or an invalid `VIGIE_EMPLOI_PORT` now give one line naming the file and the key. A wrong port used to be read as "not a number" without a word.
 
+### Languages in the data
+
+- A score no longer saves French sentences. Its flags (remote work unknown, pay unknown or below the floor, criterion without a sub-score) are saved as a code and its values, and written in the language of whoever reads them: dashboard, command line, MCP server. Scores saved earlier keep their message and still read in both languages.
+- In an English workspace, the summary of the applied rules ("cap 6.5: …"), the contract kinds read from job ads ("Permanent", "Fixed term / temp"), the "known-company" tag and the page that shows a file of the workspace are in English.
+- Moving a job ad to "sent" clears a next action that was to send the application whatever the language ("Envoyer…", "Send…"); it only knew the French verb.
+- `ingest`: an application acknowledgement now lists the job ads it refers to (the line showed the placeholder `{suite}` instead).
+
 ### Development
 
 - Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.

@@ -9,7 +9,8 @@ import { dateFr, dateIso, fingerprint, isEmpty } from './text.ts';
 import { z } from 'zod';
 import { computeScore, summaryRules, checkInput, UNITS, type Breakdown } from './rubric.ts';
 import type { VersionRubric } from './rubric-storage.ts';
-import { decimal, t } from '../i18n/index.ts';
+import { decimal, languageCurrent, t } from '../i18n/index.ts';
+import { messageFlag } from '../i18n/labels.ts';
 import { AppError, messageZod } from './errors.ts';
 
 /** Text a front end attaches to a field of a schema: the MCP server describes each field to the AI. */
@@ -204,7 +205,7 @@ export function scoreInput(
     }
     if (e.raw_score !== undefined && e.raw_score !== null) warnings.push(t('core.rawScoreIgnored'));
     if (e.penalties) warnings.push(t('core.penaltiesIgnored'));
-    for (const d of breakdown.flags) if (d.code.startsWith('criterion_missing')) warnings.push(d.message);
+    for (const d of breakdown.flags) if (d.code.startsWith('criterion_missing')) warnings.push(messageFlag(d, languageCurrent()));
     scoreAdded = addScore(
       db,
       target.id,

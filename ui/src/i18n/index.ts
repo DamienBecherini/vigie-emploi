@@ -6,7 +6,7 @@ import { createTranslator, isLanguage, LANGUAGE_DEFAULT, LOCALES, type Language 
 import { labelLevel, labelStatus, labelType, messageFlag } from '../../../src/i18n/labels.ts';
 import { defineLanguage as defineLanguageCore } from '../../../src/i18n/index.ts';
 import type { Status, TypeEvent } from '../../../src/core/statuses.ts';
-import type { Level } from '../../../src/core/rubric.ts';
+import type { Flag, Level } from '../../../src/core/rubric.ts';
 import { en } from './en.ts';
 import { fr, type KeyUi } from './fr.ts';
 
@@ -96,7 +96,7 @@ export function dateShort(d: Date): string {
 export const statusShown = (s: Status) => labelStatus(s, current);
 export const typeShown = (x: TypeEvent) => labelType(x, current);
 export const levelShown = (n: Level) => labelLevel(n, current);
-export const flagShown = (d: { code: string; message: string }) => messageFlag(d, current);
+export const flagShown = (d: Flag) => messageFlag(d, current);
 
 /** Whole percentage in the language's format ("35 %" in French, "35%" in English). */
 export function percent(n: number): string {

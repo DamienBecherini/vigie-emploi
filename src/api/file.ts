@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { basename, extname } from 'node:path';
 import { Marked } from 'marked';
+import { LANGUAGE_DEFAULT, tl, type Language } from '../i18n/index.ts';
 
 const TEXT = new Set(['.txt', '.json', '.csv', '.log', '.eml', '.yml', '.yaml', '.xml', '.html', '.htm', '.ts', '.js', '.py', '.sql']);
 const BINARIES: Record<string, string> = {
@@ -45,17 +46,18 @@ export interface PageFile {
   headers: Record<string, string>;
 }
 
-export function pageFile(absolute: string, relative: string, o: { raw?: boolean } = {}): PageFile {
+export function pageFile(absolute: string, relative: string, o: { raw?: boolean; language?: Language } = {}): PageFile {
   const ext = extname(absolute).toLowerCase();
   const name = basename(absolute);
   const common = { 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-cache', 'Referrer-Policy': 'no-referrer' };
   if (ext === '.md' && !o.raw) {
     const source = readFileSync(absolute, 'utf8').replace(/^﻿/, '');
     const html = marked.parse(source, { async: false });
+    const language = o.language ?? LANGUAGE_DEFAULT;
     const page = `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(name)}</title><style>${STYLE}</style></head>
-<body><main><header><span>${escapeHtml(relative)}</span><a href="?raw=1">Texte brut</a></header>
+<body><main><header><span>${escapeHtml(relative)}</span><a href="?raw=1">${tl(language, 'api.fileRaw')}</a></header>
 ${html}
 </main></body></html>`;
     return { body: page, headers: { ...common, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP } };

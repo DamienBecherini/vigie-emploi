@@ -219,7 +219,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
       } else {
         addStatus(db, offer.id, 'new', { comment: off.subject ? t('core.ingest.email', { subject: off.subject }) : null, origin: 'ingest', at });
         if (offer.company && companyOffers(db, offer.company, offer.id) > 0) {
-          updateTags(db, offer.id, ['entreprise-connue'], []);
+          updateTags(db, offer.id, [t('core.ingest.tagKnownCompany')], []);
         }
         summary.added++;
         if (offer.description) summary.with_description++;

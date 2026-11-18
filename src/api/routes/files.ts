@@ -13,7 +13,7 @@ export function routesFiles(app: Hono, ctx: RoutesContext): void {
   // Files of the application folder: list, then reading (data folder only).
   app.get('/api/offers/:id/files', (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     return c.json(filesFolder(db, config.dataDir, id));
   });
 
@@ -24,7 +24,7 @@ export function routesFiles(app: Hono, ctx: RoutesContext): void {
       return c.json({ ok: false, error: m('api.jsonExpected') }, 415);
     }
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const folder = filesFolder(db, config.dataDir, id).folder;
     if (!folder) return c.json({ ok: false, error: m('api.withoutFolder') }, 404);
     let absolute: string;

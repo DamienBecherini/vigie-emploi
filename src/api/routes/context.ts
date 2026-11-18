@@ -1,8 +1,8 @@
 // What every group of API routes shares: database, configuration, language, messages, notifications,
-// and the check that a job ad exists (answered 404 with the same body on every route).
+// and the check that a job ad exists (a 'not-found' error, answered 404 like any other expected error).
 import type { Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import type { Config } from '../../core/config.ts';
+import { AppError } from '../../core/errors.ts';
 import { offerById } from '../../core/offers.ts';
 import type { Database } from '../../db/database.ts';
 import type { KeyServer, Language } from '../../i18n/index.ts';
@@ -29,16 +29,13 @@ export interface RoutesContext {
   launcher: Launcher;
   opener: OpenerFolder;
   isLocal: (c: Context) => boolean;
-  /**
-   * Stops the route with 404 { ok: false, error } when the job ad does not exist. Thrown as an HTTPException whose
-   * response is ready, which app.onError sends as it is (no `code` field, unlike an AppError).
-   */
-  requireOffer: (c: Context, id: number) => void;
+  /** Stops the route with a 'not-found' error (404) when the job ad does not exist. */
+  requireOffer: (id: number) => void;
 }
 
 export function requireOfferWith(db: Database, m: RoutesContext['m']): RoutesContext['requireOffer'] {
-  return (c, id) => {
-    if (!offerById(db, id)) throw new HTTPException(404, { res: c.json({ ok: false, error: m('api.offerNotFound') }, 404) });
+  return (id) => {
+    if (!offerById(db, id)) throw new AppError('not-found', m('api.offerNotFound'));
   };
 }
 

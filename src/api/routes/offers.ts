@@ -58,7 +58,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   app.post('/api/offers/:id/status', async (c) => {
     const id = Number(c.req.param('id'));
     const body = await read(c, bodyStatus);
-    requireOffer(c, id);
+    requireOffer(id);
     if (!body.status || !isStatus(body.status)) return c.json({ ok: false, error: m('api.statusUnknown') }, 400);
     addStatus(db, id, body.status, { comment: body.comment ?? null, origin: 'interface' });
     return c.json(detailOffer(db, id));
@@ -67,7 +67,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   app.put('/api/offers/:id/tags', async (c) => {
     const id = Number(c.req.param('id'));
     const body = await read(c, bodyTags);
-    requireOffer(c, id);
+    requireOffer(id);
     const wanted = new Set(body.tags ?? []);
     const current = tagsOffer(db, id);
     const tags = transaction(db, () =>
@@ -84,7 +84,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   app.put('/api/offers/:id/link', async (c) => {
     const id = Number(c.req.param('id'));
     const body = await read(c, bodyLink);
-    requireOffer(c, id);
+    requireOffer(id);
     updateLink(db, id, body.url ?? null);
     return c.json(detailOffer(db, id));
   });
@@ -92,7 +92,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   /** "Apply" button: moves the offer to go and returns the command to copy. */
   app.post('/api/offers/:id/apply', (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const r = prepareApplication(db, config.dataDir, id, 'interface');
     return c.json({ ok: true, command: `apply ${id}`, offer: r.offer });
   });
@@ -100,7 +100,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   /** Entry or correction of a score from the detail panel (new history entry). */
   app.post('/api/offers/:id/score', async (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const { score, raw_score, penalties, fit, gaps } = await read(c, bodyScore);
     scoreOffers(db, [{ id, score, raw_score, penalties, fit, gaps, read: true }], 'interface');
     return c.json(detailOffer(db, id));
@@ -109,7 +109,7 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
   /** Correction of the sub-scores (and of the inputs of computed criteria): new score computed with the rubric. */
   app.put('/api/offers/:id/sub-scores', async (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const body = await read(c, schemaSubScores);
     updateSubScores(db, id, body, 'interface', rubricRequired(db, config.dataDir));
     return c.json(detailOffer(db, id));

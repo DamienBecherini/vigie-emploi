@@ -16,7 +16,7 @@ export function routesTracking(app: Hono, ctx: RoutesContext): void {
   /** Application: next action, sending date, channel… (null or '' clears a field, absent = unchanged). */
   app.put('/api/offers/:id/application', async (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const body = await read(c, bodyApplication);
     const fields: FieldsApplication = {};
     for (const k of FIELDS_EDITABLE) {
@@ -31,13 +31,13 @@ export function routesTracking(app: Hono, ctx: RoutesContext): void {
   // Application journal (events and deadlines).
   app.get('/api/offers/:id/events', (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     return c.json(journal(db, id));
   });
 
   app.post('/api/offers/:id/events', async (c) => {
     const id = Number(c.req.param('id'));
-    requireOffer(c, id);
+    requireOffer(id);
     const body = await read(c, schemaEventInput);
     addEvent(db, id, body, 'interface');
     return c.json(detailOffer(db, id));

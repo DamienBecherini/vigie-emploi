@@ -3,7 +3,6 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import { Hono, type Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { serve } from '@hono/node-server';
 import type { Config } from '../core/config.ts';
 import { APP_ROOT } from '../core/config.ts';
@@ -95,12 +94,10 @@ export function createApp(db: Database, config: ConfigApp, idle: Idle = new Idle
   };
 
   // An expected error answers with the status of its code; an unreadable JSON body is a wrong input.
-  // A route that stopped with a ready answer (a missing job ad: ctx.requireOffer) sends that answer.
   // Anything else is a defect of the program: 500, with the stack on the error output.
   app.onError((err, c) => {
     if (err instanceof AppError) return c.json({ ok: false, error: err.message, code: err.code }, HTTP_STATUS[err.code]);
     if (err instanceof SyntaxError) return c.json({ ok: false, error: err.message, code: 'invalid' }, 400);
-    if (err instanceof HTTPException) return err.getResponse();
     process.stderr.write(`${err.stack ?? err.message}\n`);
     return c.json({ ok: false, error: m('api.internalError', { message: err.message }), code: 'internal' }, 500);
   });

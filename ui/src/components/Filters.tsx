@@ -8,14 +8,14 @@ import { VerticalShadows, useVerticalShadows } from './VerticalShadows.tsx';
 type Update = (updated: Partial<Record<KeyUrl, string | null>>) => void;
 
 /** Text field written into the URL after a short typing pause. */
-function FieldText(props: { key: KeyUrl; value: string; update: Update; label: string; type?: string; placeholder?: string; step?: string }) {
+function FieldText(props: { param: KeyUrl; value: string; update: Update; label: string; type?: string; placeholder?: string; step?: string }) {
   const id = useId();
   const [local, setLocal] = useState(props.value);
   const deferred = useDebounce(local, props.type === 'date' ? 0 : 350);
   useEffect(() => setLocal(props.value), [props.value]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the debounced input changes, not when the URL does (it would write the old value back)
   useEffect(() => {
-    if (deferred !== props.value) props.update({ [props.key]: deferred || null, page: null });
+    if (deferred !== props.value) props.update({ [props.param]: deferred || null, page: null });
   }, [deferred]);
   return (
     <div>
@@ -38,12 +38,12 @@ function FieldText(props: { key: KeyUrl; value: string; update: Update; label: s
   );
 }
 
-function Cases(props: { legend: string; key: KeyUrl; options: { value: string; label: string; n?: number }[]; chosen: string[]; update: Update }) {
+function Cases(props: { legend: string; param: KeyUrl; options: { value: string; label: string; n?: number }[]; chosen: string[]; update: Update }) {
   const toggle = (v: string) => {
     const s = new Set(props.chosen);
     if (s.has(v)) s.delete(v);
     else s.add(v);
-    props.update({ [props.key]: [...s].join(',') || null, page: null });
+    props.update({ [props.param]: [...s].join(',') || null, page: null });
   };
   const list = useRef<HTMLDivElement>(null);
   const shadows = useVerticalShadows(list, props.options.length > 0);
@@ -92,8 +92,8 @@ export function Filters({ params, update, meta }: { params: URLSearchParams; upd
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <FieldText key="scoreMin" label={t('filters.scoreMin')} type="number" step="0.5" value={g('scoreMin')} update={update} />
-        <FieldText key="scoreMax" label={t('filters.scoreMax')} type="number" step="0.5" value={g('scoreMax')} update={update} />
+        <FieldText param="scoreMin" label={t('filters.scoreMin')} type="number" step="0.5" value={g('scoreMin')} update={update} />
+        <FieldText param="scoreMax" label={t('filters.scoreMax')} type="number" step="0.5" value={g('scoreMax')} update={update} />
       </div>
       <label className="flex items-center gap-2 text-sm">
         <input
@@ -106,33 +106,33 @@ export function Filters({ params, update, meta }: { params: URLSearchParams; upd
       </label>
       <fieldset className="grid grid-cols-2 gap-2">
         <legend className="label">{t('filters.received')}</legend>
-        <FieldText key="receivedFrom" label={t('filters.from')} type="date" value={g('receivedFrom')} update={update} />
-        <FieldText key="receivedUntil" label={t('filters.until')} type="date" value={g('receivedUntil')} update={update} />
+        <FieldText param="receivedFrom" label={t('filters.from')} type="date" value={g('receivedFrom')} update={update} />
+        <FieldText param="receivedUntil" label={t('filters.until')} type="date" value={g('receivedUntil')} update={update} />
       </fieldset>
       <fieldset className="grid grid-cols-2 gap-2">
         <legend className="label">{t('filters.published')}</legend>
-        <FieldText key="publishedFrom" label={t('filters.from')} type="date" value={g('publishedFrom')} update={update} />
-        <FieldText key="publishedUntil" label={t('filters.until')} type="date" value={g('publishedUntil')} update={update} />
+        <FieldText param="publishedFrom" label={t('filters.from')} type="date" value={g('publishedFrom')} update={update} />
+        <FieldText param="publishedUntil" label={t('filters.until')} type="date" value={g('publishedUntil')} update={update} />
       </fieldset>
       <Cases
         legend={t('filters.status')}
-        key="status"
+        param="status"
         chosen={chosen('status')}
         update={update}
         options={STATUSES.map((s: Status) => ({ value: s, label: statusShown(s), n: nByStatus.get(s) ?? 0 }))}
       />
       <Cases
         legend={t('filters.source')}
-        key="source"
+        param="source"
         chosen={chosen('source')}
         update={update}
         options={(meta?.sources ?? []).map((s) => ({ value: s.value, label: s.value, n: s.n }))}
       />
-      <FieldText key="contract" label={t('filters.contract')} placeholder={t('filters.contractExample')} value={g('contract')} update={update} />
-      <FieldText key="remote" label={t('filters.remote')} placeholder={t('filters.remoteExample')} value={g('remote')} update={update} />
+      <FieldText param="contract" label={t('filters.contract')} placeholder={t('filters.contractExample')} value={g('contract')} update={update} />
+      <FieldText param="remote" label={t('filters.remote')} placeholder={t('filters.remoteExample')} value={g('remote')} update={update} />
       <Cases
         legend={t('filters.tags')}
-        key="tag"
+        param="tag"
         chosen={chosen('tag')}
         update={update}
         options={(meta?.tags ?? []).map((s) => ({ value: s.value, label: s.value, n: s.n }))}

@@ -58,3 +58,10 @@ Open an issue first for anything larger than a fix, to agree on the direction be
 The repository on GitHub is a mirror of the maintainer's own git server: an accepted pull request is applied there and reaches GitHub through the mirror, so it may be closed by hand rather than with the merge button. Your commits keep your name.
 
 A security problem is not reported in a public issue: see [`SECURITY.md`](.github/SECURITY.md).
+
+## Releasing (maintainer)
+
+1. Add the version's section at the top of `CHANGELOG.md`, then `npm version <x.y.z> --no-git-tag-version` (`package.json` and `package-lock.json`; the extension's manifest takes its version from `package.json`).
+2. `npm run check`, commit "Version x.y.z", tag `vx.y.z`, push the branch and the tag to the maintainer's server (the mirror carries them to GitHub).
+3. `npm run mcpb`, then `gh release create vx.y.z build/vigie-emploi-x.y.z.mcpb --latest` with the installation notes of the previous release and the version's changelog.
+4. `npm publish` in an interactive terminal: the npm account uses web authentication (`auth-type=web`), which opens the browser to confirm. Run without a terminal (an agent's shell), npm falls back on a one-time password and stops with `EOTP`: the maintainer then runs the command themselves.

@@ -58,3 +58,10 @@ Ouvrir d'abord une issue pour tout ce qui dépasse une correction, afin de s'acc
 Le dépôt GitHub est un miroir du serveur git du mainteneur : une pull request acceptée y est appliquée et arrive sur GitHub par le miroir ; elle peut donc être fermée à la main plutôt que par le bouton de fusion. Vos commits gardent votre nom.
 
 Un problème de sécurité ne se signale pas dans une issue publique : voir [`SECURITY.md`](.github/SECURITY.md).
+
+## Publier une version (mainteneur)
+
+1. Ajouter la section de la version en tête de `CHANGELOG.md`, puis `npm version <x.y.z> --no-git-tag-version` (`package.json` et `package-lock.json` ; le manifeste de l'extension prend sa version dans `package.json`).
+2. `npm run check`, commit « Version x.y.z », tag `vx.y.z`, pousser la branche et le tag sur le serveur du mainteneur (le miroir les porte sur GitHub).
+3. `npm run mcpb`, puis `gh release create vx.y.z build/vigie-emploi-x.y.z.mcpb --latest` avec les notes d'installation de la release précédente et le changelog de la version.
+4. `npm publish` dans un terminal interactif : le compte npm utilise l'authentification web (`auth-type=web`), qui ouvre le navigateur pour confirmer. Lancé sans terminal (le shell d'un agent), npm se rabat sur un code à usage unique et s'arrête sur `EOTP` : le mainteneur lance alors la commande lui-même.

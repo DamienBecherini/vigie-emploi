@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LEVELS, scoreExample, validateRubric, type Rubric, type Level } from '../../../src/core/rubric.ts';
 import { levelShown, number, percent, t } from '../i18n/index.ts';
 import { api, type ChangeScore, type Impact } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { useDebounce } from '../state.ts';
 import { BadgeScore, formatDate, formatScore } from './Badges.tsx';
 
@@ -563,7 +564,7 @@ function Preview({ impact, loading, error, choose }: { impact?: Impact; loading:
 }
 
 function History({ current, restore }: { current: number | null; restore: (v: number) => void }) {
-  const q = useQuery({ queryKey: ['rubric-history', current], queryFn: api.historyRubric });
+  const q = useQuery({ queryKey: queryKeys.rubricHistory(current), queryFn: api.historyRubric });
   return (
     <Section title={t('history.title')}>
       <ol className="space-y-1 text-sm">
@@ -599,7 +600,7 @@ export function Settings({ close, choose, announce }: { close: () => void; choos
   const client = useQueryClient();
   const title = useId();
   const header = useRef<HTMLHeadingElement>(null);
-  const q = useQuery({ queryKey: ['rubric'], queryFn: api.rubric });
+  const q = useQuery({ queryKey: queryKeys.rubric(), queryFn: api.rubric });
   const [workingCopy, setWorkingCopy] = useState<Rubric | null>(null);
   const [summary, setSummary] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -638,17 +639,17 @@ export function Settings({ close, choose, announce }: { close: () => void; choos
   }, [workingCopy]);
   const deferred = useDebounce(modified ? validation.rubric : null, 350);
   const preview = useQuery({
-    queryKey: ['rubric-preview', JSON.stringify(deferred)],
+    queryKey: queryKeys.rubricPreview(JSON.stringify(deferred)),
     queryFn: () => api.previewRubric(deferred!),
     enabled: deferred !== null,
     placeholderData: (p) => p,
   });
 
   const refresh = () => {
-    client.invalidateQueries({ queryKey: ['rubric'] });
-    client.invalidateQueries({ queryKey: ['rubric-history'] });
-    client.invalidateQueries({ queryKey: ['offers'] });
-    client.invalidateQueries({ queryKey: ['offer'] });
+    client.invalidateQueries({ queryKey: queryKeys.rubric() });
+    client.invalidateQueries({ queryKey: queryKeys.rubricHistoryAll() });
+    client.invalidateQueries({ queryKey: queryKeys.offers() });
+    client.invalidateQueries({ queryKey: queryKeys.offerAll() });
   };
   const save = useMutation({
     mutationFn: () => api.saveRubric(validation.rubric!, summary),

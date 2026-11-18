@@ -21,6 +21,9 @@ export const KEYS_FILTERS = [
 export type KeyFilter = (typeof KEYS_FILTERS)[number];
 export type KeyUrl = KeyFilter | 'page' | 'size' | 'sort' | 'order' | 'offer';
 
+/** Writes URL parameters (null or empty: removed); `history`: a new history entry instead of replacing the current one. */
+export type UpdateParameters = (updated: Partial<Record<KeyUrl, string | null>>, history?: boolean) => void;
+
 const listeners = new Set<() => void>();
 const notify = () => {
   for (const f of listeners) f();
@@ -33,7 +36,7 @@ function subscribe(f: () => void) {
 }
 
 /** Reactive URL parameters. */
-export function useParameters(): [URLSearchParams, (updated: Partial<Record<KeyUrl, string | null>>, history?: boolean) => void] {
+export function useParameters(): [URLSearchParams, UpdateParameters] {
   const search = useSyncExternalStore(subscribe, () => window.location.search);
   const params = new URLSearchParams(search);
   const update = useCallback((updated: Partial<Record<KeyUrl, string | null>>, history = false) => {

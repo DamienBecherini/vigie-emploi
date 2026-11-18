@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STATUSES, type Status } from '../../../src/core/statuses.ts';
 import { statusShown, t } from '../i18n/index.ts';
 import { api, urlFile, type DetailOffer } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { BadgeScore, BadgeStatus, formatDate, formatScore } from './Badges.tsx';
 import { FolderFiles, Journal } from './Journal.tsx';
 import { BadgeOldRubric, BreakdownScore, EditorSubScores } from './Breakdown.tsx';
@@ -41,8 +42,8 @@ function LinkCv({ path }: { path: string }) {
  *   displayed formatted by /api/file; without a sheet, the path as text (the files are listed below).
  */
 function LinkFolder({ offerId, folder }: { offerId: number; folder: string }) {
-  const q = useQuery({ queryKey: ['files', offerId], queryFn: () => api.files(offerId) });
-  const health = useQuery({ queryKey: ['health'], queryFn: api.health, staleTime: Infinity });
+  const q = useQuery({ queryKey: queryKeys.files(offerId), queryFn: () => api.files(offerId) });
+  const health = useQuery({ queryKey: queryKeys.health(), queryFn: api.health, staleTime: Infinity });
   const open = useMutation({ mutationFn: () => api.openFolder(offerId) });
   const md = q.data?.files ?? [];
   const sheet = md.find((f) => f.name === 'dossier-candidature.md') ?? md.find((f) => f.name.toLowerCase().endsWith('.md'));
@@ -80,9 +81,9 @@ function EditorTags({ offer }: { offer: DetailOffer }) {
   const updated = useMutation({
     mutationFn: (tags: string[]) => api.tags(offer.id, tags),
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: ['offer', offer.id] });
-      client.invalidateQueries({ queryKey: ['offers'] });
-      client.invalidateQueries({ queryKey: ['meta'] });
+      client.invalidateQueries({ queryKey: queryKeys.offer(offer.id) });
+      client.invalidateQueries({ queryKey: queryKeys.offers() });
+      client.invalidateQueries({ queryKey: queryKeys.meta() });
     },
   });
   const add = () => {
@@ -140,8 +141,8 @@ function EditorLink({ offer }: { offer: DetailOffer }) {
     mutationFn: (url: string | null) => api.link(offer.id, url),
     onSuccess: () => {
       setEditing(false);
-      client.invalidateQueries({ queryKey: ['offer', offer.id] });
-      client.invalidateQueries({ queryKey: ['offers'] });
+      client.invalidateQueries({ queryKey: queryKeys.offer(offer.id) });
+      client.invalidateQueries({ queryKey: queryKeys.offers() });
     },
   });
   if (!editing) {
@@ -208,9 +209,9 @@ function readNumber(s: string): number | null {
 function useRefresh(id: number) {
   const client = useQueryClient();
   return (d: DetailOffer) => {
-    client.setQueryData(['offer', id], d);
-    client.invalidateQueries({ queryKey: ['offers'] });
-    client.invalidateQueries({ queryKey: ['meta'] });
+    client.setQueryData(queryKeys.offer(id), d);
+    client.invalidateQueries({ queryKey: queryKeys.offers() });
+    client.invalidateQueries({ queryKey: queryKeys.meta() });
   };
 }
 
@@ -419,9 +420,9 @@ function ChangeStatus({ offer }: { offer: DetailOffer }) {
   const updated = useMutation({
     mutationFn: () => api.status(offer.id, status, comment),
     onSuccess: (d) => {
-      client.setQueryData(['offer', offer.id], d);
-      client.invalidateQueries({ queryKey: ['offers'] });
-      client.invalidateQueries({ queryKey: ['meta'] });
+      client.setQueryData(queryKeys.offer(offer.id), d);
+      client.invalidateQueries({ queryKey: queryKeys.offers() });
+      client.invalidateQueries({ queryKey: queryKeys.meta() });
       setComment('');
     },
   });
@@ -466,9 +467,9 @@ function ButtonApply({ offer, announce }: { offer: DetailOffer; announce: (m: st
   const updated = useMutation({
     mutationFn: () => api.apply(offer.id),
     onSuccess: async (r) => {
-      client.setQueryData(['offer', offer.id], r.offer);
-      client.invalidateQueries({ queryKey: ['offers'] });
-      client.invalidateQueries({ queryKey: ['meta'] });
+      client.setQueryData(queryKeys.offer(offer.id), r.offer);
+      client.invalidateQueries({ queryKey: queryKeys.offers() });
+      client.invalidateQueries({ queryKey: queryKeys.meta() });
       try {
         await navigator.clipboard.writeText(r.command);
         announce(t('detail.copy', { command: r.command }));
@@ -488,7 +489,7 @@ function ButtonApply({ offer, announce }: { offer: DetailOffer; announce: (m: st
 export function Detail({ id, close, announce }: { id: number; close: () => void; announce: (m: string) => void }) {
   const title = useId();
   const header = useRef<HTMLHeadingElement>(null);
-  const q = useQuery({ queryKey: ['offer', id], queryFn: () => api.offer(id) });
+  const q = useQuery({ queryKey: queryKeys.offer(id), queryFn: () => api.offer(id) });
   // biome-ignore lint/correctness/useExhaustiveDependencies: id is the trigger: another offer is shown, focus goes back to its title
   useEffect(() => {
     header.current?.focus({ preventScroll: true });

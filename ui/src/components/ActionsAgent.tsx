@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FilePenLine, Inbox, Mail } from 'lucide-react';
 import { api, type ActionAgent } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { t, type KeyUi } from '../i18n/index.ts';
 
 /**
@@ -16,7 +17,7 @@ export function useNotifications(): void {
     if (typeof EventSource === 'undefined') return;
     const stream = new EventSource('/api/stream');
     const onDatabase = () => void client.invalidateQueries();
-    const emails = () => void client.invalidateQueries({ queryKey: ['work'] });
+    const emails = () => void client.invalidateQueries({ queryKey: queryKeys.work() });
     // After a reconnection (server restarted), changes may have been missed.
     let connected = false;
     const ready = () => {
@@ -37,7 +38,7 @@ const ACTIONS: Record<ActionAgent, KeyUi> = {
 
 /** Displays nothing as long as there is no pending work. */
 export function ActionsAgent({ className = '' }: { className?: string }) {
-  const work = useQuery({ queryKey: ['work'], queryFn: api.work });
+  const work = useQuery({ queryKey: queryKeys.work(), queryFn: api.work });
   const [message, setMessage] = useState('');
   // Avoids opening two terminals on a double click: button disabled for a few seconds after the launch.
   const [recent, setRecent] = useState<ActionAgent | null>(null);
@@ -52,14 +53,14 @@ export function ActionsAgent({ className = '' }: { className?: string }) {
   });
 
   const client = useQueryClient();
-  const mail = useQuery({ queryKey: ['mail'], queryFn: api.mail });
+  const mail = useQuery({ queryKey: queryKeys.mail(), queryFn: api.mail });
   const box = mail.data?.state.configured && mail.data.state.password ? mail.data.state : null;
   const fetchMail = useMutation({
     mutationFn: api.fetchMail,
     onSuccess: (r) => {
       setMessage(r.ok ? (r.fetched ? t('mail.fetched', { n: r.fetched }) : t('mail.fetchedNone', { folder: r.folder })) : r.error);
-      client.invalidateQueries({ queryKey: ['work'] });
-      client.invalidateQueries({ queryKey: ['mail'] });
+      client.invalidateQueries({ queryKey: queryKeys.work() });
+      client.invalidateQueries({ queryKey: queryKeys.mail() });
     },
     onError: (e) => setMessage((e as Error).message),
   });

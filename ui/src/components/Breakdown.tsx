@@ -2,6 +2,7 @@
 import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type DetailOffer, type Score, type InputSubScores } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { formatScore } from './Badges.tsx';
 import { flagShown, number, percent, t, type KeyUi } from '../i18n/index.ts';
 
@@ -110,7 +111,7 @@ type Line = { score: string; justification: string };
 export function EditorSubScores({ offer }: { offer: DetailOffer }) {
   const client = useQueryClient();
   const base = useId();
-  const g = useQuery({ queryKey: ['rubric'], queryFn: api.rubric });
+  const g = useQuery({ queryKey: queryKeys.rubric(), queryFn: api.rubric });
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const n = offer.scores[0];
@@ -165,8 +166,8 @@ export function EditorSubScores({ offer }: { offer: DetailOffer }) {
       });
     },
     onSuccess: (d) => {
-      client.setQueryData(['offer', offer.id], d);
-      client.invalidateQueries({ queryKey: ['offers'] });
+      client.setQueryData(queryKeys.offer(offer.id), d);
+      client.invalidateQueries({ queryKey: queryKeys.offers() });
       setEditing(false);
       setError(null);
     },

@@ -4,6 +4,7 @@ import { ExternalLink, KeyRound, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type InputMail, type ProviderMail, type StateMail } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { t } from '../i18n/index.ts';
 import { formatDate } from './Badges.tsx';
 
@@ -27,8 +28,8 @@ function Status({ state, edit }: { state: StateMail; edit: () => void }) {
       const parts = [r.fetched ? t('mail.fetched', { n: r.fetched }) : t('mail.fetchedNone', { folder: r.folder })];
       if (r.more) parts.push(t('mail.more'));
       setMessage({ text: parts.join(' '), error: false });
-      client.invalidateQueries({ queryKey: ['mail'] });
-      client.invalidateQueries({ queryKey: ['work'] });
+      client.invalidateQueries({ queryKey: queryKeys.mail() });
+      client.invalidateQueries({ queryKey: queryKeys.work() });
     },
     onError: (e) => setMessage({ text: (e as Error).message, error: true }),
   });
@@ -36,7 +37,7 @@ function Status({ state, edit }: { state: StateMail; edit: () => void }) {
     mutationFn: api.forgetMail,
     onSuccess: () => {
       setMessage(null);
-      client.invalidateQueries({ queryKey: ['mail'] });
+      client.invalidateQueries({ queryKey: queryKeys.mail() });
     },
   });
   return (
@@ -131,7 +132,7 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
         return;
       }
       setPassword('');
-      client.invalidateQueries({ queryKey: ['mail'] });
+      client.invalidateQueries({ queryKey: queryKeys.mail() });
       done(folder);
     },
     onError: (e) => setError((e as Error).message),
@@ -277,7 +278,7 @@ function Form({ state, providers, done }: { state: StateMail; providers: Provide
 export function Mailbox({ close, announce }: { close: () => void; announce: (m: string) => void }) {
   const title = useId();
   const header = useRef<HTMLHeadingElement>(null);
-  const q = useQuery({ queryKey: ['mail'], queryFn: api.mail });
+  const q = useQuery({ queryKey: queryKeys.mail(), queryFn: api.mail });
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     header.current?.focus({ preventScroll: true });

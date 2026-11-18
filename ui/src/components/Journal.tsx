@@ -3,6 +3,7 @@ import { useId, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TYPES_EVENT, type Direction, type TypeEvent } from '../../../src/core/statuses.ts';
 import { api, urlFile, type DetailOffer, type JournalEvent, type FilesFolder, type EventInput } from '../api.ts';
+import { queryKeys } from '../queryKeys.ts';
 import { dateShort, number as numberLocal, t, typeShown } from '../i18n/index.ts';
 
 const two = (n: number) => String(n).padStart(2, '0');
@@ -43,16 +44,16 @@ function nameFile(path: string, folder: string | null): string {
 }
 
 function useFiles(id: number) {
-  return useQuery({ queryKey: ['files', id], queryFn: () => api.files(id) });
+  return useQuery({ queryKey: queryKeys.files(id), queryFn: () => api.files(id) });
 }
 
 function useRefreshJournal(id: number) {
   const client = useQueryClient();
   return (d: DetailOffer) => {
-    client.setQueryData(['offer', id], d);
-    client.invalidateQueries({ queryKey: ['offers'] });
-    client.invalidateQueries({ queryKey: ['deadlines'] });
-    client.invalidateQueries({ queryKey: ['statistics'] });
+    client.setQueryData(queryKeys.offer(id), d);
+    client.invalidateQueries({ queryKey: queryKeys.offers() });
+    client.invalidateQueries({ queryKey: queryKeys.deadlines() });
+    client.invalidateQueries({ queryKey: queryKeys.statistics() });
   };
 }
 

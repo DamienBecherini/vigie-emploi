@@ -6,7 +6,8 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isLanguage, LANGUAGE_DEFAULT, LANGUAGE_REFERENCE, LANGUAGES, NAMES_LANGUAGES, type Language } from '../i18n/tool.ts';
 import { tl } from '../i18n/index.ts';
-import { AppError } from './errors.ts';
+import { z } from 'zod';
+import { AppError, messageZod } from './errors.ts';
 
 export interface Config {
   /** The user's data folder (contains data/, emails/, candidatures/…). */
@@ -49,18 +50,21 @@ export interface MailConfig {
   markSeen: boolean;
 }
 
-interface ConfigFile {
-  dataDir?: string;
-  database?: string;
-  emails?: string;
-  port?: number;
-  fetchJsonLd?: boolean;
-  excludedTitles?: string[];
-  rejectedEmployers?: string[];
-  terminal?: string[];
-  language?: string;
-  mail?: Partial<MailConfig>;
-}
+/** What vigie-emploi.config.json may contain; a key the application does not know is left alone. */
+const schemaConfigFile = z.looseObject({
+  dataDir: z.string().optional(),
+  database: z.string().optional(),
+  emails: z.string().optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  fetchJsonLd: z.boolean().optional(),
+  excludedTitles: z.array(z.string()).optional(),
+  rejectedEmployers: z.array(z.string()).optional(),
+  terminal: z.array(z.string()).optional(),
+  language: z.string().optional(),
+  /** Read field by field by mailOf, which keeps what is usable. */
+  mail: z.record(z.string(), z.unknown()).optional(),
+});
+type ConfigFile = z.infer<typeof schemaConfigFile>;
 
 export const APP_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const NAME_FILE_CONFIG = 'vigie-emploi.config.json';
@@ -113,9 +117,18 @@ function folderConfig(folder: string): string[] {
   return [join(folder, NAME_FILE_CONFIG)];
 }
 
-function readJson(path: string): ConfigFile {
+/** Reads and validates a configuration file; the error names the file and the wrong key. */
+function readJson(path: string, language: Language = LANGUAGE_DEFAULT): ConfigFile {
   const text = readFileSync(path, 'utf8').replace(/^﻿/, '');
-  return JSON.parse(text) as ConfigFile;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch (e) {
+    throw new AppError('invalid', tl(language, 'core.config.invalid', { file: path, message: (e as Error).message }));
+  }
+  const r = schemaConfigFile.safeParse(raw);
+  if (!r.success) throw new AppError('invalid', tl(language, 'core.config.invalid', { file: path, message: messageZod(r.error) }));
+  return r.data;
 }
 
 /** Mailbox settings of the file; null when the address, server or folder is missing. */
@@ -141,14 +154,29 @@ export function mailOf(raw: Partial<MailConfig> | undefined): MailConfig | null 
 export function readMailSettings(file: string | null): MailConfig | null {
   if (!file || !existsSync(file)) return null;
   try {
-    return mailOf(readJson(file).mail);
+    return mailOf(readJson(file).mail as Partial<MailConfig> | undefined);
   } catch {
     return null;
   }
 }
 
-function compiler(patterns: string[] | undefined): RegExp[] {
-  return (patterns ?? []).map((m) => new RegExp(m, 'i'));
+function compiler(patterns: string[] | undefined, language: Language): RegExp[] {
+  return (patterns ?? []).map((m) => {
+    try {
+      return new RegExp(m, 'i');
+    } catch (e) {
+      throw new AppError('invalid', tl(language, 'core.config.pattern', { pattern: m, message: (e as Error).message }));
+    }
+  });
+}
+
+/** Port of the dashboard: VIGIE_EMPLOI_PORT, otherwise the file's, otherwise 4410. */
+function portOf(env: NodeJS.ProcessEnv, raw: ConfigFile, language: Language): number {
+  const v = variable(env, 'PORT');
+  if (v === undefined) return raw.port ?? 4410;
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1 || n > 65535) throw new AppError('invalid', tl(language, 'core.config.port', { value: v }));
+  return n;
 }
 
 /**
@@ -224,7 +252,7 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
   for (const c of candidates) {
     if (existsSync(c)) {
       file = c;
-      raw = readJson(c);
+      raw = readJson(c, messageLanguage(env));
       break;
     }
   }
@@ -233,19 +261,20 @@ export function loadConfig(opts: OptionsConfig = {}): Config {
   if (!folder) {
     throw new ErrorConfig('not-configured', tl(messageLanguage(env, raw), 'core.config.notConfigure', { file: NAME_FILE_CONFIG }));
   }
+  const languageMessages = messageLanguage(env, raw);
   const relative = (p: string | undefined, fallback: string) => (p ? (isAbsolute(p) ? p : join(folder, p)) : fallback);
   const databaseDefault = join(folder, 'data', 'vigie-emploi.sqlite');
   return {
     dataDir: folder,
     database: relative(variable(env, 'DATABASE') ?? raw.database, databaseDefault),
     emails: relative(raw.emails, join(folder, 'emails')),
-    port: Number(variable(env, 'PORT') ?? raw.port ?? 4410),
+    port: portOf(env, raw, languageMessages),
     fetchJsonLd: raw.fetchJsonLd ?? true,
-    excludedTitles: compiler(raw.excludedTitles),
-    rejectedEmployers: compiler(raw.rejectedEmployers),
+    excludedTitles: compiler(raw.excludedTitles, languageMessages),
+    rejectedEmployers: compiler(raw.rejectedEmployers, languageMessages),
     terminal: Array.isArray(raw.terminal) && raw.terminal.length ? raw.terminal.map(String) : null,
     language: languageOf(env, raw, file),
-    mail: mailOf(raw.mail),
+    mail: mailOf(raw.mail as Partial<MailConfig> | undefined),
     file,
   };
 }

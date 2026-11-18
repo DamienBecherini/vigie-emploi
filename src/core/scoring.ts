@@ -7,10 +7,10 @@ import { addScore, addStatus, saveOffer, offerById, type Origin } from './offers
 import { STATUSES_TO_PROCESS } from './statuses.ts';
 import { dateFr, dateIso, fingerprint, isEmpty } from './text.ts';
 import { z } from 'zod';
-import { computeScore, summaryRules, checkInput, messageZod, UNITS, type Breakdown } from './rubric.ts';
+import { computeScore, summaryRules, checkInput, UNITS, type Breakdown } from './rubric.ts';
 import type { VersionRubric } from './rubric-storage.ts';
 import { decimal, t } from '../i18n/index.ts';
-import { AppError } from './errors.ts';
+import { AppError, messageZod } from './errors.ts';
 
 /** Text a front end attaches to a field of a schema: the MCP server describes each field to the AI. */
 export type Describe = (field: string) => string | undefined;

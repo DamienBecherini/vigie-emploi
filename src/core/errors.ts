@@ -3,6 +3,8 @@
 // language): an HTTP status for the API, the message alone for the CLI and the MCP server. Any other error is a defect
 // of the program: the API answers 500, the CLI prints the stack.
 
+import type { ZodError } from 'zod';
+
 export const ERROR_CODES = [
   /** The offer, event, file, version… does not exist. */
   'not-found',
@@ -46,4 +48,14 @@ export function isExpected(e: unknown): boolean {
   if (e instanceof AppError) return true;
   const code = (e as { code?: unknown } | null)?.code;
   return typeof code === 'string' && /^E[A-Z_]+$/.test(code);
+}
+
+/** Readable message of a Zod error: "criteria.2.weight: …; threshold: …". */
+export function messageZod(e: ZodError, prefix = ''): string {
+  return e.issues
+    .map((i) => {
+      const path = [prefix, ...i.path.map(String)].filter(Boolean).join('.');
+      return path ? `${path} : ${i.message}` : i.message;
+    })
+    .join(' ; ');
 }

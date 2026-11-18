@@ -501,6 +501,9 @@ Language: "language" key of vigie-emploi.config.json (fr or en) or VIGIE_EMPLOI_
   'core.config.notConfigure':
     'Data folder not configured: set VIGIE_EMPLOI_DATA, pass --data <folder> or create {file} with "dataDir" (see vigie-emploi.config.example.json).',
   'core.config.notFound': 'Configuration file not found: {path}',
+  'core.config.invalid': 'Invalid configuration ({file}): {message}',
+  'core.config.port': 'Invalid port: {value} (VIGIE_EMPLOI_PORT, a whole number from 1 to 65535)',
+  'core.config.pattern': 'Invalid exclusion pattern in the configuration: {pattern} ({message})',
   'core.config.language': 'Unknown language: {language} ({languages}; VIGIE_EMPLOI_LANGUAGE or "language" in {file})',
 
   'common.offers': p('{n} offer', '{n} offers'),

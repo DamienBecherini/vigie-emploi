@@ -25,6 +25,12 @@
 - The API answers with the status of the error: 404 for what does not exist (it was 400), 400 for a wrong input, 403 for a refused access, and 500 for a defect of the program (it was 400 too), whose stack goes to the error output. Each error answer carries a `code` (`not-found`, `invalid`, `forbidden`…) next to its message.
 - The command line gives the same `code` in its JSON errors (`--json`), and `import-history` without a `candidatures/` folder now says so in one translated line instead of a stack.
 
+### Inputs
+
+- The API validates the body of each request: a field of the wrong type is refused with 400 and its name, before anything is written.
+- A score has one definition for the command line, the API and the MCP server. A text field may be `null` everywhere (an AI often writes `null` for what the job ad does not say), and a field of the wrong type is refused with its name.
+- The configuration file is validated: a key of the wrong type, a file that is not JSON, an invalid exclusion pattern or an invalid `VIGIE_EMPLOI_PORT` now give one line naming the file and the key. A wrong port used to be read as "not a number" without a word.
+
 ### Development
 
 - Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.

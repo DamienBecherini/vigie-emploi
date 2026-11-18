@@ -523,6 +523,9 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   'core.config.notConfigure':
     'Dossier de données non configuré : définir VIGIE_EMPLOI_DATA, passer --data <dossier> ou créer {file} avec "dataDir" (voir vigie-emploi.config.example.json).',
   'core.config.notFound': 'Fichier de configuration introuvable : {path}',
+  'core.config.invalid': 'Configuration invalide ({file}) : {message}',
+  'core.config.port': 'Port invalide : {value} (VIGIE_EMPLOI_PORT, un entier de 1 à 65535)',
+  'core.config.pattern': "Motif d'exclusion invalide dans la configuration : {pattern} ({message})",
   'core.config.language': 'Langue inconnue : {language} ({languages} ; VIGIE_EMPLOI_LANGUAGE ou "language" de {file})',
 
   // Plural example (used by the tests of the mechanism)

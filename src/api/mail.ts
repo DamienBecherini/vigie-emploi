@@ -1,6 +1,8 @@
 // Mailbox settings from the dashboard (for users without a terminal): state, folder list, save, fetch, forget.
 // The password goes from the local page to the system keychain; it is never sent back.
 import type { Hono } from 'hono';
+import { z } from 'zod';
+import { body } from './bodies.ts';
 import { readMailSettings, type MailConfig } from '../core/config.ts';
 import type { Database } from '../db/database.ts';
 import { accountOf, fetchMailPerConfig, listFolders, MailError } from '../mail/fetch.ts';
@@ -9,16 +11,17 @@ import type { SecretStore } from '../mail/secret.ts';
 import { mailState, messageMailError, saveMailSettings } from '../mail/settings.ts';
 
 /** Body of the mailbox requests (folder list, save). */
-export interface Body {
-  address?: string;
-  host?: string;
-  port?: number;
-  secure?: boolean;
-  folder?: string;
-  password?: string;
-  sinceDays?: number;
-  markSeen?: boolean;
-}
+export const schemaBody = z.object({
+  address: z.string().optional(),
+  host: z.string().optional(),
+  port: z.number().optional(),
+  secure: z.boolean().optional(),
+  folder: z.string().optional(),
+  password: z.string().optional(),
+  sinceDays: z.number().optional(),
+  markSeen: z.boolean().optional(),
+});
+export type Body = z.infer<typeof schemaBody>;
 
 function settings(b: Body, current: MailConfig | null): Omit<MailConfig, 'folder'> & { folder: string } {
   const user = String(b.address ?? '').trim();
@@ -62,7 +65,7 @@ export function routesMail(app: Hono, o: { db: Database; file: string | null; em
 
   // Connection test and folder list (before choosing the folder).
   app.post('/api/mail/folders', async (c) => {
-    const b = (await c.req.json()) as Body;
+    const b = await body(c, schemaBody);
     let mail: MailConfig | null = null;
     try {
       mail = settings(b, current());
@@ -75,7 +78,7 @@ export function routesMail(app: Hono, o: { db: Database; file: string | null; em
 
   app.put('/api/mail', async (c) => {
     if (!o.file) return c.json({ ok: false, kind: 'other', error: 'no configuration file' }, 400);
-    const b = (await c.req.json()) as Body;
+    const b = await body(c, schemaBody);
     let mail: MailConfig | null = null;
     try {
       mail = settings(b, current());

@@ -7,6 +7,7 @@ import { now } from './text.ts';
 import { TYPES_EVENT, type OriginEvent, type Direction, type TypeEvent } from './statuses.ts';
 import { t as tr } from '../i18n/index.ts';
 import { AppError } from './errors.ts';
+import { z } from 'zod';
 
 export { LABELS_TYPES, ORIGINS_EVENT, DIRECTION_MESSAGE, TYPES_EVENT } from './statuses.ts';
 export type { OriginEvent, Direction, TypeEvent } from './statuses.ts';
@@ -49,20 +50,25 @@ export interface DeadlineOffer extends EventJournal {
 }
 
 /** Input of an event. Optional fields: absent = unchanged (update), null or '' = cleared. */
-export interface EventInput {
-  type?: string;
-  direction?: string | null;
-  at?: string;
-  done?: boolean;
-  summary?: string;
-  details?: string | null;
-  channel?: string | null;
-  contacts?: string | null;
-  amount?: number | string | null;
-  unit?: string | null;
-  days?: number | string | null;
-  files?: string[] | null;
-}
+/**
+ * What a front end sends to add or change an event: the shape only. The content (type, date, direction, amount,
+ * files) is read and checked by addEvent and updateEvent, which accept what a person types ("demain", "1 200,50").
+ */
+export const schemaEventInput = z.object({
+  type: z.string().optional(),
+  direction: z.string().nullable().optional(),
+  at: z.string().optional(),
+  done: z.boolean().optional(),
+  summary: z.string().optional(),
+  details: z.string().nullable().optional(),
+  channel: z.string().nullable().optional(),
+  contacts: z.string().nullable().optional(),
+  amount: z.union([z.number(), z.string()]).nullable().optional(),
+  unit: z.string().nullable().optional(),
+  days: z.union([z.number(), z.string()]).nullable().optional(),
+  files: z.array(z.string()).nullable().optional(),
+});
+export type EventInput = z.infer<typeof schemaEventInput>;
 
 // ---------------------------------------------------------------------------------------------
 // Dates (local time of the machine: the user's)

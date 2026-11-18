@@ -6,7 +6,7 @@
 // average, applies the rules (zero, cap) and rounds to the half point. The AI never gives the final score.
 import { z } from 'zod';
 import { decimal, languageCurrent, t, t as tr } from '../i18n/index.ts';
-import { AppError } from './errors.ts';
+import { AppError, messageZod } from './errors.ts';
 
 export const LEVELS = ['strong', 'medium', 'light', 'zero'] as const;
 export type Level = (typeof LEVELS)[number];
@@ -213,16 +213,6 @@ export type CriterionRubric = Rubric['criteria'][number];
 
 /** Metadata keys of the grille.json file (outside the versioned content). */
 export const META_FILE = ['version', 'modified_at', 'summary', '$schema', '$comment'] as const;
-
-/** Readable message of a Zod error: "criteria.2.weight: …; threshold: …". */
-export function messageZod(e: z.ZodError, prefix = ''): string {
-  return e.issues
-    .map((i) => {
-      const path = [prefix, ...i.path.map(String)].filter(Boolean).join('.');
-      return path ? `${path} : ${i.message}` : i.message;
-    })
-    .join(' ; ');
-}
 
 /** Validates a rubric (JSON object); throws an Error with a readable message. */
 export function validateRubric(raw: unknown, origin = 'rubric'): Rubric {

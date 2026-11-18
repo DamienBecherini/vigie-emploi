@@ -7,7 +7,8 @@ import { addStatus, detailOffer, saveApplication, updateTags, offerById, type Fi
 import { checkInputBatch, isCriteriaScore, scoreInput, type InputBatch, type ResultScoring } from './scoring.ts';
 import { scoresOffer } from './offers.ts';
 import type { VersionRubric } from './rubric-storage.ts';
-import type { Inputs } from './rubric.ts';
+import { z } from 'zod';
+import { UNITS, type Inputs } from './rubric.ts';
 import { STATUSES_TO_PROCESS, type Status } from './statuses.ts';
 import { dateFr } from './text.ts';
 import { t } from '../i18n/index.ts';
@@ -123,13 +124,22 @@ export function scoreOffers(db: Database, received: unknown[], origin: string, o
   }
 }
 
-export interface InputSubScores {
+export const schemaSubScores = z.object({
   /** Modified sub-scores (criteria scored by the AI); null removes the sub-score (neutral value). */
-  criteria?: Record<string, { score: number | string; justification?: string | null } | null>;
+  criteria: z.record(z.string(), z.object({ score: z.union([z.number(), z.string()]), justification: z.string().nullable().optional() }).nullable()).optional(),
   /** Inputs of the computed criteria; null clears a value (back to the deduction from the offer). */
-  inputs?: { [K in keyof Inputs]?: Inputs[K] | null };
-  blockers?: string[];
-}
+  inputs: z
+    .object({
+      onsite_days: z.number().nullable().optional(),
+      salary_min: z.number().nullable().optional(),
+      salary_max: z.number().nullable().optional(),
+      unit: z.enum(UNITS).nullable().optional(),
+    })
+    .optional(),
+  blockers: z.array(z.string()).optional(),
+});
+/** A correction of the sub-scores typed in the dashboard (its values are checked against the rubric when the score is computed). */
+export type InputSubScores = z.infer<typeof schemaSubScores>;
 
 /**
  * Correction of the sub-scores from the interface: starts from the last score (sub-scores, inputs, rules,

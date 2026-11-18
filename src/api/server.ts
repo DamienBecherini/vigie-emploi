@@ -11,10 +11,11 @@ import { routesMail } from './mail.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
 import { transaction } from '../db/database.ts';
 import { AppError, HTTP_STATUS } from '../core/errors.ts';
+import { body as read, bodyApplication, bodyDone, bodyLink, bodyOptional, bodyRestore, bodyRubric, bodyScore, bodyStatus, bodyTags } from './bodies.ts';
 import { listOffers, meta, type OptionsList } from '../core/queries.ts';
 import { addStatus, FIELDS_APPLICATION, detailOffer, updateLink, updateTags, offerById, tagsOffer, type FieldsApplication } from '../core/offers.ts';
 import { isStatus, STATUSES } from '../core/statuses.ts';
-import { updateSubScores, scoreOffers, prepareApplication, trackApplication, type InputSubScores } from '../core/actions.ts';
+import { updateSubScores, scoreOffers, prepareApplication, trackApplication, schemaSubScores } from '../core/actions.ts';
 import { scoreExample, LEVELS, validateRubric, type Breakdown, type Level } from '../core/rubric.ts';
 import {
   previewRubric,
@@ -26,8 +27,7 @@ import {
   versionRubric,
   type VersionRubric,
 } from '../core/rubric-storage.ts';
-import type { InputBatch } from '../core/scoring.ts';
-import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, deleteEvent, type EventInput } from '../core/events.ts';
+import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, deleteEvent, schemaEventInput } from '../core/events.ts';
 import { safeFolder, safeFile, filesFolder } from '../core/files.ts';
 import { statistics } from '../core/statistics.ts';
 import { pageFile } from './file.ts';
@@ -237,7 +237,7 @@ export function createApp(
 
   app.post('/api/offers/:id/status', async (c) => {
     const id = Number(c.req.param('id'));
-    const body = (await c.req.json()) as { status?: string; comment?: string };
+    const body = await read(c, bodyStatus);
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
     if (!body.status || !isStatus(body.status)) return c.json({ ok: false, error: m('api.statusUnknown') }, 400);
     addStatus(db, id, body.status, { comment: body.comment ?? null, origin: 'interface' });
@@ -246,9 +246,9 @@ export function createApp(
 
   app.put('/api/offers/:id/tags', async (c) => {
     const id = Number(c.req.param('id'));
-    const body = (await c.req.json()) as { tags?: string[] };
+    const body = await read(c, bodyTags);
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
-    const wanted = new Set((body.tags ?? []).map((t) => String(t)));
+    const wanted = new Set(body.tags ?? []);
     const current = tagsOffer(db, id);
     const tags = transaction(db, () =>
       updateTags(
@@ -263,7 +263,7 @@ export function createApp(
 
   app.put('/api/offers/:id/link', async (c) => {
     const id = Number(c.req.param('id'));
-    const body = (await c.req.json()) as { url?: string | null };
+    const body = await read(c, bodyLink);
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
     updateLink(db, id, body.url ?? null);
     return c.json(detailOffer(db, id));
@@ -281,8 +281,7 @@ export function createApp(
   app.post('/api/offers/:id/score', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
-    const body = (await c.req.json()) as Pick<InputBatch, 'score' | 'raw_score' | 'penalties' | 'fit' | 'gaps'>;
-    const { score, raw_score, penalties, fit, gaps } = body;
+    const { score, raw_score, penalties, fit, gaps } = await read(c, bodyScore);
     scoreOffers(db, [{ id, score, raw_score, penalties, fit, gaps, read: true }], 'interface');
     return c.json(detailOffer(db, id));
   });
@@ -291,7 +290,7 @@ export function createApp(
   app.put('/api/offers/:id/sub-scores', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
-    const body = (await c.req.json()) as InputSubScores;
+    const body = await read(c, schemaSubScores);
     updateSubScores(db, id, body, 'interface', rubricRequired(db, config.dataDir));
     return c.json(detailOffer(db, id));
   });
@@ -309,13 +308,13 @@ export function createApp(
   app.get('/api/rubric', (c) => c.json(replyRubric(rubricCurrent(db, config.dataDir))));
 
   app.post('/api/rubric/preview', async (c) => {
-    const body = (await c.req.json()) as { rubric?: unknown };
+    const body = await read(c, bodyRubric);
     const current = rubricRequired(db, config.dataDir);
     return c.json(previewRubric(db, validateRubric(body.rubric), current.rubric.threshold));
   });
 
   app.put('/api/rubric', async (c) => {
-    const body = (await c.req.json()) as { rubric?: unknown; summary?: string };
+    const body = await read(c, bodyRubric);
     const r = saveRubric(db, config.dataDir, body.rubric, { author: 'interface', summary: body.summary ?? '' });
     return c.json({ ok: true, ...replyRubric(r.version), impact: r.impact });
   });
@@ -328,8 +327,8 @@ export function createApp(
   app.get('/api/rubric/versions/:v', (c) => c.json(versionRubric(db, Number(c.req.param('v')))));
 
   app.post('/api/rubric/restore', async (c) => {
-    const body = (await c.req.json()) as { version?: number; summary?: string };
-    const r = restoreRubric(db, config.dataDir, Number(body.version), { author: 'interface', summary: body.summary });
+    const body = await read(c, bodyRestore);
+    const r = restoreRubric(db, config.dataDir, body.version, { author: 'interface', summary: body.summary });
     return c.json({ ok: true, ...replyRubric(r.version), impact: r.impact });
   });
 
@@ -337,7 +336,7 @@ export function createApp(
   app.put('/api/offers/:id/application', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
-    const body = (await c.req.json()) as Record<string, unknown>;
+    const body = await read(c, bodyApplication);
     const fields: FieldsApplication = {};
     for (const k of FIELDS_EDITABLE) {
       if (!(k in body)) continue;
@@ -358,21 +357,21 @@ export function createApp(
   app.post('/api/offers/:id/events', async (c) => {
     const id = Number(c.req.param('id'));
     if (!offerById(db, id)) return c.json({ ok: false, error: m('api.offerNotFound') }, 404);
-    const body = (await c.req.json()) as EventInput;
+    const body = await read(c, schemaEventInput);
     addEvent(db, id, body, 'interface');
     return c.json(detailOffer(db, id));
   });
 
   app.put('/api/events/:id', async (c) => {
     const e = eventOrError(db, Number(c.req.param('id')));
-    const body = (await c.req.json()) as EventInput;
+    const body = await read(c, schemaEventInput);
     updateEvent(db, e.id, body);
     return c.json(detailOffer(db, e.offer_id));
   });
 
   app.post('/api/events/:id/done', async (c) => {
     const e = eventOrError(db, Number(c.req.param('id')));
-    const body = (await c.req.json().catch(() => ({}))) as { done?: boolean };
+    const body = await bodyOptional(c, bodyDone);
     markDone(db, e.id, body.done ?? true);
     return c.json(detailOffer(db, e.offer_id));
   });

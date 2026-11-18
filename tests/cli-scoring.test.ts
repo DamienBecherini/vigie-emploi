@@ -1,5 +1,6 @@
 // CLI (src/cli/main.ts), safety net before the file is split: score, rubric, rescore, and show with a breakdown.
 import { cpSync, rmSync, writeFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { cli, FIXTURES, isolate, parsed, workspace } from './cli-helpers.ts';
 
@@ -254,5 +255,38 @@ describe('French', () => {
     expect(r.out).toContain('Critères (poids normalisés)');
     expect((await runFr('score')).err).toMatch(/^Erreur : score : /);
     expect((await cli('rescore', '--data', fr)).out).toMatch(/^Grille v1\./);
+  });
+});
+
+describe('--dry-run and --dry_run', () => {
+  it('score: the spelling of the help (--dry-run) is accepted, nothing saved', async () => {
+    const before = parsed<{ score: number | null }>(await run('show', '3', '--json')).score;
+    const r = parsed<Scoring>(await run('score', '3', '--json', '{"score":2,"fit":"x","gaps":"y"}', '--dry-run'));
+    expect(r).toMatchObject({ ok: true, dry_run: true, scored: 0 });
+    expect(r.offers[0]).toMatchObject({ id: 3, score: 2 });
+    expect(parsed<{ score: number | null }>(await run('show', '3', '--json')).score).toBe(before);
+  });
+
+  it('rubric --update: --dry-run is a trial without a summary', async () => {
+    const version = parsed<{ version: number }>(await run('rubric', '--json')).version;
+    expect(parsed(await run('rubric', '--update', '{"threshold":9}', '--dry-run', '--json'))).toMatchObject({ ok: true, saved: false });
+    expect((await run('rubric', '--update', '{"threshold":9}', '--dry-run')).out).toMatch(/^Trial: nothing is saved\./);
+    expect(parsed<{ version: number }>(await run('rubric', '--json')).version).toBe(version);
+  });
+});
+
+describe('errors of the core', () => {
+  it('an expected error shows its message alone; a defect (stored version unreadable) its stack', async () => {
+    const other = `${tmp.root()}/defect`;
+    const runOther = await workspace(other);
+    // The first read records the grid file as version 1.
+    expect(parsed<{ version: number }>(await runOther('rubric', '--json')).version).toBe(1);
+    expect(await runOther('rubric', '--version', '9')).toEqual({ code: 1, out: '', err: 'Error: Grid version 9 not found\n' });
+    const db = new DatabaseSync(`${other}/data/vigie-emploi.sqlite`);
+    db.prepare('UPDATE rubrics SET content = ? WHERE version = 1').run('{not json');
+    db.close();
+    const r = await runOther('rubric', '--version', '1');
+    expect(r.code).toBe(1);
+    expect(r.err).toMatch(/^Error: SyntaxError: .*JSON[\s\S]*\n +at /);
   });
 });

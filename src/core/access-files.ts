@@ -9,7 +9,7 @@ import { AppError } from './errors.ts';
 
 /** Forbidden first segment: the SQLite database and its files. */
 const FOLDERS_FORBIDDEN = new Set(['data']);
-/** Extensions qu'ecrire_fichier accepte (texte seulement). */
+/** Extensions that write_file accepts (text only). */
 export const EXTENSIONS_WRITE = ['.md', '.txt', '.json', '.csv', '.yml', '.yaml', '.css'];
 /** Files read as text. */
 const EXTENSIONS_TEXT = new Set([...EXTENSIONS_WRITE, '.eml', '.html', '.htm', '.xml', '.log', '.ini', '.toml']);

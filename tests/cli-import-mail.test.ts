@@ -131,6 +131,9 @@ describe('mail', () => {
 
   it('setup refusals that come before any connection', async () => {
     expect((await run('mail', 'setup', '--password-stdin')).err).toBe('Error: E-mail address required (--address).\n');
+    // Numbers checked first: the error names the option and shows what was typed.
+    expect(await run('mail', 'setup', '--port', 'abc', '--password-stdin')).toEqual({ code: 1, out: '', err: 'Error: Invalid port: abc\n' });
+    expect((await run('mail', 'setup', '--since-days', '2x', '--password-stdin')).err).toBe('Error: Invalid since-days: 2x\n');
     const oauth = await run('mail', 'setup', '--address', 'jane@outlook.com', '--password-stdin');
     expect(oauth.code).toBe(1);
     expect(oauth.err).toContain('Outlook.com / Microsoft 365');

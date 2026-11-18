@@ -7,7 +7,7 @@ import { addEvent, deadlines, eventOrError, journal, markDone, updateEvent, dele
 import { statistics } from '../../core/statistics.ts';
 import { number, type RoutesContext } from './context.ts';
 
-/** Champs de candidature modifiables depuis l'interface. */
+/** Application fields that can be edited from the interface. */
 const FIELDS_EDITABLE = FIELDS_APPLICATION.filter((k) => k !== 'state' && k !== 'label');
 
 export function routesTracking(app: Hono, ctx: RoutesContext): void {

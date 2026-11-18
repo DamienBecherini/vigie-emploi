@@ -61,8 +61,12 @@ describe('settings of the Claude Desktop extension', () => {
   it('empty or unsubstituted variable = absent', () => {
     const c = loadConfig({ dataDir: folder, env: { VIGIE_EMPLOI_LANGUAGE: '${user_config.language}' }, cwd: root });
     expect(c.language).toBe('fr');
-    const e = openState({ env: { VIGIE_EMPLOI_DATA: '${user_config.folder}' }, cwd: root });
+    // Home folder given: the default workspace is looked for there, never in the real ~/vigie-emploi.
+    const home = join(root, 'home');
+    const e = openState({ env: { VIGIE_EMPLOI_DATA: '${user_config.folder}' }, cwd: root }, home);
     expect(e.byDefault).toBe(true);
+    expect(e.config.dataDir).toBe(join(home, 'vigie-emploi'));
+    expect(e.db).toBeNull();
     e.db?.close();
   });
 

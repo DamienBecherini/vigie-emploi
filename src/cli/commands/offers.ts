@@ -109,15 +109,17 @@ export const offerCommands: Record<string, Command> = {
   },
 
   tag(args) {
-    // Manual parsing: "-removal" must not be taken for an option.
-    const opts: { json?: boolean; data?: string; config?: string } = {};
+    // The general options are set apart and parsed like on the other commands (--data x or --data=x, a missing value
+    // is an error); everything else is the id and the tags, read by hand: "-removal" must not be taken for an option.
+    const options: string[] = [];
     const rest: string[] = [];
     for (let i = 0; i < args.length; i++) {
       const a = args[i];
-      if (a === '--json') opts.json = true;
-      else if (a === '--data' || a === '--config') opts[a === '--data' ? 'data' : 'config'] = args[++i];
+      if (a === '--data' || a === '--config') options.push(a, ...(i + 1 < args.length ? [args[++i]] : []));
+      else if (a === '--json' || /^--(data|config)=/.test(a)) options.push(a);
       else rest.push(a);
     }
+    const { v: opts } = analyze(options, {});
     const { db } = context(opts);
     const id = whole(rest[0], 'id');
     if (!offerById(db, id)) notFound(t('cli.offerNotFound', { id }));

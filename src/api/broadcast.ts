@@ -22,7 +22,7 @@ export class Broadcast {
       try {
         f(n);
       } catch {
-        /* un abonné défaillant (connexion fermée) ne bloque pas les autres */
+        /* a failing subscriber (connection closed) does not block the others */
       }
     }
   }
@@ -99,7 +99,7 @@ export function watchChanges(o: OptionsWatcher): () => void {
     onEmails.on('error', () => {});
     observers.push(onEmails);
   } catch {
-    /* boîte de réception absente : rien à surveiller */
+    /* no inbox: nothing to watch */
   }
 
   return () => {

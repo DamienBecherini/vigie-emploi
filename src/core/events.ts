@@ -82,7 +82,7 @@ export function dayLocal(d: Date = new Date(), days = 0): string {
   return `${x.getFullYear()}-${two(x.getMonth() + 1)}-${two(x.getDate())}`;
 }
 
-/** AAAA-MM-JJTHH:MM (heure locale). */
+/** YYYY-MM-DDTHH:MM (local time). */
 export function instantLocal(d: Date = new Date()): string {
   return `${dayLocal(d)}T${two(d.getHours())}:${two(d.getMinutes())}`;
 }
@@ -202,7 +202,7 @@ function directionValid(v: unknown): Direction | null {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Lecture
+// Read
 // ---------------------------------------------------------------------------------------------
 
 type LineRaw = Omit<JournalEvent, 'done' | 'files'> & { done: number; files: string };
@@ -213,7 +213,7 @@ function fromLine(l: LineRaw): JournalEvent {
     const f = JSON.parse(l.files || '[]') as unknown;
     if (Array.isArray(f)) files = f.map(String);
   } catch {
-    /* colonne abîmée : liste vide */
+    /* damaged column: empty list */
   }
   return { ...l, done: Boolean(l.done), files };
 }

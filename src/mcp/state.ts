@@ -10,8 +10,8 @@ import { defineLanguage } from '../i18n/index.ts';
 import { tm } from './texts.ts';
 
 /** Data folder when nothing is configured (neither --data, nor VIGIE_EMPLOI_DATA, nor a config file). */
-export function folderByDefault(): string {
-  return join(homedir(), 'vigie-emploi');
+export function folderByDefault(home = homedir()): string {
+  return join(home, 'vigie-emploi');
 }
 
 export interface StateMcp {
@@ -35,14 +35,15 @@ function isApplication(folder: string): boolean {
   return resolve(folder).toLowerCase() === resolve(APP_ROOT).toLowerCase();
 }
 
-export function openState(options: OptionsConfig = {}): StateMcp {
+/** Workspace of the server; `home` (the user's home folder by default) holds the default folder. */
+export function openState(options: OptionsConfig = {}, home = homedir()): StateMcp {
   let config: Config;
   let byDefault = false;
   try {
     config = loadConfig(options);
   } catch (e) {
     if (!(e instanceof ErrorConfig && e.code === 'not-configured')) throw e;
-    config = loadConfig({ ...options, dataDir: folderByDefault() });
+    config = loadConfig({ ...options, dataDir: folderByDefault(home) });
     byDefault = true;
   }
   const ready = workspaceExists(config.dataDir) && !isApplication(config.dataDir);

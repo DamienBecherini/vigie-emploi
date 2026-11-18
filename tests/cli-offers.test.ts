@@ -251,6 +251,17 @@ describe('tag', () => {
     expect((await run('tag', '3', 'nope')).err).toBe('Error: tag: prefix each tag with + or - (nope)\n');
     expect((await run('tag', '999', '+x')).err).toBe('Error: Offer 999 not found\n');
   });
+
+  it('--data=x and --config=x like on the other commands; --data without a value is an error', async () => {
+    expect(parsed(await cli('tag', '3', '+a', `--data=${ws}`, '--json'))).toEqual({ ok: true, id: 3, tags: ['a'] });
+    expect(parsed(await cli('tag', '3', '-a', `--config=${ws}/vigie-emploi.config.json`, '--json'))).toEqual({ ok: true, id: 3, tags: [] });
+    const missing = await cli('tag', '3', '+b', '--data');
+    expect(missing.code).toBe(1);
+    // No workspace read (no --data): the message comes in the default language, French.
+    expect(missing.err).toMatch(/^Erreur : Option '--data <value>' argument missing/);
+    expect(missing.err).not.toContain('    at ');
+    expect(parsed<{ tags: string[] }>(await run('show', '3', '--json')).tags).toEqual([]);
+  });
 });
 
 describe('link', () => {
@@ -308,6 +319,25 @@ describe('templates and template', () => {
     expect(r.out).toContain(' (old template kept in ');
   });
 
+  it('template three times within the same second: -2, -3 backups, nothing overwritten', async () => {
+    const runOther = await workspace(`${tmp.root()}/template-same-second`);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date(2026, 10, 18, 9, 30, 5));
+      const olds: string[] = [];
+      for (const name of ['modern', 'compact', 'plain']) olds.push(parsed<{ old: string }>(await runOther('template', name, '--json')).old);
+      expect(olds.map((o) => o.replace(/\\/g, '/').split('/').pop())).toEqual([
+        'gabarit-20261118-093005',
+        'gabarit-20261118-093005-2',
+        'gabarit-20261118-093005-3',
+      ]);
+      expect(readFileSync(`${olds[1]}/gabarit.css`, 'utf8')).toContain('« modern »');
+      expect(readFileSync(`${olds[2]}/gabarit.css`, 'utf8')).toContain('« compact »');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('errors: no name, unknown template', async () => {
     expect((await run('template')).err).toBe('Error: Usage: vigie-emploi template <name> (list: vigie-emploi templates)\n');
     expect((await run('template', 'unknown')).code).toBe(1);
@@ -329,6 +359,14 @@ describe('help, unknown command, bad option', () => {
     expect(r.out).toBe('');
     expect(r.err).toMatch(/^Unknown command: bogus\n\n/);
     expect(r.err).toContain('list [filters]');
+  });
+
+  it('names inherited from Object.prototype are unknown commands', async () => {
+    for (const name of ['toString', 'constructor', 'hasOwnProperty', '__proto__']) {
+      const r = await run(name);
+      expect(r.code, name).toBe(2);
+      expect(r.err.startsWith(`Unknown command: ${name}\n`), name).toBe(true);
+    }
   });
 
   it('--data=<folder> form, read before the parsing for the language', async () => {

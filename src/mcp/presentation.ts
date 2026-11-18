@@ -17,7 +17,7 @@ export const TO_READ_MAX = 60;
 export const TO_READ_MAX_DESCRIPTIONS = 10;
 export const LENGTH_DESCRIPTION_PAGE = 1_500;
 
-/** lister_offres : offres par page. */
+/** list_offers: offers per page. */
 export const LIST_DEFAULT = 25;
 export const LIST_MAX = 60;
 

@@ -6,25 +6,18 @@ import type { Database } from '../db/database.ts';
 import { transaction } from '../db/database.ts';
 import { canonicalize } from '../core/links.ts';
 import { batchInputs, scoreInput, type InputBatch } from '../core/scoring.ts';
-import {
-  addScore,
-  addStatus,
-  applicationOf,
-  saveApplication,
-  saveOffer,
-  mergeOffers,
-  updateTags,
-  findOffer,
-  type FieldsOffer,
-  type Offer,
-} from '../core/offers.ts';
+import { addScore, addStatus, applicationOf, saveApplication, saveOffer, mergeOffers, updateTags, findOffer, type Offer } from '../core/offers.ts';
 import type { Status } from '../core/statuses.ts';
-import { dateFr, fingerprint, isEmpty, now, withoutMarkdown, findCompensation } from '../core/text.ts';
-import { split, linksMarkdown, linesTables, type LineTable } from './markdown.ts';
+import { dateFr, fingerprint, isEmpty, now, withoutMarkdown } from '../core/text.ts';
+import { linksMarkdown, linesTables } from './markdown.ts';
+import { column, excerpt, readConditions, registerLineOffers, withoutLinkList } from './cells.ts';
 import { MARKER_TRACKER_GENERATED } from '../export/tracker.ts';
 import { importJournals, type ReportJournal } from './journal.ts';
 import { AppError } from '../core/errors.ts';
 import { t } from '../i18n/index.ts';
+
+// The reading of the cells moved to cells.ts: exported from here too, for the callers of this module.
+export { cellCompanies, cellScores, readConditions, registerLineOffers } from './cells.ts';
 
 export interface UnrecognizedLine {
   file: string;
@@ -61,8 +54,6 @@ export interface ReportImport {
   journal: ReportJournal;
 }
 
-const excerpt = (s: string) => (s.length > 160 ? `${s.slice(0, 157)}…` : s);
-
 function reportEmpty(): Omit<ReportImport, 'journal'> {
   return {
     batches: { files: 0, inputs: 0, offers_created: 0, scores_added: 0, errors: [] },
@@ -79,39 +70,6 @@ function reportEmpty(): Omit<ReportImport, 'journal'> {
     },
     tracker: { lines: 0, offers_created: 0, applications: 0, merges: [], statuses_added: 0, scores_added: 0, unrecognized: [] },
   };
-}
-
-/** Cell of a line by column name (start of the label, case and accents ignored). */
-function column(l: LineTable, ...names: string[]): string | undefined {
-  const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
-  for (const name of names) {
-    const i = l.headers.findIndex((e) => norm(e).startsWith(norm(name)));
-    if (i >= 0) return l.cells[i];
-  }
-  return undefined;
-}
-
-/** Scores of a cell "6/10", "6 et 5,5/10", "7 · 6,5 · 4"; empty if ambiguous ("4 à 7/10", "≤ 2,5"). */
-export function cellScores(cell: string): number[] {
-  if (/[≤≥<>~≈]|(^|\s)à(\s|$)/.test(cell)) return [];
-  return (cell.replace(/\/\s*10/g, '').match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => Number(n.replace(',', '.'))).filter((n) => n >= 0 && n <= 10);
-}
-
-/** Contract, compensation and remote work read in a "Conditions" or "Type" cell. */
-export function readConditions(text: string): Pick<FieldsOffer, 'contract' | 'compensation' | 'remote'> {
-  const t = withoutMarkdown(text);
-  const contract = t.match(/\b(CDI|CDD|freelance|indépendant|portage|stage|alternance|intérim)\b/i)?.[1] ?? null;
-  const tt = t.match(/(full remote|100 % (?:télétravail|remote)|full télétravail|full TT|télétravail[^,;·]*|remote[^,;·]*|hybride[^,;·]*)/i)?.[1] ?? null;
-  return {
-    contract: contract ? contract.charAt(0).toUpperCase() + contract.slice(1) : null,
-    compensation: findCompensation(t),
-    remote: tt ? tt.trim() : null,
-  };
-}
-
-/** Removes from the cell the parentheses that only contain links "([offre](…), [doublon](…))". */
-function withoutLinkList(s: string): string {
-  return s.replace(/\s*\(\s*(?:\[[^\]]*\]\([^)\s]*\)\s*,?\s*)+\)/g, '').replace(/\[[^\]]*\]\([^)\s]*\)/g, '');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -159,134 +117,6 @@ function importBatches(db: Database, folder: string, report: ReportImport): void
 // ---------------------------------------------------------------------------------------------
 // Register of the dismissed offers (_ecartees.md)
 // ---------------------------------------------------------------------------------------------
-
-interface OfferRegister {
-  source: string;
-  siteId: string;
-  url: string | null;
-  title: string;
-  company: string;
-  conditions: string;
-  score: number | null;
-}
-
-/**
- * Companies of a grouped cell of the register: separated by "·" or "/", otherwise one per bold block
- * ("**A** (filiale), **B**"). `parts`: one entry per company; `byOffer`: "(×3)" counts three times.
- */
-export function cellCompanies(cell: string): { parts: string[]; byOffer: string[] } {
-  let parts = split(cell, ' · ');
-  if (parts.length < 2) parts = split(cell, ' / ');
-  if (parts.length < 2) {
-    const bold = [...cell.matchAll(/\*\*[^*]+\*\*/g)];
-    if (bold.length >= 2) {
-      parts = bold.map((m, i) =>
-        cell
-          .slice(m.index, bold[i + 1]?.index ?? cell.length)
-          .replace(/[\s,;]+$/, '')
-          .replace(/\s+(et|and)$/i, ''),
-      );
-    }
-  }
-  const MULTIPLE = /\s*\(\s*[×x]\s*(\d+)\s*\)/i;
-  const byOffer: string[] = [];
-  const names = parts.map((p) => {
-    const times = p.match(MULTIPLE);
-    const name = withoutMarkdown(p.replace(MULTIPLE, ''));
-    for (let i = 0; i < (times ? Number(times[1]) : 1); i++) byOffer.push(name);
-    return name;
-  });
-  return { parts: names, byOffer };
-}
-
-const keyLink = (url: string): string | null => {
-  const id = canonicalize(url);
-  return id ? `${id.source}:${id.siteId}` : null;
-};
-
-export function registerLineOffers(l: LineTable): { offers: OfferRegister[]; linksIgnored: string[] } {
-  const company = column(l, 'entreprise') ?? '';
-  const machine = column(l, 'poste') ?? '';
-  const conditions = column(l, 'conditions') ?? '';
-  const scores = cellScores(column(l, 'note') ?? '');
-  const segments = split(machine, ' · ');
-  const isBatch = /^lot\b/i.test(withoutMarkdown(company));
-  const { parts: companies, byOffer } = cellCompanies(company);
-  // Otherwise, one company per offer link (in order) when the numbers match; failing that, the whole cell.
-  const linksJob = new Set(
-    segments.flatMap((seg) =>
-      linksMarkdown(seg)
-        .map((x) => keyLink(x.url))
-        .filter((x) => x !== null),
-    ),
-  );
-  const bySegment = companies.length === segments.length;
-  const byLink = !isBatch && !bySegment && byOffer.length > 1 && byOffer.length === linksJob.size;
-  let rank = 0;
-  const conds = split(conditions, ' · ');
-  const offers: OfferRegister[] = [];
-  const linksIgnored: string[] = [];
-  const seen = new Set<string>();
-
-  segments.forEach((seg, k) => {
-    const text = withoutMarkdown(withoutLinkList(seg));
-    let ent = bySegment ? companies[k] : withoutMarkdown(company);
-    let title = text;
-    if (isBatch && text.includes(' — ')) {
-      const i = text.indexOf(' — ');
-      ent = text.slice(0, i).trim();
-      title = text.slice(i + 3).trim();
-    }
-    const score = scores.length === segments.length ? scores[k] : scores.length === 1 ? scores[0] : null;
-    const cond = conds.length === segments.length ? conds[k] : conditions;
-    for (const link of linksMarkdown(seg)) {
-      const id = canonicalize(link.url);
-      if (!id) {
-        if (/^https?:/.test(link.url)) linksIgnored.push(link.url);
-        continue;
-      }
-      const key = `${id.source}:${id.siteId}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const entLink = byLink ? byOffer[rank++] : ent;
-      offers.push({ source: id.source, siteId: id.siteId, url: id.url, title, company: entLink, conditions: cond, score });
-    }
-  });
-  // Links placed in the other columns (company, conditions).
-  for (const link of linksMarkdown(`${company} ${conditions}`)) {
-    const id = canonicalize(link.url);
-    if (!id) {
-      if (/^https?:/.test(link.url)) linksIgnored.push(link.url);
-      continue;
-    }
-    const key = `${id.source}:${id.siteId}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    offers.push({
-      source: id.source,
-      siteId: id.siteId,
-      url: id.url,
-      title: withoutMarkdown(withoutLinkList(machine)),
-      company: withoutMarkdown(withoutLinkList(company)),
-      conditions,
-      score: scores.length === 1 ? scores[0] : null,
-    });
-  }
-  if (!offers.length) {
-    // Line without an offer link: a "register" offer identified by its content, to keep the history.
-    const date = column(l, 'date') ?? '';
-    offers.push({
-      source: 'register',
-      siteId: `reg-${fingerprint(`${date}|${withoutMarkdown(company)}|${withoutMarkdown(machine)}`)}`,
-      url: null,
-      title: withoutMarkdown(withoutLinkList(machine)) || withoutMarkdown(company),
-      company: withoutMarkdown(withoutLinkList(company)),
-      conditions,
-      score: scores.length === 1 ? scores[0] : null,
-    });
-  }
-  return { offers, linksIgnored };
-}
 
 function importRegister(db: Database, folder: string, report: ReportImport): void {
   const path = join(folder, 'candidatures', '_ecartees.md');

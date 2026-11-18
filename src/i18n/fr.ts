@@ -96,6 +96,7 @@ Langue : clé « language » de vigie-emploi.config.json (fr ou en) ou variable 
   // CLI: general messages
   'cli.error': 'Erreur : {message}',
   'cli.commandUnknown': 'Commande inconnue : {command}',
+  'cli.optionUnknown': 'Option inconnue : {option} (« vigie-emploi help » liste les options de chaque commande)',
   'cli.invalid': '{name} invalide : {value}',
   'cli.offerNotFound': 'Offre {id} introuvable',
   'cli.statusUnknown': 'Statut inconnu : {status}',

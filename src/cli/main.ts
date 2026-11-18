@@ -48,6 +48,13 @@ function messageLanguage(cmd: string | undefined, args: string[]) {
   return languageConfigured({ dataDir: optionRaw(args, 'data'), fileConfig: optionRaw(args, 'config') });
 }
 
+/** An option the command does not have, said in the user's language (node:util words it in English); null for any other error. */
+function optionUnknown(err: Error): string | null {
+  if ((err as { code?: string }).code !== 'ERR_PARSE_ARGS_UNKNOWN_OPTION') return null;
+  const option = err.message.match(/'([^']+)'/)?.[1];
+  return option ? t('cli.optionUnknown', { option }) : null;
+}
+
 export async function main(argv: string[]): Promise<number> {
   const [cmd, ...args] = argv;
   defineLanguage(messageLanguage(cmd, args));
@@ -71,9 +78,10 @@ export async function main(argv: string[]): Promise<number> {
   } catch (e) {
     const err = e as Error;
     // An expected error (wrong input, missing file, unknown option) shows its message; anything else is a defect: its stack.
-    const message = isExpected(err) ? err.message : (err.stack ?? err.message);
+    const text = optionUnknown(err) ?? err.message;
+    const message = isExpected(err) ? text : (err.stack ?? text);
     const code = err instanceof AppError ? err.code : undefined;
-    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, error: err.message, code })}\n`);
+    if (args.includes('--json')) process.stderr.write(`${JSON.stringify({ ok: false, error: text, code })}\n`);
     else process.stderr.write(`${t('cli.error', { message })}\n`);
     return 1;
   }

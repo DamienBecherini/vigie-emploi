@@ -52,6 +52,7 @@
 - `template` run twice within the same second keeps both old templates (`cv/gabarit-<date>-2`…) instead of failing.
 - `deadlines --days abc`, `mail setup --port abc` and `mail setup --since-days abc` give one line naming the option and what was typed, instead of going on with "not a number".
 - `vigie-emploi toString` (or any name inherited by a JavaScript object) is an unknown command, not a silent success.
+- An option a command does not have is named in one line, in the language of the workspace ("Option inconnue : --limit"), instead of a long English sentence.
 - `tag` reads `--data=<folder>` and `--config=<file>` like the other commands, and refuses `--data` or `--config` without a value instead of ignoring it.
 - The command line shows the stack of a defect of the program (an unexpected error) instead of its message alone; the errors it expects (a wrong input, something missing) still show their message alone.
 

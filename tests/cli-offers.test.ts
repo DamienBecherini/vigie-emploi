@@ -378,6 +378,7 @@ describe('help, unknown command, bad option', () => {
     const r = await run('list', '--bogus');
     expect(r.code).toBe(1);
     expect(r.err).toMatch(/^Error: Unknown option '--bogus'/);
+    expect(r.err).not.toContain('positional argument');
     expect(r.err).not.toContain('    at ');
     const j = await run('list', '--bogus', '--json');
     expect(JSON.parse(j.err).ok).toBe(false);

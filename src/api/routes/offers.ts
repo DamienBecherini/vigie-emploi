@@ -1,6 +1,7 @@
 // Job ads: list (with its URL filters), detail, and the changes made from the detail panel
 // (status, tags, link, apply, overall score, sub-scores).
 import type { Hono } from 'hono';
+import { AppError } from '../../core/errors.ts';
 import { transaction } from '../../db/database.ts';
 import { body as read, bodyLink, bodyScore, bodyStatus, bodyTags } from '../bodies.ts';
 import { listOffers, meta, type OptionsList } from '../../core/queries.ts';
@@ -51,7 +52,8 @@ export function routesOffers(app: Hono, ctx: RoutesContext): void {
 
   app.get('/api/offers/:id', (c) => {
     const d = detailOffer(db, Number(c.req.param('id')));
-    return d ? c.json(d) : c.json({ ok: false, error: m('api.offerNotFound') }, 404);
+    if (!d) throw new AppError('not-found', m('api.offerNotFound'));
+    return c.json(d);
   });
 
   // Status, tags and link read their body first: a wrong body is refused (400) even for a missing job ad.

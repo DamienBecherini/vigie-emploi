@@ -2,7 +2,7 @@ import { ExternalLink, FolderOpen, Send, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STATUSES, type Status } from '../../../src/core/statuses.ts';
-import { statusShown, t } from '../i18n/index.ts';
+import { compensationShown, statusShown, t } from '../i18n/index.ts';
 import { api, urlFile, type DetailOffer } from '../api.ts';
 import { queryKeys } from '../queryKeys.ts';
 import { BadgeScore, BadgeStatus, formatDate, formatScore } from './Badges.tsx';
@@ -575,7 +575,7 @@ export function Detail({ id, close, announce }: { id: number; close: () => void;
             </Line>
             <Line label={t('detail.location')}>{o.location}</Line>
             <Line label={t('detail.contract')}>{o.contract}</Line>
-            <Line label={t('detail.compensation')}>{o.compensation}</Line>
+            <Line label={t('detail.compensation')}>{compensationShown(o.compensation)}</Line>
             <Line label={t('detail.remote')}>{o.remote}</Line>
             <Line label={t('detail.stack')}>{o.stack}</Line>
             <Line label={t('detail.source')}>{`${o.source} · ${o.site_id}`}</Line>

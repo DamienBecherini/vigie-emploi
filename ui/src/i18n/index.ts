@@ -98,6 +98,19 @@ export const typeShown = (x: TypeEvent) => labelType(x, current);
 export const levelShown = (n: Level) => labelLevel(n, current);
 export const flagShown = (d: Flag) => messageFlag(d, current);
 
+const UNITS_PAY = {
+  HOUR: 'compensation.HOUR',
+  DAY: 'compensation.DAY',
+  WEEK: 'compensation.WEEK',
+  MONTH: 'compensation.MONTH',
+  YEAR: 'compensation.YEAR',
+} as const;
+
+/** Pay as shown: the schema.org unit that a job ad's JSON-LD leaves at the end ("45000-55000 YEAR") in the current language ("/ an"). */
+export function compensationShown(c: string | null): string | null {
+  return c?.replace(/\b(HOUR|DAY|WEEK|MONTH|YEAR)$/, (u) => t(UNITS_PAY[u as keyof typeof UNITS_PAY])) ?? null;
+}
+
 /** Whole percentage in the language's format ("35 %" in French, "35%" in English). */
 export function percent(n: number): string {
   return (Math.round(n) / 100).toLocaleString(locale(), { style: 'percent', maximumFractionDigits: 0 });

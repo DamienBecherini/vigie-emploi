@@ -1,7 +1,7 @@
 // Columns of the offers table, their default visibility, and the classes of the job title column stuck to the left.
 import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import type { LineOffer } from '../api.ts';
-import { t } from '../i18n/index.ts';
+import { compensationShown, t } from '../i18n/index.ts';
 import { BadgeScore, BadgeStatus, formatDate } from './Badges.tsx';
 
 /** Columns of the table (labels in the current language: the application is remounted at each language change). */
@@ -21,7 +21,7 @@ export const columnDefs = (): ColumnDef<LineOffer>[] => [
     id: 'compensation_min',
     accessorKey: 'compensation',
     header: t('col.compensation'),
-    cell: (c) => <span className="line-clamp-2">{c.row.original.compensation ?? '—'}</span>,
+    cell: (c) => <span className="line-clamp-2">{compensationShown(c.row.original.compensation) ?? '—'}</span>,
   },
   { id: 'remote', accessorKey: 'remote', header: t('col.remote'), cell: (c) => <span className="line-clamp-2">{c.row.original.remote ?? '—'}</span> },
   { id: 'source', accessorKey: 'source', header: t('col.source') },

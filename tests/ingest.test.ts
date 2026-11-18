@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openDatabase, type Database } from '../src/db/database.ts';
 import { readEmail } from '../src/ingest/eml.ts';
 import { ingest } from '../src/ingest/ingest.ts';
-import { extractJsonLd } from '../src/ingest/jsonld.ts';
+import { hellowork } from '../src/sources/hellowork.ts';
 import { detailOffer, findOffer } from '../src/core/offers.ts';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures');
@@ -46,7 +46,7 @@ describe('reading of the .eml files', () => {
 
 describe('JSON-LD', () => {
   it('extracts title, company, salary, remote work, description without the repeated presentation', () => {
-    const d = extractJsonLd(readFileSync(join(FIXTURES, 'pages', 'hellowork-70000001.html'), 'utf8'));
+    const d = hellowork.extract?.(readFileSync(join(FIXTURES, 'pages', 'hellowork-70000001.html'), 'utf8'));
     expect(d).toMatchObject({
       title: 'Développeur WordPress H/F',
       company: 'Pi Conseil',

@@ -1,6 +1,7 @@
 // High-level operations shared by the CLI, the dashboard API and the MCP server.
 // Each function validates its inputs and throws an Error with a message the user can read.
 import type { Database } from '../db/database.ts';
+import { adapterOf } from '../sources/index.ts';
 import { transaction } from '../db/database.ts';
 import { listOffers } from './queries.ts';
 import { addStatus, detailOffer, saveApplication, updateTags, offerById, type FieldsApplication, type DetailOffer, type Offer } from './offers.ts';
@@ -74,7 +75,7 @@ export function offersToRead(db: Database, o: OptionsToRead = {}): ResultToRead 
   const withDescriptions = o.descriptions !== false;
   const offers = r.offers.map((l): OfferToRead => {
     const d = offerById(db, l.id)!;
-    const reading = d.description ? 'description' : l.source === 'glassdoor' ? 'human' : 'browser';
+    const reading = d.description ? 'description' : adapterOf(l.source)?.browserReading === 'human' ? 'human' : 'browser';
     const base: OfferToRead = {
       id: l.id,
       source: l.source,

@@ -38,8 +38,17 @@
 - Moving a job ad to "sent" clears a next action that was to send the application whatever the language ("Envoyer…", "Send…"); it only knew the French verb.
 - `ingest`: an application acknowledgement now lists the job ads it refers to (the line showed the placeholder `{suite}` instead).
 
+### Job sites
+
+- Indeed and Glassdoor: the address saved for a job ad keeps the country site of the link received (`uk.indeed.com`, `www.glassdoor.co.uk`…) instead of always the French one. A job ad is still recognised by its site and its identifier, so nothing changes for the ads already saved, and the same ad seen on two country sites stays one ad.
+- Collective: the contract and the work pattern read in the page follow the language of the workspace ("Fixed term", "on site"), as does the "yes" of a remote job read on Hellowork or Free-Work.
+- A work pattern written in English is understood by the score: "3 days on site", "2 days from home", "2 days per week in the office".
+- Free-Work: a description that contains "Bienvenue chez" is no longer cut there (the cut is for Hellowork, which repeats the presentation of the company).
+
 ### Development
 
+- One adapter per job site in `src/sources/` (link recognition, who reads the ad, page reading, e-mail particularities), listed in one registry: adding a site is one file, one line and one block of tests.
+- The five largest files are split by domain, without any change of behaviour: commands of the command line (`src/cli/commands/`), routes of the API (`src/api/routes/`), tools of the MCP server (`src/mcp/tools/`), scoring grid (`src/core/rubric/`), components and hooks of the interface.
 - Lint and formatting with Biome (`npm run lint`, `npm run format`), coverage of `src/` with a floor (`npm run coverage`), `npm run check` for everything the CI runs.
 - Tests of the command-line interface, of the documentation's links and of the lockfile.
 

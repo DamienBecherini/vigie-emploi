@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readEmail } from '../src/ingest/eml.ts';
-import { extractJsonLd } from '../src/ingest/jsonld.ts';
+import { collective } from '../src/sources/collective.ts';
 import { canonicalize } from '../src/core/links.ts';
 
 // Fictitious data in the format of the Collective e-mails and pages (collective.work).
@@ -60,7 +60,7 @@ describe('Collective', () => {
   });
 
   it('extracts the offer from the page data', () => {
-    expect(extractJsonLd(PAGE)).toEqual({
+    expect(collective.extract?.(PAGE)).toEqual({
       title: 'Développeur PHP & API (H/F)',
       company: 'Anonyme',
       location: 'Paris, France',

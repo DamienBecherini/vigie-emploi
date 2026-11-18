@@ -3,16 +3,18 @@
 
 /**
  * Days on site per week read in a free remote-work text: "full remote" → 0,
- * "3 j sur site" → 3, "2 j de télétravail" → 3, "sur site" → 5; null if the text does not allow a conclusion
- * ("hybride", "télétravail partiel", "NC").
+ * "3 j sur site" or "3 days on site" → 3, "2 j de télétravail" or "2 days from home" → 3, "sur site" → 5;
+ * null if the text does not allow a conclusion ("hybride", "télétravail partiel", "NC").
  */
 export function onsiteDaysFromText(text: string | null | undefined): number | null {
   if (!text) return null;
   const t = text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ');
-  const j = String.raw`(\d)(?:[,.]5)?\s*(?:j\b|jours?\b|jrs?\b)\s*(?:\/|par)?\s*(?:sem\w*)?\s*`;
-  let m = t.match(new RegExp(`${j}(?:sur site|au bureau|en presentiel|de presentiel|presentiel|on[- ]?site|dans nos locaux|chez le client)`));
+  const j = String.raw`(\d)(?:[,.]5)?\s*(?:j\b|jours?\b|jrs?\b|days?\b)\s*(?:\/|par|per|a)?\s*(?:sem\w*|week)?\s*`;
+  let m = t.match(
+    new RegExp(`${j}(?:sur site|au bureau|en presentiel|de presentiel|presentiel|on[- ]?site|(?:in|at) the office|dans nos locaux|chez le client)`),
+  );
   if (m) return Math.min(5, Number(m[1]));
-  m = t.match(new RegExp(`${j}(?:de |en )?(?:teletravail|remote|tt\\b|a distance)`));
+  m = t.match(new RegExp(`${j}(?:de |en |of )?(?:teletravail|remote|tt\\b|a distance|from home|wfh\\b)`));
   if (m) return Math.max(0, 5 - Number(m[1]));
   if (
     /full[ -]?remote|100 ?% (?:teletravail|remote|a distance)|(?:tout|totalement|entierement) (?:a distance|en teletravail)|teletravail (?:complet|total|integral)|remote total|fully remote|\bremote only\b/.test(

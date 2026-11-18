@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitGlassdoor } from '../src/ingest/eml.ts';
+import { splitGlassdoor } from '../src/sources/glassdoor.ts';
 
 describe('Glassdoor titles', () => {
   it('separates company, job title, location and salary', () => {

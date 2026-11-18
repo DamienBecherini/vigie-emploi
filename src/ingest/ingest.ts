@@ -4,13 +4,13 @@ import { basename, join } from 'node:path';
 import type { Database } from '../db/database.ts';
 import type { Config } from '../core/config.ts';
 import { transaction } from '../db/database.ts';
-import { SOURCES_JSONLD } from '../core/links.ts';
+import { adapterOf, type DetailPage } from '../sources/index.ts';
 import { addStatus, saveOffer, updateTags, companyOffers, findOffer } from '../core/offers.ts';
 import { now } from '../core/text.ts';
 import { STATUSES_TRACKED } from '../core/statuses.ts';
 import { addEvent, dateEventFr, dayLocal } from '../core/events.ts';
 import { readEmail, type OfferEmail } from './eml.ts';
-import { extractJsonLd, downloadPage, type DetailJsonLd, type Downloader } from './jsonld.ts';
+import { downloadPage, type Downloader } from './download.ts';
 import { t } from '../i18n/index.ts';
 import { fetchMailPerConfig, MailError, type MailErrorKind, type MailFetch } from '../mail/fetch.ts';
 import { secretStore, type SecretStore } from '../mail/secret.ts';
@@ -20,7 +20,7 @@ export interface OptionsIngest {
   folderEmails: string;
   /** Keep the .eml files after processing. */
   keep?: boolean;
-  /** Read the JSON-LD of the Hellowork / Free-Work pages. */
+  /** Download the public page of the new job ads, for the sites whose adapter reads it. */
   download?: boolean;
   excludedTitles?: RegExp[];
   rejectedEmployers?: RegExp[];
@@ -49,7 +49,7 @@ export interface SummaryIngest {
   dismissed: number;
   /** New offers without a description: to read in the browser. */
   to_read: number;
-  /** New offers whose description was read (JSON-LD). */
+  /** New offers whose description was read in their public page. */
   with_description: number;
   errors: { file?: string; url?: string; message: string }[];
   /** E-mails read without any recognized offer: kept (unknown format, to report). */
@@ -123,8 +123,9 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
         continue;
       }
       for (const off of email.offers) {
-        const already = offers.get(off.url);
-        if (!already) offers.set(off.url, off);
+        const key = `${off.source}:${off.siteId}`;
+        const already = offers.get(key);
+        if (!already) offers.set(key, off);
         else if (off.title.length > already.title.length) already.title = off.title;
       }
       // No offer recognized: unknown format, the e-mail is kept so that nothing is lost.
@@ -136,7 +137,7 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
   }
   summary.offers_found = offers.size;
 
-  // 2. Sorting: duplicates (already in the database), exclusions on the job title, JSON-LD reading.
+  // 2. Sorting: duplicates (already in the database), exclusions on the job title, reading of the public page.
   for (const off of offers.values()) {
     const existing = findOffer(db, off.source, off.siteId);
     if (existing) {
@@ -167,10 +168,11 @@ export async function ingest(db: Database, o: OptionsIngest): Promise<SummaryIng
     }
     const excluded = patternExclusion(off.title, rejected) ?? patternExclusion(off.title, excludedTitles);
     let pattern = excluded ? t('core.ingest.titleExcluded', { pattern: excluded }) : null;
-    let detail: DetailJsonLd | null = null;
-    if (!pattern && o.download !== false && SOURCES_JSONLD.includes(off.source)) {
+    let detail: DetailPage | null = null;
+    const extract = adapterOf(off.source)?.extract;
+    if (!pattern && o.download !== false && extract) {
       try {
-        detail = extractJsonLd(await downloader(off.url));
+        detail = extract(await downloader(off.url));
         if (!detail) summary.errors.push({ url: off.url, message: t('core.ingest.withoutJsonLd') });
       } catch (e) {
         summary.errors.push({ url: off.url, message: t('core.ingest.readingImpossible', { message: (e as Error).message }) });
